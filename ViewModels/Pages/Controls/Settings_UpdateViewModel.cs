@@ -8,6 +8,7 @@ using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
 using MessageBox.Avalonia;
+using MessageBox.Avalonia.Enums;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using MessageBox.Avalonia.Enums;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -119,6 +119,31 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
             {
                 diskUseStatus = value;
                 PropertyChanged?.Invoke(this, new(nameof(DiskUseStatus)));
+            }
+        }
+
+        /// <summary>
+        /// 更新频道
+        /// </summary>
+        public static int UpdateChannel
+        {
+            get => Program.Config.Web.UpdateChannel switch
+            {
+                "stable" => 0,
+                "beta" => 1,
+                "alpha" => 2,
+                _ => 0
+            };
+            set
+            {
+                Program.Config.Web.UpdateChannel = value switch
+                {
+                    0 => "stable",
+                    1 => "beta",
+                    2 => "alpha",
+                    _ => "stable"
+                };
+                EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
             }
         }
 
@@ -241,9 +266,11 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                             .SetPerThreadFilesCount(Program.Config.IO.UpdatingCheckPerThreadFilesCount)
                             .SetTransHash2String(true)
                             .AppendIgnoreFolder("Config")
-                            .AppendIgnoreFolder("Languages")
+                            .AppendIgnoreFolder("Core")
                             .AppendIgnoreFolder("Data")
+                            .AppendIgnoreFolder("Languages")
                             .AppendIgnoreFolder("Log")
+                            .AppendIgnoreFolder("Update")
                             .AppendIgnoreFolder(Program.Config.App.LocalPluginsFileDirectory)
                             .AppendIgnoreFolder(Program.Config.App.LocalPluginsDataDirectory);
                         foreach (var item in Program.Config.App.SurpportLanguages)
