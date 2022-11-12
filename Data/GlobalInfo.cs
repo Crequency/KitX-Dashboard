@@ -1,4 +1,6 @@
-﻿namespace KitX_Dashboard.Data
+﻿using System;
+
+namespace KitX_Dashboard.Data
 {
     internal static class GlobalInfo
     {
@@ -40,6 +42,10 @@
         internal static bool Exiting = false;
 
         internal static bool IsMainMachine = false;
+
+        internal static string ServerAddress = "";
+
+        internal static DateTime ServerBuildTime = new();
 
         internal const string Api_Get_Announcements = "get-announcements.php";
 

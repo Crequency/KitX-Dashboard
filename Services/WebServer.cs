@@ -402,6 +402,8 @@ namespace KitX_Dashboard.Services
                         && !ip.ToString().Equals("::1")
                     select ip).First().ToString(),
             ServingPort = GlobalInfo.ServerPortNumber,
+            ServerAddress = "",
+            ServerBuildTime = new(),
             PluginsCount = Program.PluginCards.Count,
         };
 
@@ -420,6 +422,9 @@ namespace KitX_Dashboard.Services
                                             select ip).First().ToString();
             DefaultDeviceInfoStruct.ServingPort = GlobalInfo.ServerPortNumber;
             DefaultDeviceInfoStruct.PluginsCount = Program.PluginCards.Count;
+            DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
+            DefaultDeviceInfoStruct.ServerAddress = GlobalInfo.ServerAddress;
+            DefaultDeviceInfoStruct.ServerBuildTime = GlobalInfo.ServerBuildTime;
         }
 
         #endregion
