@@ -1,5 +1,7 @@
 ﻿using KitX_Dashboard.Commands;
 using KitX_Dashboard.Services;
+using Serilog;
+using System;
 using System.ComponentModel;
 using System.Threading;
 
@@ -83,7 +85,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         }
 
         /// <summary>
-        /// 确认主题色变更命令
+        /// 立即显示公告命令
         /// </summary>
         internal DelegateCommand? ShowAnnouncementsNowCommand { get; set; }
 
@@ -91,7 +93,14 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         {
             new Thread(async () =>
             {
-                await Services.AnouncementManager.CheckNewAnnouncements();
+                try
+                {
+                    await AnouncementManager.CheckNewAnnouncements();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("辣鸡公告系统又双叒叕崩了!", ex);
+                }
             }).Start();
         }
 

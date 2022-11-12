@@ -2,6 +2,8 @@
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
+using Serilog;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading;
@@ -115,7 +117,14 @@ namespace KitX_Dashboard.ViewModels.Pages
             {
                 new Thread(() =>
                 {
-                    PluginsManager.ImportPlugin(files, true);
+                    try
+                    {
+                        PluginsManager.ImportPlugin(files, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("In RepoPageViewModel.ImportPlugin()", ex);
+                    }
                 }).Start();
             }
         }

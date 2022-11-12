@@ -101,10 +101,17 @@ namespace KitX_Dashboard
 
             new Thread(() =>
             {
-                lock (_configWriteLock)
+                try
                 {
-                    FileHelper.WriteIn(Path.GetFullPath(GlobalInfo.ConfigFilePath),
-                        JsonSerializer.Serialize(Program.Config, options));
+                    lock (_configWriteLock)
+                    {
+                        FileHelper.WriteIn(Path.GetFullPath(GlobalInfo.ConfigFilePath),
+                            JsonSerializer.Serialize(Program.Config, options));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("In Helper.SaveConfig()", ex);
                 }
             }).Start();
         }
@@ -122,8 +129,15 @@ namespace KitX_Dashboard
 
             new Thread(() =>
             {
-                FileHelper.WriteIn(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath),
-                    JsonSerializer.Serialize(Program.PluginsList, options));
+                try
+                {
+                    FileHelper.WriteIn(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath),
+                        JsonSerializer.Serialize(Program.PluginsList, options));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("In Helper.SavePluginsListConfig()", ex);
+                }
             }).Start();
         }
 
@@ -199,7 +213,14 @@ namespace KitX_Dashboard
             if (!Algorithm.Interop.Environment.CheckEnvironment())
                 new Thread(() =>
                 {
-                    Algorithm.Interop.Environment.InstallEnvironment();
+                    try
+                    {
+                        Algorithm.Interop.Environment.InstallEnvironment();
+                    }
+                    catch(Exception ex)
+                    {
+                        Log.Error("In Helper.InitEnvironment()", ex);
+                    }
                 }).Start();
             #endregion
         }
@@ -217,7 +238,7 @@ namespace KitX_Dashboard
             }
             else
             {
-                Services.PluginsManager.ImportPlugin(new string[] { kxpPath });
+                PluginsManager.ImportPlugin(new string[] { kxpPath });
             }
         }
     }

@@ -28,15 +28,22 @@ namespace KitX_Dashboard.Services
 
             new Thread(() =>
             {
-                DevicesManager.KeepCheckAndRemove();
-                PluginsManager.KeepCheckAndRemove();
-                PluginsManager.KeepCheckAndRemoveOrDelete();
-                FindSurpportNetworkInterface(new()
+                try
                 {
-                    UdpClient_Send, UdpClient_Receive
-                }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
-                MultiDevicesBroadCastSend();
-                MultiDevicesBroadCastReceive();
+                    DevicesManager.KeepCheckAndRemove();
+                    PluginsManager.KeepCheckAndRemove();
+                    PluginsManager.KeepCheckAndRemoveOrDelete();
+                    FindSurpportNetworkInterface(new()
+                    {
+                        UdpClient_Send, UdpClient_Receive
+                    }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
+                        MultiDevicesBroadCastSend();
+                        MultiDevicesBroadCastReceive();
+                    }
+                catch (Exception ex)
+                {
+                    Log.Error("In WebServer Constructor", ex);
+                }
             }).Start();
         }
 
@@ -99,7 +106,13 @@ namespace KitX_Dashboard.Services
                         // 新建并运行接收消息线程
                         new Thread(() =>
                         {
-                            ReciveMessage(client);
+                            try
+                            {
+                                ReciveMessage(client);
+                            }catch(Exception ex)
+                            {
+                                Log.Error("In WebServer.AcceptClient().ReciveMessage()", ex);
+                            }
                         }).Start();
                     }
                     else
@@ -402,9 +415,9 @@ namespace KitX_Dashboard.Services
             DefaultDeviceInfoStruct.DeviceOSVersion = Environment.OSVersion.VersionString;
             DefaultDeviceInfoStruct.IPv4 = GetInterNetworkIPv4();
             DefaultDeviceInfoStruct.IPv6 = (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                    where ip.AddressFamily == AddressFamily.InterNetworkV6
-                        && !ip.ToString().Equals("::1")
-                    select ip).First().ToString();
+                                            where ip.AddressFamily == AddressFamily.InterNetworkV6
+                                                && !ip.ToString().Equals("::1")
+                                            select ip).First().ToString();
             DefaultDeviceInfoStruct.ServingPort = GlobalInfo.ServerPortNumber;
             DefaultDeviceInfoStruct.PluginsCount = Program.PluginCards.Count;
         }

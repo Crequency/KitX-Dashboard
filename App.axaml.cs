@@ -138,7 +138,14 @@ namespace KitX_Dashboard
             if (Program.Config.App.ShowAnnouncementWhenStart)
                 new Thread(async () =>
                 {
-                    await AnouncementManager.CheckNewAnnouncements();
+                    try
+                    {
+                        await AnouncementManager.CheckNewAnnouncements();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("In AnouncementManager.CheckNewAccnouncements()", ex);
+                    }
                 }).Start();
 
             base.OnFrameworkInitializationCompleted();
