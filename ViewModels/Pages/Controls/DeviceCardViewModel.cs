@@ -49,6 +49,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 DeviceVersion = DeviceInfo.DeviceOSVersion;
                 DeviceOSKind = DeviceInfo.DeviceOSType switch
                 {
+                    OperatingSystems.Unknown => MaterialIconKind.QuestionMarkCircle,
                     OperatingSystems.Android => MaterialIconKind.Android,
                     OperatingSystems.Browser => MaterialIconKind.MicrosoftEdge,
                     OperatingSystems.FreeBSD => MaterialIconKind.Freebsd,
@@ -59,7 +60,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                     OperatingSystems.TvOS => MaterialIconKind.Apple,
                     OperatingSystems.WatchOS => MaterialIconKind.Apple,
                     OperatingSystems.Windows => MaterialIconKind.MicrosoftWindows,
-                    OperatingSystems.Unknown => MaterialIconKind.QuestionMarkCircle,
+                    OperatingSystems.IoT => MaterialIconKind.Chip,
                     _ => MaterialIconKind.QuestionMarkCircle,
                 };
                 IPv4 = $"{DeviceInfo.IPv4}:{DeviceInfo.ServingPort}";
