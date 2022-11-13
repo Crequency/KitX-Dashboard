@@ -22,7 +22,7 @@ namespace KitX_Dashboard.Views
             SuggestResolutionAndLocation();
 
             DataContext = viewModel;
-            
+
             Resolution nowRes = Resolution.Parse($"" +
                 $"{Program.Config.Windows.AnnouncementWindow.Window_Width}" +
                 $"x{Program.Config.Windows.AnnouncementWindow.Window_Height}");

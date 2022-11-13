@@ -1,14 +1,9 @@
-﻿using KitX_Dashboard.Data;
-using KitX_Dashboard.Services;
+﻿using KitX_Dashboard.Services;
 using LiveChartsCore;
-using LiveChartsCore.Kernel;
 using LiveChartsCore.SkiaSharpView;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 
 namespace KitX_Dashboard.ViewModels.Pages.Controls
 {

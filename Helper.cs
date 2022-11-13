@@ -217,7 +217,7 @@ namespace KitX_Dashboard
                     {
                         Algorithm.Interop.Environment.InstallEnvironment();
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Log.Error("In Helper.InitEnvironment()", ex);
                     }

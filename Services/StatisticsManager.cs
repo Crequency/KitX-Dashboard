@@ -47,7 +47,7 @@ namespace KitX_Dashboard.Services
                 {
                     string useCountJson = await File.ReadAllTextAsync(usePath);
                     UseStatistics = JsonSerializer.Deserialize<Dictionary<string, double>>(useCountJson);
-                    if(UseStatistics != null)
+                    if (UseStatistics != null)
                     {
                         DateTime lastDT = DateTime.Parse(UseStatistics.Keys.Last());
                         while (!lastDT.ToString("MM.dd").Equals(DateTime.Now.ToString("MM.dd")))

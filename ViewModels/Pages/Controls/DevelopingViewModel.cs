@@ -9,7 +9,7 @@
 
         private void InitCommands()
         {
-            
+
         }
     }
 }
