@@ -24,7 +24,7 @@ namespace KitX_Dashboard.Services
         public WebServer()
         {
             listener = new(IPAddress.Any, 0);
-            acceptClientThread = new(AcceptClient);
+            acceptPluginThread = new(AcceptClient);
 
             new Thread(() =>
             {
@@ -37,9 +37,9 @@ namespace KitX_Dashboard.Services
                     {
                         UdpClient_Send, UdpClient_Receive
                     }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
-                        MultiDevicesBroadCastSend();
-                        MultiDevicesBroadCastReceive();
-                    }
+                    MultiDevicesBroadCastSend();
+                    MultiDevicesBroadCastReceive();
+                }
                 catch (Exception ex)
                 {
                     Log.Error("In WebServer Constructor", ex);
@@ -57,11 +57,11 @@ namespace KitX_Dashboard.Services
             listener.Start();
 
             int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
-            GlobalInfo.ServerPortNumber = port; // 全局端口号标明
+            GlobalInfo.PluginServerPort = port; // 全局端口号标明
 
             Log.Information($"Server Port: {port}");
 
-            acceptClientThread.Start();
+            acceptPluginThread.Start();
         }
 
         /// <summary>
@@ -77,10 +77,10 @@ namespace KitX_Dashboard.Services
                 item.Value.Dispose();
             }
 
-            acceptClientThread.Join();
+            acceptPluginThread.Join();
         }
 
-        public Thread acceptClientThread;
+        public Thread acceptPluginThread;
         public TcpListener listener;
         public bool keepListen = true;
 
@@ -109,7 +109,8 @@ namespace KitX_Dashboard.Services
                             try
                             {
                                 ReciveMessage(client);
-                            }catch(Exception ex)
+                            }
+                            catch (Exception ex)
                             {
                                 Log.Error("In WebServer.AcceptClient().ReciveMessage()", ex);
                             }
@@ -405,9 +406,9 @@ namespace KitX_Dashboard.Services
                     where ip.AddressFamily == AddressFamily.InterNetworkV6
                         && !ip.ToString().Equals("::1")
                     select ip).First().ToString(),
-            ServingPort = GlobalInfo.ServerPortNumber,
-            ServerAddress = "",
-            ServerBuildTime = new(),
+            PluginServerPort = GlobalInfo.PluginServerPort,
+            DeviceServerPort = GlobalInfo.DeviceServerPort,
+            DeviceServerBuildTime = new(),
             PluginsCount = Program.PluginCards.Count,
         };
 
@@ -424,11 +425,11 @@ namespace KitX_Dashboard.Services
                                             where ip.AddressFamily == AddressFamily.InterNetworkV6
                                                 && !ip.ToString().Equals("::1")
                                             select ip).First().ToString();
-            DefaultDeviceInfoStruct.ServingPort = GlobalInfo.ServerPortNumber;
+            DefaultDeviceInfoStruct.PluginServerPort = GlobalInfo.PluginServerPort;
             DefaultDeviceInfoStruct.PluginsCount = Program.PluginCards.Count;
             DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
-            DefaultDeviceInfoStruct.ServerAddress = GlobalInfo.ServerAddress;
-            DefaultDeviceInfoStruct.ServerBuildTime = GlobalInfo.ServerBuildTime;
+            DefaultDeviceInfoStruct.DeviceServerPort = GlobalInfo.DeviceServerPort;
+            DefaultDeviceInfoStruct.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;
         }
 
         #endregion
@@ -440,7 +441,7 @@ namespace KitX_Dashboard.Services
         {
             keepListen = false;
             listener.Stop();
-            acceptClientThread.Join();
+            acceptPluginThread.Join();
             GC.SuppressFinalize(this);
         }
     }

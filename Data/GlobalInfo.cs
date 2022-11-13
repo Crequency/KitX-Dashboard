@@ -35,7 +35,7 @@ namespace KitX_Dashboard.Data
         //internal const string LogTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] " +
         //    "{Message:lj}{NewLine}{Exception}";
 
-        internal static int ServerPortNumber = 0;
+        internal static int PluginServerPort = 0;
 
         internal static bool Running = true;
 
@@ -43,7 +43,7 @@ namespace KitX_Dashboard.Data
 
         internal static bool IsMainMachine = false;
 
-        internal static string ServerAddress = "";
+        internal static int DeviceServerPort = 0;
 
         internal static DateTime ServerBuildTime = new();
 

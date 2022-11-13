@@ -63,7 +63,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                     OperatingSystems.IoT => MaterialIconKind.Chip,
                     _ => MaterialIconKind.QuestionMarkCircle,
                 };
-                IPv4 = $"{DeviceInfo.IPv4}:{DeviceInfo.ServingPort}";
+                IPv4 = $"{DeviceInfo.IPv4}:{DeviceInfo.PluginServerPort}";
                 IPv6 = DeviceInfo.IPv6;
                 PluginsCount = DeviceInfo.PluginsCount.ToString();
 

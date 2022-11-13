@@ -59,7 +59,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         /// <summary>
         /// 网络服务端口属性
         /// </summary>
-        internal static int WebServerPort => GlobalInfo.ServerPortNumber;
+        internal static int WebServerPort => GlobalInfo.PluginServerPort;
 
         /// <summary>
         /// 本机IP地址过滤规则
