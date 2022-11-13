@@ -1,10 +1,12 @@
 ﻿using Avalonia.Threading;
 using KitX.Web.Rules;
+using KitX_Dashboard.Data;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Timers;
+using System.Threading;
+using Timer = System.Timers.Timer;
 
 namespace KitX_Dashboard.Services
 {
@@ -93,9 +95,9 @@ namespace KitX_Dashboard.Services
                 foreach (var item in Program.DeviceCards)
                 {
                     if (item.viewModel.DeviceInfo.DeviceMacAddress.Equals(
-                            WebServer.DefaultDeviceInfoStruct.DeviceMacAddress)
+                            DevicesServer.DefaultDeviceInfoStruct.DeviceMacAddress)
                         && item.viewModel.DeviceInfo.DeviceName.Equals(
-                            WebServer.DefaultDeviceInfoStruct.DeviceName))
+                            DevicesServer.DefaultDeviceInfoStruct.DeviceName))
                     {
                         localMachine = item;
                         break;
@@ -124,6 +126,75 @@ namespace KitX_Dashboard.Services
         internal static void Update(DeviceInfoStruct deviceInfo)
         {
             deviceInfoStructs.Enqueue(deviceInfo);
+        }
+
+        /// <summary>
+        /// 观察主控
+        /// </summary>
+        internal static void Watch4MainDevice()
+        {
+            new Thread(() =>
+            {
+                try
+                {
+                    int checkedTime = 0;
+                    bool hadMainDevice = false;
+                    DateTime earliestBuiltServerTime = DateTime.Now;
+                    int serverPort = 0;
+                    Timer timer = new()
+                    {
+                        Interval = 1000,
+                        AutoReset = true
+                    };
+                    timer.Elapsed += (_, _) =>
+                    {
+                        try
+                        {
+                            foreach (var item in Program.DeviceCards)
+                            {
+                                if (item.viewModel.deviceInfo.IsMainDevice)
+                                {
+                                    if (item.viewModel.deviceInfo.DeviceServerBuildTime < earliestBuiltServerTime)
+                                    {
+                                        serverPort = item.viewModel.deviceInfo.DeviceServerPort;
+                                    }
+                                    hadMainDevice = true;
+                                }
+                            }
+                            ++checkedTime;
+                            if (checkedTime == 5)
+                            {
+                                timer.Stop();
+                                WatchingOver(hadMainDevice, serverPort);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error("In Watch4MainDevice", e);
+                        }
+                    };
+                    timer.Start();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("In Watch4MainDevice", ex);
+                }
+            }).Start();
+        }
+
+        /// <summary>
+        /// 观察结束
+        /// </summary>
+        internal static void WatchingOver(bool hadMainDevice, int serverPort)
+        {
+            if (hadMainDevice)
+            {
+
+            }
+            else
+            {
+                
+            }
         }
     }
 }
