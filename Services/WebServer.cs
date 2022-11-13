@@ -272,6 +272,8 @@ namespace KitX_Dashboard.Services
             UdpClient udpClient = UdpClient_Send;
             IPEndPoint multicast = new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
                 Program.Config.Web.UDPPortReceive);
+            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket,
+                SocketOptionName.ReuseAddress, true);
 
             #endregion
 
@@ -319,6 +321,8 @@ namespace KitX_Dashboard.Services
 
             UdpClient udpClient = UdpClient_Receive;
             IPEndPoint multicast = new(IPAddress.Any, 0);
+            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket,
+                SocketOptionName.ReuseAddress, true);
 
             #endregion
 
