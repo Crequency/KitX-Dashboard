@@ -15,7 +15,7 @@ namespace KitX_Dashboard
 
         internal static AppConfig Config = new();
 
-        internal static WebServer? LocalWebServer;
+        internal static WebManager? WebManager;
 
         internal static ObservableCollection<PluginCard> PluginCards = new();
 

@@ -4,7 +4,6 @@ using KitX_Dashboard.Data;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -13,26 +12,22 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 
-#pragma warning disable CS8600 // 将 null 字面量或可能为 null 的值转换为非 null 类型。
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
-
 namespace KitX_Dashboard.Services
 {
-    public class WebServer : IDisposable
+    internal class DevicesServer : IDisposable
     {
-        public WebServer()
-        {
-            listener = new(IPAddress.Any, 0);
-            acceptPluginThread = new(AcceptClient);
 
+        public DevicesServer()
+        {
+
+        }
+
+        public void Start()
+        {
             new Thread(() =>
             {
                 try
                 {
-                    DevicesManager.KeepCheckAndRemove();
-                    PluginsManager.KeepCheckAndRemove();
-                    PluginsManager.KeepCheckAndRemoveOrDelete();
                     FindSurpportNetworkInterface(new()
                     {
                         UdpClient_Send, UdpClient_Receive
@@ -42,168 +37,15 @@ namespace KitX_Dashboard.Services
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("In WebServer Constructor", ex);
+                    Log.Error("In DevicesServer", ex);
                 }
             }).Start();
         }
 
-        #region TCP Socket 服务于 Loaders 的服务器
-
-        /// <summary>
-        /// 开始执行
-        /// </summary>
-        public void Start()
-        {
-            listener.Start();
-
-            int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
-            GlobalInfo.PluginServerPort = port; // 全局端口号标明
-
-            Log.Information($"Server Port: {port}");
-
-            acceptPluginThread.Start();
-        }
-
-        /// <summary>
-        /// 停止进程
-        /// </summary>
         public void Stop()
         {
-            keepListen = false;
 
-            foreach (KeyValuePair<string, TcpClient> item in clients)
-            {
-                item.Value.Close();
-                item.Value.Dispose();
-            }
-
-            acceptPluginThread.Join();
         }
-
-        public Thread acceptPluginThread;
-        public TcpListener listener;
-        public bool keepListen = true;
-
-        public readonly Dictionary<string, TcpClient> clients = new();
-
-        /// <summary>
-        /// 接收客户端
-        /// </summary>
-        private void AcceptClient()
-        {
-            try
-            {
-                while (keepListen)
-                {
-                    if (listener.Pending())
-                    {
-                        TcpClient client = listener.AcceptTcpClient();
-                        IPEndPoint endpoint = client.Client.RemoteEndPoint as IPEndPoint;
-                        clients.Add(endpoint.ToString(), client);
-
-                        Log.Information($"New connection: {endpoint}");
-
-                        // 新建并运行接收消息线程
-                        new Thread(() =>
-                        {
-                            try
-                            {
-                                ReciveMessage(client);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("In WebServer.AcceptClient().ReciveMessage()", ex);
-                            }
-                        }).Start();
-                    }
-                    else
-                    {
-                        Thread.Sleep(100);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"In AcceptClient() : {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 接收消息
-        /// </summary>
-        /// <param name="obj">TcpClient</param>
-        private async void ReciveMessage(object obj)
-        {
-            TcpClient client = obj as TcpClient;
-            IPEndPoint endpoint = null;
-            NetworkStream stream = null;
-
-            try
-            {
-                endpoint = client.Client.RemoteEndPoint as IPEndPoint;
-                stream = client.GetStream();
-
-                while (keepListen)
-                {
-                    byte[] data = new byte[Program.Config.Web.SocketBufferSize];
-                    //如果远程主机已关闭连接,Read将立即返回零字节
-                    //int length = await stream.ReadAsync(data, 0, data.Length);
-                    int length = await stream.ReadAsync(data);
-                    if (length > 0)
-                    {
-                        string msg = Encoding.UTF8.GetString(data, 0, length);
-
-                        Log.Information($"From: {endpoint}\tReceive: {msg}");
-
-                        if (false)
-                        {
-
-                        }
-                        else if (msg.StartsWith("PluginStruct: "))
-                        {
-                            PluginsManager.Execute(msg[14..], endpoint);
-                            string workPath = Path.GetFullPath(Program.Config.App.LocalPluginsDataDirectory);
-                            string sendtxt = $"WorkPath: {workPath}";
-                            byte[] bytes = Encoding.UTF8.GetBytes(sendtxt);
-                            stream.Write(bytes, 0, bytes.Length);
-                        }
-
-                        //发送到其他客户端
-                        //foreach (KeyValuePair<string, TcpClient> kvp in clients)
-                        //{
-                        //    if (kvp.Value != client)
-                        //    {
-                        //        byte[] writeData = Encoding.UTF8.GetBytes(msg);
-                        //        NetworkStream writeStream = kvp.Value.GetStream();
-                        //        writeStream.Write(writeData, 0, writeData.Length);
-                        //    }
-                        //}
-                    }
-                    else
-                    {
-
-                        break; //客户端断开连接 跳出循环
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"Error: In ReciveMessage() : {ex.Message}");
-                Log.Information($"Connection broke from: {endpoint}");
-
-                //Read是阻塞方法 客户端退出是会引发异常 释放资源 结束此线程
-            }
-            finally
-            {
-                //释放资源
-                PluginsManager.Disconnect(endpoint); //注销插件
-                stream.Close();
-                stream.Dispose();
-                clients.Remove(endpoint.ToString());
-                client.Dispose();
-            }
-        }
-        #endregion
 
         #region UDP Socket 服务于自发现自组网
 
@@ -250,7 +92,7 @@ namespace KitX_Dashboard.Services
                 IPv4InterfaceProperties p = adapterProperties.GetIPv4Properties();
                 if (p == null) continue;    // IPv4 is not configured on this adapter
                 SurpportedNetworkInterfaces.Add(IPAddress.HostToNetworkOrder(p.Index));
-                IPAddress ipAddress = null;
+                IPAddress? ipAddress = null;
                 foreach (UnicastIPAddressInformation unicastIPAddress in unicastIPAddresses)
                 {
                     if (unicastIPAddress.Address.AddressFamily != AddressFamily.InterNetwork) continue;
@@ -432,53 +274,11 @@ namespace KitX_Dashboard.Services
             DefaultDeviceInfoStruct.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;
         }
 
-        #endregion
-
-        /// <summary>
-        /// 释放资源
-        /// </summary>
         public void Dispose()
         {
-            keepListen = false;
-            listener.Stop();
-            acceptPluginThread.Join();
             GC.SuppressFinalize(this);
         }
+
+        #endregion
     }
 }
-
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
-#pragma warning restore CS8602 // 解引用可能出现空引用。
-#pragma warning restore CS8600 // 将 null 字面量或可能为 null 的值转换为非 null 类型。
-
-//                                         .....
-//                                    .e$$$$$$$$$$$$$$e.
-//                                  z$$ ^$$$$$$$$$$$$$$$$$.
-//                                .$$$* J$$$$$$$$$$$$$$$$$$$e
-//                               .$"  .$$$$$$$$$$$$$$$$$$$$$$*-
-//                              .$  $$$$$$$$$$$$$$$$***$$  .ee"
-//                 z**$$        $$r ^**$$$$$$$$$*" .e$$$$$$*"
-//                " -\e$$      4$$$$.         .ze$$$""""
-//               4 z$$$$$      $$$$$$$$$$$$$$$$$$$$"
-//               $$$$$$$$     .$$$$$$$$$$$**$$$$*"
-//             z$$"    $$     $$$$P*""     J$*$$c
-//            $$"      $$F   .$$$          $$ ^$$
-//           $$        *$$c.z$$$          $$   $$
-//          $P          $$$$$$$          4$F   4$
-//         dP            *$$$"           $$    '$r
-//        .$                            J$"     $"
-//        $                             $P     4$
-//        F                            $$      4$
-//                                    4$%      4$
-//                                    $$       4$
-//                                   d$"       $$
-//                                   $P        $$
-//                                  $$         $$
-//                                 4$%         $$
-//                                 $$          $$
-//                                d$           $$
-//                                $F           "3
-//                         r=4e="  ...  ..rf   .  ""%
-//                        $**$*"^""=..^4*=4=^""  ^"""
-
-

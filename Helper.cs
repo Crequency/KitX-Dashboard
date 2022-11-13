@@ -60,10 +60,10 @@ namespace KitX_Dashboard
 
             #endregion
 
-            #region 初始化 WebServer
+            #region 初始化 WebManager
 
-            Program.LocalWebServer = new();
-            Program.LocalWebServer.Start();
+            Program.WebManager = new();
+            Program.WebManager.Start();
 
             #endregion
 
@@ -198,8 +198,8 @@ namespace KitX_Dashboard
         /// </summary>
         public static void Exit()
         {
-            Program.LocalWebServer.Stop();
-            Program.LocalWebServer.Dispose();
+            Program.WebManager.Stop();
+            Program.WebManager.Dispose();
 
             GlobalInfo.Running = false;
         }

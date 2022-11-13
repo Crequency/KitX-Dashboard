@@ -343,7 +343,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                         string link = "https://" +
                             Program.Config.Web.UpdateServer +
                             Program.Config.Web.UpdatePath.Replace("%platform%",
-                                WebServer.DefaultDeviceInfoStruct.DeviceOSType switch
+                                DevicesServer.DefaultDeviceInfoStruct.DeviceOSType switch
                                 {
                                     OperatingSystems.Windows => "win",
                                     OperatingSystems.Linux => "linux",
@@ -460,7 +460,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                             string downloadLinkBase = "https://" +
                             Program.Config.Web.UpdateServer +
                             Program.Config.Web.UpdateDownloadPath.Replace("%platform%",
-                                WebServer.DefaultDeviceInfoStruct.DeviceOSType switch
+                                DevicesServer.DefaultDeviceInfoStruct.DeviceOSType switch
                                 {
                                     OperatingSystems.Windows => "win",
                                     OperatingSystems.Linux => "linux",
