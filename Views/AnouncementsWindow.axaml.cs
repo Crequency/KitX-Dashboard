@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using BasicHelper.UI.Screen;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.ViewModels;
 using System.Collections.Generic;
@@ -18,24 +19,49 @@ namespace KitX_Dashboard.Views
 
             viewModel.Window = this;
 
+            SuggestResolutionAndLocation();
+
             DataContext = viewModel;
+            
+            Resolution nowRes = Resolution.Parse($"" +
+                $"{Program.Config.Windows.AnnouncementWindow.Window_Width}" +
+                $"x{Program.Config.Windows.AnnouncementWindow.Window_Height}");
 
             // 设置窗体坐标
 
             Position = new(
                 WindowAttributesConverter.PositionCameCenter(
                     Program.Config.Windows.AnnouncementWindow.Window_Left,
-                    true, Screens
+                    true, Screens, nowRes
                 ),
                 WindowAttributesConverter.PositionCameCenter(
                     Program.Config.Windows.AnnouncementWindow.Window_Top,
-                    false, Screens
+                    false, Screens, nowRes
                 )
             );
 
 #if DEBUG
             this.AttachDevTools();
 #endif
+        }
+
+        private void SuggestResolutionAndLocation()
+        {
+            if (Program.Config.Windows.AnnouncementWindow.Window_Width == 1280
+                && Program.Config.Windows.AnnouncementWindow.Window_Height == 720)
+            {
+                Resolution suggest = Resolution.Suggest(
+                    Resolution.Parse("2560x1440"),
+                    Resolution.Parse("1280x720"),
+                    Resolution.Parse($"{Screens.Primary.Bounds.Width}x" +
+                    $"{Screens.Primary.Bounds.Height}")).Integerization();
+                if (suggest.Width != null
+                    && suggest.Height != null)
+                {
+                    Program.Config.Windows.AnnouncementWindow.Window_Width = (double)suggest.Width;
+                    Program.Config.Windows.AnnouncementWindow.Window_Height = (double)suggest.Height;
+                }
+            }
         }
 
         internal void UpdateSource(Dictionary<string, string> src, List<string> readed)

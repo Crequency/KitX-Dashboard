@@ -4,6 +4,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Threading;
+using BasicHelper.UI.Screen;
 using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Controls;
 using FluentAvalonia.UI.Media;
@@ -40,17 +41,22 @@ namespace KitX_Dashboard.Views
 
             DataContext = viewModel;
 
+            SuggestResolutionAndLocation();
+
+            Resolution nowRes = Resolution.Parse($"{Program.Config.Windows.MainWindow.Window_Width}" +
+                $"x{Program.Config.Windows.MainWindow.Window_Height}");
+
             // 设置窗体坐标
             try
             {
                 Position = new(
                     WindowAttributesConverter.PositionCameCenter(
                         Program.Config.Windows.MainWindow.Window_Left,
-                        true, Screens
+                        true, Screens, nowRes
                     ),
                     WindowAttributesConverter.PositionCameCenter(
                         Program.Config.Windows.MainWindow.Window_Top,
-                        false, Screens
+                        false, Screens, nowRes
                     )
                 );
             }
@@ -83,6 +89,25 @@ namespace KitX_Dashboard.Views
 #if DEBUG
             this.AttachDevTools();
 #endif
+        }
+
+        private void SuggestResolutionAndLocation()
+        {
+            if (Program.Config.Windows.MainWindow.Window_Width == 1280
+                && Program.Config.Windows.MainWindow.Window_Height == 720)
+            {
+                Resolution suggest = Resolution.Suggest(
+                    Resolution.Parse("2560x1440"),
+                    Resolution.Parse("1280x720"),
+                    Resolution.Parse($"{Screens.Primary.Bounds.Width}x" +
+                    $"{Screens.Primary.Bounds.Height}")).Integerization();
+                if (suggest.Width != null
+                    && suggest.Height != null)
+                {
+                    Program.Config.Windows.MainWindow.Window_Width = (double)suggest.Width;
+                    Program.Config.Windows.MainWindow.Window_Height = (double)suggest.Height;
+                }
+            }
         }
 
         /// <summary>
@@ -339,6 +364,7 @@ namespace KitX_Dashboard.Views
 #pragma warning restore CS8601 // 引用类型赋值可能为 null。
 #pragma warning restore CS8602 // 解引用可能出现空引用。
 
+//
 //   ____________________________________                  ______________
 //  |------|------|     __   __   __     |     ___________     |           () |
 //  | 64X4 | 64X4 | || |  | |  | |  |    |    |           |    |           ___|
@@ -361,3 +387,4 @@ namespace KitX_Dashboard.Views
 //                   |LLLLLLLLLLLLLL|  |LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL| |___|
 //                                                                            |
 //                                                                            |
+//
