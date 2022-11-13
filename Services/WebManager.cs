@@ -8,7 +8,7 @@ namespace KitX_Dashboard.Services
     {
         public WebManager()
         {
-            
+
         }
 
         internal PluginsServer? pluginsServer;
@@ -33,7 +33,7 @@ namespace KitX_Dashboard.Services
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("In WebManager Constructor", ex);
+                    Log.Error("In WebManager Start", ex);
                 }
             }).Start();
         }

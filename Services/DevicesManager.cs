@@ -1,6 +1,5 @@
 ﻿using Avalonia.Threading;
 using KitX.Web.Rules;
-using KitX_Dashboard.Data;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
@@ -193,7 +192,7 @@ namespace KitX_Dashboard.Services
             }
             else
             {
-                
+
             }
         }
     }
