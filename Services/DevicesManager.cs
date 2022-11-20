@@ -140,6 +140,7 @@ namespace KitX_Dashboard.Services
                     bool hadMainDevice = false;
                     DateTime earliestBuiltServerTime = DateTime.Now;
                     int serverPort = 0;
+                    string serverAddress = string.Empty;
                     Timer timer = new()
                     {
                         Interval = 1000,
@@ -153,9 +154,11 @@ namespace KitX_Dashboard.Services
                             {
                                 if (item.viewModel.deviceInfo.IsMainDevice)
                                 {
-                                    if (item.viewModel.deviceInfo.DeviceServerBuildTime < earliestBuiltServerTime)
+                                    if (item.viewModel.deviceInfo.DeviceServerBuildTime
+                                        < earliestBuiltServerTime)
                                     {
                                         serverPort = item.viewModel.deviceInfo.DeviceServerPort;
+                                        serverAddress = item.viewModel.deviceInfo.IPv4;
                                     }
                                     hadMainDevice = true;
                                 }
@@ -164,7 +167,7 @@ namespace KitX_Dashboard.Services
                             if (checkedTime == 5)
                             {
                                 timer.Stop();
-                                WatchingOver(hadMainDevice, serverPort);
+                                WatchingOver(hadMainDevice, serverAddress, serverPort);
                             }
                         }
                         catch (Exception e)
@@ -184,15 +187,15 @@ namespace KitX_Dashboard.Services
         /// <summary>
         /// 观察结束
         /// </summary>
-        internal static void WatchingOver(bool hadMainDevice, int serverPort)
+        internal static void WatchingOver(bool hadMainDevice, string serverAddress, int serverPort)
         {
             if (hadMainDevice)
             {
-
+                Program.WebManager?.devicesServer?.AttendServer($"{serverAddress}:{serverPort}");
             }
             else
             {
-
+                Program.WebManager?.devicesServer?.BuildServer();
             }
         }
     }

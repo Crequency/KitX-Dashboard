@@ -34,6 +34,8 @@ namespace KitX_Dashboard.Services
                     }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
                     MultiDevicesBroadCastSend();
                     MultiDevicesBroadCastReceive();
+
+                    DevicesHost = new();
                 }
                 catch (Exception ex)
                 {
@@ -44,7 +46,18 @@ namespace KitX_Dashboard.Services
 
         public void Stop()
         {
+            keepListen = false;
 
+            foreach (KeyValuePair<string, TcpClient> item in clients)
+            {
+                item.Value.Close();
+                item.Value.Dispose();
+            }
+
+            acceptPluginThread?.Join();
+
+            DevicesHost?.Close();
+            DevicesHost?.Dispose();
         }
 
         #region UDP Socket 服务于自发现自组网
@@ -274,11 +287,154 @@ namespace KitX_Dashboard.Services
             DefaultDeviceInfoStruct.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;
         }
 
+        #endregion
+
+        #region TCP Socket 服务于设备间组网
+
+        internal Thread? acceptPluginThread;
+        internal TcpClient? DevicesHost;
+        internal TcpListener? listener;
+        internal bool keepListen = true;
+
+        public readonly Dictionary<string, TcpClient> clients = new();
+
+        internal void BuildServer()
+        {
+            listener = new(IPAddress.Any, 0);
+            acceptPluginThread = new(AcceptClient);
+
+            listener.Start();
+
+            int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
+            GlobalInfo.DeviceServerPort = port; // 全局端口号标明
+            GlobalInfo.ServerBuildTime = DateTime.Now;
+            GlobalInfo.IsMainMachine = true;
+
+            Log.Information($"DevicesServer Port: {port}");
+
+            acceptPluginThread.Start();
+        }
+
+        internal void AcceptClient()
+        {
+            try
+            {
+                while (keepListen)
+                {
+                    if (listener != null && listener.Pending())
+                    {
+                        TcpClient client = listener.AcceptTcpClient();
+                        if (client.Client.RemoteEndPoint is IPEndPoint endpoint)
+                        {
+                            clients.Add(endpoint.ToString(), client);
+
+                            Log.Information($"New connection: {endpoint}");
+
+                            // 新建并运行接收消息线程
+                            new Thread(() =>
+                            {
+                                try
+                                {
+                                    ReciveMessage(client);
+                                }
+                                catch (Exception e)
+                                {
+                                    Log.Error("In DevicesServer.AcceptClient()" +
+                                        ".ReciveMessage()", e);
+                                }
+                            }).Start();
+                        }
+                    }
+                    else
+                    {
+                        Thread.Sleep(100);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"In AcceptClient() : {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 接收消息
+        /// </summary>
+        /// <param name="obj">TcpClient</param>
+        private async void ReciveMessage(object obj)
+        {
+            TcpClient? client = obj as TcpClient;
+            IPEndPoint? endpoint = null;
+            NetworkStream? stream = null;
+
+            try
+            {
+                endpoint = client?.Client.RemoteEndPoint as IPEndPoint;
+                stream = client?.GetStream();
+
+                while (keepListen && stream != null)
+                {
+                    byte[] data = new byte[Program.Config.Web.SocketBufferSize];
+                    //如果远程主机已关闭连接,Read将立即返回零字节
+                    //int length = await stream.ReadAsync(data, 0, data.Length);
+                    int length = await stream.ReadAsync(data);
+                    if (length > 0)
+                    {
+                        string msg = Encoding.UTF8.GetString(data, 0, length);
+
+                        Log.Information($"From: {endpoint}\tReceive: {msg}");
+
+
+                        //发送到其他客户端
+                        //foreach (KeyValuePair<string, TcpClient> kvp in clients)
+                        //{
+                        //    if (kvp.Value != client)
+                        //    {
+                        //        byte[] writeData = Encoding.UTF8.GetBytes(msg);
+                        //        NetworkStream writeStream = kvp.Value.GetStream();
+                        //        writeStream.Write(writeData, 0, writeData.Length);
+                        //    }
+                        //}
+                    }
+                    else
+                    {
+
+                        break; //客户端断开连接 跳出循环
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: In ReciveMessage() : {ex.Message}");
+                Log.Information($"Connection broke from: {endpoint}");
+
+                //Read是阻塞方法 客户端退出是会引发异常 释放资源 结束此线程
+            }
+            finally
+            {
+                //释放资源
+                if (endpoint != null)
+                {
+                    PluginsManager.Disconnect(endpoint); //注销插件
+                    clients.Remove(endpoint.ToString());
+                }
+                stream?.Close();
+                stream?.Dispose();
+                client?.Dispose();
+            }
+        }
+
+        internal void AttendServer(string serverAddress)
+        {
+
+        }
+
+        #endregion
+
         public void Dispose()
         {
             GC.SuppressFinalize(this);
         }
 
-        #endregion
     }
 }
