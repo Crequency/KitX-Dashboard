@@ -62,7 +62,7 @@ namespace KitX_Dashboard
             }
             finally
             {
-                Log.Error($"No surpport language file loaded.");
+                Log.Warning($"No surpport language file loaded.");
             }
 
             try
