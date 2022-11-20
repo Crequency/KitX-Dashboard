@@ -96,7 +96,8 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">고대비</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">시스템을 따르다</x:String>
     <x:String x:Key="Text_Settings_Performence">성능</x:String>
-    <x:String x:Key="Text_Settings_Performence_Web_Port">포트</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">플러그인 통신 포트</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">장치 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">기본 IP 필터링 규칙</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">인사말 업데이트가 지연되었습니다.</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">로그 파일 관련 설정</x:String>

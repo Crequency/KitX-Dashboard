@@ -96,7 +96,8 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">High Contrast</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">Follow System</x:String>
     <x:String x:Key="Text_Settings_Performence">Performence</x:String>
-    <x:String x:Key="Text_Settings_Performence_Web_Port">Port</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Plugins Communication Port</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Devices Communication Port</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Native IP Filter</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Greeting Text Update Interval</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Log File Relative Settings</x:String>

@@ -96,7 +96,8 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">contraste élevé</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">suivre le système</x:String>
     <x:String x:Key="Text_Settings_Performence">performance</x:String>
-    <x:String x:Key="Text_Settings_Performence_Web_Port">Port</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Port de communication enfichable</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Port de communication de l'appareil</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Règles de filtrage IP natives</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Mise à jour du message d'accueil retardée</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Paramètres liés au fichier journal</x:String>

@@ -34,7 +34,7 @@ namespace KitX_Dashboard.Services
             int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
             GlobalInfo.PluginServerPort = port; // 全局端口号标明
 
-            Log.Information($"Server Port: {port}");
+            Log.Information($"PluginsServer Port: {port}");
 
             acceptPluginThread.Start();
         }
@@ -76,7 +76,7 @@ namespace KitX_Dashboard.Services
                         IPEndPoint endpoint = client.Client.RemoteEndPoint as IPEndPoint;
                         clients.Add(endpoint.ToString(), client);
 
-                        Log.Information($"New connection: {endpoint}");
+                        Log.Information($"New plugin connection: {endpoint}");
 
                         // 新建并运行接收消息线程
                         new Thread(() =>

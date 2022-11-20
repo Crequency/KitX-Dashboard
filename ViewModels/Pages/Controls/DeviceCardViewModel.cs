@@ -37,6 +37,19 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
             }
         }
 
+        /// <summary>
+        /// 获取不同语言的提示
+        /// </summary>
+        /// <param name="key">值</param>
+        /// <returns>提示</returns>
+        private static string GetResources(string key)
+        {
+            if (Application.Current != null && Application.Current.TryFindResource(key, out object? result))
+                if (result != null) return (string)result;
+                else return string.Empty;
+            else return string.Empty;
+        }
+
         internal DeviceInfoStruct DeviceInfo
         {
             get => deviceInfo;
@@ -66,6 +79,9 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 IPv4 = $"{DeviceInfo.IPv4}:{DeviceInfo.PluginServerPort}";
                 IPv6 = DeviceInfo.IPv6;
                 PluginsCount = DeviceInfo.PluginsCount.ToString();
+                DeviceControlStatus = DeviceInfo.IsMainDevice
+                    ? GetResources("Text_Device_Type_Master")
+                    : GetResources("Text_Device_Type_Slave");
 
                 PropertyChanged?.Invoke(this, new(nameof(DeviceName)));
                 PropertyChanged?.Invoke(this, new(nameof(DeviceMacAddress)));
@@ -75,6 +91,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 PropertyChanged?.Invoke(this, new(nameof(IPv4)));
                 PropertyChanged?.Invoke(this, new(nameof(IPv6)));
                 PropertyChanged?.Invoke(this, new(nameof(PluginsCount)));
+                PropertyChanged?.Invoke(this, new(nameof(DeviceControlStatus)));
             }
         }
 
@@ -93,6 +110,8 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         internal string? IPv6 { get; set; }
 
         internal string? PluginsCount { get; set; }
+
+        internal string? DeviceControlStatus { get; set; }
 
 
         public new event PropertyChangedEventHandler? PropertyChanged;

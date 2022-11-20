@@ -25,6 +25,8 @@ namespace KitX_Dashboard.Services
 
         internal delegate void OnExitingHandler();
 
+        internal delegate void DevicesServerPortChangedHandler();
+
         internal static event LanguageChangedHandler? LanguageChanged;
 
         internal static event GreetingTextIntervalUpdatedHandler? GreetingTextIntervalUpdated;
@@ -45,6 +47,8 @@ namespace KitX_Dashboard.Services
 
         internal static event OnExitingHandler? OnExiting;
 
+        internal static event DevicesServerPortChangedHandler? DevicesServerPortChanged;
+
 
         /// <summary>
         /// 必要的初始化
@@ -61,6 +65,7 @@ namespace KitX_Dashboard.Services
             ThemeConfigChanged += () => { };
             UseStatisticsChanged += () => { };
             OnExiting += () => { };
+            DevicesServerPortChanged += () => { };
         }
 
         /// <summary>
@@ -100,6 +105,9 @@ namespace KitX_Dashboard.Services
                     break;
                 case nameof(OnExiting):
                     OnExiting();
+                    break;
+                case nameof(DevicesServerPortChanged):
+                    DevicesServerPortChanged();
                     break;
             }
         }

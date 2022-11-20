@@ -28,18 +28,73 @@ namespace KitX_Dashboard.Services
             {
                 try
                 {
+                    Log.Information($"Start {nameof(FindSurpportNetworkInterface)}");
+                    //  寻找所有支持的网络适配器
                     FindSurpportNetworkInterface(new()
                     {
                         UdpClient_Send, UdpClient_Receive
                     }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"In {nameof(DevicesServer)}, " +
+                        $"{nameof(FindSurpportNetworkInterface)}", ex);
+                }
+                try
+                {
+                    Log.Information($"Start {nameof(MultiDevicesBroadCastSend)}");
+                    //  开始组播发送本机信息
                     MultiDevicesBroadCastSend();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"In {nameof(DevicesServer)}, " +
+                        $"{nameof(MultiDevicesBroadCastSend)}", ex);
+                    try
+                    {
+                        Log.Information($"Start {nameof(MultiDevicesBroadCastSendDefault)}");
+                        //  组播发送失败, 尝试由系统决定发送的网络适配器
+                        MultiDevicesBroadCastSendDefault();
+                    }
+                    catch (Exception exc)
+                    {
+                        Log.Error($"In {nameof(DevicesServer)}, " +
+                            $"{nameof(MultiDevicesBroadCastSendDefault)}", exc);
+                    }
+                }
+                try
+                {
+                    Log.Information($"Start {nameof(MultiDevicesBroadCastReceive)}");
+                    //  开始接收组播消息
                     MultiDevicesBroadCastReceive();
-
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"In {nameof(DevicesServer)}, " +
+                        $"{nameof(MultiDevicesBroadCastReceive)}", ex);
+                    try
+                    {
+                        Log.Information($"Start {nameof(MultiDevicesBroadCastReceiveDefault)}");
+                        //  组播接收失败, 尝试由系统决定接收的网络适配器
+                        MultiDevicesBroadCastReceiveDefault();
+                    }
+                    catch (Exception exc)
+                    {
+                        Log.Error($"In {nameof(DevicesServer)}, " +
+                            $"{nameof(MultiDevicesBroadCastReceiveDefault)}", exc);
+                    }
+                }
+                try
+                {
+                    Log.Information($"Start Init {nameof(DevicesHost)}");
+                    //  初始化自组网
                     DevicesHost = new();
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("In DevicesServer", ex);
+                    Log.Error($"In {nameof(DevicesServer)}, " +
+                        $"Init {nameof(DevicesHost)}", ex);
+
                 }
             }).Start();
         }
@@ -135,7 +190,7 @@ namespace KitX_Dashboard.Services
 
             System.Timers.Timer timer = new()
             {
-                Interval = 2000,
+                Interval = Program.Config.Web.UDPSendFrequency,
                 AutoReset = true
             };
             timer.Elapsed += (_, _) =>
@@ -156,6 +211,49 @@ namespace KitX_Dashboard.Services
                 catch (Exception e)
                 {
                     Log.Error($"In MultiDevicesBroadCastSend: {e.Message}", e);
+                }
+                if (!GlobalInfo.Running)
+                {
+                    udpClient.Close();
+
+                    timer.Stop();
+                    timer.Dispose();
+                }
+            };
+            timer.Start();
+        }
+
+        /// <summary>
+        /// 默认的多设备组播发送方法
+        /// </summary>
+        public static void MultiDevicesBroadCastSendDefault()
+        {
+            #region 初始化 UDP 客户端
+
+            UdpClient udpClient = new(Program.Config.Web.UDPPortSend);
+            udpClient.JoinMulticastGroup(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
+            IPEndPoint multicast = new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
+                Program.Config.Web.UDPPortReceive);
+
+            #endregion
+
+            System.Timers.Timer timer = new()
+            {
+                Interval = Program.Config.Web.UDPSendFrequency,
+                AutoReset = true
+            };
+            timer.Elapsed += (_, _) =>
+            {
+                try
+                {
+                    UpdateDefaultDeviceInfoStruct();
+                    string sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
+                    byte[] sendBytes = Encoding.UTF8.GetBytes(sendText);
+                    udpClient.Send(sendBytes, sendBytes.Length, multicast);
+                }
+                catch (Exception e)
+                {
+                    Log.Error($"In MultiDevicesBroadCastSend: {e.Message}");
                 }
                 if (!GlobalInfo.Running)
                 {
@@ -206,7 +304,41 @@ namespace KitX_Dashboard.Services
                 }
                 else
                 {
-                    MultiDevicesBroadCastReceive();
+                    MultiDevicesBroadCastReceiveDefault();
+                }
+            }).Start();
+        }
+
+        /// <summary>
+        /// 默认的多设备组播接收方法
+        /// </summary>
+        public static void MultiDevicesBroadCastReceiveDefault()
+        {
+            UdpClient udpClient = new(Program.Config.Web.UDPPortReceive);
+            udpClient.JoinMulticastGroup(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
+            IPEndPoint multicast = new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
+                Program.Config.Web.UDPPortSend);
+            new Thread(() =>
+            {
+                try
+                {
+                    while (GlobalInfo.Running)
+                    {
+                        byte[] bytes = udpClient.Receive(ref multicast);
+                        string result = Encoding.UTF8.GetString(bytes);
+                        Log.Information($"UDP Receive: {result}");
+                        DeviceInfoStruct deviceInfo = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
+                        DevicesManager.Update(deviceInfo);
+                    }
+                    udpClient.Close();
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e.Message);
+                }
+                if (!GlobalInfo.Running)
+                {
+                    udpClient.Close();
                 }
             }).Start();
         }
@@ -298,6 +430,9 @@ namespace KitX_Dashboard.Services
 
         public readonly Dictionary<string, TcpClient> clients = new();
 
+        /// <summary>
+        /// 建立主控网络
+        /// </summary>
         internal void BuildServer()
         {
             listener = new(IPAddress.Any, 0);
@@ -313,6 +448,8 @@ namespace KitX_Dashboard.Services
             Log.Information($"DevicesServer Port: {port}");
 
             acceptPluginThread.Start();
+
+            EventHandlers.Invoke(nameof(EventHandlers.DevicesServerPortChanged));
         }
 
         internal void AcceptClient()
@@ -328,7 +465,7 @@ namespace KitX_Dashboard.Services
                         {
                             clients.Add(endpoint.ToString(), client);
 
-                            Log.Information($"New connection: {endpoint}");
+                            Log.Information($"New device connection: {endpoint}");
 
                             // 新建并运行接收消息线程
                             new Thread(() =>
@@ -424,9 +561,15 @@ namespace KitX_Dashboard.Services
             }
         }
 
-        internal void AttendServer(string serverAddress)
+        /// <summary>
+        /// 加入主控网络
+        /// </summary>
+        /// <param name="serverAddress">主控地址</param>
+        /// <param name="serverPort">主控端口</param>
+        internal void AttendServer(string serverAddress, int serverPort)
         {
-
+            Log.Information($"Attending Server -> {serverAddress}:{serverPort}");
+            DevicesHost?.Connect(serverAddress, serverPort);
         }
 
         #endregion

@@ -11,6 +11,8 @@ namespace KitX_Dashboard.Services
 {
     internal class DevicesManager
     {
+        internal static List<DeviceInfoStruct>? receivedDeviceInfoStruct4Watch;
+
         internal static readonly Queue<DeviceInfoStruct> deviceInfoStructs = new();
 
         private static readonly object AddDeviceCard2ViewLock = new();
@@ -125,6 +127,7 @@ namespace KitX_Dashboard.Services
         internal static void Update(DeviceInfoStruct deviceInfo)
         {
             deviceInfoStructs.Enqueue(deviceInfo);
+            receivedDeviceInfoStruct4Watch?.Add(deviceInfo);
         }
 
         /// <summary>
@@ -136,6 +139,7 @@ namespace KitX_Dashboard.Services
             {
                 try
                 {
+                    receivedDeviceInfoStruct4Watch = new();
                     int checkedTime = 0;
                     bool hadMainDevice = false;
                     DateTime earliestBuiltServerTime = DateTime.Now;
@@ -150,28 +154,31 @@ namespace KitX_Dashboard.Services
                     {
                         try
                         {
-                            foreach (var item in Program.DeviceCards)
+                            foreach (var item in receivedDeviceInfoStruct4Watch)
                             {
-                                if (item.viewModel.deviceInfo.IsMainDevice)
+                                if (item.IsMainDevice)
                                 {
-                                    if (item.viewModel.deviceInfo.DeviceServerBuildTime
-                                        < earliestBuiltServerTime)
+                                    if (item.DeviceServerBuildTime < earliestBuiltServerTime)
                                     {
-                                        serverPort = item.viewModel.deviceInfo.DeviceServerPort;
-                                        serverAddress = item.viewModel.deviceInfo.IPv4;
+                                        serverPort = item.DeviceServerPort;
+                                        serverAddress = item.IPv4;
                                     }
                                     hadMainDevice = true;
                                 }
                             }
                             ++checkedTime;
-                            if (checkedTime == 5)
+                            if (checkedTime == 7)
                             {
                                 timer.Stop();
+                                receivedDeviceInfoStruct4Watch?.Clear();
+                                receivedDeviceInfoStruct4Watch = null;
                                 WatchingOver(hadMainDevice, serverAddress, serverPort);
                             }
                         }
                         catch (Exception e)
                         {
+                            receivedDeviceInfoStruct4Watch?.Clear();
+                            receivedDeviceInfoStruct4Watch = null;
                             Log.Error("In Watch4MainDevice", e);
                         }
                     };
@@ -179,6 +186,8 @@ namespace KitX_Dashboard.Services
                 }
                 catch (Exception ex)
                 {
+                    receivedDeviceInfoStruct4Watch?.Clear();
+                    receivedDeviceInfoStruct4Watch = null;
                     Log.Error("In Watch4MainDevice", ex);
                 }
             }).Start();
@@ -189,9 +198,11 @@ namespace KitX_Dashboard.Services
         /// </summary>
         internal static void WatchingOver(bool hadMainDevice, string serverAddress, int serverPort)
         {
+            Log.Information($"In WatchingOver: hadMainDevice: {hadMainDevice}, " +
+                $"serverAddress: {serverAddress}, serverPort: {serverPort}");
             if (hadMainDevice)
             {
-                Program.WebManager?.devicesServer?.AttendServer($"{serverAddress}:{serverPort}");
+                Program.WebManager?.devicesServer?.AttendServer(serverAddress, serverPort);
             }
             else
             {

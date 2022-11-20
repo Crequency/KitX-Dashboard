@@ -96,7 +96,8 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">высокий контраст</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">следовать системе</x:String>
     <x:String x:Key="Text_Settings_Performence">производительность</x:String>
-    <x:String x:Key="Text_Settings_Performence_Web_Port">порт</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Подключаемый коммуникационный порт</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Порт связи устройства</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Собственные правила IP-фильтрации</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Обновление приветствия отложено</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Настройки, связанные с файлом журнала</x:String>

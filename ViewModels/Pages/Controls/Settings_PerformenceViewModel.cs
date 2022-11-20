@@ -46,6 +46,10 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                     item.LogLevelDisplayName = GetLogLevelInLanguages(item.LogLevelName);
                 PropertyChanged?.Invoke(this, new(nameof(SurpportLogLevels)));
             };
+            EventHandlers.DevicesServerPortChanged += () =>
+            {
+                PropertyChanged?.Invoke(this, new(nameof(DevicesServerPort)));
+            };
         }
 
         /// <summary>
@@ -57,9 +61,14 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         }
 
         /// <summary>
-        /// 网络服务端口属性
+        /// 插件间服务端口属性
         /// </summary>
-        internal static int WebServerPort => GlobalInfo.PluginServerPort;
+        internal static int PluginsServerPort => GlobalInfo.PluginServerPort;
+
+        /// <summary>
+        /// 设备间服务端口属性
+        /// </summary>
+        internal static int DevicesServerPort => GlobalInfo.DeviceServerPort;
 
         /// <summary>
         /// 本机IP地址过滤规则
