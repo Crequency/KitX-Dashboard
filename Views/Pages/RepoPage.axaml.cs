@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 using Avalonia.Controls;
+=======
+﻿using Avalonia.Controls;
+>>>>>>> Stashed changes
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using KitX_Dashboard.ViewModels.Pages;
@@ -35,7 +39,11 @@ namespace KitX_Dashboard.Views.Pages
             // Only allow Copy or Link as Drop Operations.
             e.DragEffects = e.DragEffects & (DragDropEffects.Copy | DragDropEffects.Link);
 
+<<<<<<< Updated upstream
             // Only allow if the dragged data contains text or filenames.
+=======
+            // Only allow if the dragged data contains filenames.
+>>>>>>> Stashed changes
             if (!e.Data.Contains(DataFormats.FileNames))
                 e.DragEffects = DragDropEffects.None;
         }
