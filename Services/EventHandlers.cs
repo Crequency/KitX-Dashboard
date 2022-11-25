@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS8602 // 解引用可能出现空引用。
+﻿using KitX.Web.Rules;
 
 namespace KitX_Dashboard.Services
 {
@@ -27,6 +27,8 @@ namespace KitX_Dashboard.Services
 
         internal delegate void DevicesServerPortChangedHandler();
 
+        internal delegate void OnReceivingDeviceInfoStructHandler(DeviceInfoStruct dis);
+
         internal static event LanguageChangedHandler? LanguageChanged;
 
         internal static event GreetingTextIntervalUpdatedHandler? GreetingTextIntervalUpdated;
@@ -49,6 +51,8 @@ namespace KitX_Dashboard.Services
 
         internal static event DevicesServerPortChangedHandler? DevicesServerPortChanged;
 
+        internal static event OnReceivingDeviceInfoStructHandler? OnReceivingDeviceInfoStruct4DeviceNet;
+
 
         /// <summary>
         /// 必要的初始化
@@ -66,6 +70,7 @@ namespace KitX_Dashboard.Services
             UseStatisticsChanged += () => { };
             OnExiting += () => { };
             DevicesServerPortChanged += () => { };
+            OnReceivingDeviceInfoStruct4DeviceNet += x => { };
         }
 
         /// <summary>
@@ -77,44 +82,57 @@ namespace KitX_Dashboard.Services
             switch (eventName)
             {
                 case nameof(LanguageChanged):
-                    LanguageChanged();
+                    LanguageChanged?.Invoke();
                     break;
                 case nameof(GreetingTextIntervalUpdated):
-                    GreetingTextIntervalUpdated();
+                    GreetingTextIntervalUpdated?.Invoke();
                     break;
                 case nameof(ConfigSettingsChanged):
-                    ConfigSettingsChanged();
+                    ConfigSettingsChanged?.Invoke();
                     break;
                 case nameof(MicaOpacityChanged):
-                    MicaOpacityChanged();
+                    MicaOpacityChanged?.Invoke();
                     break;
                 case nameof(PluginsListChanged):
-                    PluginsListChanged();
+                    PluginsListChanged?.Invoke();
                     break;
                 case nameof(DevelopSettingsChanged):
-                    DevelopSettingsChanged();
+                    DevelopSettingsChanged?.Invoke();
                     break;
                 case nameof(LogConfigUpdated):
-                    LogConfigUpdated();
+                    LogConfigUpdated?.Invoke();
                     break;
                 case nameof(ThemeConfigChanged):
-                    ThemeConfigChanged();
+                    ThemeConfigChanged?.Invoke();
                     break;
                 case nameof(UseStatisticsChanged):
-                    UseStatisticsChanged();
+                    UseStatisticsChanged?.Invoke();
                     break;
                 case nameof(OnExiting):
-                    OnExiting();
+                    OnExiting?.Invoke();
                     break;
                 case nameof(DevicesServerPortChanged):
-                    DevicesServerPortChanged();
+                    DevicesServerPortChanged?.Invoke();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 执行全局事件
+        /// </summary>
+        /// <param name="eventName">事件名称</param>
+        /// <param name="arg">事件参数</param>
+        internal static void InvokeWith1Arg(string eventName, object arg)
+        {
+            switch (eventName)
+            {
+                case nameof(OnReceivingDeviceInfoStruct4DeviceNet):
+                    OnReceivingDeviceInfoStruct4DeviceNet?.Invoke((DeviceInfoStruct)arg);
                     break;
             }
         }
     }
 }
-
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
 //
 //                            ====
