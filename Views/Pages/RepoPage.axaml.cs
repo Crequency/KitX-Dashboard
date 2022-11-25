@@ -6,7 +6,6 @@ using System.Threading;
 using Serilog;
 using System;
 using KitX_Dashboard.Services;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace KitX_Dashboard.Views.Pages
