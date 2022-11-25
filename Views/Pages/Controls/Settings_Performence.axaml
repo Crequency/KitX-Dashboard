@@ -75,7 +75,7 @@
                     <StackPanel VerticalAlignment="Center"
                                 DockPanel.Dock="Left"
                                 Orientation="Horizontal">
-                        <icon:MaterialIcon Margin="5,0" Kind="Portrait"/>
+                        <icon:MaterialIcon Margin="5,0" Kind="IpNetwork"/>
                         <TextBlock FontFamily="{StaticResource SourceHanSans}"
                                    FontWeight="Bold"
                                    Text="{DynamicResource Text_Settings_Performence_Web_MyIP_Filter}"/>
