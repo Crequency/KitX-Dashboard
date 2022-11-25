@@ -70,7 +70,7 @@ namespace KitX_Dashboard.Services
             UseStatisticsChanged += () => { };
             OnExiting += () => { };
             DevicesServerPortChanged += () => { };
-            OnReceivingDeviceInfoStruct4DeviceNet += x => { };
+            OnReceivingDeviceInfoStruct4DeviceNet += dis => { };
         }
 
         /// <summary>
