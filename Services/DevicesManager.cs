@@ -1,5 +1,6 @@
 ﻿using Avalonia.Threading;
 using KitX.Web.Rules;
+using KitX_Dashboard.Data;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
@@ -11,6 +12,21 @@ namespace KitX_Dashboard.Services
 {
     internal class DevicesManager
     {
+        internal static void InitEvents()
+        {
+            EventHandlers.OnReceivingDeviceInfoStruct4DeviceNet += dis =>
+            {
+                if (GlobalInfo.IsMainMachine)
+                    if (dis.DeviceServerBuildTime < GlobalInfo.ServerBuildTime)
+                    {
+                        Program.WebManager?.devicesServer?.CancleBuildServer();
+                        Log.Information($"In DevicesManager: Watched for earlier built server. " +
+                            $"DeviceServerAddress: {dis.IPv4}:{dis.DeviceServerPort} " +
+                            $"DeviceServerBuildTime: {dis.DeviceServerBuildTime}");
+                    }
+            };
+        }
+
         internal static List<DeviceInfoStruct>? receivedDeviceInfoStruct4Watch;
 
         internal static readonly Queue<DeviceInfoStruct> deviceInfoStructs = new();

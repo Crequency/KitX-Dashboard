@@ -20,6 +20,8 @@ namespace KitX_Dashboard.Services
             {
                 try
                 {
+                    DevicesManager.InitEvents();
+
                     DevicesManager.KeepCheckAndRemove();
                     DevicesManager.Watch4MainDevice();
                     PluginsManager.KeepCheckAndRemove();

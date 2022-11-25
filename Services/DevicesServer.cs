@@ -109,7 +109,7 @@ namespace KitX_Dashboard.Services
                 item.Value.Dispose();
             }
 
-            acceptPluginThread?.Join();
+            acceptDeviceThread?.Join();
 
             DevicesHost?.Close();
             DevicesHost?.Dispose();
@@ -423,7 +423,7 @@ namespace KitX_Dashboard.Services
 
         #region TCP Socket 服务于设备间组网
 
-        internal Thread? acceptPluginThread;
+        internal Thread? acceptDeviceThread;
         internal TcpClient? DevicesHost;
         internal TcpListener? listener;
         internal bool keepListen = true;
@@ -436,7 +436,7 @@ namespace KitX_Dashboard.Services
         internal void BuildServer()
         {
             listener = new(IPAddress.Any, 0);
-            acceptPluginThread = new(AcceptClient);
+            acceptDeviceThread = new(AcceptClient);
 
             listener.Start();
 
@@ -447,9 +447,26 @@ namespace KitX_Dashboard.Services
 
             Log.Information($"DevicesServer Port: {port}");
 
-            acceptPluginThread.Start();
+            acceptDeviceThread.Start();
 
             EventHandlers.Invoke(nameof(EventHandlers.DevicesServerPortChanged));
+        }
+
+        /// <summary>
+        /// 取消建立主控网络
+        /// </summary>
+        internal void CancleBuildServer()
+        {
+            GlobalInfo.IsMainMachine = false;
+            GlobalInfo.DeviceServerPort = -1;
+
+            keepListen = false;
+            acceptDeviceThread?.Join();
+            
+            DevicesHost?.Close();
+            DevicesHost?.Dispose();
+
+            DevicesManager.Watch4MainDevice();  //  取消建立之后重新寻找并加入主控网络
         }
 
         internal void AcceptClient()
@@ -552,7 +569,6 @@ namespace KitX_Dashboard.Services
                 //释放资源
                 if (endpoint != null)
                 {
-                    PluginsManager.Disconnect(endpoint); //注销插件
                     clients.Remove(endpoint.ToString());
                 }
                 stream?.Close();
