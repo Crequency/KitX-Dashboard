@@ -29,6 +29,8 @@ namespace KitX_Dashboard.Services
 
         internal delegate void OnReceivingDeviceInfoStructHandler(DeviceInfoStruct dis);
 
+        
+
         internal static event LanguageChangedHandler? LanguageChanged;
 
         internal static event GreetingTextIntervalUpdatedHandler? GreetingTextIntervalUpdated;
