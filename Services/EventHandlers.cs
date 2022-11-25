@@ -122,7 +122,7 @@ namespace KitX_Dashboard.Services
         /// </summary>
         /// <param name="eventName">事件名称</param>
         /// <param name="arg">事件参数</param>
-        internal static void InvokeWith1Arg(string eventName, object arg)
+        internal static void Invoke(string eventName, object arg)
         {
             switch (eventName)
             {
