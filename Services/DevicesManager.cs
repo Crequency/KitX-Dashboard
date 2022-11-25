@@ -128,6 +128,10 @@ namespace KitX_Dashboard.Services
         {
             deviceInfoStructs.Enqueue(deviceInfo);
             receivedDeviceInfoStruct4Watch?.Add(deviceInfo);
+
+            if (deviceInfo.IsMainDevice)
+                EventHandlers.Invoke(nameof(EventHandlers.OnReceivingDeviceInfoStruct4DeviceNet),
+                    deviceInfo);
         }
 
         /// <summary>
