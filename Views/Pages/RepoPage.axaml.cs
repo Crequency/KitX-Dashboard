@@ -25,23 +25,18 @@ namespace KitX_Dashboard.Views.Pages
         {
             AvaloniaXamlLoader.Load(this);
 
+#pragma warning disable CS8622 // 参数类型中引用类型的为 Null 性与目标委托不匹配(可能是由于为 Null 性特性)。
+
             AddHandler(DragDrop.DropEvent, Drop);
             AddHandler(DragDrop.DragOverEvent, DragOver);
-        }
 
-        private void DragOver(object sender, DragEventArgs e)
-        {
-            // Only allow Copy or Link as Drop Operations.
-            e.DragEffects = e.DragEffects & (DragDropEffects.Copy | DragDropEffects.Link);
+#pragma warning restore CS8622 // 参数类型中引用类型的为 Null 性与目标委托不匹配(可能是由于为 Null 性特性)。
 
-            // Only allow if the dragged data contains filenames.
-            if (!e.Data.Contains(DataFormats.FileNames))
-                e.DragEffects = DragDropEffects.None;
         }
 
         private void Drop(object sender, DragEventArgs e)
         {
-            string[]? files = e.Data.GetFileNames().ToArray();
+            string[]? files = e.Data?.GetFileNames()?.ToArray();
             if (files != null && files?.Length > 0)
             {
                 new Thread(() =>
@@ -56,6 +51,16 @@ namespace KitX_Dashboard.Views.Pages
                     }
                 }).Start();
             }
+        }
+
+        private void DragOver(object sender, DragEventArgs e)
+        {
+            // Only allow Copy or Link as Drop Operations.
+            e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
+
+            // Only allow if the dragged data contains filenames.
+            if (!e.Data.Contains(DataFormats.FileNames))
+                e.DragEffects = DragDropEffects.None;
         }
 
     }
