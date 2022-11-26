@@ -462,7 +462,7 @@ namespace KitX_Dashboard.Services
 
             keepListen = false;
             acceptDeviceThread?.Join();
-            
+
             DevicesHost?.Close();
             DevicesHost?.Dispose();
 
