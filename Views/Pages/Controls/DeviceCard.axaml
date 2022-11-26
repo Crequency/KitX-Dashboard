@@ -42,7 +42,8 @@
                         DockPanel.Dock="Right"
                         FontFamily="{StaticResource SourceHanSans}"
                         FontSize="16"
-                        FontWeight="Bold"/>
+                        FontWeight="Bold"
+                        ToolTip.Tip="{Binding DeviceServerAddress}"/>
                 <Grid Margin="5,0,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition/>
