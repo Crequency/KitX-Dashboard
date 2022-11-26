@@ -304,7 +304,14 @@ namespace KitX_Dashboard.Services
                 }
                 else
                 {
-                    MultiDevicesBroadCastReceiveDefault();
+                    try
+                    {
+                        MultiDevicesBroadCastReceiveDefault();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("In MultiDevicesBroadCastReceiveDefault()", ex);
+                    }
                 }
             }).Start();
         }
