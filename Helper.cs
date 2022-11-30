@@ -260,14 +260,21 @@ namespace KitX_Dashboard
         /// <param name="kxpPath">.kxp Path</param>
         public static void ImportPlugin(string kxpPath)
         {
-            if (!File.Exists(kxpPath))
+            try
             {
-                Console.WriteLine($"No this file: {kxpPath}");
-                throw new Exception("Plugin Package Doesn't Exist.");
+                if (!File.Exists(kxpPath))
+                {
+                    Console.WriteLine($"No this file: {kxpPath}");
+                    throw new Exception("Plugin Package Doesn't Exist.");
+                }
+                else
+                {
+                    PluginsManager.ImportPlugin(new string[] { kxpPath });
+                }
             }
-            else
+            catch (Exception ex)
             {
-                PluginsManager.ImportPlugin(new string[] { kxpPath });
+                Log.Error("In Helper.ImportPlugin", ex);
             }
         }
     }
