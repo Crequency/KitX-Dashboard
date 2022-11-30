@@ -196,13 +196,20 @@ namespace KitX_Dashboard
         /// </summary>
         public static void InitConfig()
         {
-            if (!Directory.Exists(Path.GetFullPath(GlobalInfo.ConfigPath)))
-                _ = Directory.CreateDirectory(Path.GetFullPath(GlobalInfo.ConfigPath));
-            if (!File.Exists(Path.GetFullPath(GlobalInfo.ConfigFilePath))) SaveConfig();
-            else LoadConfig();
-            if (!File.Exists(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath)))
-                SavePluginsListConfig();
-            else LoadPluginsListConfig();
+            try
+            {
+                if (!Directory.Exists(Path.GetFullPath(GlobalInfo.ConfigPath)))
+                    _ = Directory.CreateDirectory(Path.GetFullPath(GlobalInfo.ConfigPath));
+                if (!File.Exists(Path.GetFullPath(GlobalInfo.ConfigFilePath))) SaveConfig();
+                else LoadConfig();
+                if (!File.Exists(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath)))
+                    SavePluginsListConfig();
+                else LoadPluginsListConfig();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("In Helper.InitConfig", ex);
+            }
         }
 
         /// <summary>
