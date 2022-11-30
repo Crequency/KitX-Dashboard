@@ -238,7 +238,7 @@ namespace KitX_Dashboard
         /// </summary>
         public static void InitEnvironment()
         {
-            #region 检查 Catrol.Algorithm 库环境并安装环境
+            #region 检查 Common.Algorithm 库环境并安装环境
             if (!Algorithm.Interop.Environment.CheckEnvironment())
                 new Thread(() =>
                 {
