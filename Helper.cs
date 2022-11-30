@@ -154,6 +154,7 @@ namespace KitX_Dashboard
             catch (Exception ex)
             {
                 Log.Error("In Helper.LoadConfig()", ex);
+                Program.Config = new AppConfig();
             }
         }
 
