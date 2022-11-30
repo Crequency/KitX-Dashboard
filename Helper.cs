@@ -163,8 +163,15 @@ namespace KitX_Dashboard
         /// </summary>
         public static async void LoadPluginsListConfig()
         {
-            Program.PluginsList = JsonSerializer.Deserialize<PluginsList>(
-                await FileHelper.ReadAllAsync(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath)));
+            try
+            {
+                Program.PluginsList = JsonSerializer.Deserialize<PluginsList>(
+                    await FileHelper.ReadAllAsync(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath)));
+            }
+            catch (Exception ex)
+            {
+                Log.Error("In Helper.LoadPluginsListConfig", ex);
+            }
         }
 
         /// <summary>
