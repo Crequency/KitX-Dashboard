@@ -170,7 +170,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.LoadPluginsListConfig", ex);
+                Log.Error("In Helper.LoadPluginsListConfig()", ex);
             }
         }
 
@@ -208,7 +208,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.InitConfig", ex);
+                Log.Error("In Helper.InitConfig()", ex);
             }
         }
 
@@ -274,7 +274,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.ImportPlugin", ex);
+                Log.Error("In Helper.ImportPlugin()", ex);
             }
         }
     }
