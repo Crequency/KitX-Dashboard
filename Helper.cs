@@ -179,9 +179,16 @@ namespace KitX_Dashboard
         /// </summary>
         public static async void LoadResource()
         {
-            GlobalInfo.KitXIconBase64 = await FileHelper.ReadAllAsync(Path.GetFullPath(
-                $"{GlobalInfo.AssetsPath}{GlobalInfo.IconBase64FileName}"
-            ));
+            try
+            {
+                GlobalInfo.KitXIconBase64 = await FileHelper.ReadAllAsync(Path.GetFullPath(
+                    $"{GlobalInfo.AssetsPath}{GlobalInfo.IconBase64FileName}"
+                ));
+            }
+            catch (Exception ex)
+            {
+                Log.Error("In Helper.LoadResource", ex);
+            }
         }
 
         /// <summary>
