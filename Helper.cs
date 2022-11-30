@@ -146,8 +146,15 @@ namespace KitX_Dashboard
         /// </summary>
         public static async void LoadConfig()
         {
-            Program.Config = JsonSerializer.Deserialize<AppConfig>(
-                await FileHelper.ReadAllAsync(Path.GetFullPath(GlobalInfo.ConfigFilePath)));
+            try
+            {
+                Program.Config = JsonSerializer.Deserialize<AppConfig>(
+                    await FileHelper.ReadAllAsync(Path.GetFullPath(GlobalInfo.ConfigFilePath)));
+            }
+            catch (Exception ex)
+            {
+                Log.Error("In Helper.LoadConfig()", ex);
+            }
         }
 
         /// <summary>
