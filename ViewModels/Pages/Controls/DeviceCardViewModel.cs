@@ -92,6 +92,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 PropertyChanged?.Invoke(this, new(nameof(IPv6)));
                 PropertyChanged?.Invoke(this, new(nameof(PluginsCount)));
                 PropertyChanged?.Invoke(this, new(nameof(DeviceControlStatus)));
+                PropertyChanged?.Invoke(this, new(nameof(DeviceServerAddress)));
             }
         }
 
@@ -112,6 +113,13 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         internal string? PluginsCount { get; set; }
 
         internal string? DeviceControlStatus { get; set; }
+
+        internal string? DeviceServerAddress
+        {
+            get => deviceInfo.IsMainDevice
+                ? $"{deviceInfo.IPv4}:{deviceInfo.DeviceServerPort}"
+                : null;
+        }
 
 
         public new event PropertyChangedEventHandler? PropertyChanged;

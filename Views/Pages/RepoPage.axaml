@@ -49,7 +49,7 @@
             </StackPanel>
         </Grid>
 
-        <DockPanel Margin="10">
+        <DockPanel Margin="10" DragDrop.AllowDrop="True">
             <Border Height="{Binding NoPlugins_TipHeight}" DockPanel.Dock="Top">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
