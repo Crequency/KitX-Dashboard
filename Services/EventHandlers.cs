@@ -29,6 +29,8 @@ namespace KitX_Dashboard.Services
 
         internal delegate void OnReceivingDeviceInfoStructHandler(DeviceInfoStruct dis);
 
+        internal delegate void OnConfigHotReloadedHandler();
+
 
 
         internal static event LanguageChangedHandler? LanguageChanged;
@@ -55,6 +57,8 @@ namespace KitX_Dashboard.Services
 
         internal static event OnReceivingDeviceInfoStructHandler? OnReceivingDeviceInfoStruct4DeviceNet;
 
+        internal static event OnConfigHotReloadedHandler? OnConfigHotReloaded;
+
 
         /// <summary>
         /// 必要的初始化
@@ -73,6 +77,7 @@ namespace KitX_Dashboard.Services
             OnExiting += () => { };
             DevicesServerPortChanged += () => { };
             OnReceivingDeviceInfoStruct4DeviceNet += dis => { };
+            OnConfigHotReloaded += () => { };
         }
 
         /// <summary>
@@ -115,6 +120,9 @@ namespace KitX_Dashboard.Services
                     break;
                 case nameof(DevicesServerPortChanged):
                     DevicesServerPortChanged?.Invoke();
+                    break;
+                case nameof(OnConfigHotReloaded):
+                    OnConfigHotReloaded?.Invoke();
                     break;
             }
         }
