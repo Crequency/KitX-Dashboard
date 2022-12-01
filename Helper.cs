@@ -100,7 +100,8 @@ namespace KitX_Dashboard
 
             #region 初始化文件监控管理器
 
-            InitFileWatchers();
+            if (GlobalInfo.EnabledConfigFileHotReload)
+                InitFileWatchers();
 
             #endregion
         }
@@ -116,7 +117,19 @@ namespace KitX_Dashboard
                 new((x, y) =>
             {
                 Log.Information($"OnChanged: {y.Name}");
-                
+                try
+                {
+                    lock (_configWriteLock)
+                    {
+                        Program.Config = JsonSerializer.Deserialize<AppConfig>(
+                            File.ReadAllText(GlobalInfo.ConfigFilePath));
+                        EventHandlers.Invoke(nameof(EventHandlers.OnConfigHotReloaded));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("In Config Hot Reload: ", ex);
+                }
             }));
         }
 
@@ -199,7 +212,7 @@ namespace KitX_Dashboard
             try
             {
                 Program.Config = JsonSerializer.Deserialize<AppConfig>(
-                    await FileHelper.ReadAllAsync(Path.GetFullPath(GlobalInfo.ConfigFilePath)));
+                    await FileHelper.ReadAllAsync(GlobalInfo.ConfigFilePath));
             }
             catch (Exception ex)
             {
@@ -216,7 +229,7 @@ namespace KitX_Dashboard
             try
             {
                 Program.PluginsList = JsonSerializer.Deserialize<PluginsList>(
-                    await FileHelper.ReadAllAsync(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath)));
+                    await FileHelper.ReadAllAsync(GlobalInfo.PluginsListConfigFilePath));
             }
             catch (Exception ex)
             {

@@ -64,6 +64,8 @@ namespace KitX_Dashboard.Data
         internal static string KitXIconBase64 = string.Empty;
 
         internal static bool IsSingleProcessStartMode = true;
+
+        internal static bool EnabledConfigFileHotReload = true;
     }
 }
 
