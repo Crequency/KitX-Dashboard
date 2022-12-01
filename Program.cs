@@ -69,6 +69,9 @@ namespace KitX_Dashboard
                         case "--disable-single-process-check":
                             GlobalInfo.IsSingleProcessStartMode = false;
                             break;
+                        case "--disable-config-hot-reload":
+                            GlobalInfo.EnabledConfigFileHotReload = false;
+                            break;
                     }
                 }
             }

@@ -100,7 +100,8 @@ namespace KitX_Dashboard
 
             #region 初始化文件监控管理器
 
-            InitFileWatchers();
+            if (GlobalInfo.EnabledConfigFileHotReload)
+                InitFileWatchers();
 
             #endregion
         }
@@ -121,7 +122,8 @@ namespace KitX_Dashboard
                     lock (_configWriteLock)
                     {
                         Program.Config = JsonSerializer.Deserialize<AppConfig>(
-                            FileHelper.ReadAll(GlobalInfo.ConfigFilePath));
+                            File.ReadAllText(GlobalInfo.ConfigFilePath));
+                        EventHandlers.Invoke(nameof(EventHandlers.OnConfigHotReloaded));
                     }
                 }
                 catch (Exception ex)
