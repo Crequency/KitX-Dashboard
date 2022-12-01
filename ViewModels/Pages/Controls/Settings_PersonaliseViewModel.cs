@@ -3,8 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
-using BasicHelper.IO;
-using BasicHelper.Util;
+using Common.BasicHelper.IO;
+using Common.BasicHelper.Util;
 using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Media;
 using KitX_Dashboard.Commands;
@@ -69,6 +69,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         /// </summary>
         private void InitData()
         {
+            SurpportLanguages.Clear();
             foreach (var item in Program.Config.App.SurpportLanguages)
             {
                 SurpportLanguages.Add(new SurpportLanguages()

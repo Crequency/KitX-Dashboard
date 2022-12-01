@@ -3,6 +3,7 @@ using Avalonia.ReactiveUI;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
+using LiteDB;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -17,11 +18,15 @@ namespace KitX_Dashboard
 
         internal static WebManager? WebManager;
 
+        internal static FileWatcherManager? FileWatcherManager;
+
         internal static ObservableCollection<PluginCard> PluginCards = new();
 
         internal static ObservableCollection<DeviceCard> DeviceCards = new();
 
         internal static PluginsList PluginsList = new();
+
+        internal static LiteDatabase? ActivitiesDataBase;
 
         /// <summary>
         /// 主函数, 应用程序入口; 展开 summary 查看警告
@@ -35,7 +40,6 @@ namespace KitX_Dashboard
         [STAThread]
         public static void Main(string[] args)
         {
-
             #region 必要的初始化
 
             EventHandlers.Init();
@@ -62,6 +66,12 @@ namespace KitX_Dashboard
                                 }
                             else throw new Exception("No arguments for plugin location.");
                             break;
+                        case "--disable-single-process-check":
+                            GlobalInfo.IsSingleProcessStartMode = false;
+                            break;
+                        case "--disable-config-hot-reload":
+                            GlobalInfo.EnabledConfigFileHotReload = false;
+                            break;
                     }
                 }
             }
@@ -70,6 +80,13 @@ namespace KitX_Dashboard
                 Console.WriteLine(e.Message);
                 Environment.Exit(ErrorCodes.StartUpArgumentsError);
             }
+
+            #endregion
+
+            #region 单进程模式检查
+
+            if (GlobalInfo.IsSingleProcessStartMode)
+                Helper.SingleProcessCheck();
 
             #endregion
 
