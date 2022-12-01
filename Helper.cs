@@ -15,6 +15,8 @@ namespace KitX_Dashboard
 {
     public static class Helper
     {
+        private static FileWatchService FileWatch;
+
         /// <summary>
         /// 启动时检查
         /// </summary>
@@ -103,6 +105,10 @@ namespace KitX_Dashboard
             {
                 try
                 {
+                    lock (FileWatch.isProgramLock)
+                    {
+                        FileWatch.isProgram = true;
+                    }
                     lock (_configWriteLock)
                     {
                         FileHelper.WriteIn(Path.GetFullPath(GlobalInfo.ConfigFilePath),
@@ -181,6 +187,7 @@ namespace KitX_Dashboard
             if (!File.Exists(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath)))
                 SavePluginsListConfig();
             else LoadPluginsListConfig();
+            FileWatch = new FileWatchService();
         }
 
         /// <summary>
