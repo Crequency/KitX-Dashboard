@@ -27,9 +27,9 @@ namespace KitX_Dashboard.Data
 
         internal const string configFilePath = $"{ConfigPath}config.json";
 
-        internal const string pluginsDataBaseFilePath = $"{DataBasePath}plugins.db";
-
         internal const string pluginsListConfigFilePath = $"{ConfigPath}plugins.json";
+
+        internal const string activitiesDataBaseFilePath = $"{DataBasePath}Activities.db";
 
         internal const string thirdPartLicenseFilePath = $"{AssetsPath}ThirdPartLicense.md";
 
@@ -42,9 +42,9 @@ namespace KitX_Dashboard.Data
 
         internal static string ConfigFilePath => Path.GetFullPath(configFilePath);
 
-        internal static string PluginsDataBaseFilePath => Path.GetFullPath(pluginsDataBaseFilePath);
-
         internal static string PluginsListConfigFilePath => Path.GetFullPath(pluginsListConfigFilePath);
+
+        internal static string ActivitiesDataBaseFilePath => Path.GetFullPath(activitiesDataBaseFilePath);
 
         internal static string ThirdPartLicenseFilePath => Path.GetFullPath(thirdPartLicenseFilePath);
 

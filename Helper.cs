@@ -97,6 +97,27 @@ namespace KitX_Dashboard
             EventHandlers.PluginsListChanged += () => SavePluginsListConfig();
 
             #endregion
+
+            #region 初始化文件监控管理器
+
+            InitFileWatchers();
+
+            #endregion
+        }
+
+        /// <summary>
+        /// 初始化文件监控器
+        /// </summary>
+        private static void InitFileWatchers()
+        {
+            Program.FileWatcherManager = new();
+            var wm = Program.FileWatcherManager;
+            wm.RegisterWatcher(nameof(FileWatcherNames), GlobalInfo.ConfigFilePath,
+                new((x, y) =>
+            {
+                Log.Information($"OnChanged: {y.Name}");
+                
+            }));
         }
 
         /// <summary>
@@ -134,7 +155,7 @@ namespace KitX_Dashboard
                 {
                     lock (_configWriteLock)
                     {
-                        FileHelper.WriteIn(Path.GetFullPath(GlobalInfo.ConfigFilePath),
+                        FileHelper.WriteIn(GlobalInfo.ConfigFilePath,
                             JsonSerializer.Serialize(Program.Config, options));
                     }
                 }
@@ -160,7 +181,7 @@ namespace KitX_Dashboard
             {
                 try
                 {
-                    FileHelper.WriteIn(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath),
+                    FileHelper.WriteIn(GlobalInfo.PluginsListConfigFilePath,
                         JsonSerializer.Serialize(Program.PluginsList, options));
                 }
                 catch (Exception ex)
