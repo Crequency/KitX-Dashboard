@@ -38,12 +38,6 @@ namespace KitX_Dashboard
         [STAThread]
         public static void Main(string[] args)
         {
-            #region 单进程模式检查
-
-            Helper.SingleProcessCheck();
-
-            #endregion
-
             #region 必要的初始化
 
             EventHandlers.Init();
@@ -70,6 +64,9 @@ namespace KitX_Dashboard
                                 }
                             else throw new Exception("No arguments for plugin location.");
                             break;
+                        case "--disable-single-process-check":
+                            GlobalInfo.IsSingleProcessStartMode = false;
+                            break;
                     }
                 }
             }
@@ -78,6 +75,13 @@ namespace KitX_Dashboard
                 Console.WriteLine(e.Message);
                 Environment.Exit(ErrorCodes.StartUpArgumentsError);
             }
+
+            #endregion
+
+            #region 单进程模式检查
+
+            if (GlobalInfo.IsSingleProcessStartMode)
+                Helper.SingleProcessCheck();
 
             #endregion
 

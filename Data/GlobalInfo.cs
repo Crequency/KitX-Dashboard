@@ -60,6 +60,8 @@ namespace KitX_Dashboard.Data
         internal static string MyMacAddress = string.Empty;
 
         internal static string KitXIconBase64 = string.Empty;
+
+        internal static bool IsSingleProcessStartMode = true;
     }
 }
 
