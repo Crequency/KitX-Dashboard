@@ -1,10 +1,14 @@
 ﻿using Common.Activity;
 using Common.BasicHelper.IO;
+using Common.BasicHelper.Util.Extension;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Names;
 using KitX_Dashboard.Services;
+using LiteDB;
 using Serilog;
 using System;
 using System.IO;
+using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -61,6 +65,12 @@ namespace KitX_Dashboard
 
             #endregion
 
+            #region 初始化数据库
+
+            InitDataBase();
+
+            #endregion
+
             #region 初始化 WebManager
 
             Program.WebManager = new();
@@ -88,6 +98,7 @@ namespace KitX_Dashboard
         }
 
         private static readonly object _configWriteLock = new();
+        private static readonly object _activityRecordLock = new();
 
         /// <summary>
         /// 保存配置
@@ -188,7 +199,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.LoadResource", ex);
+                Log.Error("In Helper.LoadResource()", ex);
             }
         }
 
@@ -231,6 +242,9 @@ namespace KitX_Dashboard
             Program.WebManager.Stop();
             Program.WebManager.Dispose();
 
+            Program.ActivitiesDataBase.Commit();
+            Program.ActivitiesDataBase.Dispose();
+
             GlobalInfo.Running = false;
         }
 
@@ -253,6 +267,70 @@ namespace KitX_Dashboard
                     }
                 }).Start();
             #endregion
+        }
+
+        /// <summary>
+        /// 初始化数据库
+        /// </summary>
+        public static void InitDataBase()
+        {
+            try
+            {
+                using var db
+                    = new LiteDatabase(Path.GetFullPath(GlobalInfo.ActivitiesDBFilePath));
+                Program.ActivitiesDataBase = db;
+                string colName = DateTime.Now.ToString("yyyy_MM").Num2UpperChar();
+                var col = db.GetCollection<Activity>(colName);
+                var activity = new Activity()
+                {
+                    Creator = new() { GlobalInfo.AppFullName },
+                    Assign = null,
+                    Closer = new() { GlobalInfo.AppFullName },
+                    StartTime = new() { DateTime.Now },
+                    EndTime = new() { DateTime.Now },
+                    IconKind = Material.Icons.MaterialIconKind.Play,
+                    Labels = null,
+                    Name = nameof(ActivityNames.AppStart),
+                    Title = ActivityTitles.AppStart,
+                    Tasks = null,
+                    Sort = nameof(ActivitySortNames.DashboardEvent),
+                    Result = Result.Success,
+                    Progress = new()
+                    {
+                        Type = Progress.ProgressType.Tasks,
+                        TasksValue = (1, 1)
+                    }
+                };
+                RecordActivity(activity, colName, new Action(() =>
+                {
+                    activity.ID = Program.Config.Activity.TotalRecorded + 1;
+                }), x => x.ID);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("In Helper.InitDataBase()", ex);
+            }
+        }
+
+        /// <summary>
+        /// 记录活动
+        /// </summary>
+        /// <param name="activity">活动</param>
+        /// <param name="colName">集合名称</param>
+        /// <param name="action">添加后行动</param>
+        /// <param name="keySelector">键选择器</param>
+        public static void RecordActivity(Activity activity, string colName,
+            Action action, Expression<Func<Activity, int>> keySelector)
+        {
+            lock (_activityRecordLock)
+            {
+                var col = Program.ActivitiesDataBase.GetCollection<Activity>(colName);
+                col.Insert(activity);
+                action();
+                col.Update(activity);
+                col.EnsureIndex(keySelector);
+                Program.Config.Activity.TotalRecorded += 1;
+            }
         }
 
         /// <summary>
