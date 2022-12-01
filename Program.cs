@@ -38,6 +38,11 @@ namespace KitX_Dashboard
         [STAThread]
         public static void Main(string[] args)
         {
+            #region 单进程模式检查
+
+            Helper.SingleProcessCheck();
+
+            #endregion
 
             #region 必要的初始化
 

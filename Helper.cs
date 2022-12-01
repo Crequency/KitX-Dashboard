@@ -7,10 +7,12 @@ using KitX_Dashboard.Services;
 using LiteDB;
 using Serilog;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading;
+using Activity = Common.Activity.Activity;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 #pragma warning disable CS8602 // 解引用可能出现空引用。
@@ -25,19 +27,6 @@ namespace KitX_Dashboard
         /// </summary>
         public static void StartUpCheck()
         {
-            Process [] processnow = Process.GetProcesses();
-            int cnt = 0;
-            foreach (var item in processnow)
-            {
-                if(item.ProcessName.Replace(".exe" , "").Equals("KitX Dashboard"))
-                {
-                    cnt++;
-                }
-                if(cnt >= 2)
-                {
-                    Environment.Exit(0);
-                }
-            }
             #region 初始化 Config 并加载资源
 
             InitConfig();
@@ -108,6 +97,21 @@ namespace KitX_Dashboard
             EventHandlers.PluginsListChanged += () => SavePluginsListConfig();
 
             #endregion
+        }
+
+        /// <summary>
+        /// 检查当前是否是单进程状态
+        /// </summary>
+        public static void SingleProcessCheck()
+        {
+            Process[] processnow = Process.GetProcesses();
+            int count = 0;
+            foreach (var item in processnow)
+            {
+                if (item.ProcessName.Replace(".exe", "").Equals("KitX Dashboard"))
+                    ++count;
+                if (count >= 2) Environment.Exit(0);
+            }
         }
 
         private static readonly object _configWriteLock = new();
