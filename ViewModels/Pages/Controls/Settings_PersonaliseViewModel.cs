@@ -69,6 +69,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         /// </summary>
         private void InitData()
         {
+            SurpportLanguages.Clear();
             foreach (var item in Program.Config.App.SurpportLanguages)
             {
                 SurpportLanguages.Add(new SurpportLanguages()
