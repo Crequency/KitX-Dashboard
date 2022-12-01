@@ -13,10 +13,6 @@ namespace KitX_Dashboard.Data
 
         internal const string DataPath = "./Data/";
 
-        internal const string DataBasePath = "./DataBase/";
-
-        //internal const string LogPath = "./Log/";
-
         internal const string LanguageFilePath = "./Languages/";
 
         internal const string AssetsPath = "./Assets/";
@@ -29,16 +25,13 @@ namespace KitX_Dashboard.Data
 
         internal const string pluginsListConfigFilePath = $"{ConfigPath}plugins.json";
 
-        internal const string activitiesDataBaseFilePath = $"{DataBasePath}Activities.db";
+        internal const string activitiesDataBaseFilePath = $"{DataPath}Activities.db";
 
         internal const string thirdPartLicenseFilePath = $"{AssetsPath}ThirdPartLicense.md";
 
         internal const string IconBase64FileName = "KitX.Base64.txt";
 
         internal const int LastBreakAfterExit = 2000;
-
-        //internal const string LogTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] " +
-        //    "{Message:lj}{NewLine}{Exception}";
 
         internal static string ConfigFilePath => Path.GetFullPath(configFilePath);
 
