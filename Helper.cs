@@ -25,6 +25,19 @@ namespace KitX_Dashboard
         /// </summary>
         public static void StartUpCheck()
         {
+            Process [] processnow = Process.GetProcesses();
+            int cnt = 0;
+            foreach (var item in processnow)
+            {
+                if(item.ProcessName.Replace(".exe" , "").Equals("KitX Dashboard"))
+                {
+                    cnt++;
+                }
+                if(cnt >= 2)
+                {
+                    Environment.Exit(0);
+                }
+            }
             #region 初始化 Config 并加载资源
 
             InitConfig();
