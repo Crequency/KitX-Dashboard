@@ -17,6 +17,8 @@ namespace KitX_Dashboard
 
         internal static WebManager? WebManager;
 
+        internal static FileWatcherManager? FileWatcherManager;
+
         internal static ObservableCollection<PluginCard> PluginCards = new();
 
         internal static ObservableCollection<DeviceCard> DeviceCards = new();

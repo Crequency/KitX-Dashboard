@@ -1,5 +1,6 @@
-﻿using BasicHelper.IO;
+﻿using Common.BasicHelper.IO;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Names;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;
@@ -15,8 +16,6 @@ namespace KitX_Dashboard
 {
     public static class Helper
     {
-        private static FileWatchService FileWatch;
-
         /// <summary>
         /// 启动时检查
         /// </summary>
@@ -86,6 +85,27 @@ namespace KitX_Dashboard
             EventHandlers.PluginsListChanged += () => SavePluginsListConfig();
 
             #endregion
+
+            #region 初始化文件监控管理器
+
+            InitFileWatchers();
+
+            #endregion
+        }
+
+        /// <summary>
+        /// 初始化文件监控器
+        /// </summary>
+        private static void InitFileWatchers()
+        {
+            Program.FileWatcherManager = new();
+            var wm = Program.FileWatcherManager;
+            wm.RegisterWatcher(nameof(FileWatcherNames), GlobalInfo.ConfigFilePath,
+                new((x, y) =>
+            {
+                Log.Information($"OnChanged: {y.Name}");
+                
+            }));
         }
 
         private static readonly object _configWriteLock = new();
@@ -105,13 +125,9 @@ namespace KitX_Dashboard
             {
                 try
                 {
-                    lock (FileWatch.isProgramLock)
-                    {
-                        FileWatch.isProgram = true;
-                    }
                     lock (_configWriteLock)
                     {
-                        FileHelper.WriteIn(Path.GetFullPath(GlobalInfo.ConfigFilePath),
+                        FileHelper.WriteIn(GlobalInfo.ConfigFilePath,
                             JsonSerializer.Serialize(Program.Config, options));
                     }
                 }
@@ -137,7 +153,7 @@ namespace KitX_Dashboard
             {
                 try
                 {
-                    FileHelper.WriteIn(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath),
+                    FileHelper.WriteIn(GlobalInfo.PluginsListConfigFilePath,
                         JsonSerializer.Serialize(Program.PluginsList, options));
                 }
                 catch (Exception ex)
@@ -153,7 +169,7 @@ namespace KitX_Dashboard
         public static async void LoadConfig()
         {
             Program.Config = JsonSerializer.Deserialize<AppConfig>(
-                await FileHelper.ReadAllAsync(Path.GetFullPath(GlobalInfo.ConfigFilePath)));
+                await FileHelper.ReadAllAsync(GlobalInfo.ConfigFilePath));
         }
 
         /// <summary>
@@ -162,7 +178,7 @@ namespace KitX_Dashboard
         public static async void LoadPluginsListConfig()
         {
             Program.PluginsList = JsonSerializer.Deserialize<PluginsList>(
-                await FileHelper.ReadAllAsync(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath)));
+                await FileHelper.ReadAllAsync(GlobalInfo.PluginsListConfigFilePath));
         }
 
         /// <summary>
@@ -180,14 +196,13 @@ namespace KitX_Dashboard
         /// </summary>
         public static void InitConfig()
         {
-            if (!Directory.Exists(Path.GetFullPath(GlobalInfo.ConfigPath)))
-                _ = Directory.CreateDirectory(Path.GetFullPath(GlobalInfo.ConfigPath));
-            if (!File.Exists(Path.GetFullPath(GlobalInfo.ConfigFilePath))) SaveConfig();
+            if (!Directory.Exists(GlobalInfo.ConfigPath))
+                _ = Directory.CreateDirectory(GlobalInfo.ConfigPath);
+            if (!File.Exists(GlobalInfo.ConfigFilePath)) SaveConfig();
             else LoadConfig();
-            if (!File.Exists(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath)))
+            if (!File.Exists(GlobalInfo.PluginsListConfigFilePath))
                 SavePluginsListConfig();
             else LoadPluginsListConfig();
-            FileWatch = new FileWatchService();
         }
 
         /// <summary>
