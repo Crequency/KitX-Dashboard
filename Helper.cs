@@ -315,7 +315,7 @@ namespace KitX_Dashboard
             try
             {
                 using var db
-                    = new LiteDatabase(Path.GetFullPath(GlobalInfo.ActivitiesDBFilePath));
+                    = new LiteDatabase(Path.GetFullPath(GlobalInfo.ActivitiesDataBaseFilePath));
                 Program.ActivitiesDataBase = db;
                 string colName = DateTime.Now.ToString("yyyy_MM").Num2UpperChar();
                 var col = db.GetCollection<Activity>(colName);
