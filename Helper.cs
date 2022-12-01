@@ -76,7 +76,7 @@ namespace KitX_Dashboard
             #region 初始化 WebManager
 
             Program.WebManager = new();
-            Program.WebManager.Start();
+            Program.WebManager?.Start();
 
             #endregion
 
@@ -277,11 +277,11 @@ namespace KitX_Dashboard
         /// </summary>
         public static void Exit()
         {
-            Program.WebManager.Stop();
-            Program.WebManager.Dispose();
+            Program.WebManager?.Stop();
+            Program.WebManager?.Dispose();
 
-            Program.ActivitiesDataBase.Commit();
-            Program.ActivitiesDataBase.Dispose();
+            Program.ActivitiesDataBase?.Commit();
+            Program.ActivitiesDataBase?.Dispose();
 
             GlobalInfo.Running = false;
         }
