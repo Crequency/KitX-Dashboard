@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace KitX_Dashboard.Data
 {
@@ -20,13 +21,13 @@ namespace KitX_Dashboard.Data
 
         internal const string UpdateSavePath = "./Update/";
 
-        internal const string ConfigFilePath = $"{ConfigPath}config.json";
+        internal const string configFilePath = $"{ConfigPath}config.json";
 
-        internal const string PluginsDataBaseFilePath = $"{DataBasePath}plugins.db";
+        internal const string pluginsDataBaseFilePath = $"{DataBasePath}plugins.db";
 
-        internal const string PluginsListConfigFilePath = $"{ConfigPath}plugins.json";
+        internal const string pluginsListConfigFilePath = $"{ConfigPath}plugins.json";
 
-        internal const string ThirdPartLicenseFilePath = $"{AssetsPath}ThirdPartLicense.md";
+        internal const string thirdPartLicenseFilePath = $"{AssetsPath}ThirdPartLicense.md";
 
         internal const string IconBase64FileName = "KitX.Base64.txt";
 
@@ -34,6 +35,14 @@ namespace KitX_Dashboard.Data
 
         //internal const string LogTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] " +
         //    "{Message:lj}{NewLine}{Exception}";
+
+        internal static string ConfigFilePath => Path.GetFullPath(configFilePath);
+
+        internal static string PluginsDataBaseFilePath => Path.GetFullPath(pluginsDataBaseFilePath);
+
+        internal static string PluginsListConfigFilePath => Path.GetFullPath(pluginsListConfigFilePath);
+
+        internal static string ThirdPartLicenseFilePath => Path.GetFullPath(thirdPartLicenseFilePath);
 
         internal static int PluginServerPort = -1;
 
