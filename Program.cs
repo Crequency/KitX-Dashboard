@@ -3,6 +3,7 @@ using Avalonia.ReactiveUI;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
+using LiteDB;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -22,6 +23,8 @@ namespace KitX_Dashboard
         internal static ObservableCollection<DeviceCard> DeviceCards = new();
 
         internal static PluginsList PluginsList = new();
+
+        internal static LiteDatabase? ActivitiesDataBase;
 
         /// <summary>
         /// 主函数, 应用程序入口; 展开 summary 查看警告

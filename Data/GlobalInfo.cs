@@ -4,6 +4,10 @@ namespace KitX_Dashboard.Data
 {
     internal static class GlobalInfo
     {
+        internal const string AppName = "KitX";
+
+        internal const string AppFullName = "KitX Dashboard";
+
         internal const string ConfigPath = "./Config/";
 
         internal const string DataPath = "./Data/";
@@ -22,7 +26,7 @@ namespace KitX_Dashboard.Data
 
         internal const string ConfigFilePath = $"{ConfigPath}config.json";
 
-        internal const string PluginsDataBaseFilePath = $"{DataBasePath}plugins.db";
+        internal const string ActivitiesDBFilePath = $"{DataPath}Activities.db";
 
         internal const string PluginsListConfigFilePath = $"{ConfigPath}plugins.json";
 

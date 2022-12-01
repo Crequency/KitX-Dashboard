@@ -27,6 +27,9 @@ namespace KitX_Dashboard.Data
         [JsonInclude]
         public Config_IO IO { get; set; } = new();
 
+        [JsonInclude]
+        public Config_Activity Activity { get; set; } = new();
+
         /// <summary>
         /// Config
         /// </summary>
@@ -326,6 +329,15 @@ namespace KitX_Dashboard.Data
         {
             [JsonInclude]
             public int UpdatingCheckPerThreadFilesCount { get; set; } = 20;
+        }
+
+        /// <summary>
+        /// ActivityConfig
+        /// </summary>
+        public class Config_Activity
+        {
+            [JsonInclude]
+            public int TotalRecorded { get; set; } = 0;
         }
     }
 }
