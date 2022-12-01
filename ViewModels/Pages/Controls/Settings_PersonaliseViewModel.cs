@@ -3,8 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
-using BasicHelper.IO;
-using BasicHelper.Util;
 using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Media;
 using KitX_Dashboard.Commands;

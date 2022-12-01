@@ -3,8 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using BasicHelper.IO;
-using BasicHelper.Util;
 using FluentAvalonia.Styling;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
