@@ -30,6 +30,9 @@ namespace KitX_Dashboard.Data
         [JsonInclude]
         public Config_Activity Activity { get; set; } = new();
 
+        [JsonInclude]
+        public Config_Loaders Loaders { get; set; } = new();
+
         /// <summary>
         /// Config
         /// </summary>
@@ -338,6 +341,15 @@ namespace KitX_Dashboard.Data
         {
             [JsonInclude]
             public int TotalRecorded { get; set; } = 0;
+        }
+
+        /// <summary>
+        /// LoadersConfig
+        /// </summary>
+        public class Config_Loaders
+        {
+            [JsonInclude]
+            public string InstallPath { get; set; } = "./Loaders/";
         }
     }
 }

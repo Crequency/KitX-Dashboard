@@ -1,11 +1,15 @@
 ﻿using Avalonia.Controls;
+using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Models;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
+using System.Text.Json;
 using System.Threading;
 
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
@@ -140,7 +144,23 @@ namespace KitX_Dashboard.ViewModels.Pages
             PluginBars.Clear();
             foreach (var item in Program.PluginsList.Plugins)
             {
-                PluginBars.Add(new(item, ref pluginBars));
+                try
+                {
+                    Plugin plugin = new()
+                    {
+                        InstallPath = item.InstallPath,
+                        PluginDetails = JsonSerializer.Deserialize<PluginStruct>(
+                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/PluginStruct.json"))),
+                        RequiredLoaderStruct = JsonSerializer.Deserialize<LoaderStruct>(
+                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/LoaderStruct.json"))),
+                        InstalledDevices = new()
+                    };
+                    PluginBars.Add(new(plugin, ref pluginBars));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("In RefreshPlugins()", ex);
+                }
             }
         }
 

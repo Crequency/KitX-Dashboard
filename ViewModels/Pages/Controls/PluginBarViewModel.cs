@@ -7,8 +7,10 @@ using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Threading;
 
 namespace KitX_Dashboard.ViewModels.Pages.Controls
 {
@@ -72,13 +74,15 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                         using var ms = new MemoryStream(src);
                         return new(ms);
                     }
-                    else return new($"{GlobalInfo.AssetsPath}{Program.Config.App.CoverIconFileName}");
+                    else return new($"{GlobalInfo.AssetsPath}" +
+                        $"{Program.Config.App.CoverIconFileName}");
                 }
                 catch (Exception e)
                 {
                     Log.Warning($"Icon transform error from base64 to byte[] or " +
                         $"create bitmap from MemoryStream error: {e.Message}");
-                    return new($"{GlobalInfo.AssetsPath}{Program.Config.App.CoverIconFileName}");
+                    return new($"{GlobalInfo.AssetsPath}" +
+                        $"{Program.Config.App.CoverIconFileName}");
                 }
             }
         }
@@ -132,7 +136,36 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         /// <param name="_"></param>
         internal void Launch(object _)
         {
+            new Thread(() =>
+            {
+                try
+                {
+                    string? loaderName = PluginDetail?.RequiredLoaderStruct.LoaderName;
+                    string loaderFile = $"{Program.Config.Loaders.InstallPath}/{loaderName}/{loaderName}";
+                    if (OperatingSystem.IsWindows())
+                        loaderFile += ".exe";
+                    loaderFile = Path.GetFullPath(loaderFile);
 
+                    var pd = PluginDetail?.PluginDetails;
+                    string pluginPath = $"{PluginDetail?.InstallPath}/{pd?.RootStartupFileName}";
+                    string pluginFile = Path.GetFullPath(pluginPath);
+
+                    Log.Information($"Launch: {pluginFile} through {loaderFile}");
+
+                    if (File.Exists(loaderFile) && File.Exists(pluginFile))
+                    {
+                        string arg = $"--load \"{pluginFile}\" " +
+                            $"--connect {DevicesServer.DefaultDeviceInfoStruct.IPv4}:" +
+                                $"{GlobalInfo.PluginServerPort}";
+                        Log.Information($"Launch Argument: {arg}");
+                        Process.Start(loaderFile, arg);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("In PluginBarViewModel.Launch()", ex);
+                }
+            }).Start();
         }
 
         public new event PropertyChangedEventHandler? PropertyChanged;
