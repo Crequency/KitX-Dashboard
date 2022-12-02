@@ -186,9 +186,7 @@ namespace KitX_Dashboard.Services
 
                     Program.PluginsList.Plugins.Add(new Plugin()
                     {
-                        PluginDetails = pluginStruct,
-                        RequiredLoaderStruct = loaderStruct,
-                        MacAddressOfInstalledDevice = new()
+                        InstallPath = thisplugindir
                     });
                 }
                 catch (Exception e)

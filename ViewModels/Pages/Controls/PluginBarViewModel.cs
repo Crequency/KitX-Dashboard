@@ -72,13 +72,15 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                         using var ms = new MemoryStream(src);
                         return new(ms);
                     }
-                    else return new($"{GlobalInfo.AssetsPath}{Program.Config.App.CoverIconFileName}");
+                    else return new($"{GlobalInfo.AssetsPath}" +
+                        $"{Program.Config.App.CoverIconFileName}");
                 }
                 catch (Exception e)
                 {
                     Log.Warning($"Icon transform error from base64 to byte[] or " +
                         $"create bitmap from MemoryStream error: {e.Message}");
-                    return new($"{GlobalInfo.AssetsPath}{Program.Config.App.CoverIconFileName}");
+                    return new($"{GlobalInfo.AssetsPath}" +
+                        $"{Program.Config.App.CoverIconFileName}");
                 }
             }
         }
