@@ -2,6 +2,7 @@
 using Avalonia.ReactiveUI;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
+using KitX_Dashboard.Views;
 using KitX_Dashboard.Views.Pages.Controls;
 using LiteDB;
 using System;
@@ -27,6 +28,8 @@ namespace KitX_Dashboard
         internal static PluginsList PluginsList = new();
 
         internal static LiteDatabase? ActivitiesDataBase;
+
+        internal static MainWindow? MainWindow;
 
         /// <summary>
         /// 主函数, 应用程序入口; 展开 summary 查看警告
@@ -143,7 +146,20 @@ namespace KitX_Dashboard
         /// Avalonia configuration, don't remove; also used by visual designer.
         /// Avalonia 配置项, 请不要删除; 同时也用于可视化设计器
         public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
-            .UsePlatformDetect().LogToTrace().UseReactiveUI();
+            .UsePlatformDetect().LogToTrace().UseReactiveUI()
+            .With(new Win32PlatformOptions
+            {
+                UseWindowsUIComposition = true,
+                EnableMultitouch = true
+            })
+            .With(new MacOSPlatformOptions
+            {
+                ShowInDock = true
+            })
+            .With(new X11PlatformOptions
+            {
+                EnableMultiTouch = true
+            });
     }
 }
 

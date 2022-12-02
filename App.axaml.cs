@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Common.BasicHelper.IO;
 using Common.BasicHelper.Util;
 using FluentAvalonia.Styling;
@@ -14,6 +15,7 @@ using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using Serilog;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -150,6 +152,9 @@ namespace KitX_Dashboard
 
             base.OnFrameworkInitializationCompleted();
         }
+
+        public static Bitmap DefaultIcon = new(Path.GetFullPath(
+            $"{GlobalInfo.AssetsPath}{Program.Config.App.CoverIconFileName}"));
     }
 }
 

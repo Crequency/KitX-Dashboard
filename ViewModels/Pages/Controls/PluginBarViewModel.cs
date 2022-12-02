@@ -1,14 +1,16 @@
-﻿using KitX_Dashboard.Commands;
+﻿using Avalonia.Controls;
+using Avalonia.Media.Imaging;
+using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Models;
 using KitX_Dashboard.Services;
+using KitX_Dashboard.Views;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Threading;
 
@@ -21,7 +23,6 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
             InitCommands();
             InitEvents();
         }
-
 
         internal void InitCommands()
         {
@@ -74,15 +75,13 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                         using var ms = new MemoryStream(src);
                         return new(ms);
                     }
-                    else return new($"{GlobalInfo.AssetsPath}" +
-                        $"{Program.Config.App.CoverIconFileName}");
+                    else return App.DefaultIcon;
                 }
                 catch (Exception e)
                 {
                     Log.Warning($"Icon transform error from base64 to byte[] or " +
                         $"create bitmap from MemoryStream error: {e.Message}");
-                    return new($"{GlobalInfo.AssetsPath}" +
-                        $"{Program.Config.App.CoverIconFileName}");
+                    return App.DefaultIcon;
                 }
             }
         }
@@ -101,7 +100,13 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         /// <param name="_"></param>
         internal void ViewDetails(object _)
         {
-
+            if (PluginDetail != null && Program.MainWindow != null)
+                new PluginDetailWindow()
+                {
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                }
+                .SetPluginStruct(PluginDetail.PluginDetails)
+                .Show(Program.MainWindow);
         }
 
         /// <summary>

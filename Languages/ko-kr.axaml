@@ -67,6 +67,16 @@
     <x:String x:Key="Text_PluginBar_ComplexDescription">설명하다:</x:String>
     <x:String x:Key="Text_PluginBar_TotalDescriptionInMarkdown">선적 서류 비치:</x:String>
     <x:String x:Key="Text_PluginBar_RootStartupFileName">시작 루트 파일 이름:</x:String>
+    <x:String x:Key="Text_Plugin_Version">버전:</x:String>
+    <x:String x:Key="Text_Plugin_AuthorName">작가:</x:String>
+    <x:String x:Key="Text_Plugin_PublisherName">발행자:</x:String>
+    <x:String x:Key="Text_Plugin_PublishDate">게시일:</x:String>
+    <x:String x:Key="Text_Plugin_LastUpdateDate">마지막 업데이트 날짜:</x:String>
+    <x:String x:Key="Text_Plugin_IsMarketVersion">마켓 버전인가요:</x:String>
+    <x:String x:Key="Text_Plugin_TotalDescriptionInMarkdown">문서</x:String>
+    <x:String x:Key="Text_Plugin_RootStartupFileName">시작 루트 파일 이름:</x:String>
+    <x:String x:Key="Text_Plugin_Functions">함수 목록</x:String>
+    <x:String x:Key="Text_Plugin_Tags">태그</x:String>
     <x:String x:Key="Text_Device_No">네트워크에 다른 장치 없음</x:String>
     <x:String x:Key="Text_Device_This">이 기기</x:String>
     <x:String x:Key="Text_Device_Type_Slave">노예</x:String>
