@@ -36,6 +36,8 @@ namespace KitX_Dashboard.Views
         {
             InitializeComponent();
 
+            Program.MainWindow = this;
+
             Resources["MainWindow"] = this;
             //(Resources["TrayIcon"] as TrayIcon).CommandParameter = this;
 
@@ -91,6 +93,9 @@ namespace KitX_Dashboard.Views
 #endif
         }
 
+        /// <summary>
+        /// 建议分辨率和位置
+        /// </summary>
         private void SuggestResolutionAndLocation()
         {
             if (Program.Config.Windows.MainWindow.Window_Width == 1280
