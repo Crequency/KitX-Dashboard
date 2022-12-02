@@ -67,6 +67,16 @@
     <x:String x:Key="Text_PluginBar_ComplexDescription">説明：</x:String>
     <x:String x:Key="Text_PluginBar_TotalDescriptionInMarkdown">ドキュメンテーション：</x:String>
     <x:String x:Key="Text_PluginBar_RootStartupFileName">ルートファイル名の開始:</x:String>
+    <x:String x:Key="Text_Plugin_Version">バージョン:</x:String>
+    <x:String x:Key="Text_Plugin_AuthorName">著者：</x:String>
+    <x:String x:Key="Text_Plugin_PublisherName">出版社:</x:String>
+    <x:String x:Key="Text_Plugin_PublishDate">公開日:</x:String>
+    <x:String x:Key="Text_Plugin_LastUpdateDate">最終更新日:</x:String>
+    <x:String x:Key="Text_Plugin_IsMarketVersion">市場バージョンですか:</x:String>
+    <x:String x:Key="Text_Plugin_TotalDescriptionInMarkdown">ドキュメント</x:String>
+    <x:String x:Key="Text_Plugin_RootStartupFileName">開始ルート ファイル名:</x:String>
+    <x:String x:Key="Text_Plugin_Functions">関数リスト</x:String>
+    <x:String x:Key="Text_Plugin_Tags">タグ</x:String>
     <x:String x:Key="Text_Device_No">ネットワーク上に他のデバイスがない</x:String>
     <x:String x:Key="Text_Device_This">この装置</x:String>
     <x:String x:Key="Text_Device_Type_Slave">Slave</x:String>

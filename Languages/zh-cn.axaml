@@ -67,6 +67,16 @@
     <x:String x:Key="Text_PluginBar_ComplexDescription">描述:</x:String>
     <x:String x:Key="Text_PluginBar_TotalDescriptionInMarkdown">文档:</x:String>
     <x:String x:Key="Text_PluginBar_RootStartupFileName">起始根文件名:</x:String>
+    <x:String x:Key="Text_Plugin_Version">版本:</x:String>
+    <x:String x:Key="Text_Plugin_AuthorName">作者:</x:String>
+    <x:String x:Key="Text_Plugin_PublisherName">发行商:</x:String>
+    <x:String x:Key="Text_Plugin_PublishDate">发布日期:</x:String>
+    <x:String x:Key="Text_Plugin_LastUpdateDate">最后更新日期:</x:String>
+    <x:String x:Key="Text_Plugin_IsMarketVersion">是否是市场版本:</x:String>
+    <x:String x:Key="Text_Plugin_TotalDescriptionInMarkdown">文档</x:String>
+    <x:String x:Key="Text_Plugin_RootStartupFileName">起始根文件名:</x:String>
+    <x:String x:Key="Text_Plugin_Functions">功能列表</x:String>
+    <x:String x:Key="Text_Plugin_Tags">标记</x:String>
     <x:String x:Key="Text_Device_No">网络中没有其它设备</x:String>
     <x:String x:Key="Text_Device_This">此设备</x:String>
     <x:String x:Key="Text_Device_Type_Slave">从控</x:String>

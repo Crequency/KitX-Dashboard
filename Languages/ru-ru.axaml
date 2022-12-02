@@ -67,6 +67,16 @@
     <x:String x:Key="Text_PluginBar_ComplexDescription">описывать:</x:String>
     <x:String x:Key="Text_PluginBar_TotalDescriptionInMarkdown">Документация:</x:String>
     <x:String x:Key="Text_PluginBar_RootStartupFileName">начальное корневое имя файла:</x:String>
+    <x:String x:Key="Text_Plugin_Version">Версия:</x:String>
+    <x:String x:Key="Text_Plugin_AuthorName">автор:</x:String>
+    <x:String x:Key="Text_Plugin_PublisherName">Издатель:</x:String>
+    <x:String x:Key="Text_Plugin_PublishDate">Дата публикации:</x:String>
+    <x:String x:Key="Text_Plugin_LastUpdateDate">Дата последнего обновления:</x:String>
+    <x:String x:Key="Text_Plugin_IsMarketVersion">Это рыночная версия:</x:String>
+    <x:String x:Key="Text_Plugin_TotalDescriptionInMarkdown">Документация</x:String>
+    <x:String x:Key="Text_Plugin_RootStartupFileName">Имя начального корневого файла:</x:String>
+    <x:String x:Key="Text_Plugin_Functions">Список функций</x:String>
+    <x:String x:Key="Text_Plugin_Tags">Теги</x:String>
     <x:String x:Key="Text_Device_No">Нет других устройств в сети</x:String>
     <x:String x:Key="Text_Device_This">это устройство</x:String>
     <x:String x:Key="Text_Device_Type_Slave">раб</x:String>

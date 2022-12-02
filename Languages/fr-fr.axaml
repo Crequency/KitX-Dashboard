@@ -67,6 +67,16 @@
     <x:String x:Key="Text_PluginBar_ComplexDescription">décris:</x:String>
     <x:String x:Key="Text_PluginBar_TotalDescriptionInMarkdown">Documentation:</x:String>
     <x:String x:Key="Text_PluginBar_RootStartupFileName">nom de fichier racine de départ:</x:String>
+    <x:String x:Key="Text_Plugin_Version">Version:</x:String>
+    <x:String x:Key="Text_Plugin_AuthorName">auteur:</x:String>
+    <x:String x:Key="Text_Plugin_PublisherName">Éditeur:</x:String>
+    <x:String x:Key="Text_Plugin_PublishDate">Date de publication:</x:String>
+    <x:String x:Key="Text_Plugin_LastUpdateDate">Date de la dernière mise à jour:</x:String>
+    <x:String x:Key="Text_Plugin_IsMarketVersion">Est-ce la version commerciale:</x:String>
+    <x:String x:Key="Text_Plugin_TotalDescriptionInMarkdown">Documentation</x:String>
+    <x:String x:Key="Text_Plugin_RootStartupFileName">Nom du fichier racine de démarrage:</x:String>
+    <x:String x:Key="Text_Plugin_Functions">Liste des fonctions</x:String>
+    <x:String x:Key="Text_Plugin_Tags">Balises</x:String>
     <x:String x:Key="Text_Device_No">Aucun autre appareil sur le réseau</x:String>
     <x:String x:Key="Text_Device_This">cet appareil</x:String>
     <x:String x:Key="Text_Device_Type_Slave">trimer</x:String>
