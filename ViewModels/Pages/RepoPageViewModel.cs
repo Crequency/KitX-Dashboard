@@ -148,6 +148,7 @@ namespace KitX_Dashboard.ViewModels.Pages
                 {
                     Plugin plugin = new()
                     {
+                        InstallPath = item.InstallPath,
                         PluginDetails = JsonSerializer.Deserialize<PluginStruct>(
                             File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/PluginStruct.json"))),
                         RequiredLoaderStruct = JsonSerializer.Deserialize<LoaderStruct>(
