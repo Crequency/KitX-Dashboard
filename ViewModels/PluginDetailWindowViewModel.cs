@@ -4,12 +4,10 @@ using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace KitX_Dashboard.ViewModels
 {
