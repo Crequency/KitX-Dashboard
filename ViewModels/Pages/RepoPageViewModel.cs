@@ -142,24 +142,29 @@ namespace KitX_Dashboard.ViewModels.Pages
             //LiteDatabase? pgdb = Program.PluginsDataBase;
 
             PluginBars.Clear();
-            foreach (var item in Program.PluginsList.Plugins)
+            lock (PluginsManager.PluginsListOperationLock)
             {
-                try
+                foreach (var item in Program.PluginsList.Plugins)
                 {
-                    Plugin plugin = new()
+                    try
                     {
-                        InstallPath = item.InstallPath,
-                        PluginDetails = JsonSerializer.Deserialize<PluginStruct>(
-                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/PluginStruct.json"))),
-                        RequiredLoaderStruct = JsonSerializer.Deserialize<LoaderStruct>(
-                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/LoaderStruct.json"))),
-                        InstalledDevices = new()
-                    };
-                    PluginBars.Add(new(plugin, ref pluginBars));
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("In RefreshPlugins()", ex);
+                        Plugin plugin = new()
+                        {
+                            InstallPath = item.InstallPath,
+                            PluginDetails = JsonSerializer.Deserialize<PluginStruct>(
+                                File.ReadAllText(
+                                    Path.GetFullPath($"{item.InstallPath}/PluginStruct.json"))),
+                            RequiredLoaderStruct = JsonSerializer.Deserialize<LoaderStruct>(
+                                File.ReadAllText(
+                                    Path.GetFullPath($"{item.InstallPath}/LoaderStruct.json"))),
+                            InstalledDevices = new()
+                        };
+                        PluginBars.Add(new(plugin, ref pluginBars));
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("In RefreshPlugins()", ex);
+                    }
                 }
             }
         }

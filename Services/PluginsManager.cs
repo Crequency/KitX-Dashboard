@@ -57,6 +57,8 @@ namespace KitX_Dashboard.Services
 
         internal static readonly Queue<Plugin> pluginsToDelete = new();
 
+        internal static readonly object PluginsListOperationLock = new();
+
         /// <summary>
         /// 持续检查并移除
         /// </summary>
@@ -236,14 +238,17 @@ namespace KitX_Dashboard.Services
                         while (pluginsToRemoveFromDB.Count > 0)
                         {
                             Plugin pg = pluginsToRemoveFromDB.Dequeue();
-                            Program.PluginsList.Plugins.RemoveAt(
-                                Program.PluginsList.Plugins.FindIndex(
-                                    x =>
-                                    {
-                                        if (x.InstallPath != null)
-                                            return x.InstallPath.Equals(pg.InstallPath);
-                                        else return false;
-                                    }));
+                            lock (PluginsListOperationLock)
+                            {
+                                Program.PluginsList.Plugins.RemoveAt(
+                                    Program.PluginsList.Plugins.FindIndex(
+                                        x =>
+                                        {
+                                            if (x.InstallPath != null)
+                                                return x.InstallPath.Equals(pg.InstallPath);
+                                            else return false;
+                                        }));
+                            }
                         }
                     }
 
@@ -253,14 +258,17 @@ namespace KitX_Dashboard.Services
                         while (pluginsToDelete.Count > 0)
                         {
                             Plugin pg = pluginsToDelete.Dequeue();
-                            Program.PluginsList.Plugins.RemoveAt(
-                                Program.PluginsList.Plugins.FindIndex(
-                                    x =>
-                                    {
-                                        if (x.InstallPath != null)
-                                            return x.InstallPath.Equals(pg.InstallPath);
-                                        else return false;
-                                    }));
+                            lock (PluginsListOperationLock)
+                            {
+                                Program.PluginsList.Plugins.RemoveAt(
+                                    Program.PluginsList.Plugins.FindIndex(
+                                        x =>
+                                        {
+                                            if (x.InstallPath != null)
+                                                return x.InstallPath.Equals(pg.InstallPath);
+                                            else return false;
+                                        }));
+                            }
                             string pgfiledir = Path.GetFullPath(
                                 $"{Program.Config.App.LocalPluginsFileDirectory}/" +
                                 $"{pg.PluginDetails.PublisherName}_{pg.PluginDetails.AuthorName}/" +
