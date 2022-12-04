@@ -152,18 +152,12 @@ namespace KitX_Dashboard.Services
                 if (workbase == null)
                     throw new Exception("Can not get path of \"KitX\"");
             }
-            string releaseDir = Path.GetFullPath($"{workbase}/{GlobalInfo.KXPTempReleasePath}");
             foreach (var item in kxpfiles)
             {
                 try
                 {
-                    if (Directory.Exists(releaseDir))
-                        Directory.Delete(releaseDir, true);
-                    _ = Directory.CreateDirectory(releaseDir);
-
                     KitX.KXP.Helper.Decoder decoder = new(item);
-                    Tuple<string, string> rst = decoder.Decode(releaseDir);
-                    Directory.Delete(releaseDir, true);
+                    Tuple<string, string> rst = decoder.GetLoaderAndPluginStruct();
                     LoaderStruct loaderStruct = JsonSerializer.Deserialize<LoaderStruct>(rst.Item1);
                     PluginStruct pluginStruct = JsonSerializer.Deserialize<PluginStruct>(rst.Item2);
                     AppConfig? config = null;
