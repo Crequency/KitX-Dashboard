@@ -1,26 +1,39 @@
-﻿using Avalonia.Controls;
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using FluentAvalonia.Styling;
 using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
 
 namespace KitX_Dashboard.ViewModels
 {
-    internal class PluginDetailWindowViewModel : ViewModelBase
+    internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChanged
     {
         public PluginDetailWindowViewModel()
         {
             InitCommands();
+
+            InitEvents();
         }
 
         internal void InitCommands()
         {
             FinishCommand = new(Finish);
+        }
+
+        internal void InitEvents()
+        {
+            EventHandlers.ThemeConfigChanged +=
+                () => PropertyChanged?.Invoke(this, new(nameof(TintColor)));
         }
 
         internal PluginStruct? PluginDetail { get; set; }
@@ -103,6 +116,19 @@ namespace KitX_Dashboard.ViewModels
 
         internal string? LastUpdateDate => PluginDetail?.LastUpdateDate.ToString("yyyy.MM.dd");
 
+        internal Color TintColor => Program.Config.App.Theme switch
+        {
+            "Light" => Colors.WhiteSmoke,
+            "Dark" => Colors.Black,
+            "Follow" => AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme switch
+            {
+                "Light" => Colors.WhiteSmoke,
+                "Dark" => Colors.Black,
+                _ => Color.Parse(Program.Config.App.ThemeColor)
+            },
+            _ => Color.Parse(Program.Config.App.ThemeColor),
+        };
+
         private readonly ObservableCollection<string> functions = new();
 
         private readonly ObservableCollection<string> tags = new();
@@ -177,5 +203,7 @@ namespace KitX_Dashboard.ViewModels
         {
             (parent as Window)?.Close();
         }
+
+        public new event PropertyChangedEventHandler? PropertyChanged;
     }
 }
