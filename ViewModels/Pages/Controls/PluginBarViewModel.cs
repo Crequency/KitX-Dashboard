@@ -146,24 +146,28 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 try
                 {
                     string? loaderName = PluginDetail?.RequiredLoaderStruct.LoaderName;
-                    string loaderFile = $"{Program.Config.Loaders.InstallPath}/{loaderName}/{loaderName}";
-                    if (OperatingSystem.IsWindows())
-                        loaderFile += ".exe";
-                    loaderFile = Path.GetFullPath(loaderFile);
-
                     var pd = PluginDetail?.PluginDetails;
                     string pluginPath = $"{PluginDetail?.InstallPath}/{pd?.RootStartupFileName}";
                     string pluginFile = Path.GetFullPath(pluginPath);
-
-                    Log.Information($"Launch: {pluginFile} through {loaderFile}");
-
-                    if (File.Exists(loaderFile) && File.Exists(pluginFile))
+                    string connectStr = $"{DevicesServer.DefaultDeviceInfoStruct.IPv4}" +
+                        $":{GlobalInfo.PluginServerPort}";
+                    if (PluginDetail != null && PluginDetail.RequiredLoaderStruct.SelfLoad)
+                        Process.Start(pluginFile, $"--connect {connectStr}");
+                    else
                     {
-                        string arg = $"--load \"{pluginFile}\" " +
-                            $"--connect {DevicesServer.DefaultDeviceInfoStruct.IPv4}:" +
-                                $"{GlobalInfo.PluginServerPort}";
-                        Log.Information($"Launch Argument: {arg}");
-                        Process.Start(loaderFile, arg);
+                        string loaderFile = $"{Program.Config.Loaders.InstallPath}/{loaderName}/{loaderName}";
+                        if (OperatingSystem.IsWindows())
+                            loaderFile += ".exe";
+                        loaderFile = Path.GetFullPath(loaderFile);
+
+                        Log.Information($"Launch: {pluginFile} through {loaderFile}");
+
+                        if (File.Exists(loaderFile) && File.Exists(pluginFile))
+                        {
+                            string arg = $"--load \"{pluginFile}\" --connect {connectStr}";
+                            Log.Information($"Launch Argument: {arg}");
+                            Process.Start(loaderFile, arg);
+                        }
                     }
                 }
                 catch (Exception ex)
