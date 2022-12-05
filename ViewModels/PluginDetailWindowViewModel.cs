@@ -33,7 +33,7 @@ namespace KitX_Dashboard.ViewModels
         internal void InitEvents()
         {
             EventHandlers.ThemeConfigChanged +=
-                () => PropertyChanged?.Invoke(this, new(nameof(TintColor)));
+                () => PropertyChanged?.Invoke(this, new(nameof(ViewModels.PluginDetailWindowViewModel.TintColor)));
         }
 
         internal PluginStruct? PluginDetail { get; set; }
@@ -116,7 +116,7 @@ namespace KitX_Dashboard.ViewModels
 
         internal string? LastUpdateDate => PluginDetail?.LastUpdateDate.ToString("yyyy.MM.dd");
 
-        internal Color TintColor => Program.Config.App.Theme switch
+        internal static Color TintColor => Program.Config.App.Theme switch
         {
             "Light" => Colors.WhiteSmoke,
             "Dark" => Colors.Black,
@@ -165,11 +165,11 @@ namespace KitX_Dashboard.ViewModels
                 {
                     StringBuilder sb = new();
                     sb.Append(func.ReturnValueType);
-                    sb.Append(" ");
+                    sb.Append(' ');
                     if (func.DisplayNames.ContainsKey(langKey))
                         sb.Append(func.DisplayNames[langKey]);
                     else sb.Append(func.Name);
-                    sb.Append("(");
+                    sb.Append('(');
                     if (func.Parameters.Count != func.ParametersType.Count)
                         throw new InvalidDataException("Parameters return type count " +
                             "didn't match parameters count.");
@@ -178,14 +178,14 @@ namespace KitX_Dashboard.ViewModels
                     {
                         sb.Append(func.ParametersType[index]);
                         ++index;
-                        sb.Append(" ");
+                        sb.Append(' ');
                         if (param.Value.ContainsKey(langKey))
                             sb.Append(param.Value[langKey]);
                         else sb.Append(param.Key);
                         if (index != func.Parameters.Count)
                             sb.Append(", ");
                     }
-                    sb.Append(")");
+                    sb.Append(')');
                     Functions.Add(sb.ToString());
                 }
                 foreach (var tag in PluginDetail.Value.Tags)

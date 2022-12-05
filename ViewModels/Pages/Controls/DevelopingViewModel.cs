@@ -4,12 +4,7 @@
     {
         public DevelopingViewModel()
         {
-            InitCommands();
-        }
-
-        private void InitCommands()
-        {
-
+            
         }
     }
 }
