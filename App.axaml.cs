@@ -146,7 +146,7 @@ namespace KitX_Dashboard
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("In AnouncementManager.CheckNewAccnouncements()", ex);
+                        Log.Error(ex, "In AnouncementManager.CheckNewAccnouncements()");
                     }
                 }).Start();
 

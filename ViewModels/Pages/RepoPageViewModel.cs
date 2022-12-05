@@ -127,7 +127,7 @@ namespace KitX_Dashboard.ViewModels.Pages
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("In RepoPageViewModel.ImportPlugin()", ex);
+                        Log.Error(ex, "In RepoPageViewModel.ImportPlugin()");
                     }
                 }).Start();
             }
@@ -163,7 +163,7 @@ namespace KitX_Dashboard.ViewModels.Pages
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("In RefreshPlugins()", ex);
+                        Log.Error(ex, "In RefreshPlugins()");
                     }
                 }
             }

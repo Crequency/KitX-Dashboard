@@ -172,7 +172,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("In PluginBarViewModel.Launch()", ex);
+                    Log.Error(ex, "In PluginBarViewModel.Launch()");
                 }
             }).Start();
         }

@@ -47,7 +47,7 @@ namespace KitX_Dashboard.Views.Pages
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("In RepoPage.Drop()", ex);
+                        Log.Error(ex, "In RepoPage.Drop()");
                     }
                 }).Start();
             }
