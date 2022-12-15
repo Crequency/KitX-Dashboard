@@ -10,6 +10,30 @@
              d:DesignWidth="800"
              mc:Ignorable="d">
 
+    <UserControl.Styles>
+        <Style Selector="ui|NumberBox.Disabled">
+            <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="DockPanel.Dock" Value="Right"/>
+            <Setter Property="IsEnabled" Value="False"/>
+        </Style>
+        <Style Selector="ui|NumberBox.Enabled">
+            <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="DockPanel.Dock" Value="Right"/>
+            <Setter Property="IsEnabled" Value="True"/>
+        </Style>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="StackPanel.TitleBar">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Orientation" Value="Horizontal"/>
+            <Setter Property="DockPanel.Dock" Value="Left"/>
+        </Style>
+    </UserControl.Styles>
+
     <UserControl.Resources>
         <converters:Selection2VisibleConverter x:Key="Converter_S2V"/>
     </UserControl.Resources>
@@ -22,19 +46,12 @@
                         IsIconVisible="False"
                         IsOpen="True">
                 <DockPanel Margin="0,10,10,10">
-                    <StackPanel VerticalAlignment="Center"
-                                DockPanel.Dock="Left"
-                                Orientation="Horizontal">
+                    <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="Lan"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_Performence_Web_PluginsServerPort}"/>
+                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Web_PluginsServerPort}"/>
                     </StackPanel>
 
-                    <ui:NumberBox DockPanel.Dock="Right"
-                                  FontFamily="{StaticResource SourceHanSans}"
-                                  FontWeight="Bold"
-                                  IsEnabled="False"
+                    <ui:NumberBox Classes="Disabled"
                                   SpinButtonPlacementMode="Compact"
                                   Value="{Binding PluginsServerPort}"/>
 
@@ -47,19 +64,12 @@
                         IsIconVisible="False"
                         IsOpen="True">
                 <DockPanel Margin="0,10,10,10">
-                    <StackPanel VerticalAlignment="Center"
-                                DockPanel.Dock="Left"
-                                Orientation="Horizontal">
+                    <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="LanConnect"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_Performence_Web_DevicesServerPort}"/>
+                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Web_DevicesServerPort}"/>
                     </StackPanel>
 
-                    <ui:NumberBox DockPanel.Dock="Right"
-                                  FontFamily="{StaticResource SourceHanSans}"
-                                  FontWeight="Bold"
-                                  IsEnabled="False"
+                    <ui:NumberBox Classes="Disabled"
                                   SpinButtonPlacementMode="Compact"
                                   Value="{Binding DevicesServerPort}"/>
 
@@ -72,19 +82,12 @@
                         IsIconVisible="False"
                         IsOpen="True">
                 <DockPanel Margin="0,10,10,10">
-                    <StackPanel VerticalAlignment="Center"
-                                DockPanel.Dock="Left"
-                                Orientation="Horizontal">
+                    <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="IpNetwork"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_Performence_Web_MyIP_Filter}"/>
+                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Web_MyIP_Filter}"/>
                     </StackPanel>
 
-                    <TextBox DockPanel.Dock="Right"
-                             FontFamily="{StaticResource SourceHanSans}"
-                             FontWeight="Bold"
-                             Text="{Binding LocalIPFilter}"/>
+                    <TextBox DockPanel.Dock="Right" Text="{Binding LocalIPFilter}"/>
 
                     <Border/>
                 </DockPanel>
@@ -95,19 +98,12 @@
                         IsIconVisible="False"
                         IsOpen="True">
                 <DockPanel Margin="0,10,10,10">
-                    <StackPanel VerticalAlignment="Center"
-                                DockPanel.Dock="Left"
-                                Orientation="Horizontal">
+                    <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="Clock"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_Performence_Greeting_Interval}"/>
+                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Greeting_Interval}"/>
                     </StackPanel>
 
-                    <ui:NumberBox DockPanel.Dock="Right"
-                                  FontFamily="{StaticResource SourceHanSans}"
-                                  FontWeight="Bold"
-                                  IsEnabled="True"
+                    <ui:NumberBox Classes="Enabled"
                                   Maximum="60"
                                   Minimum="1"
                                   SpinButtonPlacementMode="Compact"
@@ -121,9 +117,7 @@
                 <Expander.Header>
                     <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                         <icon:MaterialIcon Margin="5,0" Kind="FileChart"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_Performence_Log}"/>
+                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Log}"/>
                     </StackPanel>
                 </Expander.Header>
 
@@ -139,9 +133,7 @@
                             </ui:MenuFlyout>
                         </ui:InfoBar.ContextFlyout>
                         <DockPanel Margin="0,10,10,10">
-                            <StackPanel VerticalAlignment="Center"
-                                        DockPanel.Dock="Left"
-                                        Orientation="Horizontal">
+                            <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="DataUsage"/>
                                 <TextBlock FontFamily="{StaticResource SourceHanSans}"
                                            FontWeight="Bold"
@@ -155,13 +147,8 @@
                             <TextBlock Margin="10,0"
                                        VerticalAlignment="Center"
                                        DockPanel.Dock="Right"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
                                        Text="MB"/>
-                            <ui:NumberBox DockPanel.Dock="Right"
-                                          FontFamily="{StaticResource SourceHanSans}"
-                                          FontWeight="Bold"
-                                          IsEnabled="False"
+                            <ui:NumberBox Classes="Disabled"
                                           Minimum="1"
                                           SpinButtonPlacementMode="Compact"
                                           Value="{Binding LogFileSizeUsage}"/>
@@ -174,13 +161,9 @@
                                 IsIconVisible="False"
                                 IsOpen="True">
                         <DockPanel Margin="0,10,10,10">
-                            <StackPanel VerticalAlignment="Center"
-                                        DockPanel.Dock="Left"
-                                        Orientation="Horizontal">
+                            <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="Sd"/>
-                                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Settings_Performence_LogFileSize}"/>
+                                <TextBlock Text="{DynamicResource Text_Settings_Performence_LogFileSize}"/>
                             </StackPanel>
 
                             <TextBlock Margin="10,0,0,0"
@@ -189,10 +172,7 @@
                                        FontFamily="{StaticResource SourceHanSans}"
                                        FontWeight="Bold"
                                        Text="MB"/>
-                            <ui:NumberBox DockPanel.Dock="Right"
-                                          FontFamily="{StaticResource SourceHanSans}"
-                                          FontWeight="Bold"
-                                          IsEnabled="True"
+                            <ui:NumberBox Classes="Enabled"
                                           Minimum="1"
                                           SpinButtonPlacementMode="Compact"
                                           Value="{Binding LogFileSizeLimit}"/>
@@ -206,19 +186,12 @@
                                 IsIconVisible="False"
                                 IsOpen="True">
                         <DockPanel Margin="0,10,10,10">
-                            <StackPanel VerticalAlignment="Center"
-                                        DockPanel.Dock="Left"
-                                        Orientation="Horizontal">
+                            <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="FileMultiple"/>
-                                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Settings_Performence_LogFileMaxCount}"/>
+                                <TextBlock Text="{DynamicResource Text_Settings_Performence_LogFileMaxCount}"/>
                             </StackPanel>
 
-                            <ui:NumberBox DockPanel.Dock="Right"
-                                          FontFamily="{StaticResource SourceHanSans}"
-                                          FontWeight="Bold"
-                                          IsEnabled="True"
+                            <ui:NumberBox Classes="Enabled"
                                           SpinButtonPlacementMode="Compact"
                                           Value="{Binding LogFileMaxCount}"/>
 
@@ -231,25 +204,16 @@
                                 IsIconVisible="False"
                                 IsOpen="True">
                         <DockPanel Margin="0,10,10,10">
-                            <StackPanel VerticalAlignment="Center"
-                                        DockPanel.Dock="Left"
-                                        Orientation="Horizontal">
+                            <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="FileClock"/>
-                                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Settings_Performence_LogFileFlushInterval}"/>
+                                <TextBlock Text="{DynamicResource Text_Settings_Performence_LogFileFlushInterval}"/>
                             </StackPanel>
 
                             <TextBlock Margin="10,0,0,0"
                                        VerticalAlignment="Center"
                                        DockPanel.Dock="Right"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
                                        Text="{DynamicResource Text_Public_Second}"/>
-                            <ui:NumberBox DockPanel.Dock="Right"
-                                          FontFamily="{StaticResource SourceHanSans}"
-                                          FontWeight="Bold"
-                                          IsEnabled="True"
+                            <ui:NumberBox Classes="Enabled"
                                           SpinButtonPlacementMode="Compact"
                                           Value="{Binding LogFileFlushInterval}"/>
 
@@ -262,13 +226,9 @@
                                 IsIconVisible="False"
                                 IsOpen="True">
                         <DockPanel Margin="0,10,10,10">
-                            <StackPanel VerticalAlignment="Center"
-                                        DockPanel.Dock="Left"
-                                        Orientation="Horizontal">
+                            <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="FileDocument"/>
-                                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Settings_Performence_LogFileLevel}"/>
+                                <TextBlock Text="{DynamicResource Text_Settings_Performence_LogFileLevel}"/>
                             </StackPanel>
 
                             <ComboBox VerticalContentAlignment="Center"
@@ -280,9 +240,7 @@
                                       SelectedItem="{Binding CurrentLogLevel}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
-                                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                                   FontWeight="Bold"
-                                                   Text="{Binding LogLevelDisplayName}"/>
+                                        <TextBlock Text="{Binding LogLevelDisplayName}"/>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
@@ -300,19 +258,14 @@
                         IsIconVisible="False"
                         IsOpen="True">
                 <DockPanel Margin="0,10,10,10">
-                    <StackPanel VerticalAlignment="Center"
-                                DockPanel.Dock="Left"
-                                Orientation="Horizontal">
+                    <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="DirectionsFork"/>
                         <TextBlock FontFamily="{StaticResource SourceHanSans}"
                                    FontWeight="Bold"
                                    Text="{DynamicResource Text_Settings_Performence_CheckerPerThreadFilesCountLimit}"/>
                     </StackPanel>
 
-                    <ui:NumberBox DockPanel.Dock="Right"
-                                  FontFamily="{StaticResource SourceHanSans}"
-                                  FontWeight="Bold"
-                                  IsEnabled="True"
+                    <ui:NumberBox Classes="Enabled"
                                   Maximum="100"
                                   Minimum="1"
                                   SpinButtonPlacementMode="Compact"
