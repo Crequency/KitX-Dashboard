@@ -290,6 +290,8 @@ namespace KitX_Dashboard
         /// </summary>
         public static void Exit()
         {
+            Log.CloseAndFlush();
+
             Program.WebManager?.Stop();
             Program.WebManager?.Dispose();
 
