@@ -13,6 +13,8 @@
     <x:String x:Key="Text_Public_Exit">退出</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">显示主窗口</x:String>
     <x:String x:Key="Text_Public_Second">秒</x:String>
+    <x:String x:Key="Text_Public_Minute">分钟</x:String>
+    <x:String x:Key="Text_Public_Hour">小时</x:String>
     <x:String x:Key="Text_Public_Tip">提示</x:String>
     <x:String x:Key="Text_Public_Delete">删除</x:String>
     <x:String x:Key="Text_Public_Replace">替换</x:String>

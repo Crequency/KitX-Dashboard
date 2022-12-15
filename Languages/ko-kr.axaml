@@ -13,6 +13,8 @@
     <x:String x:Key="Text_Public_Exit">그만두다</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">메인 창 표시</x:String>
     <x:String x:Key="Text_Public_Second">초</x:String>
+    <x:String x:Key="Text_Public_Minute">분</x:String>
+    <x:String x:Key="Text_Public_Hour">시</x:String>
     <x:String x:Key="Text_Public_Tip">힌트</x:String>
     <x:String x:Key="Text_Public_Delete">삭제</x:String>
     <x:String x:Key="Text_Public_Replace">바꾸다</x:String>

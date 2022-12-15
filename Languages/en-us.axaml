@@ -13,6 +13,8 @@
     <x:String x:Key="Text_Public_Exit">Exit</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">Show Main Window</x:String>
     <x:String x:Key="Text_Public_Second">s</x:String>
+    <x:String x:Key="Text_Public_Minute">minute</x:String>
+    <x:String x:Key="Text_Public_Hour">hour</x:String>
     <x:String x:Key="Text_Public_Tip">Tip</x:String>
     <x:String x:Key="Text_Public_Delete">Delete</x:String>
     <x:String x:Key="Text_Public_Replace">Replace</x:String>

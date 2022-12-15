@@ -13,6 +13,8 @@
     <x:String x:Key="Text_Public_Exit">покидать</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">Показать главное окно</x:String>
     <x:String x:Key="Text_Public_Second">второй</x:String>
+    <x:String x:Key="Text_Public_Minute">минута</x:String>
+    <x:String x:Key="Text_Public_Hour">Час</x:String>
     <x:String x:Key="Text_Public_Tip">намекать</x:String>
     <x:String x:Key="Text_Public_Delete">Удалить</x:String>
     <x:String x:Key="Text_Public_Replace">заменять</x:String>
