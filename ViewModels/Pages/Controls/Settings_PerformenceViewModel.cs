@@ -1,12 +1,16 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using Common.BasicHelper.IO;
+using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Models;
 using KitX_Dashboard.Services;
 using Serilog;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Threading;
 
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
 
@@ -18,6 +22,8 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         internal Settings_PerformenceViewModel()
         {
             InitEvents();
+
+            InitCommands();
         }
 
         private void InitEvents()
@@ -50,6 +56,12 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
             {
                 PropertyChanged?.Invoke(this, new(nameof(DevicesServerPort)));
             };
+        }
+
+        private void InitCommands()
+        {
+            EmptyLogsCommand = new(EmptyLogs);
+            RefreshLogsUsageCommand = new(RefreshLogsUsage);
         }
 
         /// <summary>
@@ -109,6 +121,13 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 SaveChanges();
             }
         }
+
+        /// <summary>
+        /// 日志文件空间占用
+        /// 单位, MB
+        /// </summary>
+        internal static int LogFileSizeUsage => (int)(DirectoryHelper.GetDirectorySize
+            (Path.GetFullPath(Program.Config.Log.LogFilePath)) / 1000 / 1024);
 
         /// <summary>
         /// 单个文件体积限制上限
@@ -242,6 +261,46 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 }
             }
         }
+
+        /// <summary>
+        /// 清空日志命令
+        /// </summary>
+        internal DelegateCommand? EmptyLogsCommand { get; set; }
+
+        /// <summary>
+        /// 刷新日志占用命令
+        /// </summary>
+        internal DelegateCommand? RefreshLogsUsageCommand { get; set; }
+
+        private void EmptyLogs(object obj)
+        {
+            try
+            {
+                new Thread(() =>
+                {
+                    DirectoryInfo dir = new(Path.GetFullPath(Program.Config.Log.LogFilePath));
+                    foreach (var file in dir.GetFiles())
+                    {
+                        try
+                        {
+                            File.Delete(file.FullName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, $"In Settings_Performence.EmptyLogs(): {ex.Message}");
+                        }
+                    }
+                    PropertyChanged?.Invoke(this, new(nameof(LogFileSizeUsage)));
+                }).Start();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"In Settings_Performence.EmptyLogs(): {ex.Message}");
+            }
+        }
+
+        private void RefreshLogsUsage(object obj) =>
+            PropertyChanged?.Invoke(this, new(nameof(LogFileSizeUsage)));
 
         public new event PropertyChangedEventHandler? PropertyChanged;
     }

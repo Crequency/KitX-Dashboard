@@ -21,6 +21,8 @@
     <x:String x:Key="Text_Public_Task">Tâche</x:String>
     <x:String x:Key="Text_Public_Size">Taille</x:String>
     <x:String x:Key="Text_Public_Developing">En développement</x:String>
+    <x:String x:Key="Text_Public_Empty">vide</x:String>
+    <x:String x:Key="Text_Public_Refresh">rafraîchir</x:String>
     <x:String x:Key="Text_Log_Verbose">détaillé</x:String>
     <x:String x:Key="Text_Log_Debug">débogage</x:String>
     <x:String x:Key="Text_Log_Information">informations</x:String>
@@ -111,6 +113,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Règles de filtrage IP natives</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Mise à jour du message d'accueil retardée</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Paramètres liés au fichier journal</x:String>
+    <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">Le fichier journal a pris de la place</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSize">Limite de taille du fichier journal</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">limite du fichier journal</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">Délai du cache du fichier journal</x:String>

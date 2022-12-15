@@ -21,6 +21,8 @@
     <x:String x:Key="Text_Public_Task">Task</x:String>
     <x:String x:Key="Text_Public_Size">Size</x:String>
     <x:String x:Key="Text_Public_Developing">Developing ...</x:String>
+    <x:String x:Key="Text_Public_Empty">Empty</x:String>
+    <x:String x:Key="Text_Public_Refresh">Refresh</x:String>
     <x:String x:Key="Text_Log_Verbose">Verbose</x:String>
     <x:String x:Key="Text_Log_Debug">Debug</x:String>
     <x:String x:Key="Text_Log_Information">Infomation</x:String>
@@ -111,6 +113,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Native IP Filter</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Greeting Text Update Interval</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Log File Relative Settings</x:String>
+    <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">The log file has taken up space</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSize">Log File Max Size</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">Log File Max Count</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">Log File Flush Interval</x:String>

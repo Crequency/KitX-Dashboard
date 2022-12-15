@@ -21,6 +21,8 @@
     <x:String x:Key="Text_Public_Task">仕事</x:String>
     <x:String x:Key="Text_Public_Size">サイズ</x:String>
     <x:String x:Key="Text_Public_Developing">開発中</x:String>
+    <x:String x:Key="Text_Public_Empty">空の</x:String>
+    <x:String x:Key="Text_Public_Refresh">リフレッシュする</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">情報</x:String>
@@ -111,6 +113,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">ネイティブ IP フィルタリング ルール</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">あいさつ更新が遅れる</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">ログファイル関連の設定</x:String>
+    <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">ログファイルがスペースを占有しています</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSize">ログ ファイルのサイズ制限</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">ログ ファイルの制限</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">ログ ファイル キャッシュの遅延</x:String>

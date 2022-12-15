@@ -21,6 +21,8 @@
     <x:String x:Key="Text_Public_Task">任务</x:String>
     <x:String x:Key="Text_Public_Size">大小</x:String>
     <x:String x:Key="Text_Public_Developing">该部分正在开发中</x:String>
+    <x:String x:Key="Text_Public_Empty">清空</x:String>
+    <x:String x:Key="Text_Public_Refresh">刷新</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">信息</x:String>
@@ -111,6 +113,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">本机IP过滤规则</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">招呼语更新延迟</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">日志文件相关设置</x:String>
+    <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">日志文件已占用空间</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSize">日志文件体积限制</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">日志文件数量限制</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">日志文件缓存延时</x:String>

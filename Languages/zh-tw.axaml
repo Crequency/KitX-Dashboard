@@ -21,6 +21,8 @@
     <x:String x:Key="Text_Public_Task">任務</x:String>
     <x:String x:Key="Text_Public_Size">大小</x:String>
     <x:String x:Key="Text_Public_Developing">該部分正在開發中</x:String>
+    <x:String x:Key="Text_Public_Empty">清空</x:String>
+    <x:String x:Key="Text_Public_Refresh">刷新</x:String>
     <x:String x:Key="Text_Log_Verbose">詳細</x:String>
     <x:String x:Key="Text_Log_Debug">調試</x:String>
     <x:String x:Key="Text_Log_Information">信息</x:String>
@@ -111,11 +113,12 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">本機IP過濾器</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">招呼語更新延遲</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">日志文檔相關設定</x:String>
+    <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">日誌文件已佔用空間</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSize">日志文檔大小限制</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">日志文檔數量限制</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">日志文檔緩衝延時</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileLevel">日志級別</x:String>
-    <x:String x:Key="Text_Settings_Performence_CheckerThreadCountLimit">更新檢查每綫程處理文件數量</x:String>
+    <x:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">更新檢查每綫程處理文件數量</x:String>
     <x:String x:Key="Text_Settings_Update">更新</x:String>
     <x:String x:Key="Text_Settings_Update_Check">檢查更新</x:String>
     <x:String x:Key="Text_Settings_Update_ComponentName">組件名稱</x:String>

@@ -21,6 +21,8 @@
     <x:String x:Key="Text_Public_Task">Задача</x:String>
     <x:String x:Key="Text_Public_Size">размер</x:String>
     <x:String x:Key="Text_Public_Developing">В развитие</x:String>
+    <x:String x:Key="Text_Public_Empty">пустой</x:String>
+    <x:String x:Key="Text_Public_Refresh">обновить</x:String>
     <x:String x:Key="Text_Log_Verbose">подробный</x:String>
     <x:String x:Key="Text_Log_Debug">отладка</x:String>
     <x:String x:Key="Text_Log_Information">Информация</x:String>
@@ -111,6 +113,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Собственные правила IP-фильтрации</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Обновление приветствия отложено</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Настройки, связанные с файлом журнала</x:String>
+    <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">Файл журнала занял место</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSize">Ограничение размера файла журнала</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">лимит файла журнала</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">Задержка кеша файла журнала</x:String>
