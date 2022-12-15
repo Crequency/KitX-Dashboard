@@ -18,7 +18,17 @@
         Icon="avares://KitX.Assets/KitX-Icon-32x32.png"
         mc:Ignorable="d">
 
-    <!--  Width="{Binding DB_Width}" Height="{Binding DB_Height}"  -->
+    <Window.Styles>
+        <Style Selector="TextBlock.Normal">
+            <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="StackPanel.Item">
+            <Setter Property="Margin" Value="-3,0,0,0"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Orientation" Value="Horizontal"/>
+        </Style>
+    </Window.Styles>
 
     <Window.Resources>
         <ResourceDictionary>
@@ -50,8 +60,6 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <!--  {DynamicResource Text_MainWindow_NavigationView_Header}  -->
-
     <Grid>
 
         <ui:NavigationView x:Name="MainNavigationView"
@@ -64,14 +72,11 @@
                                        Tag="Page_Home"
                                        ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Home}">
                     <ui:NavigationViewItem.Content>
-                        <StackPanel Margin="-3,0,0,0"
-                                    HorizontalAlignment="Left"
-                                    Orientation="Horizontal">
+                        <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Home"/>
                             <TextBlock Margin="15,0,0,0"
                                        VerticalAlignment="Center"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
+                                       Classes="Normal"
                                        Text="{DynamicResource Text_MainWindow_NavigationView_Home}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
@@ -80,14 +85,11 @@
                                        Tag="Page_Lib"
                                        ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Lib}">
                     <ui:NavigationViewItem.Content>
-                        <StackPanel Margin="-3,0,0,0"
-                                    HorizontalAlignment="Left"
-                                    Orientation="Horizontal">
+                        <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Layers"/>
                             <TextBlock Margin="15,0,0,0"
                                        VerticalAlignment="Center"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
+                                       Classes="Normal"
                                        Text="{DynamicResource Text_MainWindow_NavigationView_Lib}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
@@ -96,14 +98,11 @@
                                        Tag="Page_Repo"
                                        ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Repo}">
                     <ui:NavigationViewItem.Content>
-                        <StackPanel Margin="-3,0,0,0"
-                                    HorizontalAlignment="Left"
-                                    Orientation="Horizontal">
+                        <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Folder"/>
                             <TextBlock Margin="15,0,0,0"
                                        VerticalAlignment="Center"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
+                                       Classes="Normal"
                                        Text="{DynamicResource Text_MainWindow_NavigationView_Repo}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
@@ -112,14 +111,11 @@
                                        Tag="Page_Device"
                                        ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Devices}">
                     <ui:NavigationViewItem.Content>
-                        <StackPanel Margin="-3,0,0,0"
-                                    HorizontalAlignment="Left"
-                                    Orientation="Horizontal">
+                        <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Devices"/>
                             <TextBlock Margin="15,0,0,0"
                                        VerticalAlignment="Center"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
+                                       Classes="Normal"
                                        Text="{DynamicResource Text_MainWindow_NavigationView_Devices}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
@@ -131,14 +127,11 @@
                                        Tag="Page_Market"
                                        ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Market}">
                     <ui:NavigationViewItem.Content>
-                        <StackPanel Margin="-3,0,0,0"
-                                    HorizontalAlignment="Left"
-                                    Orientation="Horizontal">
+                        <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Tag"/>
                             <TextBlock Margin="15,0,0,0"
                                        VerticalAlignment="Center"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
+                                       Classes="Normal"
                                        Text="{DynamicResource Text_MainWindow_NavigationView_Market}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
@@ -147,14 +140,11 @@
                                        Tag="Page_Account"
                                        ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Account}">
                     <ui:NavigationViewItem.Content>
-                        <StackPanel Margin="-3,0,0,0"
-                                    HorizontalAlignment="Left"
-                                    Orientation="Horizontal">
+                        <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="At"/>
                             <TextBlock Margin="15,0,0,0"
                                        VerticalAlignment="Center"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
+                                       Classes="Normal"
                                        Text="{DynamicResource Text_MainWindow_NavigationView_Account}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
@@ -163,14 +153,11 @@
                                        Tag="Page_Settings"
                                        ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Settings}">
                     <ui:NavigationViewItem.Content>
-                        <StackPanel Margin="-3,0,0,0"
-                                    HorizontalAlignment="Left"
-                                    Orientation="Horizontal">
+                        <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Settings"/>
                             <TextBlock Margin="15,0,0,0"
                                        VerticalAlignment="Center"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
+                                       Classes="Normal"
                                        Text="{DynamicResource Text_MainWindow_NavigationView_Settings}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
@@ -179,9 +166,18 @@
 
             <ui:NavigationView.PaneFooter>
                 <TextBlock Margin="20"
+                           Classes="Normal"
                            IsVisible="{Binding ElementName=MainNavigationView, Path=IsPaneOpen}"
                            Text="{DynamicResource GreetingText}"
-                           TextWrapping="Wrap"/>
+                           TextWrapping="Wrap">
+                    <TextBlock.ContextFlyout>
+                        <ui:MenuFlyout>
+                            <ui:MenuFlyoutItem Command="{Binding RefreshGreetingCommand}"
+                                               CommandParameter="{DynamicResource MainWindow}"
+                                               Text="{DynamicResource Text_Public_Refresh}"/>
+                        </ui:MenuFlyout>
+                    </TextBlock.ContextFlyout>
+                </TextBlock>
             </ui:NavigationView.PaneFooter>
 
             <ui:Frame x:Name="MainFrame" IsNavigationStackEnabled="False"/>

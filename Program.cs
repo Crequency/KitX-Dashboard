@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
+using DesktopNotifications.Avalonia;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
@@ -147,10 +148,13 @@ namespace KitX_Dashboard
         /// Avalonia 配置项, 请不要删除; 同时也用于可视化设计器
         public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
             .UsePlatformDetect().LogToTrace().UseReactiveUI()
+#if (IsBuild4WindowsPlatform == true)
+            .SetupDesktopNotifications()
+#endif
             .With(new Win32PlatformOptions
             {
                 UseWindowsUIComposition = true,
-                EnableMultitouch = true
+                EnableMultitouch = true,
             })
             .With(new MacOSPlatformOptions
             {

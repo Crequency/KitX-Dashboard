@@ -178,7 +178,7 @@ namespace KitX_Dashboard.Views
         /// <summary>
         /// 更新招呼语
         /// </summary>
-        private void UpdateGreetingText()
+        internal void UpdateGreetingText()
         {
             try
             {
