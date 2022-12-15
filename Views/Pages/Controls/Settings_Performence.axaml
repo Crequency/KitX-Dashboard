@@ -23,7 +23,7 @@
             <Setter Property="DockPanel.Dock" Value="Right"/>
             <Setter Property="IsEnabled" Value="True"/>
         </Style>
-        <Style Selector="TextBlock">
+        <Style Selector="TextBlock.Normal">
             <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
@@ -48,7 +48,7 @@
                 <DockPanel Margin="0,10,10,10">
                     <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="Lan"/>
-                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Web_PluginsServerPort}"/>
+                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_PluginsServerPort}"/>
                     </StackPanel>
 
                     <ui:NumberBox Classes="Disabled"
@@ -66,7 +66,7 @@
                 <DockPanel Margin="0,10,10,10">
                     <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="LanConnect"/>
-                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Web_DevicesServerPort}"/>
+                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_DevicesServerPort}"/>
                     </StackPanel>
 
                     <ui:NumberBox Classes="Disabled"
@@ -84,7 +84,7 @@
                 <DockPanel Margin="0,10,10,10">
                     <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="IpNetwork"/>
-                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Web_MyIP_Filter}"/>
+                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_MyIP_Filter}"/>
                     </StackPanel>
 
                     <TextBox DockPanel.Dock="Right" Text="{Binding LocalIPFilter}"/>
@@ -100,9 +100,14 @@
                 <DockPanel Margin="0,10,10,10">
                     <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="Clock"/>
-                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Greeting_Interval}"/>
+                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Greeting_Interval}"/>
                     </StackPanel>
 
+                    <TextBlock Margin="10,0,0,0"
+                               VerticalAlignment="Center"
+                               Classes="Normal"
+                               DockPanel.Dock="Right"
+                               Text="{DynamicResource Text_Public_Minute}"/>
                     <ui:NumberBox Classes="Enabled"
                                   Maximum="60"
                                   Minimum="1"
@@ -117,7 +122,7 @@
                 <Expander.Header>
                     <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                         <icon:MaterialIcon Margin="5,0" Kind="FileChart"/>
-                        <TextBlock Text="{DynamicResource Text_Settings_Performence_Log}"/>
+                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Log}"/>
                     </StackPanel>
                 </Expander.Header>
 
@@ -135,9 +140,7 @@
                         <DockPanel Margin="0,10,10,10">
                             <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="DataUsage"/>
-                                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Settings_Performence_LogFileSizeUsage}"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_LogFileSizeUsage}"/>
                             </StackPanel>
                             <Button Command="{Binding EmptyLogsCommand}"
                                     Content="{DynamicResource Text_Public_Empty}"
@@ -146,6 +149,7 @@
                                     FontWeight="Bold"/>
                             <TextBlock Margin="10,0"
                                        VerticalAlignment="Center"
+                                       Classes="Normal"
                                        DockPanel.Dock="Right"
                                        Text="MB"/>
                             <ui:NumberBox Classes="Disabled"
@@ -163,14 +167,13 @@
                         <DockPanel Margin="0,10,10,10">
                             <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="Sd"/>
-                                <TextBlock Text="{DynamicResource Text_Settings_Performence_LogFileSize}"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_LogFileSize}"/>
                             </StackPanel>
 
                             <TextBlock Margin="10,0,0,0"
                                        VerticalAlignment="Center"
+                                       Classes="Normal"
                                        DockPanel.Dock="Right"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
                                        Text="MB"/>
                             <ui:NumberBox Classes="Enabled"
                                           Minimum="1"
@@ -188,7 +191,7 @@
                         <DockPanel Margin="0,10,10,10">
                             <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="FileMultiple"/>
-                                <TextBlock Text="{DynamicResource Text_Settings_Performence_LogFileMaxCount}"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_LogFileMaxCount}"/>
                             </StackPanel>
 
                             <ui:NumberBox Classes="Enabled"
@@ -206,11 +209,12 @@
                         <DockPanel Margin="0,10,10,10">
                             <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="FileClock"/>
-                                <TextBlock Text="{DynamicResource Text_Settings_Performence_LogFileFlushInterval}"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_LogFileFlushInterval}"/>
                             </StackPanel>
 
                             <TextBlock Margin="10,0,0,0"
                                        VerticalAlignment="Center"
+                                       Classes="Normal"
                                        DockPanel.Dock="Right"
                                        Text="{DynamicResource Text_Public_Second}"/>
                             <ui:NumberBox Classes="Enabled"
@@ -228,7 +232,7 @@
                         <DockPanel Margin="0,10,10,10">
                             <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="FileDocument"/>
-                                <TextBlock Text="{DynamicResource Text_Settings_Performence_LogFileLevel}"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_LogFileLevel}"/>
                             </StackPanel>
 
                             <ComboBox VerticalContentAlignment="Center"
@@ -240,7 +244,7 @@
                                       SelectedItem="{Binding CurrentLogLevel}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding LogLevelDisplayName}"/>
+                                        <TextBlock Classes="Normal" Text="{Binding LogLevelDisplayName}"/>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
@@ -260,9 +264,7 @@
                 <DockPanel Margin="0,10,10,10">
                     <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="DirectionsFork"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_Performence_CheckerPerThreadFilesCountLimit}"/>
+                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_CheckerPerThreadFilesCountLimit}"/>
                     </StackPanel>
 
                     <ui:NumberBox Classes="Enabled"
