@@ -1,6 +1,8 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
+#if (IsBuild4WindowsPlatform == true)
 using DesktopNotifications.Avalonia;
+#endif
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
