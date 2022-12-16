@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <IsBuild4WindowsPlatform>True</IsBuild4WindowsPlatform>
+        <IsBuild4WindowsPlatform>False</IsBuild4WindowsPlatform>
         <TargetFramework Condition="$(IsBuild4WindowsPlatform) == 'False'">net6.0</TargetFramework>
         <TargetFramework Condition="$(IsBuild4WindowsPlatform) == 'True'">net6.0-windows10.0.17763.0</TargetFramework>
         <Nullable>enable</Nullable>
@@ -64,7 +64,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="Assets\KitX-Icon-256x256.ico" />
+        <None Remove="Assets\KitX-Icon-256x256.ico" />
     </ItemGroup>
     <ItemGroup>
         <Content Include="Languages\en-us.axaml">
@@ -128,14 +128,14 @@
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="0.10.18" />
         <PackageReference Include="Avalonia.Desktop" Version="0.10.18" />
-        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="0.10.18" />
+        <PackageReference Include="Avalonia.Diagnostics" Version="0.10.18" Condition="'$(Configuration)' == 'Debug'" />
         <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="0.10.18" />
         <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.18" />
         <PackageReference Include="Common.BasicHelper" Version="1.1.6360.850" />
         <PackageReference Include="Common.Activity" Version="1.0.6346.961" />
         <PackageReference Include="Common.Algorithm.Interop" Version="1.1.6345.985" />
         <PackageReference Include="Common.Update.Checker" Version="1.0.1.3" />
-        <PackageReference Include="DesktopNotifications.Avalonia" Version="1.2.0" />
+        <PackageReference Include="DesktopNotifications.Avalonia" Version="1.2.0" Condition="$(IsBuild4WindowsPlatform) == 'True'" />
         <PackageReference Include="FluentAvaloniaUI" Version="1.4.5" />
         <PackageReference Include="KitX.KXP.Helper" Version="22.4.6351.975" />
         <PackageReference Include="KitX.Web.Rules" Version="22.4.6351.974" />
