@@ -22,6 +22,8 @@
         <Style Selector="TextBlock.Normal">
             <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
             <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="15,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style Selector="StackPanel.Item">
             <Setter Property="Margin" Value="-3,0,0,0"/>
@@ -74,10 +76,7 @@
                     <ui:NavigationViewItem.Content>
                         <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Home"/>
-                            <TextBlock Margin="15,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Classes="Normal"
-                                       Text="{DynamicResource Text_MainWindow_NavigationView_Home}"/>
+                            <TextBlock Classes="Normal" Text="{DynamicResource Text_MainWindow_NavigationView_Home}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
                 </ui:NavigationViewItem>
@@ -87,10 +86,7 @@
                     <ui:NavigationViewItem.Content>
                         <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Layers"/>
-                            <TextBlock Margin="15,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Classes="Normal"
-                                       Text="{DynamicResource Text_MainWindow_NavigationView_Lib}"/>
+                            <TextBlock Classes="Normal" Text="{DynamicResource Text_MainWindow_NavigationView_Lib}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
                 </ui:NavigationViewItem>
@@ -100,10 +96,7 @@
                     <ui:NavigationViewItem.Content>
                         <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Folder"/>
-                            <TextBlock Margin="15,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Classes="Normal"
-                                       Text="{DynamicResource Text_MainWindow_NavigationView_Repo}"/>
+                            <TextBlock Classes="Normal" Text="{DynamicResource Text_MainWindow_NavigationView_Repo}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
                 </ui:NavigationViewItem>
@@ -113,10 +106,7 @@
                     <ui:NavigationViewItem.Content>
                         <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Devices"/>
-                            <TextBlock Margin="15,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Classes="Normal"
-                                       Text="{DynamicResource Text_MainWindow_NavigationView_Devices}"/>
+                            <TextBlock Classes="Normal" Text="{DynamicResource Text_MainWindow_NavigationView_Devices}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
                 </ui:NavigationViewItem>
@@ -129,10 +119,7 @@
                     <ui:NavigationViewItem.Content>
                         <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Tag"/>
-                            <TextBlock Margin="15,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Classes="Normal"
-                                       Text="{DynamicResource Text_MainWindow_NavigationView_Market}"/>
+                            <TextBlock Classes="Normal" Text="{DynamicResource Text_MainWindow_NavigationView_Market}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
                 </ui:NavigationViewItem>
@@ -142,10 +129,7 @@
                     <ui:NavigationViewItem.Content>
                         <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="At"/>
-                            <TextBlock Margin="15,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Classes="Normal"
-                                       Text="{DynamicResource Text_MainWindow_NavigationView_Account}"/>
+                            <TextBlock Classes="Normal" Text="{DynamicResource Text_MainWindow_NavigationView_Account}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
                 </ui:NavigationViewItem>
@@ -155,10 +139,7 @@
                     <ui:NavigationViewItem.Content>
                         <StackPanel Classes="Item">
                             <icon:MaterialIcon VerticalAlignment="Center" Kind="Settings"/>
-                            <TextBlock Margin="15,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Classes="Normal"
-                                       Text="{DynamicResource Text_MainWindow_NavigationView_Settings}"/>
+                            <TextBlock Classes="Normal" Text="{DynamicResource Text_MainWindow_NavigationView_Settings}"/>
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
                 </ui:NavigationViewItem>
