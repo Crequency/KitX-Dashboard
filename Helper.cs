@@ -307,12 +307,12 @@ namespace KitX_Dashboard
         public static void InitEnvironment()
         {
             #region 检查 Common.Algorithm 库环境并安装环境
-            if (!Algorithm.Interop.Environment.CheckEnvironment())
+            if (!Common.Algorithm.Interop.Environment.CheckEnvironment())
                 new Thread(() =>
                 {
                     try
                     {
-                        Algorithm.Interop.Environment.InstallEnvironment();
+                        Common.Algorithm.Interop.Environment.InstallEnvironment();
                     }
                     catch (Exception ex)
                     {
