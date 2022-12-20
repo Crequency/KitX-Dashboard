@@ -97,6 +97,7 @@
     <x:String x:Key="Text_Settings_General_DeveloperSetting">option de développeur</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncement">Afficher l'annonce au démarrage</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncementNow">Voir les dernières annonces</x:String>
+    <x:String x:Key="Text_Settings_General_OpenDebugTool">Ouvrir le débogueur</x:String>
     <x:String x:Key="Text_Settings_Personalise">personnaliser</x:String>
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">langue d'affichage</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">Effet mica</x:String>

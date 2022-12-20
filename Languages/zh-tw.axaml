@@ -97,6 +97,7 @@
     <x:String x:Key="Text_Settings_General_DeveloperSetting">開發者設定</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncement">啓動時顯示公告</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncementNow">查看新公告</x:String>
+    <x:String x:Key="Text_Settings_General_OpenDebugTool">打開調試工具</x:String>
     <x:String x:Key="Text_Settings_Personalise">個性化</x:String>
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">顯示語言</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">雲母效果</x:String>

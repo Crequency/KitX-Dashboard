@@ -97,6 +97,7 @@
     <x:String x:Key="Text_Settings_General_DeveloperSetting">開発者向けオプション</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncement">起動時にアナウンスを表示</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncementNow">最新のお知らせを見る</x:String>
+    <x:String x:Key="Text_Settings_General_OpenDebugTool">デバッガーを開く</x:String>
     <x:String x:Key="Text_Settings_Personalise">パーソナライズ</x:String>
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">表示言語</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">Mica 効果</x:String>

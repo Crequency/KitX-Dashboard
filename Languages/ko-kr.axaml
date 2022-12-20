@@ -97,6 +97,7 @@
     <x:String x:Key="Text_Settings_General_DeveloperSetting">개발자 옵션</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncement">시작 시 알림 표시</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncementNow">최신 공지사항 보기</x:String>
+    <x:String x:Key="Text_Settings_General_OpenDebugTool">디버거 열기</x:String>
     <x:String x:Key="Text_Settings_Personalise">개인화</x:String>
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">표시 언어</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">운모 효과</x:String>
