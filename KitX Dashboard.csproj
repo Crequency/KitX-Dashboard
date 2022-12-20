@@ -10,9 +10,9 @@
         <ApplicationIcon>Assets\KitX-Icon-256x.ico</ApplicationIcon>
         <BaseOutputPath>..\KitX Build\Dashboard\</BaseOutputPath>
         <BaseIntermediateOutputPath>..\KitX Build\Temp\Dashboard\</BaseIntermediateOutputPath>
-        <AssemblyVersion>3.22.04.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2005-07-16"))).TotalDays)</AssemblyVersion>
-        <FileVersion>3.22.04.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2005-07-16"))).TotalDays)</FileVersion>
-        <Version>3.22.04.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2005-07-16"))).TotalDays)</Version>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+        <FileVersion>$(Version)</FileVersion>
+        <Version>3.22.10.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2005-06-06"))).TotalDays)</Version>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(IsBuild4WindowsPlatform) == 'True'">
@@ -155,5 +155,6 @@
         <ProjectReference Include="..\KitX Dashboard Helper\KitX.Fonts\KitX.Fonts.csproj" />
         <ProjectReference Include="..\KitX File Format Helper\KitX.KXP.Helper\KitX.KXP.Helper.csproj" />
         <ProjectReference Include="..\KitX Rules\KitX.Web.Rules\KitX.Web.Rules.csproj" />
+        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole.Console\Common.ExternalConsole.Console.csproj" />
     </ItemGroup>
 </Project>
