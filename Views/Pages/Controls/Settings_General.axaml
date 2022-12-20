@@ -121,6 +121,14 @@
                         <ComboBoxItem Content="{DynamicResource Text_Public_Disable}"/>
                     </ComboBox>
 
+                    <Button Margin="0,0,10,0"
+                            Command="{Binding OpenDebugToolCommand}"
+                            Content="{DynamicResource Text_Settings_General_OpenDebugTool}"
+                            DockPanel.Dock="Right"
+                            FontFamily="{StaticResource SourceHanSans}"
+                            FontWeight="Bold"
+                            IsVisible="{Binding DeveloperSettingEnabled}"/>
+
                     <Border/>
                 </DockPanel>
             </ui:InfoBar>

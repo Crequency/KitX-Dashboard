@@ -1,4 +1,5 @@
-﻿using KitX_Dashboard.Commands;
+﻿using Common.ExternalConsole;
+using KitX_Dashboard.Commands;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;
@@ -10,9 +11,14 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
     internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     {
 
+        private static Manager _manager = new();
+        private static int _consolesCount = 0;
+
         internal Settings_GeneralViewModel()
         {
             InitCommands();
+
+            InitEvents();
         }
 
         /// <summary>
@@ -21,8 +27,18 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         private void InitCommands()
         {
             ShowAnnouncementsNowCommand = new(ShowAnnouncementsNow);
+            OpenDebugToolCommand = new(OpenDebugTool);
         }
 
+        /// <summary>
+        /// 初始化事件
+        /// </summary>
+        private void InitEvents()
+        {
+            EventHandlers.DevelopSettingsChanged +=
+                () => PropertyChanged?.Invoke(this, new(nameof(DeveloperSettingEnabled)));
+        }
+        
         /// <summary>
         /// 保存变更
         /// </summary>
@@ -71,6 +87,14 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         }
 
         /// <summary>
+        /// 是否启用了开发者设置
+        /// </summary>
+        internal static bool DeveloperSettingEnabled
+        {
+            get => Program.Config.App.DeveloperSetting;
+        }
+
+        /// <summary>
         /// 开发者设置项
         /// </summary>
         internal static int DeveloperSettingStatus
@@ -89,6 +113,11 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         /// </summary>
         internal DelegateCommand? ShowAnnouncementsNowCommand { get; set; }
 
+        /// <summary>
+        /// 打开调试工具命令
+        /// </summary>
+        internal DelegateCommand? OpenDebugToolCommand { get; set; }
+
         private void ShowAnnouncementsNow(object _)
         {
             new Thread(async () =>
@@ -102,6 +131,14 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                     Log.Error("辣鸡公告系统又双叒叕崩了!", ex);
                 }
             }).Start();
+        }
+
+        private void OpenDebugTool(object _)
+        {
+            ++_consolesCount;
+            var console = _manager.Register($"KitX_{_consolesCount}");
+            console.Start();
+            
         }
 
         public new event PropertyChangedEventHandler? PropertyChanged;

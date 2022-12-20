@@ -16,8 +16,6 @@ namespace KitX_Dashboard
 {
     internal class Program
     {
-        //internal static LoggerManager LocalLogger = new();
-
         internal static AppConfig Config = new();
 
         internal static WebManager? WebManager;
