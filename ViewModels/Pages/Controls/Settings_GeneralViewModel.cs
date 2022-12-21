@@ -4,6 +4,8 @@ using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Threading;
 
 namespace KitX_Dashboard.ViewModels.Pages.Controls
@@ -38,7 +40,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
             EventHandlers.DevelopSettingsChanged +=
                 () => PropertyChanged?.Invoke(this, new(nameof(DeveloperSettingEnabled)));
         }
-        
+
         /// <summary>
         /// 保存变更
         /// </summary>
@@ -136,9 +138,46 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         private void OpenDebugTool(object _)
         {
             ++_consolesCount;
-            var console = _manager.Register($"KitX_{_consolesCount}");
-            console.Start();
-            
+            var name = $"KitX_DebugTool_{_consolesCount}";
+            var console = _manager.Register(name);
+            try
+            {
+                console.Start();
+
+                ProcessStartInfo psi = new()
+                {
+                    FileName = Path.GetFullPath($"./Common.ExternalConsole.Console" +
+                        $"{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
+                    Arguments = $"--connect CommonExternalConsole{name}",
+                    CreateNoWindow = false,
+                    UseShellExecute = true,
+                };
+                Process.Start(psi);
+
+                //  Receive Thread
+                new Thread(() =>
+                {
+                    try
+                    {
+                        while (true)
+                        {
+                            var remote = console.ReadLine();
+                            if (remote is null) continue;
+                            var result = DebugService.ExecuteCommand(remote);
+                            console.WriteLine(result ?? "No this command.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, $"In OpenDebugTool(_): Receive Thread: {ex.Message}");
+                    }
+                }).Start();
+            }
+            catch (Exception ex)
+            {
+                console.Dispose();
+                Log.Error(ex, $"In OpenDebugTool(_): {ex.Message}");
+            }
         }
 
         public new event PropertyChangedEventHandler? PropertyChanged;
