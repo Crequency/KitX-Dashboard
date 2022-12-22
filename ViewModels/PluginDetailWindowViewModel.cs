@@ -1,28 +1,39 @@
-﻿using Avalonia.Controls;
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using FluentAvalonia.Styling;
 using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Services;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace KitX_Dashboard.ViewModels
 {
-    internal class PluginDetailWindowViewModel : ViewModelBase
+    internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChanged
     {
         public PluginDetailWindowViewModel()
         {
             InitCommands();
+
+            InitEvents();
         }
 
         internal void InitCommands()
         {
             FinishCommand = new(Finish);
+        }
+
+        internal void InitEvents()
+        {
+            EventHandlers.ThemeConfigChanged +=
+                () => PropertyChanged?.Invoke(this, new(nameof(ViewModels.PluginDetailWindowViewModel.TintColor)));
         }
 
         internal PluginStruct? PluginDetail { get; set; }
@@ -105,6 +116,19 @@ namespace KitX_Dashboard.ViewModels
 
         internal string? LastUpdateDate => PluginDetail?.LastUpdateDate.ToString("yyyy.MM.dd");
 
+        internal static Color TintColor => Program.Config.App.Theme switch
+        {
+            "Light" => Colors.WhiteSmoke,
+            "Dark" => Colors.Black,
+            "Follow" => AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme switch
+            {
+                "Light" => Colors.WhiteSmoke,
+                "Dark" => Colors.Black,
+                _ => Color.Parse(Program.Config.App.ThemeColor)
+            },
+            _ => Color.Parse(Program.Config.App.ThemeColor),
+        };
+
         private readonly ObservableCollection<string> functions = new();
 
         private readonly ObservableCollection<string> tags = new();
@@ -141,11 +165,11 @@ namespace KitX_Dashboard.ViewModels
                 {
                     StringBuilder sb = new();
                     sb.Append(func.ReturnValueType);
-                    sb.Append(" ");
+                    sb.Append(' ');
                     if (func.DisplayNames.ContainsKey(langKey))
                         sb.Append(func.DisplayNames[langKey]);
                     else sb.Append(func.Name);
-                    sb.Append("(");
+                    sb.Append('(');
                     if (func.Parameters.Count != func.ParametersType.Count)
                         throw new InvalidDataException("Parameters return type count " +
                             "didn't match parameters count.");
@@ -154,14 +178,14 @@ namespace KitX_Dashboard.ViewModels
                     {
                         sb.Append(func.ParametersType[index]);
                         ++index;
-                        sb.Append(" ");
+                        sb.Append(' ');
                         if (param.Value.ContainsKey(langKey))
                             sb.Append(param.Value[langKey]);
                         else sb.Append(param.Key);
                         if (index != func.Parameters.Count)
                             sb.Append(", ");
                     }
-                    sb.Append(")");
+                    sb.Append(')');
                     Functions.Add(sb.ToString());
                 }
                 foreach (var tag in PluginDetail.Value.Tags)
@@ -179,5 +203,7 @@ namespace KitX_Dashboard.ViewModels
         {
             (parent as Window)?.Close();
         }
+
+        public new event PropertyChangedEventHandler? PropertyChanged;
     }
 }

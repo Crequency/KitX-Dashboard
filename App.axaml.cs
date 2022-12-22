@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading;
 
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
+#pragma warning disable CA2211 // Non-constant fields should not be visible
 
 namespace KitX_Dashboard
 {
@@ -146,7 +147,7 @@ namespace KitX_Dashboard
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("In AnouncementManager.CheckNewAccnouncements()", ex);
+                        Log.Error(ex, "In AnouncementManager.CheckNewAccnouncements()");
                     }
                 }).Start();
 
@@ -158,6 +159,7 @@ namespace KitX_Dashboard
     }
 }
 
+#pragma warning restore CA2211 // Non-constant fields should not be visible
 #pragma warning restore CS8604 // 引用类型参数可能为 null。
 
 //                                         .....'',;;::cccllllllllllllcccc:::;;,,,''...'',,'..

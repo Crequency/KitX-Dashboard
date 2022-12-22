@@ -13,6 +13,8 @@
     <x:String x:Key="Text_Public_Exit">退出</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">显示主窗口</x:String>
     <x:String x:Key="Text_Public_Second">秒</x:String>
+    <x:String x:Key="Text_Public_Minute">分钟</x:String>
+    <x:String x:Key="Text_Public_Hour">小时</x:String>
     <x:String x:Key="Text_Public_Tip">提示</x:String>
     <x:String x:Key="Text_Public_Delete">删除</x:String>
     <x:String x:Key="Text_Public_Replace">替换</x:String>
@@ -21,6 +23,8 @@
     <x:String x:Key="Text_Public_Task">任务</x:String>
     <x:String x:Key="Text_Public_Size">大小</x:String>
     <x:String x:Key="Text_Public_Developing">该部分正在开发中</x:String>
+    <x:String x:Key="Text_Public_Empty">清空</x:String>
+    <x:String x:Key="Text_Public_Refresh">刷新</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">信息</x:String>
@@ -93,6 +97,7 @@
     <x:String x:Key="Text_Settings_General_DeveloperSetting">开发者选项</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncement">启动时显示公告</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncementNow">查看最新公告</x:String>
+    <x:String x:Key="Text_Settings_General_OpenDebugTool">打开调试工具</x:String>
     <x:String x:Key="Text_Settings_Personalise">个性化</x:String>
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">显示语言</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">云母效果</x:String>
@@ -111,6 +116,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">本机IP过滤规则</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">招呼语更新延迟</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">日志文件相关设置</x:String>
+    <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">日志文件已占用空间</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSize">日志文件体积限制</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">日志文件数量限制</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">日志文件缓存延时</x:String>

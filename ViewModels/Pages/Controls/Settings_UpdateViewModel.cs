@@ -35,8 +35,6 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
             InitEvents();
 
             InitCommands();
-
-            InitData();
         }
 
         /// <summary>
@@ -60,14 +58,6 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         internal void InitCommands()
         {
             CheckUpdateCommand = new(CheckUpdate);
-        }
-
-        /// <summary>
-        /// 初始化数据
-        /// </summary>
-        internal void InitData()
-        {
-
         }
 
         internal int canUpdateCount = 0;

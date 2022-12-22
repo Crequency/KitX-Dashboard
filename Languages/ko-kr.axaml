@@ -13,6 +13,8 @@
     <x:String x:Key="Text_Public_Exit">그만두다</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">메인 창 표시</x:String>
     <x:String x:Key="Text_Public_Second">초</x:String>
+    <x:String x:Key="Text_Public_Minute">분</x:String>
+    <x:String x:Key="Text_Public_Hour">시</x:String>
     <x:String x:Key="Text_Public_Tip">힌트</x:String>
     <x:String x:Key="Text_Public_Delete">삭제</x:String>
     <x:String x:Key="Text_Public_Replace">바꾸다</x:String>
@@ -21,6 +23,8 @@
     <x:String x:Key="Text_Public_Task">일</x:String>
     <x:String x:Key="Text_Public_Size">크기</x:String>
     <x:String x:Key="Text_Public_Developing">개발 중</x:String>
+    <x:String x:Key="Text_Public_Empty">비어 있는</x:String>
+    <x:String x:Key="Text_Public_Refresh">새로 고침</x:String>
     <x:String x:Key="Text_Log_Verbose">상세한</x:String>
     <x:String x:Key="Text_Log_Debug">디버깅</x:String>
     <x:String x:Key="Text_Log_Information">정보</x:String>
@@ -93,6 +97,7 @@
     <x:String x:Key="Text_Settings_General_DeveloperSetting">개발자 옵션</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncement">시작 시 알림 표시</x:String>
     <x:String x:Key="Text_Settings_General_ShowAnnouncementNow">최신 공지사항 보기</x:String>
+    <x:String x:Key="Text_Settings_General_OpenDebugTool">디버거 열기</x:String>
     <x:String x:Key="Text_Settings_Personalise">개인화</x:String>
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">표시 언어</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">운모 효과</x:String>
@@ -111,6 +116,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">기본 IP 필터링 규칙</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">인사말 업데이트가 지연되었습니다.</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">로그 파일 관련 설정</x:String>
+    <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">로그 파일이 공간을 차지했습니다.</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSize">로그 파일 크기 제한</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">로그 파일 제한</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">로그 파일 캐시 지연</x:String>

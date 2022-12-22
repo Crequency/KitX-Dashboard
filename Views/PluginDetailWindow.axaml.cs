@@ -1,7 +1,7 @@
 ﻿using Avalonia.Controls;
+using Common.BasicHelper.UI.Screen;
 using KitX.Web.Rules;
 using KitX_Dashboard.ViewModels;
-using Common.BasicHelper.UI.Screen;
 
 namespace KitX_Dashboard.Views
 {

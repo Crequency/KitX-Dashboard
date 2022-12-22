@@ -1,8 +1,14 @@
 ﻿using Avalonia.Controls;
+#if (IsBuild4WindowsPlatform == true)
+using Avalonia;
+using DesktopNotifications;
+using System.IO;
+#endif
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
+using Serilog;
 using System;
 using System.Threading;
 
@@ -10,6 +16,11 @@ namespace KitX_Dashboard.ViewModels
 {
     internal class MainWindowViewModel : ViewModelBase
     {
+
+#if (IsBuild4WindowsPlatform == true)
+        private static bool _firstTime2RefreshGreeting = true;
+#endif
+
         public MainWindowViewModel()
         {
             InitCommands();
@@ -19,11 +30,14 @@ namespace KitX_Dashboard.ViewModels
         {
             TrayIconClickedCommand = new(TrayIconClicked);
             ExitCommand = new(Exit);
+            RefreshGreetingCommand = new(RefreshGreeting);
         }
 
         internal DelegateCommand? TrayIconClickedCommand { get; set; }
 
         internal DelegateCommand? ExitCommand { get; set; }
+
+        internal DelegateCommand? RefreshGreetingCommand { get; set; }
 
         internal void TrayIconClicked(object mainWindow)
         {
@@ -43,9 +57,43 @@ namespace KitX_Dashboard.ViewModels
 
             new Thread(() =>
             {
-                Thread.Sleep(GlobalInfo.LastBreakAfterExit);
-                Environment.Exit(0);
+                try
+                {
+                    Thread.Sleep(GlobalInfo.LastBreakAfterExit);
+                    Environment.Exit(0);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, $"In MainWindow.Exit(): {ex.Message}");
+                }
             }).Start();
+        }
+
+        internal void RefreshGreeting(object mainWindow)
+        {
+            MainWindow? win = mainWindow as MainWindow;
+            win?.UpdateGreetingText();
+#if (IsBuild4WindowsPlatform == true)
+            if (_firstTime2RefreshGreeting)
+            {
+                _firstTime2RefreshGreeting = false;
+                try
+                {
+                    var notificationManager =
+                        AvaloniaLocator.Current.GetService<INotificationManager>()
+                        ?? throw new InvalidDataException("Missing notification manager.");
+                    notificationManager.ShowNotification(new()
+                    {
+                        Title = GlobalInfo.AppName,
+                        Body = "(ノω<。)ノ))☆.。",
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, ex.Message);
+                }
+            }
+#endif
         }
     }
 }

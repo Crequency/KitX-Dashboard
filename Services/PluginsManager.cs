@@ -57,6 +57,8 @@ namespace KitX_Dashboard.Services
 
         internal static readonly Queue<Plugin> pluginsToDelete = new();
 
+        internal static readonly object PluginsListOperationLock = new();
+
         /// <summary>
         /// 持续检查并移除
         /// </summary>
@@ -150,18 +152,12 @@ namespace KitX_Dashboard.Services
                 if (workbase == null)
                     throw new Exception("Can not get path of \"KitX\"");
             }
-            string releaseDir = Path.GetFullPath($"{workbase}/{GlobalInfo.KXPTempReleasePath}");
             foreach (var item in kxpfiles)
             {
                 try
                 {
-                    if (Directory.Exists(releaseDir))
-                        Directory.Delete(releaseDir, true);
-                    _ = Directory.CreateDirectory(releaseDir);
-
                     KitX.KXP.Helper.Decoder decoder = new(item);
-                    Tuple<string, string> rst = decoder.Decode(releaseDir);
-                    Directory.Delete(releaseDir, true);
+                    Tuple<string, string> rst = decoder.GetLoaderAndPluginStruct();
                     LoaderStruct loaderStruct = JsonSerializer.Deserialize<LoaderStruct>(rst.Item1);
                     PluginStruct pluginStruct = JsonSerializer.Deserialize<PluginStruct>(rst.Item2);
                     AppConfig? config = null;
@@ -174,20 +170,24 @@ namespace KitX_Dashboard.Services
                         Console.WriteLine($"No config file found!");
                         if (!inGraphic) Environment.Exit(ErrorCodes.ConfigFileDidntExists);
                     }
-                    string pluginsavedir = config?.App.LocalPluginsFileDirectory;
+                    string pluginsavedir = config?.App?.LocalPluginsFileDirectory;
+                    if (pluginsavedir != null)
+                        pluginsavedir = Path.GetFullPath(pluginsavedir);
                     string thisplugindir = $"{pluginsavedir}/" +
                         $"{pluginStruct.PublisherName}_{pluginStruct.AuthorName}/" +
                         $"{pluginStruct.Name}/" +
                         $"{pluginStruct.Version}/";
+                    thisplugindir = Path.GetFullPath(thisplugindir);
                     if (Directory.Exists(thisplugindir))
                         Directory.Delete(thisplugindir, true);
                     _ = Directory.CreateDirectory(thisplugindir);
                     _ = decoder.Decode(thisplugindir);
 
-                    Program.PluginsList.Plugins.Add(new Plugin()
-                    {
-                        InstallPath = thisplugindir
-                    });
+                    if (!Program.PluginsList.Plugins.Exists(x => x.InstallPath.Equals(thisplugindir)))
+                        Program.PluginsList.Plugins.Add(new()
+                        {
+                            InstallPath = thisplugindir
+                        });
                 }
                 catch (Exception e)
                 {
@@ -222,34 +222,62 @@ namespace KitX_Dashboard.Services
             };
             timer.Elapsed += (_, _) =>
             {
-                bool isPluginsListUpdated = false;
-
-                if (pluginsToRemoveFromDB.Count > 0)
+                try
                 {
-                    isPluginsListUpdated = true;
-                    while (pluginsToRemoveFromDB.Count > 0)
-                    {
-                        Program.PluginsList.Plugins.Remove(pluginsToRemoveFromDB.Dequeue());
-                    }
-                }
+                    bool isPluginsListUpdated = false;
 
-                if (pluginsToDelete.Count > 0)
+                    if (pluginsToRemoveFromDB.Count > 0)
+                    {
+                        isPluginsListUpdated = true;
+                        while (pluginsToRemoveFromDB.Count > 0)
+                        {
+                            Plugin pg = pluginsToRemoveFromDB.Dequeue();
+                            lock (PluginsListOperationLock)
+                            {
+                                Program.PluginsList.Plugins.RemoveAt(
+                                    Program.PluginsList.Plugins.FindIndex(
+                                        x =>
+                                        {
+                                            if (x.InstallPath != null)
+                                                return x.InstallPath.Equals(pg.InstallPath);
+                                            else return false;
+                                        }));
+                            }
+                        }
+                    }
+
+                    if (pluginsToDelete.Count > 0)
+                    {
+                        isPluginsListUpdated = true;
+                        while (pluginsToDelete.Count > 0)
+                        {
+                            Plugin pg = pluginsToDelete.Dequeue();
+                            lock (PluginsListOperationLock)
+                            {
+                                Program.PluginsList.Plugins.RemoveAt(
+                                    Program.PluginsList.Plugins.FindIndex(
+                                        x =>
+                                        {
+                                            if (x.InstallPath != null)
+                                                return x.InstallPath.Equals(pg.InstallPath);
+                                            else return false;
+                                        }));
+                            }
+                            string pgfiledir = Path.GetFullPath(
+                                $"{Program.Config.App.LocalPluginsFileDirectory}/" +
+                                $"{pg.PluginDetails.PublisherName}_{pg.PluginDetails.AuthorName}/" +
+                                $"{pg.PluginDetails.Name}/{pg.PluginDetails.Version}/"
+                            );
+                            Directory.Delete(pgfiledir, true);
+                        }
+                    }
+
+                    if (isPluginsListUpdated) EventHandlers.Invoke(nameof(EventHandlers.PluginsListChanged));
+                }
+                catch (Exception ex)
                 {
-                    isPluginsListUpdated = true;
-                    while (pluginsToDelete.Count > 0)
-                    {
-                        Plugin pg = pluginsToDelete.Dequeue();
-                        Program.PluginsList.Plugins.Remove(pg);
-                        string pgfiledir = Path.GetFullPath(
-                            $"{Program.Config.App.LocalPluginsFileDirectory}/" +
-                            $"{pg.PluginDetails.PublisherName}_{pg.PluginDetails.AuthorName}/" +
-                            $"{pg.PluginDetails.Name}/{pg.PluginDetails.Version}/"
-                        );
-                        Directory.Delete(pgfiledir, true);
-                    }
+                    Log.Error("In PluginsManager.KeepCheckAndRemoveOrDelete()", ex);
                 }
-
-                if (isPluginsListUpdated) EventHandlers.Invoke(nameof(EventHandlers.PluginsListChanged));
             };
             timer.Start();
         }
