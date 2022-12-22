@@ -120,15 +120,15 @@ namespace KitX_Dashboard.Views
         /// </summary>
         private void InitMainWindow()
         {
-            // 导航到上次关闭时界面
+            //  导航到上次关闭时界面
             MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
 
-            // 如果主题不设置为 `跟随系统` 则手动变更主题
+            //  如果主题不设置为 `跟随系统` 则手动变更主题
             if (!Program.Config.App.Theme.Equals("Follow"))
                 AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>().RequestedTheme =
                     Program.Config.App.Theme;
 
-            // 透明度变更事件, 让透明度变更立即生效
+            //  透明度变更事件, 让透明度变更立即生效
             EventHandlers.MicaOpacityChanged += () =>
             {
                 if (Program.Config.Windows.MainWindow.EnabledMica)
@@ -154,7 +154,7 @@ namespace KitX_Dashboard.Views
                     }
             };
 
-            // 每 Interval 更新一次招呼语
+            //  每 Interval 更新一次招呼语
             UpdateGreetingText();
             EventHandlers.LanguageChanged += () => UpdateGreetingText();
             EventHandlers.GreetingTextIntervalUpdated += () => UpdateGreetingText();
@@ -165,6 +165,16 @@ namespace KitX_Dashboard.Views
             };
             timer.Elapsed += (_, _) => UpdateGreetingText();
             timer.Start();
+
+            //  位置改变时更新配置
+            PositionChanged += (_, e) =>
+            {
+                if (WindowState != WindowState.Minimized)
+                {
+                    Program.Config.Windows.MainWindow.Window_Left = e.Point.X;
+                    Program.Config.Windows.MainWindow.Window_Top = e.Point.Y;
+                }
+            };
         }
 
         /// <summary>
@@ -249,8 +259,11 @@ namespace KitX_Dashboard.Views
         /// </summary>
         private void SaveMetaData()
         {
-            Program.Config.Windows.MainWindow.Window_Left = Position.X;
-            Program.Config.Windows.MainWindow.Window_Top = Position.Y;
+            if (WindowState != WindowState.Minimized)
+            {
+                Program.Config.Windows.MainWindow.Window_Left = Position.X;
+                Program.Config.Windows.MainWindow.Window_Top = Position.Y;
+            }
             if (OperatingSystem.IsWindows())
             {
                 Program.Config.Windows.MainWindow.Window_Width = Width;
@@ -266,13 +279,20 @@ namespace KitX_Dashboard.Views
         }
 
         /// <summary>
+        /// 窗口状态改变事件
+        /// </summary>
+        /// <param name="state">窗口状态</param>
+        protected override void HandleWindowStateChanged(WindowState state)
+        {
+            base.HandleWindowStateChanged(state);
+        }
+
+        /// <summary>
         /// 正在关闭窗口时事件
         /// </summary>
         /// <param name="e">关闭事件参数</param>
         protected override void OnClosing(CancelEventArgs e)
         {
-            base.OnClosing(e);
-
             SaveMetaData();
 
             if (!GlobalInfo.Exiting)
@@ -284,6 +304,8 @@ namespace KitX_Dashboard.Views
             {
                 (Resources["TrayIcon"] as TrayIcon)?.Dispose();
             }
+
+            base.OnClosing(e);
         }
 
         /// <summary>
