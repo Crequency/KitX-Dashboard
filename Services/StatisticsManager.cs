@@ -17,18 +17,25 @@ namespace KitX_Dashboard.Services
         {
             EventHandlers.UseStatisticsChanged += async () =>
             {
-                string dataDir = Path.GetFullPath(GlobalInfo.DataPath);
-                if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
+                try
+                {
+                    string dataDir = Path.GetFullPath(GlobalInfo.DataPath);
+                    if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
-                #region 存储使用时长数据
+                    #region 存储使用时长数据
 
-                string useFile = "UseCount.json";
-                string usePath = Path.GetFullPath($"{dataDir}/{useFile}");
-                string json = JsonSerializer.Serialize(UseStatistics);
-                await File.WriteAllTextAsync(usePath, json);
+                    string useFile = "UseCount.json";
+                    string usePath = Path.GetFullPath($"{dataDir}/{useFile}");
+                    string json = JsonSerializer.Serialize(UseStatistics);
+                    await File.WriteAllTextAsync(usePath, json);
 
-                #endregion
+                    #endregion
 
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, $"On UseStatisticsChanged: {ex.Message}");
+                }
             };
         }
 
