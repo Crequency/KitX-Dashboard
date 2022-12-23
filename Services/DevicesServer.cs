@@ -50,17 +50,6 @@ namespace KitX_Dashboard.Services
                 {
                     Log.Error($"In {nameof(DevicesServer)}, " +
                         $"{nameof(MultiDevicesBroadCastSend)}", ex);
-                    try
-                    {
-                        Log.Information($"Start {nameof(MultiDevicesBroadCastSendDefault)}");
-                        //  组播发送失败, 尝试由系统决定发送的网络适配器
-                        MultiDevicesBroadCastSendDefault();
-                    }
-                    catch (Exception exc)
-                    {
-                        Log.Error($"In {nameof(DevicesServer)}, " +
-                            $"{nameof(MultiDevicesBroadCastSendDefault)}", exc);
-                    }
                 }
                 try
                 {
@@ -72,17 +61,6 @@ namespace KitX_Dashboard.Services
                 {
                     Log.Error($"In {nameof(DevicesServer)}, " +
                         $"{nameof(MultiDevicesBroadCastReceive)}", ex);
-                    try
-                    {
-                        Log.Information($"Start {nameof(MultiDevicesBroadCastReceiveDefault)}");
-                        //  组播接收失败, 尝试由系统决定接收的网络适配器
-                        MultiDevicesBroadCastReceiveDefault();
-                    }
-                    catch (Exception exc)
-                    {
-                        Log.Error($"In {nameof(DevicesServer)}, " +
-                            $"{nameof(MultiDevicesBroadCastReceiveDefault)}", exc);
-                    }
                 }
                 try
                 {
@@ -94,7 +72,6 @@ namespace KitX_Dashboard.Services
                 {
                     Log.Error($"In {nameof(DevicesServer)}, " +
                         $"Init {nameof(DevicesHost)}", ex);
-
                 }
             }).Start();
         }
@@ -118,6 +95,8 @@ namespace KitX_Dashboard.Services
         #region UDP Socket 服务于自发现自组网
 
         private static readonly List<int> SurpportedNetworkInterfaces = new();
+        
+        internal static readonly Queue<string> Messages2BroadCast = new();
 
         internal static DeviceInfoStruct DefaultDeviceInfoStruct = GetDeviceInfo();
 
@@ -193,6 +172,13 @@ namespace KitX_Dashboard.Services
                 Interval = Program.Config.Web.UDPSendFrequency,
                 AutoReset = true
             };
+            void EndMultiDevicesBroadCastSend()
+            {
+                timer.Stop();
+                timer.Dispose();
+                udpClient.Close();
+                udpClient.Dispose();
+            }
             timer.Elapsed += (_, _) =>
             {
                 try
@@ -211,14 +197,20 @@ namespace KitX_Dashboard.Services
                 catch (Exception e)
                 {
                     Log.Error($"In MultiDevicesBroadCastSend: {e.Message}", e);
+                    try
+                    {
+                        Log.Information($"Start {nameof(MultiDevicesBroadCastSendDefault)}");
+                        EndMultiDevicesBroadCastSend();
+                        //  组播发送失败, 尝试由系统决定发送的网络适配器
+                        MultiDevicesBroadCastSendDefault();
+                    }
+                    catch (Exception exc)
+                    {
+                        Log.Error($"In {nameof(DevicesServer)}, " +
+                            $"{nameof(MultiDevicesBroadCastSendDefault)}", exc);
+                    }
                 }
-                if (!GlobalInfo.Running)
-                {
-                    udpClient.Close();
-
-                    timer.Stop();
-                    timer.Dispose();
-                }
+                if (!GlobalInfo.Running) EndMultiDevicesBroadCastSend();
             };
             timer.Start();
         }
@@ -306,6 +298,8 @@ namespace KitX_Dashboard.Services
                 {
                     try
                     {
+                        Log.Information($"Start {nameof(MultiDevicesBroadCastReceiveDefault)}");
+                        //  组播接收失败, 尝试由系统决定接收的网络适配器
                         MultiDevicesBroadCastReceiveDefault();
                     }
                     catch (Exception ex)
