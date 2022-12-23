@@ -152,14 +152,16 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                     CreateNoWindow = false,
                     UseShellExecute = true,
                 };
-                Process.Start(psi);
+                var process = new Process();
+                process.StartInfo = psi;
+                process.Start();
 
                 //  Receive Thread
                 new Thread(() =>
                 {
                     try
                     {
-                        while (true)
+                        while (!process.HasExited)
                         {
                             var remote = console.ReadLine();
                             if (remote is null) continue;
