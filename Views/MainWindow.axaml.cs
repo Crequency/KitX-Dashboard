@@ -167,14 +167,14 @@ namespace KitX_Dashboard.Views
             timer.Start();
 
             //  位置改变时更新配置
-            PositionChanged += (_, e) =>
-            {
-                if (WindowState != WindowState.Minimized)
-                {
-                    Program.Config.Windows.MainWindow.Window_Left = e.Point.X;
-                    Program.Config.Windows.MainWindow.Window_Top = e.Point.Y;
-                }
-            };
+            //PositionChanged += (_, e) =>
+            //{
+            //    if (WindowState != WindowState.Minimized)
+            //    {
+            //        Program.Config.Windows.MainWindow.Window_Left = e.Point.X;
+            //        Program.Config.Windows.MainWindow.Window_Top = e.Point.Y;
+            //    }
+            //};
         }
 
         /// <summary>
@@ -293,6 +293,8 @@ namespace KitX_Dashboard.Views
         /// <param name="e">关闭事件参数</param>
         protected override void OnClosing(CancelEventArgs e)
         {
+            base.OnClosing(e);
+
             SaveMetaData();
 
             if (!GlobalInfo.Exiting)
@@ -304,8 +306,6 @@ namespace KitX_Dashboard.Views
             {
                 (Resources["TrayIcon"] as TrayIcon)?.Dispose();
             }
-
-            base.OnClosing(e);
         }
 
         /// <summary>
