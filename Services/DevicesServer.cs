@@ -234,6 +234,13 @@ namespace KitX_Dashboard.Services
                 Interval = Program.Config.Web.UDPSendFrequency,
                 AutoReset = true
             };
+            void EndMultiDevicesBroadCastSendDefault()
+            {
+                udpClient.Close();
+                udpClient.Dispose();
+                timer.Stop();
+                timer.Dispose();
+            }
             timer.Elapsed += (_, _) =>
             {
                 try
@@ -246,14 +253,11 @@ namespace KitX_Dashboard.Services
                 catch (Exception e)
                 {
                     Log.Error($"In MultiDevicesBroadCastSend: {e.Message}");
+                    EndMultiDevicesBroadCastSendDefault();
+                    //  默认发包方式发生问题, 尝试遍历适配器发送报文
+                    MultiDevicesBroadCastSend();
                 }
-                if (!GlobalInfo.Running)
-                {
-                    udpClient.Close();
-
-                    timer.Stop();
-                    timer.Dispose();
-                }
+                if (!GlobalInfo.Running) EndMultiDevicesBroadCastSendDefault();
             };
             timer.Start();
         }
@@ -340,6 +344,19 @@ namespace KitX_Dashboard.Services
                 if (!GlobalInfo.Running)
                 {
                     udpClient.Close();
+                }
+                else
+                {
+                    try
+                    {
+                        Log.Information($"Start {nameof(MultiDevicesBroadCastReceive)}");
+                        //  组播接收失败, 尝试逐个适配器接收消息
+                        MultiDevicesBroadCastReceive();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("In MultiDevicesBroadCastReceive()", ex);
+                    }
                 }
             }).Start();
         }
