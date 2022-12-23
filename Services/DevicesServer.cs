@@ -95,7 +95,7 @@ namespace KitX_Dashboard.Services
         #region UDP Socket 服务于自发现自组网
 
         private static readonly List<int> SurpportedNetworkInterfaces = new();
-        
+
         internal static readonly Queue<string> Messages2BroadCast = new();
 
         internal static DeviceInfoStruct DefaultDeviceInfoStruct = GetDeviceInfo();
@@ -192,6 +192,13 @@ namespace KitX_Dashboard.Services
                         udpClient.Client.SetSocketOption(SocketOptionLevel.IP,
                             SocketOptionName.MulticastInterface, item);
                         udpClient.Send(sendBytes, sendBytes.Length, multicast);
+
+                        //  将自定义广播消息全部发送
+                        while (Messages2BroadCast.Count > 0)
+                        {
+                            byte[] messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
+                            udpClient.Send(messageBytes, messageBytes.Length, multicast);
+                        }
                     }
                 }
                 catch (Exception e)
@@ -249,6 +256,13 @@ namespace KitX_Dashboard.Services
                     string sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
                     byte[] sendBytes = Encoding.UTF8.GetBytes(sendText);
                     udpClient.Send(sendBytes, sendBytes.Length, multicast);
+
+                    //  将自定义广播消息全部发送
+                    while (Messages2BroadCast.Count > 0)
+                    {
+                        byte[] messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
+                        udpClient.Send(messageBytes, messageBytes.Length, multicast);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -285,8 +299,15 @@ namespace KitX_Dashboard.Services
                         byte[] bytes = udpClient.Receive(ref multicast);
                         string result = Encoding.UTF8.GetString(bytes);
                         Log.Information($"UDP Receive: {result}");
-                        DeviceInfoStruct deviceInfo = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
-                        DevicesManager.Update(deviceInfo);
+                        try
+                        {
+                            DeviceInfoStruct deviceInfo = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
+                            DevicesManager.Update(deviceInfo);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, $"{ex.Message}");
+                        }
                     }
                     udpClient.Close();
                 }
@@ -332,8 +353,15 @@ namespace KitX_Dashboard.Services
                         byte[] bytes = udpClient.Receive(ref multicast);
                         string result = Encoding.UTF8.GetString(bytes);
                         Log.Information($"UDP Receive: {result}");
-                        DeviceInfoStruct deviceInfo = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
-                        DevicesManager.Update(deviceInfo);
+                        try
+                        {
+                            DeviceInfoStruct deviceInfo = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
+                            DevicesManager.Update(deviceInfo);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, $"{ex.Message}");
+                        }
                     }
                     udpClient.Close();
                 }
