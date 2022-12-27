@@ -83,6 +83,14 @@ internal class DebugCommands
                         return "Appended value to broadcast list.";
                     }
                     else return "Missing value of `--value`.";
+                //  ClientMessage
+                case "clientmessage":
+                    if (args.ContainsKey("--value"))
+                    {
+                        Program.WebManager?.devicesServer?.SendMessage(args["--value"]);
+                        return $"Sent msg: {args["--value"]}";
+                    }
+                    else return "Missing value of `--value`.";
                 default:
                     return "Missing value of `--type`.";
             }

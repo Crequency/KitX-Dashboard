@@ -634,6 +634,16 @@ namespace KitX_Dashboard.Services
             DevicesHost?.Connect(serverAddress, serverPort);
         }
 
+        /// <summary>
+        /// 向主控发送消息
+        /// </summary>
+        /// <param name="msg">消息内容</param>
+        internal void SendMessage(string msg)
+        {
+            DevicesHost?.Client.Send(Encoding.UTF8.GetBytes(msg));
+            Log.Information($"Sent Message to Host, msg: {msg}");
+        }
+
         #endregion
 
         public void Dispose()
