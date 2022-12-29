@@ -215,7 +215,13 @@ namespace KitX_Dashboard.Data
                 public bool PaletteAreaExpanded { get; set; } = false;
 
                 [JsonInclude]
-                public bool LogReletiveAreaExpanded { get; set; } = true;
+                public bool WebRelatedAreaExpanded { get; set; } = true;
+
+                [JsonInclude]
+                public bool LogRelatedAreaExpanded { get; set; } = true;
+
+                [JsonInclude]
+                public bool UpdateRelatedAreaExpanded { get; set; } = true;
 
                 [JsonInclude]
                 public bool AboutAreaExpanded { get; set; } = false;

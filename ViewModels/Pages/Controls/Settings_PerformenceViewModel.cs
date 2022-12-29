@@ -110,14 +110,40 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         }
 
         /// <summary>
-        /// 日志相关设置区域是否展开
+        /// 网络相关设置区域是否展开
         /// </summary>
-        internal static bool LogReletiveAreaExpanded
+        internal static bool WebRelatedAreaExpanded
         {
-            get => Program.Config.Pages.Settings.LogReletiveAreaExpanded;
+            get => Program.Config.Pages.Settings.WebRelatedAreaExpanded;
             set
             {
-                Program.Config.Pages.Settings.LogReletiveAreaExpanded = value;
+                Program.Config.Pages.Settings.WebRelatedAreaExpanded = value;
+                SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// 日志相关设置区域是否展开
+        /// </summary>
+        internal static bool LogRelatedAreaExpanded
+        {
+            get => Program.Config.Pages.Settings.LogRelatedAreaExpanded;
+            set
+            {
+                Program.Config.Pages.Settings.LogRelatedAreaExpanded = value;
+                SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// 更新相关设置区域是否展开
+        /// </summary>
+        internal static bool UpdateRelatedAreaExpanded
+        {
+            get => Program.Config.Pages.Settings.UpdateRelatedAreaExpanded;
+            set
+            {
+                Program.Config.Pages.Settings.UpdateRelatedAreaExpanded = value;
                 SaveChanges();
             }
         }
