@@ -111,6 +111,7 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">ハイコントラスト</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">システムに従ってください</x:String>
     <x:String x:Key="Text_Settings_Performence">パフォーマンス</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web">ネットワーク関連の設定</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">プラグイン通信ポート</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">デバイス通信ポート</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">ネイティブ IP フィルタリング ルール</x:String>
@@ -121,6 +122,7 @@
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">ログ ファイルの制限</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">ログ ファイル キャッシュの遅延</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileLevel">ログレベル</x:String>
+    <x:String x:Key="Text_Settings_Performence_Update">関連設定の更新</x:String>
     <x:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">更新は、スレッドごとに処理されるファイルの数をチェックします</x:String>
     <x:String x:Key="Text_Settings_Update">更新する</x:String>
     <x:String x:Key="Text_Settings_Update_Check">アップデートを確認</x:String>

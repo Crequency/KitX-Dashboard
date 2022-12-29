@@ -111,6 +111,7 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">высокий контраст</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">следовать системе</x:String>
     <x:String x:Key="Text_Settings_Performence">производительность</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web">Настройки, связанные с сетью</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Подключаемый коммуникационный порт</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Порт связи устройства</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Собственные правила IP-фильтрации</x:String>
@@ -121,6 +122,7 @@
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">лимит файла журнала</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">Задержка кеша файла журнала</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileLevel">уровень журнала</x:String>
+    <x:String x:Key="Text_Settings_Performence_Update">Обновить связанные настройки</x:String>
     <x:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">Обновление проверяет количество файлов, обрабатываемых за поток</x:String>
     <x:String x:Key="Text_Settings_Update">возобновить</x:String>
     <x:String x:Key="Text_Settings_Update_Check">Проверить наличие обновлений</x:String>

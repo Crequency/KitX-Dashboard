@@ -111,6 +111,7 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">高對比度</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">跟隨系統</x:String>
     <x:String x:Key="Text_Settings_Performence">性能</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web">網絡相關設置</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">插件通信端口</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">設備通信端口</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">本機IP過濾器</x:String>
@@ -121,6 +122,7 @@
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">日志文檔數量限制</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">日志文檔緩衝延時</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileLevel">日志級別</x:String>
+    <x:String x:Key="Text_Settings_Performence_Update">更新相關設置</x:String>
     <x:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">更新檢查每綫程處理文件數量</x:String>
     <x:String x:Key="Text_Settings_Update">更新</x:String>
     <x:String x:Key="Text_Settings_Update_Check">檢查更新</x:String>

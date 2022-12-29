@@ -111,6 +111,7 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">contraste élevé</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">suivre le système</x:String>
     <x:String x:Key="Text_Settings_Performence">performance</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web">Paramètres liés au réseau</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Port de communication enfichable</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Port de communication de l'appareil</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Règles de filtrage IP natives</x:String>
@@ -121,6 +122,7 @@
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">limite du fichier journal</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">Délai du cache du fichier journal</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileLevel">niveau de journalisation</x:String>
+    <x:String x:Key="Text_Settings_Performence_Update">Mettre à jour les paramètres associés</x:String>
     <x:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">La mise à jour vérifie le nombre de fichiers traités par thread</x:String>
     <x:String x:Key="Text_Settings_Update">renouveler</x:String>
     <x:String x:Key="Text_Settings_Update_Check">Vérifier les mises à jour</x:String>

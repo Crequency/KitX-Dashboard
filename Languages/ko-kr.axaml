@@ -111,6 +111,7 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">고대비</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">시스템을 따르다</x:String>
     <x:String x:Key="Text_Settings_Performence">성능</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web">네트워크 관련 설정</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">플러그인 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">장치 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">기본 IP 필터링 규칙</x:String>
@@ -121,6 +122,7 @@
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">로그 파일 제한</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">로그 파일 캐시 지연</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileLevel">로그 수준</x:String>
+    <x:String x:Key="Text_Settings_Performence_Update">관련 설정 업데이트</x:String>
     <x:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">업데이트는 스레드당 처리된 파일 수를 확인합니다.</x:String>
     <x:String x:Key="Text_Settings_Update">고쳐 쓰다</x:String>
     <x:String x:Key="Text_Settings_Update_Check">업데이트 확인</x:String>
