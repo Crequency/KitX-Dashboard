@@ -148,31 +148,19 @@
     <x:String x:Key="Text_Settings_About_Found">найдено вами!~OvO</x:String>
     <x:String x:Key="Text_AnouncementWindow_Receive">Получать</x:String>
     <x:String x:Key="Text_AnouncementWindow_ReceiveAll">получить все</x:String>
-    <!--  GreetingStart  -->
-    <!--  MorningStart  -->
     <x:String x:Key="Text_Greeting_Morning_1">доброе утро! ο(=•ω＜=)ρ⌒☆</x:String>
     <x:String x:Key="Text_Greeting_Morning_2">Хорошего настроения каждый деньOvO</x:String>
     <x:String x:Key="Text_Greeting_Morning_3">сегодняшнее событие, сегодняшний конец!</x:String>
     <x:String x:Key="Text_Greeting_Morning_4">хороший день начинается~</x:String>
-    <!--  MorningEnd  -->
-    <!--  NoonStart  -->
     <x:String x:Key="Text_Greeting_Noon_1">добрый день! o(〃＾▽＾〃)o</x:String>
     <x:String x:Key="Text_Greeting_Noon_2">Уже полдень, отдохни~</x:String>
     <x:String x:Key="Text_Greeting_Noon_3">Сегодня тоже полное утро</x:String>
-    <!--  NoonEnd  -->
-    <!--  AfterNoonStart  -->
     <x:String x:Key="Text_Greeting_AfterNoon_1">добрый день! ヾ(≧▽≦*)o</x:String>
     <x:String x:Key="Text_Greeting_AfterNoon_2">время послеобеденного чая!</x:String>
     <x:String x:Key="Text_Greeting_AfterNoon_3">Какие задачи остались нерешенными сегодня?</x:String>
-    <!--  AfterNoonEnd  -->
-    <!--  EveningStart  -->
     <x:String x:Key="Text_Greeting_Evening_1">добрый вечер! o(*￣▽￣*)ブ</x:String>
     <x:String x:Key="Text_Greeting_Evening_2">Я собираюсь хорошо поесть сегодня вечером!</x:String>
-    <!--  EveningEnd  -->
-    <!--  NightStart  -->
     <x:String x:Key="Text_Greeting_Night_1">Ночью тихо! o(*￣▽￣*)ブ</x:String>
     <x:String x:Key="Text_Greeting_Night_2">Уже поздно, отдохни пораньше</x:String>
     <x:String x:Key="Text_Greeting_Night_3">Завтра будет хороший день!</x:String>
-    <!--  NightEnd  -->
-    <!--  GreetingEnd  -->
 </ResourceDictionary>
