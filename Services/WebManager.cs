@@ -14,7 +14,7 @@ namespace KitX_Dashboard.Services
         internal PluginsServer? pluginsServer;
         internal DevicesServer? devicesServer;
 
-        public void Start()
+        public WebManager Start()
         {
             new Thread(() =>
             {
@@ -38,15 +38,26 @@ namespace KitX_Dashboard.Services
                     Log.Error("In WebManager Start", ex);
                 }
             }).Start();
+
+            return this;
         }
 
-        public void Stop()
+        public WebManager Stop()
         {
             pluginsServer?.Stop();
             devicesServer?.Stop();
 
             pluginsServer?.Dispose();
             devicesServer?.Dispose();
+
+            return this;
+        }
+
+        public WebManager Restart()
+        {
+            Stop();
+            Start();
+            return this;
         }
 
         /// <summary>

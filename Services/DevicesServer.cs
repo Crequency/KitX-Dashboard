@@ -28,39 +28,50 @@ namespace KitX_Dashboard.Services
             {
                 try
                 {
+
+                    #region 寻找支持的网络适配器
+
                     Log.Information($"Start {nameof(FindSurpportNetworkInterface)}");
                     //  寻找所有支持的网络适配器
                     FindSurpportNetworkInterface(new()
                     {
                         UdpClient_Send, UdpClient_Receive
                     }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
+
+                    #endregion
+
+                    #region 组播收发消息
+
+                    try
+                    {
+                        Log.Information($"Start {nameof(MultiDevicesBroadCastSend)}");
+                        //  开始组播发送本机信息
+                        MultiDevicesBroadCastSend();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error($"In {nameof(DevicesServer)}, " +
+                            $"{nameof(MultiDevicesBroadCastSend)}", ex);
+                    }
+                    try
+                    {
+                        Log.Information($"Start {nameof(MultiDevicesBroadCastReceive)}");
+                        //  开始接收组播消息
+                        MultiDevicesBroadCastReceive();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error($"In {nameof(DevicesServer)}, " +
+                            $"{nameof(MultiDevicesBroadCastReceive)}", ex);
+                    }
+
+                    #endregion
+
                 }
                 catch (Exception ex)
                 {
                     Log.Error($"In {nameof(DevicesServer)}, " +
                         $"{nameof(FindSurpportNetworkInterface)}", ex);
-                }
-                try
-                {
-                    Log.Information($"Start {nameof(MultiDevicesBroadCastSend)}");
-                    //  开始组播发送本机信息
-                    MultiDevicesBroadCastSend();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error($"In {nameof(DevicesServer)}, " +
-                        $"{nameof(MultiDevicesBroadCastSend)}", ex);
-                }
-                try
-                {
-                    Log.Information($"Start {nameof(MultiDevicesBroadCastReceive)}");
-                    //  开始接收组播消息
-                    MultiDevicesBroadCastReceive();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error($"In {nameof(DevicesServer)}, " +
-                        $"{nameof(MultiDevicesBroadCastReceive)}", ex);
                 }
                 try
                 {
@@ -515,6 +526,9 @@ namespace KitX_Dashboard.Services
             DevicesManager.Watch4MainDevice();  //  取消建立之后重新寻找并加入主控网络
         }
 
+        /// <summary>
+        /// 接收客户端
+        /// </summary>
         internal void AcceptClient()
         {
             try
@@ -620,6 +634,31 @@ namespace KitX_Dashboard.Services
                 stream?.Close();
                 stream?.Dispose();
                 client?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// 向客户端发送消息
+        /// </summary>
+        /// <param name="msg">消息内容</param>
+        /// <param name="client">客户端</param>
+        internal void SendMessage(string msg, string client)
+        {
+            if (clients.ContainsKey(client))
+                clients[client].Client.Send(Encoding.UTF8.GetBytes(msg));
+        }
+
+        /// <summary>
+        /// 广播消息
+        /// </summary>
+        /// <param name="msg">消息</param>
+        internal void BroadCastMessage(string msg, Func<TcpClient, bool>? pattern)
+        {
+            foreach (var client in clients)
+            {
+                if (pattern is not null && pattern.Invoke(client.Value))
+                    client.Value.Client.Send(Encoding.UTF8.GetBytes(msg));
+                else client.Value.Client.Send(Encoding.UTF8.GetBytes(msg));
             }
         }
 

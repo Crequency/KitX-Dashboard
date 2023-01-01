@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace KitX_Dashboard.Services;
@@ -91,6 +90,26 @@ internal class DebugCommands
                         return $"Sent msg: {args["--value"]}";
                     }
                     else return "Missing value of `--value`.";
+                case "hostmessage":
+                    if (args.ContainsKey("--value"))
+                    {
+                        if (args.ContainsKey("--to"))
+                        {
+                            Program.WebManager?.devicesServer
+                                ?.SendMessage(args["--value"], args["--to"]);
+                            return $"Sent msg: {args["--value"]}, to: {args["--to"]}";
+                        }
+                        else return "Missing value of `--to`.";
+                    }
+                    else return "Missing value of `--value`.";
+                case "hostbroadcast":
+                    if (args.ContainsKey("--value"))
+                    {
+                        Program.WebManager?.devicesServer
+                            ?.BroadCastMessage(args["--value"], null);
+                        return $"Broadcast msg: {args["--value"]}";
+                    }
+                    else return "Missing value of `--value`";
                 default:
                     return "Missing value of `--type`.";
             }
