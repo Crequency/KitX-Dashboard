@@ -152,6 +152,7 @@
     <x:String x:Key="Text_Greeting_Morning_2">每天都要有好心情哟 OvO</x:String>
     <x:String x:Key="Text_Greeting_Morning_3">今日事, 今日毕!</x:String>
     <x:String x:Key="Text_Greeting_Morning_4">美好的一天开始啦~</x:String>
+    <x:String x:Key="Text_Greeting_Morning_5">一日之计在于晨</x:String>
     <x:String x:Key="Text_Greeting_Noon_1">中午好! o(〃＾▽＾〃)o</x:String>
     <x:String x:Key="Text_Greeting_Noon_2">中午啦, 小憩一会儿吧~</x:String>
     <x:String x:Key="Text_Greeting_Noon_3">今天也是一个充实的上午呢</x:String>
@@ -163,4 +164,5 @@
     <x:String x:Key="Text_Greeting_Night_1">夜深人静呐! o(*￣▽￣*)ブ</x:String>
     <x:String x:Key="Text_Greeting_Night_2">夜深了, 早点休息吧</x:String>
     <x:String x:Key="Text_Greeting_Night_3">明天也会是美好的一天!</x:String>
+    <x:String x:Key="Text_Greeting_Night_4">还熬夜呢</x:String>
 </ResourceDictionary>

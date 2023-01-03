@@ -123,7 +123,7 @@ namespace KitX_Dashboard.Data
                 public double MicaOpacity { get; set; } = 0.15;
 
                 [JsonInclude]
-                public int GreetingTextCount_Morning { get; set; } = 4;
+                public int GreetingTextCount_Morning { get; set; } = 5;
 
                 [JsonInclude]
                 public int GreetingTextCount_Noon { get; set; } = 3;
@@ -135,7 +135,7 @@ namespace KitX_Dashboard.Data
                 public int GreetingTextCount_Evening { get; set; } = 2;
 
                 [JsonInclude]
-                public int GreetingTextCount_Night { get; set; } = 3;
+                public int GreetingTextCount_Night { get; set; } = 4;
 
                 [JsonInclude]
                 public int GreetingUpdateInterval { get; set; } = 10;

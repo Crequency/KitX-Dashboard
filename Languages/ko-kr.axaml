@@ -152,6 +152,7 @@
     <x:String x:Key="Text_Greeting_Morning_2">매일 기분이 좋아OvO</x:String>
     <x:String x:Key="Text_Greeting_Morning_3">오늘의 이벤트, 오늘의 끝!</x:String>
     <x:String x:Key="Text_Greeting_Morning_4">좋은 하루가 시작됩니다~</x:String>
+    <x:String x:Key="Text_Greeting_Morning_5">아침은 하루의 시작이다</x:String>
     <x:String x:Key="Text_Greeting_Noon_1">좋은 오후에요! o(〃＾▽＾〃)o</x:String>
     <x:String x:Key="Text_Greeting_Noon_2">정오입니다, 휴식을 취하세요~</x:String>
     <x:String x:Key="Text_Greeting_Noon_3">오늘도 역시 아침이다</x:String>
@@ -163,4 +164,5 @@
     <x:String x:Key="Text_Greeting_Night_1">밤에는 조용하다! o(*￣▽￣*)ブ</x:String>
     <x:String x:Key="Text_Greeting_Night_2">밤이 늦었어 일찍 쉬어</x:String>
     <x:String x:Key="Text_Greeting_Night_3">내일은 좋은 날이 될거야!</x:String>
+    <x:String x:Key="Text_Greeting_Night_4">아직도 늦게까지 깨어있어</x:String>
 </ResourceDictionary>

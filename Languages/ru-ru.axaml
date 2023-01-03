@@ -152,6 +152,7 @@
     <x:String x:Key="Text_Greeting_Morning_2">Хорошего настроения каждый деньOvO</x:String>
     <x:String x:Key="Text_Greeting_Morning_3">сегодняшнее событие, сегодняшний конец!</x:String>
     <x:String x:Key="Text_Greeting_Morning_4">хороший день начинается~</x:String>
+    <x:String x:Key="Text_Greeting_Morning_5">утро это начало дня</x:String>
     <x:String x:Key="Text_Greeting_Noon_1">добрый день! o(〃＾▽＾〃)o</x:String>
     <x:String x:Key="Text_Greeting_Noon_2">Уже полдень, отдохни~</x:String>
     <x:String x:Key="Text_Greeting_Noon_3">Сегодня тоже полное утро</x:String>
@@ -163,4 +164,5 @@
     <x:String x:Key="Text_Greeting_Night_1">Ночью тихо! o(*￣▽￣*)ブ</x:String>
     <x:String x:Key="Text_Greeting_Night_2">Уже поздно, отдохни пораньше</x:String>
     <x:String x:Key="Text_Greeting_Night_3">Завтра будет хороший день!</x:String>
+    <x:String x:Key="Text_Greeting_Night_4">все еще поздно ложиться</x:String>
 </ResourceDictionary>
