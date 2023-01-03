@@ -129,7 +129,9 @@ namespace KitX_Dashboard
             catch (Exception e)
             {
                 File.WriteAllText(Path.GetFullPath("./dump.log"), e.Message);
+#if !DEBUG
                 Environment.Exit(1);
+#endif
             }
 
             #endregion
