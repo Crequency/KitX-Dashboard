@@ -98,8 +98,6 @@ namespace KitX_Dashboard
 
             try
             {
-                if (File.Exists(Path.GetFullPath("./dump.log")))
-                    File.Delete(Path.GetFullPath("./dump.log"));
 
                 #region 执行启动时检查
 
@@ -130,11 +128,8 @@ namespace KitX_Dashboard
             }
             catch (Exception e)
             {
-                FileStream fs = new(Path.GetFullPath("./dump.log"), FileMode.OpenOrCreate);
-                StreamWriter sw = new(fs);
-                sw.WriteLine(e.Message);
-                sw.Close();
-                fs.Close();
+                File.WriteAllText(Path.GetFullPath("./dump.log"), e.Message);
+                Environment.Exit(1);
             }
 
             #endregion
