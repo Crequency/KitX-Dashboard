@@ -307,9 +307,14 @@ namespace KitX_Dashboard.Services
                 {
                     while (GlobalInfo.Running)
                     {
-                        byte[] bytes = udpClient.Receive(ref multicast);
-                        string result = Encoding.UTF8.GetString(bytes);
-                        Log.Information($"UDP Receive: {result}");
+                        var bytes = udpClient.Receive(ref multicast);
+                        if (bytes is null) continue;    //  null byte[] cause exception in next line.
+                        var result = Encoding.UTF8.GetString(bytes);
+                        if (result is null) continue;   //  null string skip.
+                        var client = $"{multicast.Address}:{multicast.Port}";
+                        Log.Information($"UDP " +
+                            $"From: {client,-21}, " +
+                            $"Receive: {result}");
                         try
                         {
                             DeviceInfoStruct deviceInfo = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
