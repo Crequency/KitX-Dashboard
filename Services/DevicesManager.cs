@@ -160,11 +160,11 @@ namespace KitX_Dashboard.Services
                 try
                 {
                     receivedDeviceInfoStruct4Watch = new();
-                    int checkedTime = 0;
-                    bool hadMainDevice = false;
-                    DateTime earliestBuiltServerTime = DateTime.Now;
-                    int serverPort = 0;
-                    string serverAddress = string.Empty;
+                    var checkedTime = 0;
+                    var hadMainDevice = false;
+                    var earliestBuiltServerTime = DateTime.Now;
+                    var serverPort = 0;
+                    var serverAddress = string.Empty;
                     Timer timer = new()
                     {
                         Interval = 1000,
