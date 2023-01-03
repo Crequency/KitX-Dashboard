@@ -34,6 +34,8 @@ namespace KitX_Dashboard.Services
 
         private static readonly object AddDeviceCard2ViewLock = new();
 
+        private static bool KeepCheckAndRemoveTaskRunning = false;
+
         /// <summary>
         /// 持续检查并移除
         /// </summary>
@@ -46,92 +48,112 @@ namespace KitX_Dashboard.Services
             };
             timer.Elapsed += (_, _) =>
             {
-                while (deviceInfoStructs.Count > 0)
+                var location = $"{nameof(DevicesServer)}.{nameof(KeepCheckAndRemove)}()";
+                if (KeepCheckAndRemoveTaskRunning)
+                    Log.Information($"In {location}: Timer elapsed and skip task.");
+                else
                 {
-                    DeviceInfoStruct deviceInfoStruct = deviceInfoStructs.Dequeue();
-                    bool findThis = false;
-                    foreach (var item in Program.DeviceCards)
+                    Log.Information($"In {location}: Timer elapsed and run task.");
+
+                    KeepCheckAndRemoveTaskRunning = true;
+
+                    #region 更新已有卡片的信息, 添加不存在卡片到界面
+
+                    while (deviceInfoStructs.Count > 0)
                     {
-                        if (item.viewModel.DeviceInfo.DeviceName.Equals(deviceInfoStruct.DeviceName))
+                        var deviceInfoStruct = deviceInfoStructs.Dequeue();
+                        var findThis = false;
+                        foreach (var item in Program.DeviceCards)
                         {
-                            item.viewModel.DeviceInfo = deviceInfoStruct;
-                            findThis = true;
-                            break;
+                            if (item.viewModel.DeviceInfo.DeviceName.Equals(deviceInfoStruct.DeviceName))
+                            {
+                                item.viewModel.DeviceInfo = deviceInfoStruct;
+                                findThis = true;
+                                break;
+                            }
+                        }
+                        if (!findThis)
+                        {
+                            Dispatcher.UIThread.Post(() =>
+                            {
+                                lock (AddDeviceCard2ViewLock)
+                                {
+                                    Program.DeviceCards.Add(new(deviceInfoStruct));
+                                }
+                            });
                         }
                     }
-                    if (!findThis)
+
+                    #endregion
+
+                    #region 查找重复的卡片并移除
+
+                    List<string>
+                        MacAddressVisited = new(),
+                        IPv4AddressVisited = new(),
+                        IPv6AddressVisited = new();
+                    List<DeviceCard> DevicesNeed2BeRemoved = new();
+
+                    foreach (var item in Program.DeviceCards)
                     {
-                        Dispatcher.UIThread.Post(() =>
+                        var info = item.viewModel.DeviceInfo;
+                        if (
+                            MacAddressVisited.Contains(info.DeviceMacAddress) ||
+                            IPv4AddressVisited.Contains(info.IPv4) ||
+                            IPv6AddressVisited.Contains(info.IPv6)
+                           )
                         {
-                            lock (AddDeviceCard2ViewLock)
-                            {
-                                Program.DeviceCards.Add(new(deviceInfoStruct));
-                            }
-                        });
+                            DevicesNeed2BeRemoved.Add(item);
+                            continue;
+                        }
+                        MacAddressVisited.Add(info.DeviceMacAddress);
+                        IPv4AddressVisited.Add(info.IPv4);
+                        IPv6AddressVisited.Add(info.IPv6);
+                        if (DateTime.Now - info.SendTime
+                            > new TimeSpan(0, 0, Program.Config.Web.DeviceInfoStructTTLSeconds))
+                            DevicesNeed2BeRemoved.Add(item);
                     }
-                }
+                    foreach (var item in DevicesNeed2BeRemoved)
+                    {
+                        lock (AddDeviceCard2ViewLock)
+                        {
+                            Program.DeviceCards.Remove(item);
+                        }
+                    }
 
-                List<string> MacAddressVisited = new();
-                List<string> IPv4AddressVisited = new();
-                List<string> IPv6AddressVisited = new();
-                List<DeviceCard> DevicesNeed2BeRemoved = new();
+                    #endregion
 
-                foreach (var item in Program.DeviceCards)
-                {
-                    if (MacAddressVisited.Contains(item.viewModel.DeviceInfo.DeviceMacAddress))
-                    {
-                        DevicesNeed2BeRemoved.Add(item);
-                        continue;
-                    }
-                    if (IPv4AddressVisited.Contains(item.viewModel.DeviceInfo.IPv4))
-                    {
-                        DevicesNeed2BeRemoved.Add(item);
-                        continue;
-                    }
-                    if (IPv6AddressVisited.Contains(item.viewModel.DeviceInfo.IPv6))
-                    {
-                        DevicesNeed2BeRemoved.Add(item);
-                        continue;
-                    }
-                    MacAddressVisited.Add(item.viewModel.DeviceInfo.DeviceMacAddress);
-                    IPv4AddressVisited.Add(item.viewModel.DeviceInfo.IPv4);
-                    IPv6AddressVisited.Add(item.viewModel.DeviceInfo.IPv6);
-                    if (DateTime.Now - item.viewModel.DeviceInfo.SendTime
-                        > new TimeSpan(0, 0, Program.Config.Web.DeviceInfoStructTTLSeconds))
-                        DevicesNeed2BeRemoved.Add(item);
-                }
-                foreach (var item in DevicesNeed2BeRemoved)
-                {
-                    lock (AddDeviceCard2ViewLock)
-                    {
-                        Program.DeviceCards.Remove(item);
-                    }
-                }
+                    #region 寻找本机卡片并移到最前面
 
-                int index = 0;
-                DeviceCard? localMachine = null;
-                foreach (var item in Program.DeviceCards)
-                {
-                    if (item.viewModel.DeviceInfo.DeviceMacAddress.Equals(
-                            DevicesServer.DefaultDeviceInfoStruct.DeviceMacAddress)
-                        && item.viewModel.DeviceInfo.DeviceName.Equals(
-                            DevicesServer.DefaultDeviceInfoStruct.DeviceName))
+                    int index = 0;
+                    DeviceCard? localMachine = null;
+                    foreach (var item in Program.DeviceCards)
                     {
-                        localMachine = item;
-                        break;
+                        var info = item.viewModel.DeviceInfo;
+                        var self = DevicesServer.DefaultDeviceInfoStruct;
+                        if (info.DeviceMacAddress.Equals(self.DeviceMacAddress)
+                            && info.DeviceName.Equals(self.DeviceName))
+                        {
+                            localMachine = item;
+                            break;
+                        }
+                        ++index;
                     }
-                    ++index;
-                }
-                if (index != 0)
-                {
-                    try
+                    if (index != 0)
                     {
-                        Program.DeviceCards.Move(index, 0);
+                        try
+                        {
+                            Program.DeviceCards.Move(index, 0);
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Warning($"Can't move self 2 first. {e.Message}", e);
+                        }
                     }
-                    catch (Exception e)
-                    {
-                        Log.Warning($"Can't move self 2 first. {e.Message}", e);
-                    }
+
+                    #endregion
+
+                    KeepCheckAndRemoveTaskRunning = false;
                 }
             };
             timer.Start();
