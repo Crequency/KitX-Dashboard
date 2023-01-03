@@ -6,6 +6,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
 namespace KitX_Dashboard.Services
@@ -165,15 +166,11 @@ namespace KitX_Dashboard.Services
                     var earliestBuiltServerTime = DateTime.Now;
                     var serverPort = 0;
                     var serverAddress = string.Empty;
-                    Timer timer = new()
-                    {
-                        Interval = 1000,
-                        AutoReset = true
-                    };
-                    timer.Elapsed += (_, _) =>
+                    while (checkedTime < 7)
                     {
                         try
                         {
+                            if (receivedDeviceInfoStruct4Watch is null) continue;
                             foreach (var item in receivedDeviceInfoStruct4Watch)
                             {
                                 if (item.IsMainDevice)
@@ -187,13 +184,15 @@ namespace KitX_Dashboard.Services
                                 }
                             }
                             ++checkedTime;
+                            Log.Information($"In Watch4MainDevice: " +
+                                $"Watched for {checkedTime} times.");
                             if (checkedTime == 7)
                             {
-                                timer.Stop();
                                 receivedDeviceInfoStruct4Watch?.Clear();
                                 receivedDeviceInfoStruct4Watch = null;
                                 WatchingOver(hadMainDevice, serverAddress, serverPort);
                             }
+                            Thread.Sleep(1 * 1000); //  Sleep 1 second.
                         }
                         catch (Exception e)
                         {
@@ -201,8 +200,7 @@ namespace KitX_Dashboard.Services
                             receivedDeviceInfoStruct4Watch = null;
                             Log.Error("In Watch4MainDevice", e);
                         }
-                    };
-                    timer.Start();
+                    }
                 }
                 catch (Exception ex)
                 {
