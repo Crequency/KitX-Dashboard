@@ -48,112 +48,121 @@ namespace KitX_Dashboard.Services
             };
             timer.Elapsed += (_, _) =>
             {
-                var location = $"{nameof(DevicesServer)}.{nameof(KeepCheckAndRemove)}()";
-                if (KeepCheckAndRemoveTaskRunning)
-                    Log.Information($"In {location}: Timer elapsed and skip task.");
-                else
+                try
                 {
-                    Log.Information($"In {location}: Timer elapsed and run task.");
-
-                    KeepCheckAndRemoveTaskRunning = true;
-
-                    #region 更新已有卡片的信息, 添加不存在卡片到界面
-
-                    while (deviceInfoStructs.Count > 0)
+                    var location = $"{nameof(DevicesServer)}.{nameof(KeepCheckAndRemove)}()";
+                    if (KeepCheckAndRemoveTaskRunning)
+                        Log.Information($"In {location}: Timer elapsed and skip task.");
+                    else
                     {
-                        var deviceInfoStruct = deviceInfoStructs.Dequeue();
-                        var findThis = false;
-                        foreach (var item in Program.DeviceCards)
+                        Log.Information($"In {location}: Timer elapsed and run task.");
+
+                        KeepCheckAndRemoveTaskRunning = true;
+
+                        #region 更新已有卡片的信息, 添加不存在卡片到界面
+
+                        while (deviceInfoStructs.Count > 0)
                         {
-                            if (item.viewModel.DeviceInfo.DeviceName.Equals(deviceInfoStruct.DeviceName))
+                            var deviceInfoStruct = deviceInfoStructs.Dequeue();
+                            var findThis = false;
+                            foreach (var item in Program.DeviceCards)
                             {
-                                item.viewModel.DeviceInfo = deviceInfoStruct;
-                                findThis = true;
-                                break;
+                                if (item.viewModel.DeviceInfo.DeviceName.Equals(deviceInfoStruct.DeviceName))
+                                {
+                                    item.viewModel.DeviceInfo = deviceInfoStruct;
+                                    findThis = true;
+                                    break;
+                                }
+                            }
+                            if (!findThis)
+                            {
+                                Dispatcher.UIThread.Post(() =>
+                                {
+                                    lock (AddDeviceCard2ViewLock)
+                                    {
+                                        Program.DeviceCards.Add(new(deviceInfoStruct));
+                                    }
+                                });
                             }
                         }
-                        if (!findThis)
+
+                        #endregion
+
+                        #region 查找重复的卡片并移除
+
+                        List<string>
+                            MacAddressVisited = new(),
+                            IPv4AddressVisited = new(),
+                            IPv6AddressVisited = new();
+                        List<DeviceCard> DevicesNeed2BeRemoved = new();
+
+                        foreach (var item in Program.DeviceCards)
                         {
-                            Dispatcher.UIThread.Post(() =>
+                            var info = item.viewModel.DeviceInfo;
+                            if (
+                                MacAddressVisited.Contains(info.DeviceMacAddress) ||
+                                IPv4AddressVisited.Contains(info.IPv4) ||
+                                IPv6AddressVisited.Contains(info.IPv6)
+                               )
                             {
-                                lock (AddDeviceCard2ViewLock)
-                                {
-                                    Program.DeviceCards.Add(new(deviceInfoStruct));
-                                }
-                            });
+                                DevicesNeed2BeRemoved.Add(item);
+                                continue;
+                            }
+                            MacAddressVisited.Add(info.DeviceMacAddress);
+                            IPv4AddressVisited.Add(info.IPv4);
+                            IPv6AddressVisited.Add(info.IPv6);
+                            if (DateTime.Now - info.SendTime
+                                > new TimeSpan(0, 0,
+                                    Program.Config.Web.DeviceInfoStructTTLSeconds))
+                                DevicesNeed2BeRemoved.Add(item);
                         }
-                    }
-
-                    #endregion
-
-                    #region 查找重复的卡片并移除
-
-                    List<string>
-                        MacAddressVisited = new(),
-                        IPv4AddressVisited = new(),
-                        IPv6AddressVisited = new();
-                    List<DeviceCard> DevicesNeed2BeRemoved = new();
-
-                    foreach (var item in Program.DeviceCards)
-                    {
-                        var info = item.viewModel.DeviceInfo;
-                        if (
-                            MacAddressVisited.Contains(info.DeviceMacAddress) ||
-                            IPv4AddressVisited.Contains(info.IPv4) ||
-                            IPv6AddressVisited.Contains(info.IPv6)
-                           )
+                        foreach (var item in DevicesNeed2BeRemoved)
                         {
-                            DevicesNeed2BeRemoved.Add(item);
-                            continue;
+                            lock (AddDeviceCard2ViewLock)
+                            {
+                                Program.DeviceCards.Remove(item);
+                            }
                         }
-                        MacAddressVisited.Add(info.DeviceMacAddress);
-                        IPv4AddressVisited.Add(info.IPv4);
-                        IPv6AddressVisited.Add(info.IPv6);
-                        if (DateTime.Now - info.SendTime
-                            > new TimeSpan(0, 0, Program.Config.Web.DeviceInfoStructTTLSeconds))
-                            DevicesNeed2BeRemoved.Add(item);
-                    }
-                    foreach (var item in DevicesNeed2BeRemoved)
-                    {
-                        lock (AddDeviceCard2ViewLock)
+
+                        #endregion
+
+                        #region 寻找本机卡片并移到最前面
+
+                        int index = 0;
+                        DeviceCard? localMachine = null;
+                        foreach (var item in Program.DeviceCards)
                         {
-                            Program.DeviceCards.Remove(item);
+                            var info = item.viewModel.DeviceInfo;
+                            var self = DevicesServer.DefaultDeviceInfoStruct;
+                            if (info.DeviceMacAddress.Equals(self.DeviceMacAddress)
+                                && info.DeviceName.Equals(self.DeviceName))
+                            {
+                                localMachine = item;
+                                break;
+                            }
+                            ++index;
                         }
-                    }
-
-                    #endregion
-
-                    #region 寻找本机卡片并移到最前面
-
-                    int index = 0;
-                    DeviceCard? localMachine = null;
-                    foreach (var item in Program.DeviceCards)
-                    {
-                        var info = item.viewModel.DeviceInfo;
-                        var self = DevicesServer.DefaultDeviceInfoStruct;
-                        if (info.DeviceMacAddress.Equals(self.DeviceMacAddress)
-                            && info.DeviceName.Equals(self.DeviceName))
+                        if (index != 0)
                         {
-                            localMachine = item;
-                            break;
+                            try
+                            {
+                                Program.DeviceCards.Move(index, 0);
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Warning(e, $"Can't move self 2 first. {e.Message}");
+                            }
                         }
-                        ++index;
-                    }
-                    if (index != 0)
-                    {
-                        try
-                        {
-                            Program.DeviceCards.Move(index, 0);
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Warning($"Can't move self 2 first. {e.Message}", e);
-                        }
-                    }
 
-                    #endregion
+                        #endregion
 
-                    KeepCheckAndRemoveTaskRunning = false;
+                        KeepCheckAndRemoveTaskRunning = false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var location = $"{nameof(DevicesManager)}.{nameof(KeepCheckAndRemove)}()";
+                    Log.Error(ex, $"In {location}: {ex.Message}");
                 }
             };
             timer.Start();

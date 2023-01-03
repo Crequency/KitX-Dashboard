@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.Json;
 using System.Timers;
 
@@ -90,19 +91,27 @@ namespace KitX_Dashboard.Services
             };
             use_timer.Elapsed += (_, _) =>
             {
-                string today = DateTime.Now.ToString("MM.dd");
-                if (UseStatistics != null)
+                try
                 {
-                    if (UseStatistics.ContainsKey(today))
+                    string today = DateTime.Now.ToString("MM.dd");
+                    if (UseStatistics != null)
                     {
-                        UseStatistics[today] += 0.01;
-                        UseStatistics[today] = Math.Round(UseStatistics[today], 2);
+                        if (UseStatistics.ContainsKey(today))
+                        {
+                            UseStatistics[today] += 0.01;
+                            UseStatistics[today] = Math.Round(UseStatistics[today], 2);
+                        }
+                        else
+                        {
+                            UseStatistics.Add(today, 0.01);
+                        }
+                        EventHandlers.Invoke(nameof(EventHandlers.UseStatisticsChanged));
                     }
-                    else
-                    {
-                        UseStatistics.Add(today, 0.01);
-                    }
-                    EventHandlers.Invoke(nameof(EventHandlers.UseStatisticsChanged));
+                }
+                catch (Exception ex)
+                {
+                    var location = $"{nameof(StatisticsManager)}.{nameof(BeginRecord)}";
+                    Log.Error(ex, $"In {location}: {ex.Message}");
                 }
             };
             use_timer.Start();

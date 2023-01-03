@@ -276,10 +276,18 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                         };
                         timer.Elapsed += (_, _) =>
                         {
-                            var progress = checker.GetProgress();
-                            Tip = GetUpdateTip("Calculate")
-                                .Replace("%Progress%", $"({progress.Item1}/{progress.Item2})");
-                            if (_calculateFinished) timer.Stop();
+                            try
+                            {
+                                var progress = checker.GetProgress();
+                                Tip = GetUpdateTip("Calculate")
+                                    .Replace("%Progress%", $"({progress.Item1}/{progress.Item2})");
+                                if (_calculateFinished) timer.Stop();
+                            }
+                            catch(Exception e)
+                            {
+                                var location = $"{nameof(Settings_UpdateViewModel)}.{nameof(CheckUpdate)}";
+                                Log.Warning(e, $"In {location}: {e.Message}");
+                            }
                         };
                         timer.Start();
 

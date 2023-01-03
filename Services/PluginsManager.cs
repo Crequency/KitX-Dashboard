@@ -71,57 +71,65 @@ namespace KitX_Dashboard.Services
             };
             timer.Elapsed += (_, _) =>
             {
-                if (pluginsToAdd.Count > 0)
+                try
                 {
-                    List<PluginCard> pluginCardsToAdd = new();
-                    int needAddCount = 0, addedCount = 0;
-                    while (pluginsToAdd.Count > 0)
+                    if (pluginsToAdd.Count > 0)
                     {
-                        ++needAddCount;
-
-                        PluginStruct pluginStruct = pluginsToAdd.Dequeue();
-
-                        Dispatcher.UIThread.Post(() =>
+                        List<PluginCard> pluginCardsToAdd = new();
+                        int needAddCount = 0, addedCount = 0;
+                        while (pluginsToAdd.Count > 0)
                         {
-                            PluginCard card = new(pluginStruct);
-                            pluginCardsToAdd.Add(card);
-                            lock ((object)addedCount)
-                            {
-                                ++addedCount;
-                            }
-                        });
-                    }
-                    while (needAddCount != addedCount) { }
-                    foreach (var item in pluginCardsToAdd)
-                    {
-                        Program.PluginCards.Add(item);
-                    }
-                }
+                            ++needAddCount;
 
-                if (pluginsToRemove.Count > 0)
-                {
-                    List<PluginCard> pluginCardsToRemove = new();
-                    while (pluginsToRemove.Count > 0)
-                    {
-                        IPEndPoint endPoint = pluginsToRemove.Dequeue();
-                        foreach (var item in Program.PluginCards)
-                        {
-                            if (item.pluginStruct.Tags["IPEndPoint"].Equals(endPoint.ToString()))
+                            PluginStruct pluginStruct = pluginsToAdd.Dequeue();
+
+                            Dispatcher.UIThread.Post(() =>
                             {
-                                pluginCardsToRemove.Add(item);
-                                break;
-                            }
+                                PluginCard card = new(pluginStruct);
+                                pluginCardsToAdd.Add(card);
+                                lock ((object)addedCount)
+                                {
+                                    ++addedCount;
+                                }
+                            });
+                        }
+                        while (needAddCount != addedCount) { }
+                        foreach (var item in pluginCardsToAdd)
+                        {
+                            Program.PluginCards.Add(item);
                         }
                     }
-                    foreach (var item in pluginCardsToRemove)
+
+                    if (pluginsToRemove.Count > 0)
                     {
-                        Program.PluginCards.Remove(item);
+                        List<PluginCard> pluginCardsToRemove = new();
+                        while (pluginsToRemove.Count > 0)
+                        {
+                            IPEndPoint endPoint = pluginsToRemove.Dequeue();
+                            foreach (var item in Program.PluginCards)
+                            {
+                                if (item.pluginStruct.Tags["IPEndPoint"].Equals(endPoint.ToString()))
+                                {
+                                    pluginCardsToRemove.Add(item);
+                                    break;
+                                }
+                            }
+                        }
+                        foreach (var item in pluginCardsToRemove)
+                        {
+                            Program.PluginCards.Remove(item);
+                        }
+                    }
+
+                    if (!GlobalInfo.Running)
+                    {
+                        timer.Stop();
                     }
                 }
-
-                if (!GlobalInfo.Running)
+                catch (Exception ex)
                 {
-                    timer.Stop();
+                    var location = $"{nameof(PluginsManager)}.{nameof(KeepCheckAndRemove)}()";
+                    Log.Error(ex, $"In {location}: {ex.Message}");
                 }
             };
             timer.Start();
@@ -276,7 +284,8 @@ namespace KitX_Dashboard.Services
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("In PluginsManager.KeepCheckAndRemoveOrDelete()", ex);
+                    var location = $"{nameof(PluginsManager)}.{nameof(KeepCheckAndRemoveOrDelete)}()";
+                    Log.Error(ex, $"In {location}: {ex.Message}");
                 }
             };
             timer.Start();
