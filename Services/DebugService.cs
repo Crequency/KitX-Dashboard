@@ -90,6 +90,7 @@ internal class DebugCommands
                         return $"Sent msg: {args["--value"]}";
                     }
                     else return "Missing value of `--value`.";
+                //  HostMessage
                 case "hostmessage":
                     if (args.ContainsKey("--value"))
                     {
@@ -102,6 +103,7 @@ internal class DebugCommands
                         else return "Missing value of `--to`.";
                     }
                     else return "Missing value of `--value`.";
+                //  HostBroadcast
                 case "hostbroadcast":
                     if (args.ContainsKey("--value"))
                     {
