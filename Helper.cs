@@ -59,6 +59,8 @@ namespace KitX_Dashboard
                 )
                 .CreateLogger();
 
+            Log.Information("KitX Dashboard Started.");
+
             #endregion
 
             #region 初始化环境
