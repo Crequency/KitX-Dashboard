@@ -63,6 +63,19 @@ namespace KitX_Dashboard
 
             #endregion
 
+            #region 初始化全局异常捕获
+
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+            {
+                if(e.ExceptionObject is Exception)
+                {
+                    var ex = e.ExceptionObject as Exception;
+                    Log.Error(ex, $"Au oh! Fatal: {ex.Message}");
+                }
+            };
+
+            #endregion
+
             #region 初始化环境
 
             InitEnvironment();
