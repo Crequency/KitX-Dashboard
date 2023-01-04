@@ -20,6 +20,8 @@ namespace KitX_Dashboard.Services
             {
                 try
                 {
+                    Log.Information("WebManager: Starting...");
+
                     DevicesManager.InitEvents();
 
                     DevicesManager.KeepCheckAndRemove();
