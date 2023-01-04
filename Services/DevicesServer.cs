@@ -28,51 +28,44 @@ namespace KitX_Dashboard.Services
             {
                 try
                 {
-
-                    #region 寻找支持的网络适配器
-
-                    Log.Information($"Start {nameof(FindSurpportNetworkInterface)}");
                     //  寻找所有支持的网络适配器
-                    FindSurpportNetworkInterface(new()
+                    Log.Information($"Start {nameof(FindSupportNetworkInterfaces)}");
+                    FindSupportNetworkInterfaces(new()
                     {
                         UdpClient_Send, UdpClient_Receive
                     }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
 
-                    #endregion
-
                     #region 组播收发消息
 
-                    try
-                    {
-                        Log.Information($"Start {nameof(MultiDevicesBroadCastSend)}");
-                        //  开始组播发送本机信息
-                        MultiDevicesBroadCastSend();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error($"In {nameof(DevicesServer)}, " +
-                            $"{nameof(MultiDevicesBroadCastSend)}", ex);
-                    }
-                    try
-                    {
-                        Log.Information($"Start {nameof(MultiDevicesBroadCastReceive)}");
-                        //  开始接收组播消息
-                        MultiDevicesBroadCastReceive();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error($"In {nameof(DevicesServer)}, " +
-                            $"{nameof(MultiDevicesBroadCastReceive)}", ex);
-                    }
+                    //  开始组播发送本机信息
+                    Log.Information($"Start {nameof(MultiDevicesBroadCastSend)}");
+                    MultiDevicesBroadCastSend();
+
+                    //  开始接收组播消息
+                    Log.Information($"Start {nameof(MultiDevicesBroadCastReceive)}");
+                    MultiDevicesBroadCastReceive();
 
                     #endregion
-
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    Log.Error($"In {nameof(DevicesServer)}, " +
-                        $"{nameof(FindSurpportNetworkInterface)}", ex);
+                    var location = $"{nameof(DevicesServer)}.{nameof(Start)}()";
+                    Log.Error(e, $"In {location}: {e.Message}");
+
+                    //  寻找或组播收发失败, 不找了, 尝试系统默认适配器的组播收发
+                    try
+                    {
+                        MultiDevicesBroadCastSendDefault();
+                        MultiDevicesBroadCastReceiveDefault();
+                    }
+                    catch (Exception ex)
+                    {
+                        location = $"{nameof(DevicesServer)}.{nameof(Start)}()";
+                        Log.Error(ex,
+                            $"In {location}: Default UDP functions: {ex.Message}");
+                    }
                 }
+
                 try
                 {
                     Log.Information($"Start Init {nameof(DevicesHost)}");
@@ -81,8 +74,8 @@ namespace KitX_Dashboard.Services
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"In {nameof(DevicesServer)}, " +
-                        $"Init {nameof(DevicesHost)}", ex);
+                    Log.Error(ex, $"In {nameof(DevicesServer)}, " +
+                        $"Init {nameof(DevicesHost)}");
                 }
             }).Start();
         }
@@ -130,7 +123,7 @@ namespace KitX_Dashboard.Services
         /// <summary>
         /// 寻找受支持的网络适配器并把UDP客户端加入组播
         /// </summary>
-        private static void FindSurpportNetworkInterface(List<UdpClient> clients, IPAddress multicastAddress)
+        private static void FindSupportNetworkInterfaces(List<UdpClient> clients, IPAddress multicastAddress)
         {
             NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
             foreach (NetworkInterface adapter in nics)
@@ -214,18 +207,18 @@ namespace KitX_Dashboard.Services
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"In MultiDevicesBroadCastSend: {e.Message}", e);
+                    Log.Error(e, $"In MultiDevicesBroadCastSend: {e.Message}");
                     try
                     {
-                        Log.Information($"Start {nameof(MultiDevicesBroadCastSendDefault)}");
                         EndMultiDevicesBroadCastSend();
                         //  组播发送失败, 尝试由系统决定发送的网络适配器
+                        Log.Information($"Start {nameof(MultiDevicesBroadCastSendDefault)}");
                         MultiDevicesBroadCastSendDefault();
                     }
                     catch (Exception exc)
                     {
-                        Log.Error($"In {nameof(DevicesServer)}, " +
-                            $"{nameof(MultiDevicesBroadCastSendDefault)}", exc);
+                        Log.Error(exc, $"In {nameof(DevicesServer)}, " +
+                            $"{nameof(MultiDevicesBroadCastSendDefault)}");
                     }
                 }
                 if (!GlobalInfo.Running) EndMultiDevicesBroadCastSend();
@@ -277,7 +270,7 @@ namespace KitX_Dashboard.Services
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"In MultiDevicesBroadCastSend: {e.Message}");
+                    Log.Error(e, $"In MultiDevicesBroadCastSend: {e.Message}");
                     EndMultiDevicesBroadCastSendDefault();
                     //  默认发包方式发生问题, 尝试遍历适配器发送报文
                     MultiDevicesBroadCastSend();
@@ -317,7 +310,8 @@ namespace KitX_Dashboard.Services
                             $"Receive: {result}");
                         try
                         {
-                            DeviceInfoStruct deviceInfo = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
+                            DeviceInfoStruct deviceInfo
+                                = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
                             DevicesManager.Update(deviceInfo);
                         }
                         catch (Exception ex)
@@ -329,7 +323,7 @@ namespace KitX_Dashboard.Services
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e.Message, e);
+                    Log.Error(e, e.Message);
                 }
                 if (!GlobalInfo.Running)
                 {
@@ -345,7 +339,7 @@ namespace KitX_Dashboard.Services
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("In MultiDevicesBroadCastReceiveDefault()", ex);
+                        Log.Error(ex, "In MultiDevicesBroadCastReceiveDefault()");
                     }
                 }
             }).Start();
@@ -399,7 +393,7 @@ namespace KitX_Dashboard.Services
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("In MultiDevicesBroadCastReceive()", ex);
+                        Log.Error(ex, "In MultiDevicesBroadCastReceive()");
                     }
                 }
             }).Start();
@@ -558,8 +552,8 @@ namespace KitX_Dashboard.Services
                                 }
                                 catch (Exception e)
                                 {
-                                    Log.Error("In DevicesServer.AcceptClient()" +
-                                        ".ReciveMessage()", e);
+                                    Log.Error(e,
+                                        "In DevicesServer.AcceptClient().ReciveMessage()");
                                 }
                             }).Start();
                         }
