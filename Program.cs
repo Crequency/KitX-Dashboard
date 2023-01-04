@@ -44,6 +44,9 @@ namespace KitX_Dashboard
         [STAThread]
         public static void Main(string[] args)
         {
+
+        //start:
+
             #region 必要的初始化
 
             EventHandlers.Init();
@@ -129,6 +132,12 @@ namespace KitX_Dashboard
             catch (Exception e)
             {
                 File.WriteAllText(Path.GetFullPath("./dump.log"), e.Message);
+
+                if (e is ArgumentOutOfRangeException)
+                {
+                    //goto start;
+                }
+
 #if !DEBUG
                 Environment.Exit(1);
 #endif
