@@ -90,8 +90,7 @@ namespace KitX_Dashboard
 
             #region 初始化 WebManager
 
-            Program.WebManager = new();
-            Program.WebManager?.Start();
+            Program.WebManager = new WebManager().Start();
 
             #endregion
 
