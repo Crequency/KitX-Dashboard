@@ -192,7 +192,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
             }
             catch (Exception e)
             {
-                Log.Error(e.Message, e);
+                Log.Error(e, e.Message);
             }
         }
 
@@ -214,7 +214,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
             }
             catch (Exception e)
             {
-                Log.Error(e.Message, e);
+                Log.Error(e, e.Message);
             }
         }
 
@@ -505,7 +505,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                         await MessageBoxManager.GetMessageBoxStandardWindow(GetUpdateTip("Failed"),
                             e.Message, ButtonEnum.Ok, Icon.Error).Show();
                     });
-                    Log.Error($"{e.Message}", e);
+                    Log.Error(e, $"{e.Message}");
                 }
             }).Start();
         }

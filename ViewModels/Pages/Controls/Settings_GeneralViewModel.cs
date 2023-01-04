@@ -130,7 +130,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("辣鸡公告系统又双叒叕崩了!", ex);
+                    Log.Error(ex, $"辣鸡公告系统又双叒叕崩了! {ex.Message}");
                 }
             }).Start();
         }

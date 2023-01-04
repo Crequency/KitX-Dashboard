@@ -75,7 +75,7 @@ namespace KitX_Dashboard.Services
             }
             catch (Exception e)
             {
-                Log.Warning(e.Message, e);
+                Log.Warning(e, e.Message);
             }
 
             #endregion

@@ -229,7 +229,7 @@ namespace KitX_Dashboard.Services
                         {
                             receivedDeviceInfoStruct4Watch?.Clear();
                             receivedDeviceInfoStruct4Watch = null;
-                            Log.Error("In Watch4MainDevice", e);
+                            Log.Error(e, "In Watch4MainDevice");
                         }
                     }
                 }

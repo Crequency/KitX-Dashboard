@@ -43,7 +43,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 }
                 catch (Exception e)
                 {
-                    Log.Warning($"Icon transform error from base64 to byte[] or " +
+                    Log.Warning(e, $"Icon transform error from base64 to byte[] or " +
                         $"create bitmap from MemoryStream error: {e.Message}");
                     return App.DefaultIcon;
                 }

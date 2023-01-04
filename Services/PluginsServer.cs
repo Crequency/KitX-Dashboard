@@ -87,7 +87,7 @@ namespace KitX_Dashboard.Services
                             }
                             catch (Exception ex)
                             {
-                                Log.Error("In WebManager.AcceptClient().ReciveMessage()", ex);
+                                Log.Error(ex, "In WebManager.AcceptClient().ReciveMessage()", ex);
                             }
                         }).Start();
                     }
@@ -99,7 +99,7 @@ namespace KitX_Dashboard.Services
             }
             catch (Exception ex)
             {
-                Log.Error($"In AcceptClient() : {ex.Message}");
+                Log.Error(ex, $"In AcceptClient() : {ex.Message}");
             }
         }
 
@@ -163,7 +163,7 @@ namespace KitX_Dashboard.Services
             }
             catch (Exception ex)
             {
-                Log.Error($"Error: In ReciveMessage() : {ex.Message}");
+                Log.Error(ex, $"Error: In ReciveMessage() : {ex.Message}");
                 Log.Information($"Connection broke from: {endpoint}");
 
                 //Read是阻塞方法 客户端退出是会引发异常 释放资源 结束此线程

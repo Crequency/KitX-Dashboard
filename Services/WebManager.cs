@@ -35,7 +35,7 @@ namespace KitX_Dashboard.Services
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("In WebManager Start", ex);
+                    Log.Error(ex, "In WebManager Start");
                 }
             }).Start();
 

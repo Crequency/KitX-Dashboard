@@ -130,7 +130,7 @@ namespace KitX_Dashboard
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("In Config Hot Reload: ", ex);
+                    Log.Error(ex, "In Config Hot Reload: ");
                 }
             }));
         }
@@ -176,7 +176,7 @@ namespace KitX_Dashboard
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("In Helper.SaveConfig()", ex);
+                    Log.Error(ex, "In Helper.SaveConfig()");
                 }
             }).Start();
         }
@@ -201,7 +201,7 @@ namespace KitX_Dashboard
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("In Helper.SavePluginsListConfig()", ex);
+                    Log.Error(ex, "In Helper.SavePluginsListConfig()");
                 }
             }).Start();
         }
@@ -218,7 +218,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.LoadConfig()", ex);
+                Log.Error(ex, "In Helper.LoadConfig()");
                 Program.Config = new AppConfig();
             }
         }
@@ -235,7 +235,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.LoadPluginsListConfig()", ex);
+                Log.Error(ex, "In Helper.LoadPluginsListConfig()");
             }
         }
 
@@ -252,7 +252,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.LoadResource()", ex);
+                Log.Error(ex, "In Helper.LoadResource()");
             }
         }
 
@@ -273,7 +273,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.InitConfig()", ex);
+                Log.Error(ex, "In Helper.InitConfig()");
             }
         }
 
@@ -318,7 +318,7 @@ namespace KitX_Dashboard
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("In Helper.InitEnvironment()", ex);
+                        Log.Error(ex, "In Helper.InitEnvironment()");
                     }
                 }).Start();
             #endregion
@@ -363,7 +363,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.InitDataBase()", ex);
+                Log.Error(ex, "In Helper.InitDataBase()");
             }
         }
 
@@ -408,7 +408,7 @@ namespace KitX_Dashboard
             }
             catch (Exception ex)
             {
-                Log.Error("In Helper.ImportPlugin()", ex);
+                Log.Error(ex, "In Helper.ImportPlugin()");
             }
         }
     }

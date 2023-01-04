@@ -250,7 +250,7 @@ namespace KitX_Dashboard.Views
             }
             catch (NullReferenceException o)
             {
-                Log.Warning(o.Message);
+                Log.Warning(o, o.Message);
             }
         }
 

@@ -44,8 +44,7 @@ namespace KitX_Dashboard.Services
             }
             catch (Exception e)
             {
-                Log.Error($"PluginsManager.Execute(msg) => msg: {msg}");
-                Log.Error(e.Message);
+                Log.Error(e, $"PluginsManager.Execute(msg) => msg: {msg}; {e.Message}");
             }
         }
 

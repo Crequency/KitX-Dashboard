@@ -60,7 +60,7 @@ namespace KitX_Dashboard
                 }
                 catch (Exception e)
                 {
-                    Log.Warning($"Suspected absence of language files on record.", e);
+                    Log.Warning(e, $"Suspected absence of language files on record.");
                 }
             }
             finally
@@ -74,7 +74,7 @@ namespace KitX_Dashboard
             }
             catch (Exception e)
             {
-                Log.Warning($"Failed to invoke language changed event.", e);
+                Log.Warning(e, $"Failed to invoke language changed event.");
             }
 
             #endregion
