@@ -111,7 +111,7 @@ namespace KitX_Dashboard.Services
                             MacAddressVisited.Add(info.DeviceMacAddress);
                             IPv4AddressVisited.Add(info.IPv4);
                             IPv6AddressVisited.Add(info.IPv6);
-                            if (DateTime.Now - info.SendTime
+                            if (DateTime.Now - info.SendTime.ToLocalTime()
                                 > new TimeSpan(0, 0,
                                     Program.Config.Web.DeviceInfoStructTTLSeconds))
                                 DevicesNeed2BeRemoved.Add(item);

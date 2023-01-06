@@ -58,7 +58,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                 deviceInfo = value;
                 DeviceName = DeviceInfo.DeviceName;
                 DeviceMacAddress = CheckString(DeviceInfo.DeviceMacAddress, "Text_Device_NoMacAddress");
-                LastOnlineTime = DeviceInfo.SendTime.ToString("yyyy.MM.dd HH:mm:ss");
+                LastOnlineTime = DeviceInfo.SendTime.ToLocalTime().ToString("yyyy.MM.dd HH:mm:ss");
                 DeviceVersion = DeviceInfo.DeviceOSVersion;
                 DeviceOSKind = DeviceInfo.DeviceOSType switch
                 {
