@@ -441,7 +441,7 @@ namespace KitX_Dashboard.Services
                     && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
                 .Select(nic => nic.GetPhysicalAddress().ToString()).FirstOrDefault(),
             IsMainDevice = GlobalInfo.IsMainMachine,
-            SendTime = DateTime.Now,
+            SendTime = DateTime.Now.ToUniversalTime(),
             DeviceOSType = OperatingSystem2Enum.GetOSType(),
             DeviceOSVersion = Environment.OSVersion.VersionString,
             IPv4 = GetInterNetworkIPv4(),
@@ -461,7 +461,7 @@ namespace KitX_Dashboard.Services
         private static void UpdateDefaultDeviceInfoStruct()
         {
             DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
-            DefaultDeviceInfoStruct.SendTime = DateTime.Now;
+            DefaultDeviceInfoStruct.SendTime = DateTime.Now.ToUniversalTime();
             DefaultDeviceInfoStruct.DeviceOSVersion = Environment.OSVersion.VersionString;
             DefaultDeviceInfoStruct.IPv4 = GetInterNetworkIPv4();
             DefaultDeviceInfoStruct.IPv6 = (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
