@@ -112,9 +112,11 @@ namespace KitX_Dashboard.ViewModels
             }
         }
 
-        internal string? PublishDate => PluginDetail?.PublishDate.ToString("yyyy.MM.dd");
+        internal string? PublishDate =>
+            PluginDetail?.PublishDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-        internal string? LastUpdateDate => PluginDetail?.LastUpdateDate.ToString("yyyy.MM.dd");
+        internal string? LastUpdateDate =>
+            PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
 
         internal static Color TintColor => Program.Config.App.Theme switch
         {
