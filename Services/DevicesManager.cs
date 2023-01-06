@@ -111,7 +111,7 @@ namespace KitX_Dashboard.Services
                             MacAddressVisited.Add(info.DeviceMacAddress);
                             IPv4AddressVisited.Add(info.IPv4);
                             IPv6AddressVisited.Add(info.IPv6);
-                            if (DateTime.Now - info.SendTime.ToLocalTime()
+                            if (DateTime.UtcNow - info.SendTime.ToUniversalTime()
                                 > new TimeSpan(0, 0,
                                     Program.Config.Web.DeviceInfoStructTTLSeconds))
                                 DevicesNeed2BeRemoved.Add(item);
@@ -194,7 +194,7 @@ namespace KitX_Dashboard.Services
                     receivedDeviceInfoStruct4Watch = new();
                     var checkedTime = 0;
                     var hadMainDevice = false;
-                    var earliestBuiltServerTime = DateTime.Now;
+                    var earliestBuiltServerTime = DateTime.UtcNow;
                     var serverPort = 0;
                     var serverAddress = string.Empty;
                     while (checkedTime < 7)
@@ -206,7 +206,8 @@ namespace KitX_Dashboard.Services
                             {
                                 if (item.IsMainDevice)
                                 {
-                                    if (item.DeviceServerBuildTime < earliestBuiltServerTime)
+                                    if (item.DeviceServerBuildTime.ToUniversalTime()
+                                        < earliestBuiltServerTime)
                                     {
                                         serverPort = item.DeviceServerPort;
                                         serverAddress = item.IPv4;

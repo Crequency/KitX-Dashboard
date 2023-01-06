@@ -346,15 +346,15 @@ namespace KitX_Dashboard
                 using var db
                     = new LiteDatabase(Path.GetFullPath(GlobalInfo.ActivitiesDataBaseFilePath));
                 Program.ActivitiesDataBase = db;
-                string colName = DateTime.Now.ToString("yyyy_MM").Num2UpperChar();
+                string colName = DateTime.UtcNow.ToString("yyyy_MM").Num2UpperChar();
                 var col = db.GetCollection<Activity>(colName);
                 var activity = new Activity()
                 {
                     Creator = new() { GlobalInfo.AppFullName },
                     Assign = null,
                     Closer = new() { GlobalInfo.AppFullName },
-                    StartTime = new() { DateTime.Now },
-                    EndTime = new() { DateTime.Now },
+                    StartTime = new() { DateTime.UtcNow },
+                    EndTime = new() { DateTime.UtcNow },
                     IconKind = Material.Icons.MaterialIconKind.Play,
                     Labels = null,
                     Name = nameof(ActivityNames.AppStart),
