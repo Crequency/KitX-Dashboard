@@ -18,6 +18,12 @@ internal class DebugService
         if (args is null) return null;
         var name = header.ToFunctionName();
         var foo = typeof(DebugCommands).GetMethod(name);
+        if (args.ContainsKey("--times"))
+        {
+            if (int.TryParse(args["--times"], out int times))
+                for (var i = 0; i < times - 1; ++i)
+                    _ = foo?.Invoke(null, new Dictionary<string, string>[] { args });
+        }
         return foo?.Invoke(null, new Dictionary<string, string>[] { args }) as string;
     }
 }
