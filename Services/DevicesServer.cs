@@ -128,8 +128,9 @@ namespace KitX_Dashboard.Services
             NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
             foreach (NetworkInterface adapter in nics)
             {
+                IPInterfaceProperties adapterProperties = adapter.GetIPProperties();
                 IPInterfaceProperties ip_properties = adapter.GetIPProperties();
-                if (adapter.GetIPProperties().MulticastAddresses.Count == 0
+                if (ip_properties.MulticastAddresses.Count == 0
                     // most of VPN adapters will be skipped
                     || !adapter.SupportsMulticast
                     // multicast is meaningless for this type of connection
@@ -137,11 +138,10 @@ namespace KitX_Dashboard.Services
                     // this adapter is off or not connected
                     || !adapter.Supports(NetworkInterfaceComponent.IPv4)
                     ) continue;
-                IPInterfaceProperties adapterProperties = adapter.GetIPProperties();
                 UnicastIPAddressInformationCollection unicastIPAddresses
                     = adapterProperties.UnicastAddresses;
                 IPv4InterfaceProperties p = adapterProperties.GetIPv4Properties();
-                if (p == null) continue;    // IPv4 is not configured on this adapter
+                if (p is null) continue;    // IPv4 is not configured on this adapter
                 SurpportedNetworkInterfaces.Add(IPAddress.HostToNetworkOrder(p.Index));
                 IPAddress? ipAddress = null;
                 foreach (UnicastIPAddressInformation unicastIPAddress in unicastIPAddresses)
@@ -150,7 +150,7 @@ namespace KitX_Dashboard.Services
                     ipAddress = unicastIPAddress.Address;
                     break;
                 }
-                if (ipAddress == null) continue;
+                if (ipAddress is null) continue;
                 foreach (var udpClient in clients)
                     udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
             }
@@ -417,16 +417,68 @@ namespace KitX_Dashboard.Services
         /// <returns>使用点分十进制表示法的本机内网IPv4地址</returns>
         private static string GetInterNetworkIPv4()
         {
-            return (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                    where ip.AddressFamily == AddressFamily.InterNetwork
-                        && !ip.ToString().Equals("127.0.0.1")
-                        && (ip.ToString().StartsWith("192.168")                         //  192.168.x.x
-                            || ip.ToString().StartsWith("10")                           //  10.x.x.x
-                            || (IPv4_2_4Parts(ip.ToString()).Item1 == 172               //  172.16-31.x.x
-                                && IPv4_2_4Parts(ip.ToString()).Item2 >= 16
-                                && IPv4_2_4Parts(ip.ToString()).Item2 <= 31))
-                        && ip.ToString().StartsWith(Program.Config.Web.IPFilter)  //  满足自定义规则
-                    select ip).First().ToString();
+            try
+            {
+                return (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
+                        where ip.AddressFamily == AddressFamily.InterNetwork
+                            && !ip.ToString().Equals("127.0.0.1")
+                            && (ip.ToString().StartsWith("192.168")                         //  192.168.x.x
+                                || ip.ToString().StartsWith("10")                           //  10.x.x.x
+                                || (IPv4_2_4Parts(ip.ToString()).Item1 == 172               //  172.16-31.x.x
+                                    && IPv4_2_4Parts(ip.ToString()).Item2 >= 16
+                                    && IPv4_2_4Parts(ip.ToString()).Item2 <= 31))
+                            && ip.ToString().StartsWith(Program.Config.Web.IPFilter)  //  满足自定义规则
+                        select ip).First().ToString();
+            }
+            catch (Exception ex)
+            {
+                var location = $"{nameof(DevicesServer)}.{nameof(GetInterNetworkIPv4)}";
+                Log.Warning(ex, $"In {location}: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 获取本机内网 IPv6 地址
+        /// </summary>
+        /// <returns>IPv6 地址</returns>
+        private static string GetInterNetworkIPv6()
+        {
+            try
+            {
+                return (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
+                        where ip.AddressFamily == AddressFamily.InterNetworkV6
+                            && !ip.ToString().Equals("::1")
+                        select ip).First().ToString();
+            }
+            catch (Exception ex)
+            {
+                var location = $"{nameof(DevicesServer)}.{nameof(GetInterNetworkIPv6)}";
+                Log.Warning(ex, $"In {location}: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 尝试获取设备 MAC 地址
+        /// </summary>
+        /// <returns>MAC 地址</returns>
+        private static string? TryGetDeviceMacAddress()
+        {
+            try
+            {
+                string? result = NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(nic => nic.OperationalStatus == OperationalStatus.Up
+                        && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                    .Select(nic => nic.GetPhysicalAddress().ToString()).FirstOrDefault();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var location = $"{nameof(DevicesServer)}.{nameof(TryGetDeviceMacAddress)}";
+                Log.Warning(ex, $"In {location}: {ex.Message}");
+                return string.Empty;
+            }
         }
 
         /// <summary>
@@ -436,19 +488,13 @@ namespace KitX_Dashboard.Services
         private static DeviceInfoStruct GetDeviceInfo() => new()
         {
             DeviceName = Environment.MachineName,
-            DeviceMacAddress = NetworkInterface.GetAllNetworkInterfaces()
-                .Where(nic => nic.OperationalStatus == OperationalStatus.Up
-                    && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-                .Select(nic => nic.GetPhysicalAddress().ToString()).FirstOrDefault(),
+            DeviceMacAddress = TryGetDeviceMacAddress(),
             IsMainDevice = GlobalInfo.IsMainMachine,
-            SendTime = DateTime.Now.ToUniversalTime(),
+            SendTime = DateTime.UtcNow,
             DeviceOSType = OperatingSystem2Enum.GetOSType(),
             DeviceOSVersion = Environment.OSVersion.VersionString,
             IPv4 = GetInterNetworkIPv4(),
-            IPv6 = (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                    where ip.AddressFamily == AddressFamily.InterNetworkV6
-                        && !ip.ToString().Equals("::1")
-                    select ip).First().ToString(),
+            IPv6 = GetInterNetworkIPv6(),
             PluginServerPort = GlobalInfo.PluginServerPort,
             DeviceServerPort = GlobalInfo.DeviceServerPort,
             DeviceServerBuildTime = new(),
@@ -461,13 +507,10 @@ namespace KitX_Dashboard.Services
         private static void UpdateDefaultDeviceInfoStruct()
         {
             DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
-            DefaultDeviceInfoStruct.SendTime = DateTime.Now.ToUniversalTime();
+            DefaultDeviceInfoStruct.SendTime = DateTime.UtcNow;
             DefaultDeviceInfoStruct.DeviceOSVersion = Environment.OSVersion.VersionString;
             DefaultDeviceInfoStruct.IPv4 = GetInterNetworkIPv4();
-            DefaultDeviceInfoStruct.IPv6 = (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                                            where ip.AddressFamily == AddressFamily.InterNetworkV6
-                                                && !ip.ToString().Equals("::1")
-                                            select ip).First().ToString();
+            DefaultDeviceInfoStruct.IPv6 = GetInterNetworkIPv6();
             DefaultDeviceInfoStruct.PluginServerPort = GlobalInfo.PluginServerPort;
             DefaultDeviceInfoStruct.PluginsCount = Program.PluginCards.Count;
             DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
@@ -498,7 +541,7 @@ namespace KitX_Dashboard.Services
 
             int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
             GlobalInfo.DeviceServerPort = port; // 全局端口号标明
-            GlobalInfo.ServerBuildTime = DateTime.Now;
+            GlobalInfo.ServerBuildTime = DateTime.UtcNow;
             GlobalInfo.IsMainMachine = true;
 
             Log.Information($"DevicesServer Port: {port}");
