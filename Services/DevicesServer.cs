@@ -1,4 +1,5 @@
-﻿using KitX.Web.Rules;
+﻿using Common.BasicHelper.Util.Extension;
+using KitX.Web.Rules;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
 using Serilog;
@@ -129,8 +130,19 @@ namespace KitX_Dashboard.Services
             foreach (NetworkInterface adapter in nics)
             {
                 IPInterfaceProperties adapterProperties = adapter.GetIPProperties();
-                IPInterfaceProperties ip_properties = adapter.GetIPProperties();
-                if (ip_properties.MulticastAddresses.Count == 0
+
+                try
+                {
+                    var logs = adapter.Dump2Lines();
+                    for (int i = 0; i < logs.Length; i++)
+                        Log.Information(logs[i]);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Logging network interface items.");
+                }
+
+                if (adapterProperties.MulticastAddresses.Count == 0
                     // most of VPN adapters will be skipped
                     || !adapter.SupportsMulticast
                     // multicast is meaningless for this type of connection
