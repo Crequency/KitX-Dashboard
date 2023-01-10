@@ -111,6 +111,7 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">跟随系统</x:String>
     <x:String x:Key="Text_Settings_Performence">性能</x:String>
     <x:String x:Key="Text_Settings_Performence_Web">网络相关设置</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_StartDelay">延时启动</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">插件通信端口</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">设备通信端口</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">本机IP过滤规则</x:String>

@@ -111,6 +111,7 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">시스템을 따르다</x:String>
     <x:String x:Key="Text_Settings_Performence">성능</x:String>
     <x:String x:Key="Text_Settings_Performence_Web">네트워크 관련 설정</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_StartDelay">Text_Settings_Performence_Web_StartDelay</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">플러그인 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">장치 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">기본 IP 필터링 규칙</x:String>

@@ -111,6 +111,7 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">システムに従ってください</x:String>
     <x:String x:Key="Text_Settings_Performence">パフォーマンス</x:String>
     <x:String x:Key="Text_Settings_Performence_Web">ネットワーク関連の設定</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_StartDelay">遅れたスタート</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">プラグイン通信ポート</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">デバイス通信ポート</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">ネイティブ IP フィルタリング ルール</x:String>
