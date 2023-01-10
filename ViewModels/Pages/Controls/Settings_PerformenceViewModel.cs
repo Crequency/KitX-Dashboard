@@ -73,6 +73,19 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
         }
 
         /// <summary>
+        /// 网络服务启动延时
+        /// </summary>
+        internal static int DelayedWebStartSeconds
+        {
+            get => Program.Config.Web.DelayStartSeconds;
+            set
+            {
+                Program.Config.Web.DelayStartSeconds = value;
+                SaveChanges();
+            }
+        }
+
+        /// <summary>
         /// 插件间服务端口属性
         /// </summary>
         internal static int PluginsServerPort => GlobalInfo.PluginServerPort;
