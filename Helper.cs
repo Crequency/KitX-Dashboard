@@ -10,6 +10,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading;
 using Activity = Common.Activity.Activity;
@@ -67,7 +68,7 @@ namespace KitX_Dashboard
 
             AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
             {
-                if(e.ExceptionObject is Exception)
+                if (e.ExceptionObject is Exception)
                 {
                     var ex = e.ExceptionObject as Exception;
                     Log.Error(ex, $"Au oh! Fatal: {ex.Message}");
@@ -88,9 +89,22 @@ namespace KitX_Dashboard
 
             #endregion
 
+            #region 初始化 TasksManager
+
+            Program.TasksManager = new();
+
+            #endregion
+
             #region 初始化 WebManager
 
-            Program.WebManager = new WebManager().Start();
+            Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), new(() =>
+            {
+                new Thread(() =>
+                {
+                    Thread.Sleep(Program.Config.Web.DelayStartSeconds * 1000);
+                    Program.WebManager = new WebManager().Start();
+                }).Start();
+            }));
 
             #endregion
 

@@ -245,6 +245,8 @@ namespace KitX_Dashboard.Data
         /// </summary>
         public class Config_Web
         {
+            [JsonInclude]
+            public int DelayStartSeconds { get; set; } = 3;
 
             [JsonInclude]
             public string APIServer { get; set; } = "api.catrol.cn";

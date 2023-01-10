@@ -18,6 +18,8 @@ namespace KitX_Dashboard
     {
         internal static AppConfig Config = new();
 
+        internal static TasksManager? TasksManager;
+
         internal static WebManager? WebManager;
 
         internal static FileWatcherManager? FileWatcherManager;
