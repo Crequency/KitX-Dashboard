@@ -1,4 +1,5 @@
-﻿using Serilog.Events;
+﻿using Avalonia.Controls;
+using Serilog.Events;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -109,6 +110,12 @@ namespace KitX_Dashboard.Data
 
                 [JsonInclude]
                 public int Window_Top { get; set; } = -1;
+
+                [JsonInclude]
+                public WindowState WindowState { get; set; } = WindowState.Normal;
+
+                [JsonInclude]
+                public bool IsHidden { get; set; } = false;
 
                 [JsonInclude]
                 public Dictionary<string, string> Tags { get; set; } = new()

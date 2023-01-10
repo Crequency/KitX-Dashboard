@@ -46,6 +46,7 @@ namespace KitX_Dashboard.ViewModels
                 win.WindowState = WindowState.Normal;
             win?.Show();
             win?.Activate();
+            Program.Config.Windows.MainWindow.IsHidden = false;
         }
 
         internal void Exit(object mainWindow)

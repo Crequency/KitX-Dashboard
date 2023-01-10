@@ -87,6 +87,19 @@ namespace KitX_Dashboard.Views
                 ClientSize = new(800, 600);
             }
 
+            try
+            {
+                Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal),
+                    () => WindowState = Program.Config.Windows.MainWindow.WindowState);
+                if (Program.Config.Windows.MainWindow.IsHidden)
+                    Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal),
+                        () => Hide());
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, e.Message);
+            }
+
             InitMainWindow();
 
 #if DEBUG
@@ -262,20 +275,23 @@ namespace KitX_Dashboard.Views
         /// </summary>
         private void SaveMetaData()
         {
-            if (WindowState != WindowState.Minimized)
+            if (WindowState != WindowState.Maximized)
             {
-                Program.Config.Windows.MainWindow.Window_Left = Position.X;
-                Program.Config.Windows.MainWindow.Window_Top = Position.Y;
-            }
-            if (OperatingSystem.IsWindows())
-            {
-                Program.Config.Windows.MainWindow.Window_Width = Width;
-                Program.Config.Windows.MainWindow.Window_Height = Height - 30;
-            }
-            else
-            {
-                Program.Config.Windows.MainWindow.Window_Width = Width;
-                Program.Config.Windows.MainWindow.Window_Height = Height;
+                if (WindowState != WindowState.Minimized)
+                {
+                    Program.Config.Windows.MainWindow.Window_Left = Position.X;
+                    Program.Config.Windows.MainWindow.Window_Top = Position.Y;
+                }
+                if (OperatingSystem.IsWindows())
+                {
+                    Program.Config.Windows.MainWindow.Window_Width = Width;
+                    Program.Config.Windows.MainWindow.Window_Height = Height - 30;
+                }
+                else
+                {
+                    Program.Config.Windows.MainWindow.Window_Width = Width;
+                    Program.Config.Windows.MainWindow.Window_Height = Height;
+                }
             }
             Program.Config.Windows.MainWindow.
                 Tags["SelectedPage"] = SelectedPageName;
@@ -287,6 +303,11 @@ namespace KitX_Dashboard.Views
         /// <param name="state">窗口状态</param>
         protected override void HandleWindowStateChanged(WindowState state)
         {
+            Program.Config.Windows.MainWindow.WindowState = state;
+            Program.Config.Windows.MainWindow.IsHidden = false;
+
+            SaveChanges();
+
             base.HandleWindowStateChanged(state);
         }
 
@@ -304,6 +325,8 @@ namespace KitX_Dashboard.Views
             {
                 e.Cancel = true;
                 Hide();
+                Program.Config.Windows.MainWindow.IsHidden = true;
+                SaveChanges();
             }
             else
             {
@@ -340,6 +363,8 @@ namespace KitX_Dashboard.Views
             }
 
             thm.ForceWin32WindowToTheme(this);
+
+            Program.TasksManager.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
         }
 
         /// <summary>
