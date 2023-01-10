@@ -97,14 +97,14 @@ namespace KitX_Dashboard
 
             #region 初始化 WebManager
 
-            Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), new(() =>
+            Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
             {
                 new Thread(() =>
                 {
                     Thread.Sleep(Program.Config.Web.DelayStartSeconds * 1000);
                     Program.WebManager = new WebManager().Start();
                 }).Start();
-            }));
+            });
 
             #endregion
 
