@@ -283,7 +283,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls
                                     .Replace("%Progress%", $"({progress.Item1}/{progress.Item2})");
                                 if (_calculateFinished) timer.Stop();
                             }
-                            catch(Exception e)
+                            catch (Exception e)
                             {
                                 var location = $"{nameof(Settings_UpdateViewModel)}.{nameof(CheckUpdate)}";
                                 Log.Warning(e, $"In {location}: {e.Message}");

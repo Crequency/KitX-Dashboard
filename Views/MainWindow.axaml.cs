@@ -40,7 +40,6 @@ namespace KitX_Dashboard.Views
             Program.MainWindow = this;
 
             Resources["MainWindow"] = this;
-            //(Resources["TrayIcon"] as TrayIcon).CommandParameter = this;
 
             DataContext = viewModel;
 
@@ -180,16 +179,6 @@ namespace KitX_Dashboard.Views
             timer.Elapsed += (_, _) => UpdateGreetingText();
             timer.Start();
 
-            //  位置改变时更新配置
-            //PositionChanged += (_, e) =>
-            //{
-            //    if (WindowState != WindowState.Minimized)
-            //    {
-            //        Program.Config.Windows.MainWindow.Window_Left = e.Point.X;
-            //        Program.Config.Windows.MainWindow.Window_Top = e.Point.Y;
-            //    }
-            //};
-
             Program.TasksManager.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
         }
 
@@ -215,9 +204,9 @@ namespace KitX_Dashboard.Views
                     Resources["GreetingText"] = text as string;
                 });
             }
-            catch (ArgumentOutOfRangeException)
+            catch (ArgumentOutOfRangeException e)
             {
-                Log.Warning($"No Language Resources Loaded.");
+                Log.Warning(e, $"No Language Resources Loaded.");
             }
         }
 

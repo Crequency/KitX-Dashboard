@@ -6,7 +6,6 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
 namespace KitX_Dashboard.Services
