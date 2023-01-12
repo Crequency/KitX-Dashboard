@@ -2,23 +2,22 @@
 using Avalonia.Markup.Xaml;
 using KitX_Dashboard.ViewModels.Pages;
 
-namespace KitX_Dashboard.Views.Pages
+namespace KitX_Dashboard.Views.Pages;
+
+public partial class AccountPage : UserControl
 {
-    public partial class AccountPage : UserControl
+    private static readonly AccountPageViewModel viewModel = new();
+
+    public AccountPage()
     {
-        private static readonly AccountPageViewModel viewModel = new();
+        InitializeComponent();
 
-        public AccountPage()
-        {
-            InitializeComponent();
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
     }
 }
 

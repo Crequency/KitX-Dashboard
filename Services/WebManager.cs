@@ -2,75 +2,74 @@
 using System;
 using System.Threading;
 
-namespace KitX_Dashboard.Services
+namespace KitX_Dashboard.Services;
+
+public class WebManager : IDisposable
 {
-    public class WebManager : IDisposable
+    public WebManager()
     {
-        public WebManager()
+
+    }
+
+    internal PluginsServer? pluginsServer;
+    internal DevicesServer? devicesServer;
+
+    public WebManager Start()
+    {
+        new Thread(() =>
         {
-
-        }
-
-        internal PluginsServer? pluginsServer;
-        internal DevicesServer? devicesServer;
-
-        public WebManager Start()
-        {
-            new Thread(() =>
+            try
             {
-                try
-                {
-                    Log.Information("WebManager: Starting...");
+                Log.Information("WebManager: Starting...");
 
-                    DevicesManager.InitEvents();
+                DevicesManager.InitEvents();
 
-                    DevicesManager.KeepCheckAndRemove();
-                    DevicesManager.Watch4MainDevice();
-                    PluginsManager.KeepCheckAndRemove();
-                    PluginsManager.KeepCheckAndRemoveOrDelete();
+                DevicesManager.KeepCheckAndRemove();
+                DevicesManager.Watch4MainDevice();
+                PluginsManager.KeepCheckAndRemove();
+                PluginsManager.KeepCheckAndRemoveOrDelete();
 
-                    pluginsServer = new();
-                    devicesServer = new();
+                pluginsServer = new();
+                devicesServer = new();
 
-                    pluginsServer.Start();
-                    devicesServer.Start();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "In WebManager Start");
-                }
-            }).Start();
+                pluginsServer.Start();
+                devicesServer.Start();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "In WebManager Start");
+            }
+        }).Start();
 
-            return this;
-        }
+        return this;
+    }
 
-        public WebManager Stop()
-        {
-            pluginsServer?.Stop();
-            devicesServer?.Stop();
+    public WebManager Stop()
+    {
+        pluginsServer?.Stop();
+        devicesServer?.Stop();
 
-            pluginsServer?.Dispose();
-            devicesServer?.Dispose();
+        pluginsServer?.Dispose();
+        devicesServer?.Dispose();
 
-            return this;
-        }
+        return this;
+    }
 
-        public WebManager Restart()
-        {
-            Stop();
-            Start();
-            return this;
-        }
+    public WebManager Restart()
+    {
+        Stop();
+        Start();
+        return this;
+    }
 
-        /// <summary>
-        /// 释放资源
-        /// </summary>
-        public void Dispose()
-        {
-            pluginsServer?.Dispose();
-            devicesServer?.Dispose();
-            GC.SuppressFinalize(this);
-        }
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    public void Dispose()
+    {
+        pluginsServer?.Dispose();
+        devicesServer?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 

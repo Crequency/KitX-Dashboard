@@ -3,32 +3,31 @@ using Avalonia.Markup.Xaml;
 using KitX.Web.Rules;
 using KitX_Dashboard.ViewModels.Pages.Controls;
 
-namespace KitX_Dashboard.Views.Pages.Controls
+namespace KitX_Dashboard.Views.Pages.Controls;
+
+public partial class DeviceCard : UserControl
 {
-    public partial class DeviceCard : UserControl
+    internal readonly DeviceCardViewModel viewModel = new();
+
+    public DeviceCard()
     {
-        internal readonly DeviceCardViewModel viewModel = new();
+        InitializeComponent();
 
-        public DeviceCard()
-        {
-            InitializeComponent();
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
+    public DeviceCard(DeviceInfoStruct deviceInfo)
+    {
+        InitializeComponent();
 
-        public DeviceCard(DeviceInfoStruct deviceInfo)
-        {
-            InitializeComponent();
+        viewModel.DeviceInfo = deviceInfo;
 
-            viewModel.DeviceInfo = deviceInfo;
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
     }
 }
 

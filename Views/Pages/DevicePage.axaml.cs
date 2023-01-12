@@ -2,23 +2,22 @@
 using Avalonia.Markup.Xaml;
 using KitX_Dashboard.ViewModels.Pages;
 
-namespace KitX_Dashboard.Views.Pages
+namespace KitX_Dashboard.Views.Pages;
+
+public partial class DevicePage : UserControl
 {
-    public partial class DevicePage : UserControl
+    private readonly DevicePageViewModel viewModel = new();
+
+    public DevicePage()
     {
-        private readonly DevicePageViewModel viewModel = new();
+        InitializeComponent();
 
-        public DevicePage()
-        {
-            InitializeComponent();
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
     }
 }
 

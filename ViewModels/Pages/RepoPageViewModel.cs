@@ -14,163 +14,162 @@ using System.Threading;
 
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
 
-namespace KitX_Dashboard.ViewModels.Pages
+namespace KitX_Dashboard.ViewModels.Pages;
+
+internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 {
-    internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
+    public RepoPageViewModel()
     {
-        public RepoPageViewModel()
+
+        InitEvents();
+
+        InitCommands();
+
+        SearchingText = "";
+        PluginsCount = PluginBars.Count.ToString();
+
+        PluginBars.CollectionChanged += (_, _) =>
         {
-
-            InitEvents();
-
-            InitCommands();
-
-            SearchingText = "";
             PluginsCount = PluginBars.Count.ToString();
+            NoPlugins_TipHeight = PluginBars.Count == 0 ? 300 : 0;
+        };
+    }
 
-            PluginBars.CollectionChanged += (_, _) =>
-            {
-                PluginsCount = PluginBars.Count.ToString();
-                NoPlugins_TipHeight = PluginBars.Count == 0 ? 300 : 0;
-            };
-        }
-
-        /// <summary>
-        /// 初始化事件
-        /// </summary>
-        private void InitEvents()
+    /// <summary>
+    /// 初始化事件
+    /// </summary>
+    private void InitEvents()
+    {
+        EventHandlers.ConfigSettingsChanged += () =>
         {
-            EventHandlers.ConfigSettingsChanged += () =>
-            {
-                ImportButtonVisibility = Program.Config.App.DeveloperSetting;
-            };
-        }
+            ImportButtonVisibility = Program.Config.App.DeveloperSetting;
+        };
+    }
 
-        /// <summary>
-        /// 初始化命令
-        /// </summary>
-        private void InitCommands()
+    /// <summary>
+    /// 初始化命令
+    /// </summary>
+    private void InitCommands()
+    {
+        ImportPluginCommand = new(ImportPlugin);
+        RefreshPluginsCommand = new(RefreshPlugins);
+    }
+
+    internal string SearchingText { get; set; }
+
+    internal string pluginsCount = "0";
+
+    internal string PluginsCount
+    {
+        get => pluginsCount;
+        set
         {
-            ImportPluginCommand = new(ImportPlugin);
-            RefreshPluginsCommand = new(RefreshPlugins);
+            pluginsCount = value;
+            PropertyChanged?.Invoke(this, new(nameof(PluginsCount)));
         }
+    }
 
-        internal string SearchingText { get; set; }
+    internal double noPlugins_tipHeight = 300;
 
-        internal string pluginsCount = "0";
-
-        internal string PluginsCount
+    internal double NoPlugins_TipHeight
+    {
+        get => noPlugins_tipHeight;
+        set
         {
-            get => pluginsCount;
-            set
-            {
-                pluginsCount = value;
-                PropertyChanged?.Invoke(this, new(nameof(PluginsCount)));
-            }
+            noPlugins_tipHeight = value;
+            PropertyChanged?.Invoke(this, new(nameof(NoPlugins_TipHeight)));
         }
+    }
 
-        internal double noPlugins_tipHeight = 300;
-
-        internal double NoPlugins_TipHeight
+    internal bool ImportButtonVisibility
+    {
+        get => Program.Config.App.DeveloperSetting;
+        set
         {
-            get => noPlugins_tipHeight;
-            set
-            {
-                noPlugins_tipHeight = value;
-                PropertyChanged?.Invoke(this, new(nameof(NoPlugins_TipHeight)));
-            }
+            Program.Config.App.DeveloperSetting = value;
+            PropertyChanged?.Invoke(this, new(nameof(ImportButtonVisibility)));
         }
+    }
 
-        internal bool ImportButtonVisibility
+    internal ObservableCollection<PluginBar> pluginBars = new();
+
+    internal ObservableCollection<PluginBar> PluginBars
+    {
+        get => pluginBars;
+        set => pluginBars = value;
+    }
+
+    internal DelegateCommand? ImportPluginCommand { get; set; }
+
+    internal DelegateCommand? RefreshPluginsCommand { get; set; }
+
+    /// <summary>
+    /// 导入插件
+    /// </summary>
+    /// <param name="_"></param>
+    internal async void ImportPlugin(object win)
+    {
+        OpenFileDialog ofd = new();
+        ofd.Filters?.Add(new()
         {
-            get => Program.Config.App.DeveloperSetting;
-            set
-            {
-                Program.Config.App.DeveloperSetting = value;
-                PropertyChanged?.Invoke(this, new(nameof(ImportButtonVisibility)));
-            }
-        }
-
-        internal ObservableCollection<PluginBar> pluginBars = new();
-
-        internal ObservableCollection<PluginBar> PluginBars
+            Name = "KitX Extensions Packages",
+            Extensions = { "kxp" }
+        });
+        ofd.AllowMultiple = true;
+        string[]? files = await ofd.ShowAsync(win as Window);
+        if (files != null && files?.Length > 0)
         {
-            get => pluginBars;
-            set => pluginBars = value;
-        }
-
-        internal DelegateCommand? ImportPluginCommand { get; set; }
-
-        internal DelegateCommand? RefreshPluginsCommand { get; set; }
-
-        /// <summary>
-        /// 导入插件
-        /// </summary>
-        /// <param name="_"></param>
-        internal async void ImportPlugin(object win)
-        {
-            OpenFileDialog ofd = new();
-            ofd.Filters?.Add(new()
+            new Thread(() =>
             {
-                Name = "KitX Extensions Packages",
-                Extensions = { "kxp" }
-            });
-            ofd.AllowMultiple = true;
-            string[]? files = await ofd.ShowAsync(win as Window);
-            if (files != null && files?.Length > 0)
-            {
-                new Thread(() =>
+                try
                 {
-                    try
-                    {
-                        PluginsManager.ImportPlugin(files, true);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "In RepoPageViewModel.ImportPlugin()");
-                    }
-                }).Start();
-            }
-        }
-
-        /// <summary>
-        /// 刷新插件
-        /// </summary>
-        /// <param name="_"></param>
-        internal void RefreshPlugins(object _)
-        {
-            //LiteDatabase? pgdb = Program.PluginsDataBase;
-
-            PluginBars.Clear();
-            lock (PluginsManager.PluginsListOperationLock)
-            {
-                foreach (var item in Program.PluginsList.Plugins)
+                    PluginsManager.ImportPlugin(files, true);
+                }
+                catch (Exception ex)
                 {
-                    try
+                    Log.Error(ex, "In RepoPageViewModel.ImportPlugin()");
+                }
+            }).Start();
+        }
+    }
+
+    /// <summary>
+    /// 刷新插件
+    /// </summary>
+    /// <param name="_"></param>
+    internal void RefreshPlugins(object _)
+    {
+        //LiteDatabase? pgdb = Program.PluginsDataBase;
+
+        PluginBars.Clear();
+        lock (PluginsManager.PluginsListOperationLock)
+        {
+            foreach (var item in Program.PluginsList.Plugins)
+            {
+                try
+                {
+                    Plugin plugin = new()
                     {
-                        Plugin plugin = new()
-                        {
-                            InstallPath = item.InstallPath,
-                            PluginDetails = JsonSerializer.Deserialize<PluginStruct>(
-                                File.ReadAllText(
-                                    Path.GetFullPath($"{item.InstallPath}/PluginStruct.json"))),
-                            RequiredLoaderStruct = JsonSerializer.Deserialize<LoaderStruct>(
-                                File.ReadAllText(
-                                    Path.GetFullPath($"{item.InstallPath}/LoaderStruct.json"))),
-                            InstalledDevices = new()
-                        };
-                        PluginBars.Add(new(plugin, ref pluginBars));
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "In RefreshPlugins()");
-                    }
+                        InstallPath = item.InstallPath,
+                        PluginDetails = JsonSerializer.Deserialize<PluginStruct>(
+                            File.ReadAllText(
+                                Path.GetFullPath($"{item.InstallPath}/PluginStruct.json"))),
+                        RequiredLoaderStruct = JsonSerializer.Deserialize<LoaderStruct>(
+                            File.ReadAllText(
+                                Path.GetFullPath($"{item.InstallPath}/LoaderStruct.json"))),
+                        InstalledDevices = new()
+                    };
+                    PluginBars.Add(new(plugin, ref pluginBars));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "In RefreshPlugins()");
                 }
             }
         }
-
-        public new event PropertyChangedEventHandler? PropertyChanged;
     }
+
+    public new event PropertyChangedEventHandler? PropertyChanged;
 }
 
 #pragma warning restore CS8604 // 引用类型参数可能为 null。

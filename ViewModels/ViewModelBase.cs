@@ -6,24 +6,23 @@ using System.Runtime.CompilerServices;
 #pragma warning disable CS0108 // 成员隐藏继承的成员；缺少关键字 new
 #pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。
 
-namespace KitX_Dashboard.ViewModels
+namespace KitX_Dashboard.ViewModels;
+
+public class ViewModelBase : ReactiveObject
 {
-    public class ViewModelBase : ReactiveObject
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected bool RaiseAndSetIfChanged<T>(ref T field, T value,
+        [CallerMemberName] string propertyName = "")
     {
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected bool RaiseAndSetIfChanged<T>(ref T field, T value,
-            [CallerMemberName] string propertyName = "")
+        if (!EqualityComparer<T>.Default.Equals(field, value))
         {
-            if (!EqualityComparer<T>.Default.Equals(field, value))
-            {
-                field = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-                return true;
-            }
-            return false;
+            field = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return true;
         }
+        return false;
     }
 }
 

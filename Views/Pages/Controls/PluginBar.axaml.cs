@@ -4,33 +4,32 @@ using KitX_Dashboard.Models;
 using KitX_Dashboard.ViewModels.Pages.Controls;
 using System.Collections.ObjectModel;
 
-namespace KitX_Dashboard.Views.Pages.Controls
+namespace KitX_Dashboard.Views.Pages.Controls;
+
+public partial class PluginBar : UserControl
 {
-    public partial class PluginBar : UserControl
+    private readonly PluginBarViewModel viewModel = new();
+
+    public PluginBar()
     {
-        private readonly PluginBarViewModel viewModel = new();
+        InitializeComponent();
 
-        public PluginBar()
-        {
-            InitializeComponent();
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
+    public PluginBar(Plugin plugin, ref ObservableCollection<PluginBar> pluginBars)
+    {
+        InitializeComponent();
 
-        public PluginBar(Plugin plugin, ref ObservableCollection<PluginBar> pluginBars)
-        {
-            InitializeComponent();
+        viewModel.PluginDetail = plugin;
+        viewModel.PluginBars = pluginBars;
+        viewModel.PluginBar = this;
 
-            viewModel.PluginDetail = plugin;
-            viewModel.PluginBars = pluginBars;
-            viewModel.PluginBar = this;
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
     }
 }
