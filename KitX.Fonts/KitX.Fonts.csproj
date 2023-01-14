@@ -6,8 +6,6 @@
         <!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
         <TrimMode>copyused</TrimMode>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-        <BaseOutputPath>..\..\KitX Build\Dashboard Helper\Fonts\</BaseOutputPath>
-        <BaseIntermediateOutputPath>..\..\KitX Build\Temp\Dashboard Helper\Fonts\</BaseIntermediateOutputPath>
     </PropertyGroup>
     <ItemGroup>
         <None Remove="sarasa-mono-cl-regular.ttf" />

@@ -6,8 +6,6 @@
         <!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
         <TrimMode>copyused</TrimMode>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-        <BaseOutputPath>..\..\KitX Build\Dashboard Helper\Assets\</BaseOutputPath>
-        <BaseIntermediateOutputPath>..\..\KitX Build\Temp\Dashboard Helper\Assets\</BaseIntermediateOutputPath>
     </PropertyGroup>
     <ItemGroup>
       <None Remove="KitX-Icon-1024x-margin-2x.png" />
