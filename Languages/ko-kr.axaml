@@ -1,5 +1,4 @@
 ﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
     <x:String x:Key="Text_MainWindow_Title">KitX 대시보드</x:String>
     <x:String x:Key="Text_Public_Enable">~할 수 있게 하다</x:String>
     <x:String x:Key="Text_Public_Disable">장애가 있는</x:String>
@@ -111,6 +110,8 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">고대비</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">시스템을 따르다</x:String>
     <x:String x:Key="Text_Settings_Performence">성능</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web">네트워크 관련 설정</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_StartDelay">Text_Settings_Performence_Web_StartDelay</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">플러그인 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">장치 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">기본 IP 필터링 규칙</x:String>
@@ -121,6 +122,7 @@
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">로그 파일 제한</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">로그 파일 캐시 지연</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileLevel">로그 수준</x:String>
+    <x:String x:Key="Text_Settings_Performence_Update">관련 설정 업데이트</x:String>
     <x:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">업데이트는 스레드당 처리된 파일 수를 확인합니다.</x:String>
     <x:String x:Key="Text_Settings_Update">고쳐 쓰다</x:String>
     <x:String x:Key="Text_Settings_Update_Check">업데이트 확인</x:String>
@@ -147,39 +149,21 @@
     <x:String x:Key="Text_Settings_About_Found">당신에 의해 발견!~OvO</x:String>
     <x:String x:Key="Text_AnouncementWindow_Receive">받다</x:String>
     <x:String x:Key="Text_AnouncementWindow_ReceiveAll">모두 받기</x:String>
-
-    <!--  GreetingStart  -->
-
-    <!--  MorningStart  -->
     <x:String x:Key="Text_Greeting_Morning_1">좋은 아침! ο(=•ω＜=)ρ⌒☆</x:String>
     <x:String x:Key="Text_Greeting_Morning_2">매일 기분이 좋아OvO</x:String>
     <x:String x:Key="Text_Greeting_Morning_3">오늘의 이벤트, 오늘의 끝!</x:String>
     <x:String x:Key="Text_Greeting_Morning_4">좋은 하루가 시작됩니다~</x:String>
-    <!--  MorningEnd  -->
-
-    <!--  NoonStart  -->
+    <x:String x:Key="Text_Greeting_Morning_5">아침은 하루의 시작이다</x:String>
     <x:String x:Key="Text_Greeting_Noon_1">좋은 오후에요! o(〃＾▽＾〃)o</x:String>
     <x:String x:Key="Text_Greeting_Noon_2">정오입니다, 휴식을 취하세요~</x:String>
     <x:String x:Key="Text_Greeting_Noon_3">오늘도 역시 아침이다</x:String>
-    <!--  NoonEnd  -->
-
-    <!--  AfterNoonStart  -->
     <x:String x:Key="Text_Greeting_AfterNoon_1">좋은 오후에요! ヾ(≧▽≦*)o</x:String>
     <x:String x:Key="Text_Greeting_AfterNoon_2">애프터눈 티 타임!</x:String>
     <x:String x:Key="Text_Greeting_AfterNoon_3">오늘 끝내지 못한 과제는 무엇입니까?</x:String>
-    <!--  AfterNoonEnd  -->
-
-    <!--  EveningStart  -->
     <x:String x:Key="Text_Greeting_Evening_1">좋은 저녁이에요! o(*￣▽￣*)ブ</x:String>
     <x:String x:Key="Text_Greeting_Evening_2">오늘 저녁은 맛있게 먹겠습니다!</x:String>
-    <!--  EveningEnd  -->
-
-    <!--  NightStart  -->
     <x:String x:Key="Text_Greeting_Night_1">밤에는 조용하다! o(*￣▽￣*)ブ</x:String>
     <x:String x:Key="Text_Greeting_Night_2">밤이 늦었어 일찍 쉬어</x:String>
     <x:String x:Key="Text_Greeting_Night_3">내일은 좋은 날이 될거야!</x:String>
-    <!--  NightEnd  -->
-
-    <!--  GreetingEnd  -->
-
+    <x:String x:Key="Text_Greeting_Night_4">아직도 늦게까지 깨어있어</x:String>
 </ResourceDictionary>

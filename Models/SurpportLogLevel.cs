@@ -1,15 +1,14 @@
 ﻿using Serilog.Events;
 
-namespace KitX_Dashboard.Models
+namespace KitX_Dashboard.Models;
+
+internal class SurpportLogLevel
 {
-    internal class SurpportLogLevel
-    {
-        internal LogEventLevel LogEventLevel { get; set; }
+    internal LogEventLevel LogEventLevel { get; set; }
 
-        internal string? LogLevelName { get; set; }
+    internal string? LogLevelName { get; set; }
 
-        internal string? LogLevelDisplayName { get; set; }
-    }
+    internal string? LogLevelDisplayName { get; set; }
 }
 
 //            ___________________________

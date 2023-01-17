@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace KitX_Dashboard.Data
+namespace KitX_Dashboard.Data;
+
+public class PluginsList
 {
-    public class PluginsList
-    {
-        [JsonInclude]
-        public List<Plugin> Plugins = new();
-    }
+    [JsonInclude]
+    public List<Plugin> Plugins = new();
 }

@@ -5,27 +5,26 @@ using System.Windows.Input;
 #pragma warning disable CS8767 // 参数类型中引用类型的为 Null 性与隐式实现的成员不匹配(可能是由于为 Null 性特性)。
 #pragma warning disable CS0067 // 从不使用事件
 
-namespace KitX_Dashboard.Commands
+namespace KitX_Dashboard.Commands;
+
+public class DelegateCommand : ICommand
 {
-    public class DelegateCommand : ICommand
+    public event EventHandler? CanExecuteChanged;
+
+    public bool CanExecute(object parameter) => CanExecuteFunc == null || CanExecuteFunc(parameter);
+
+    public void Execute(object parameter) => ExecuteAction(parameter);
+
+    public Action<object> ExecuteAction { get; set; }
+
+    public Func<object, bool> CanExecuteFunc { get; set; }
+
+    public DelegateCommand()
     {
-        public event EventHandler? CanExecuteChanged;
 
-        public bool CanExecute(object parameter) => CanExecuteFunc == null || CanExecuteFunc(parameter);
-
-        public void Execute(object parameter) => ExecuteAction(parameter);
-
-        public Action<object> ExecuteAction { get; set; }
-
-        public Func<object, bool> CanExecuteFunc { get; set; }
-
-        public DelegateCommand()
-        {
-
-        }
-
-        public DelegateCommand(Action<object> executeAction) => ExecuteAction = executeAction;
     }
+
+    public DelegateCommand(Action<object> executeAction) => ExecuteAction = executeAction;
 }
 
 #pragma warning restore CS0067 // 从不使用事件

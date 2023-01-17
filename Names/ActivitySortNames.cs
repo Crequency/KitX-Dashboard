@@ -1,11 +1,10 @@
-﻿namespace KitX_Dashboard.Names
+﻿namespace KitX_Dashboard.Names;
+
+internal class ActivitySortNames
 {
-    internal class ActivitySortNames
-    {
-        internal object? DashboardEvent { get; } = null;
+    internal object? DashboardEvent { get; } = null;
 
-        internal object? PluginEvent { get; } = null;
+    internal object? PluginEvent { get; } = null;
 
-        internal object? LoaderEvent { get; } = null;
-    }
+    internal object? LoaderEvent { get; } = null;
 }

@@ -1,10 +1,9 @@
-﻿namespace KitX_Dashboard.Services
+﻿namespace KitX_Dashboard.Services;
+
+internal class LoadersManager
 {
-    internal class LoadersManager
-    {
 
 
-    }
 }
 
 //       ___,___,_______,____

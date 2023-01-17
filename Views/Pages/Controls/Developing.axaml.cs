@@ -1,17 +1,16 @@
 ﻿using Avalonia.Controls;
 using KitX_Dashboard.ViewModels.Pages.Controls;
 
-namespace KitX_Dashboard.Views.Pages.Controls
+namespace KitX_Dashboard.Views.Pages.Controls;
+
+public partial class Developing : UserControl
 {
-    public partial class Developing : UserControl
+    private static readonly DevelopingViewModel viewModel = new();
+
+    public Developing()
     {
-        private static readonly DevelopingViewModel viewModel = new();
+        InitializeComponent();
 
-        public Developing()
-        {
-            InitializeComponent();
-
-            DataContext = viewModel;
-        }
+        DataContext = viewModel;
     }
 }

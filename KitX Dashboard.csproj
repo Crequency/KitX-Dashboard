@@ -9,11 +9,9 @@
         <TrimMode>copyused</TrimMode>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationIcon>Assets\KitX-Icon-256x.ico</ApplicationIcon>
-        <BaseOutputPath>..\KitX Build\Dashboard\</BaseOutputPath>
-        <BaseIntermediateOutputPath>..\KitX Build\Temp\Dashboard\</BaseIntermediateOutputPath>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <FileVersion>$(Version)</FileVersion>
-        <Version>3.22.10.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2005-06-06"))).TotalDays)</Version>
+        <Version>3.23.04.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2005-06-06"))).TotalDays)</Version>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(IsBuild4WindowsPlatform) == 'True'">
@@ -141,7 +139,7 @@
         <PackageReference Include="FluentAvaloniaUI" Version="1.4.5" />
         <PackageReference Include="KitX.KXP.Helper" Version="22.4.6351.975" />
         <PackageReference Include="KitX.Web.Rules" Version="22.4.6351.974" />
-        <PackageReference Include="LiteDB" Version="5.0.14" />
+        <PackageReference Include="LiteDB" Version="5.0.15" />
         <PackageReference Include="LiveChartsCore.SkiaSharpView.Avalonia" Version="2.0.0-beta.400" />
         <PackageReference Include="Markdown.Avalonia" Version="0.10.12" />
         <PackageReference Include="Material.Icons.Avalonia" Version="1.1.10" />
@@ -156,6 +154,10 @@
         <ProjectReference Include="..\KitX Dashboard Helper\KitX.Fonts\KitX.Fonts.csproj" />
         <ProjectReference Include="..\KitX File Format Helper\KitX.KXP.Helper\KitX.KXP.Helper.csproj" />
         <ProjectReference Include="..\KitX Rules\KitX.Web.Rules\KitX.Web.Rules.csproj" />
-        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole.Console\Common.ExternalConsole.Console.csproj" Condition="$(Is2Publish) == 'False'"/>
+        <ProjectReference Include="..\Reference\Common.Activity\src\Common.Activity.csproj" />
+        <ProjectReference Include="..\Reference\Common.Algorithm\Common.Algorithm.Interop\Common.Algorithm.Interop.csproj" />
+        <ProjectReference Include="..\Reference\Common.Algorithm\Common.Algorithm.UnitTest\Common.Algorithm.UnitTest.csproj" />
+        <ProjectReference Include="..\Reference\Common.BasicHelper\Common.BasicHelper\Common.BasicHelper.csproj" />
+        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole.Console\Common.ExternalConsole.Console.csproj" Condition="$(Is2Publish) == 'False'" />
     </ItemGroup>
 </Project>

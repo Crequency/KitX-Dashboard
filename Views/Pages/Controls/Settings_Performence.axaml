@@ -47,58 +47,6 @@
                         IsOpen="True">
                 <DockPanel Margin="0,10,10,10">
                     <StackPanel Classes="TitleBar">
-                        <icon:MaterialIcon Margin="5,0" Kind="Lan"/>
-                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_PluginsServerPort}"/>
-                    </StackPanel>
-
-                    <ui:NumberBox Classes="Disabled"
-                                  SpinButtonPlacementMode="Compact"
-                                  Value="{Binding PluginsServerPort}"/>
-
-                    <Border/>
-                </DockPanel>
-            </ui:InfoBar>
-
-            <ui:InfoBar Margin="20,5"
-                        IsClosable="False"
-                        IsIconVisible="False"
-                        IsOpen="True">
-                <DockPanel Margin="0,10,10,10">
-                    <StackPanel Classes="TitleBar">
-                        <icon:MaterialIcon Margin="5,0" Kind="LanConnect"/>
-                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_DevicesServerPort}"/>
-                    </StackPanel>
-
-                    <ui:NumberBox Classes="Disabled"
-                                  SpinButtonPlacementMode="Compact"
-                                  Value="{Binding DevicesServerPort}"/>
-
-                    <Border/>
-                </DockPanel>
-            </ui:InfoBar>
-
-            <ui:InfoBar Margin="20,5"
-                        IsClosable="False"
-                        IsIconVisible="False"
-                        IsOpen="True">
-                <DockPanel Margin="0,10,10,10">
-                    <StackPanel Classes="TitleBar">
-                        <icon:MaterialIcon Margin="5,0" Kind="IpNetwork"/>
-                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_MyIP_Filter}"/>
-                    </StackPanel>
-
-                    <TextBox DockPanel.Dock="Right" Text="{Binding LocalIPFilter}"/>
-
-                    <Border/>
-                </DockPanel>
-            </ui:InfoBar>
-
-            <ui:InfoBar Margin="20,5"
-                        IsClosable="False"
-                        IsIconVisible="False"
-                        IsOpen="True">
-                <DockPanel Margin="0,10,10,10">
-                    <StackPanel Classes="TitleBar">
                         <icon:MaterialIcon Margin="5,0" Kind="Clock"/>
                         <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Greeting_Interval}"/>
                     </StackPanel>
@@ -118,7 +66,96 @@
                 </DockPanel>
             </ui:InfoBar>
 
-            <Expander Margin="20,5" IsExpanded="{Binding LogReletiveAreaExpanded}">
+            <Expander Margin="20,5" IsExpanded="{Binding WebRelatedAreaExpanded}">
+                <Expander.Header>
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                        <icon:MaterialIcon Margin="5,0" Kind="Web"/>
+                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web}"/>
+                    </StackPanel>
+                </Expander.Header>
+
+                <StackPanel>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="Timer"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_StartDelay}"/>
+                            </StackPanel>
+
+                            <TextBlock Margin="10,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Classes="Normal"
+                                       DockPanel.Dock="Right"
+                                       Text="{DynamicResource Text_Public_Second}"/>
+                            <ui:NumberBox Classes="Enabled"
+                                          Minimum="1"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding DelayedWebStartSeconds}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="Lan"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_PluginsServerPort}"/>
+                            </StackPanel>
+
+                            <ui:NumberBox Classes="Disabled"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding PluginsServerPort}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="LanConnect"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_DevicesServerPort}"/>
+                            </StackPanel>
+
+                            <ui:NumberBox Classes="Disabled"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding DevicesServerPort}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="IpNetwork"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_MyIP_Filter}"/>
+                            </StackPanel>
+
+                            <TextBox DockPanel.Dock="Right" Text="{Binding LocalIPFilter}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+                </StackPanel>
+
+            </Expander>
+
+            <Expander Margin="20,5" IsExpanded="{Binding LogRelatedAreaExpanded}">
                 <Expander.Header>
                     <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                         <icon:MaterialIcon Margin="5,0" Kind="FileChart"/>
@@ -257,25 +294,39 @@
 
             </Expander>
 
-            <ui:InfoBar Margin="20,5"
-                        IsClosable="False"
-                        IsIconVisible="False"
-                        IsOpen="True">
-                <DockPanel Margin="0,10,10,10">
-                    <StackPanel Classes="TitleBar">
-                        <icon:MaterialIcon Margin="5,0" Kind="DirectionsFork"/>
-                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_CheckerPerThreadFilesCountLimit}"/>
+            <Expander Margin="20,5" IsExpanded="{Binding UpdateRelatedAreaExpanded}">
+                <Expander.Header>
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                        <icon:MaterialIcon Margin="5,0" Kind="FileChart"/>
+                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Update}"/>
                     </StackPanel>
+                </Expander.Header>
 
-                    <ui:NumberBox Classes="Enabled"
-                                  Maximum="100"
-                                  Minimum="1"
-                                  SpinButtonPlacementMode="Compact"
-                                  Value="{Binding CheckerPerThreadFilesCountLimit}"/>
+                <StackPanel>
 
-                    <Border/>
-                </DockPanel>
-            </ui:InfoBar>
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="DirectionsFork"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_CheckerPerThreadFilesCountLimit}"/>
+                            </StackPanel>
+
+                            <ui:NumberBox Classes="Enabled"
+                                          Maximum="100"
+                                          Minimum="1"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding CheckerPerThreadFilesCountLimit}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
+                </StackPanel>
+
+            </Expander>
 
             <Border Height="100"/>
 

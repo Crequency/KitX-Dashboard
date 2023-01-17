@@ -7,88 +7,87 @@ using KitX_Dashboard.ViewModels;
 using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace KitX_Dashboard.Views
+namespace KitX_Dashboard.Views;
+
+public partial class AnouncementsWindow : Window
 {
-    public partial class AnouncementsWindow : Window
+    private readonly AnouncementsWindowViewModel viewModel = new();
+
+    public AnouncementsWindow()
     {
-        private readonly AnouncementsWindowViewModel viewModel = new();
+        InitializeComponent();
 
-        public AnouncementsWindow()
-        {
-            InitializeComponent();
+        viewModel.Window = this;
 
-            viewModel.Window = this;
+        SuggestResolutionAndLocation();
 
-            SuggestResolutionAndLocation();
+        DataContext = viewModel;
 
-            DataContext = viewModel;
+        Resolution nowRes = Resolution.Parse($"" +
+            $"{Program.Config.Windows.AnnouncementWindow.Window_Width}" +
+            $"x{Program.Config.Windows.AnnouncementWindow.Window_Height}");
 
-            Resolution nowRes = Resolution.Parse($"" +
-                $"{Program.Config.Windows.AnnouncementWindow.Window_Width}" +
-                $"x{Program.Config.Windows.AnnouncementWindow.Window_Height}");
+        // 设置窗体坐标
 
-            // 设置窗体坐标
-
-            Position = new(
-                WindowAttributesConverter.PositionCameCenter(
-                    Program.Config.Windows.AnnouncementWindow.Window_Left,
-                    true, Screens, nowRes
-                ),
-                WindowAttributesConverter.PositionCameCenter(
-                    Program.Config.Windows.AnnouncementWindow.Window_Top,
-                    false, Screens, nowRes
-                )
-            );
+        Position = new(
+            WindowAttributesConverter.PositionCameCenter(
+                Program.Config.Windows.AnnouncementWindow.Window_Left,
+                true, Screens, nowRes
+            ),
+            WindowAttributesConverter.PositionCameCenter(
+                Program.Config.Windows.AnnouncementWindow.Window_Top,
+                false, Screens, nowRes
+            )
+        );
 
 #if DEBUG
-            this.AttachDevTools();
+        this.AttachDevTools();
 #endif
-        }
+    }
 
-        private void SuggestResolutionAndLocation()
+    private void SuggestResolutionAndLocation()
+    {
+        if (Program.Config.Windows.AnnouncementWindow.Window_Width == 1280
+            && Program.Config.Windows.AnnouncementWindow.Window_Height == 720)
         {
-            if (Program.Config.Windows.AnnouncementWindow.Window_Width == 1280
-                && Program.Config.Windows.AnnouncementWindow.Window_Height == 720)
+            Resolution suggest = Resolution.Suggest(
+                Resolution.Parse("2560x1440"),
+                Resolution.Parse("1280x720"),
+                Resolution.Parse($"{Screens.Primary.Bounds.Width}x" +
+                $"{Screens.Primary.Bounds.Height}")).Integerization();
+            if (suggest.Width != null
+                && suggest.Height != null)
             {
-                Resolution suggest = Resolution.Suggest(
-                    Resolution.Parse("2560x1440"),
-                    Resolution.Parse("1280x720"),
-                    Resolution.Parse($"{Screens.Primary.Bounds.Width}x" +
-                    $"{Screens.Primary.Bounds.Height}")).Integerization();
-                if (suggest.Width != null
-                    && suggest.Height != null)
-                {
-                    Program.Config.Windows.AnnouncementWindow.Window_Width = (double)suggest.Width;
-                    Program.Config.Windows.AnnouncementWindow.Window_Height = (double)suggest.Height;
-                }
+                Program.Config.Windows.AnnouncementWindow.Window_Width = (double)suggest.Width;
+                Program.Config.Windows.AnnouncementWindow.Window_Height = (double)suggest.Height;
             }
         }
+    }
 
-        internal void UpdateSource(Dictionary<string, string> src, List<string> readed)
-        {
-            viewModel.Sources = src;
-            viewModel.Readed = readed;
-        }
+    internal void UpdateSource(Dictionary<string, string> src, List<string> readed)
+    {
+        viewModel.Sources = src;
+        viewModel.Readed = readed;
+    }
 
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
+    }
 
-        private void SaveMetaData()
-        {
-            Program.Config.Windows.AnnouncementWindow.Window_Left = Position.X;
-            Program.Config.Windows.AnnouncementWindow.Window_Top = Position.Y;
-            Program.Config.Windows.AnnouncementWindow.Window_Width = Width;
-            Program.Config.Windows.AnnouncementWindow.Window_Height = Height;
-        }
+    private void SaveMetaData()
+    {
+        Program.Config.Windows.AnnouncementWindow.Window_Left = Position.X;
+        Program.Config.Windows.AnnouncementWindow.Window_Top = Position.Y;
+        Program.Config.Windows.AnnouncementWindow.Window_Width = Width;
+        Program.Config.Windows.AnnouncementWindow.Window_Height = Height;
+    }
 
-        protected override void OnClosing(CancelEventArgs e)
-        {
-            base.OnClosed(e);
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        base.OnClosed(e);
 
-            SaveMetaData();
-        }
+        SaveMetaData();
     }
 }
 

@@ -2,62 +2,74 @@
 using System;
 using System.Threading;
 
-namespace KitX_Dashboard.Services
+namespace KitX_Dashboard.Services;
+
+public class WebManager : IDisposable
 {
-    public class WebManager : IDisposable
+    public WebManager()
     {
-        public WebManager()
+
+    }
+
+    internal PluginsServer? pluginsServer;
+    internal DevicesServer? devicesServer;
+
+    public WebManager Start()
+    {
+        new Thread(() =>
         {
-
-        }
-
-        internal PluginsServer? pluginsServer;
-        internal DevicesServer? devicesServer;
-
-        public void Start()
-        {
-            new Thread(() =>
+            try
             {
-                try
-                {
-                    DevicesManager.InitEvents();
+                Log.Information("WebManager: Starting...");
 
-                    DevicesManager.KeepCheckAndRemove();
-                    DevicesManager.Watch4MainDevice();
-                    PluginsManager.KeepCheckAndRemove();
-                    PluginsManager.KeepCheckAndRemoveOrDelete();
+                DevicesManager.InitEvents();
 
-                    pluginsServer = new();
-                    devicesServer = new();
+                DevicesManager.KeepCheckAndRemove();
+                DevicesManager.Watch4MainDevice();
+                PluginsManager.KeepCheckAndRemove();
+                PluginsManager.KeepCheckAndRemoveOrDelete();
 
-                    pluginsServer.Start();
-                    devicesServer.Start();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("In WebManager Start", ex);
-                }
-            }).Start();
-        }
+                pluginsServer = new();
+                devicesServer = new();
 
-        public void Stop()
-        {
-            pluginsServer?.Stop();
-            devicesServer?.Stop();
+                pluginsServer.Start();
+                devicesServer.Start();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "In WebManager Start");
+            }
+        }).Start();
 
-            pluginsServer?.Dispose();
-            devicesServer?.Dispose();
-        }
+        return this;
+    }
 
-        /// <summary>
-        /// 释放资源
-        /// </summary>
-        public void Dispose()
-        {
-            pluginsServer?.Dispose();
-            devicesServer?.Dispose();
-            GC.SuppressFinalize(this);
-        }
+    public WebManager Stop()
+    {
+        pluginsServer?.Stop();
+        devicesServer?.Stop();
+
+        pluginsServer?.Dispose();
+        devicesServer?.Dispose();
+
+        return this;
+    }
+
+    public WebManager Restart()
+    {
+        Stop();
+        Start();
+        return this;
+    }
+
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    public void Dispose()
+    {
+        pluginsServer?.Dispose();
+        devicesServer?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 

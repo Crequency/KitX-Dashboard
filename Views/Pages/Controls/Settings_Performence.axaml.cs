@@ -2,23 +2,22 @@
 using Avalonia.Markup.Xaml;
 using KitX_Dashboard.ViewModels.Pages.Controls;
 
-namespace KitX_Dashboard.Views.Pages.Controls
+namespace KitX_Dashboard.Views.Pages.Controls;
+
+public partial class Settings_Performence : UserControl
 {
-    public partial class Settings_Performence : UserControl
+    private readonly Settings_PerformenceViewModel viewModel = new();
+
+    public Settings_Performence()
     {
-        private readonly Settings_PerformenceViewModel viewModel = new();
+        InitializeComponent();
 
-        public Settings_Performence()
-        {
-            InitializeComponent();
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
     }
 }
 

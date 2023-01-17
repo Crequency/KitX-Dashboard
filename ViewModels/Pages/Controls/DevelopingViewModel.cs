@@ -1,10 +1,9 @@
-﻿namespace KitX_Dashboard.ViewModels.Pages.Controls
+﻿namespace KitX_Dashboard.ViewModels.Pages.Controls;
+
+internal class DevelopingViewModel : ViewModelBase
 {
-    internal class DevelopingViewModel : ViewModelBase
+    public DevelopingViewModel()
     {
-        public DevelopingViewModel()
-        {
-            
-        }
+
     }
 }

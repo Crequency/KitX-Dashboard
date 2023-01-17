@@ -1,5 +1,4 @@
 ﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
     <x:String x:Key="Text_MainWindow_Title">KitX tableau de bord</x:String>
     <x:String x:Key="Text_Public_Enable">activer</x:String>
     <x:String x:Key="Text_Public_Disable">désactivé</x:String>
@@ -111,6 +110,8 @@
     <x:String x:Key="Text_Settings_Personalise_Theme_HighContrast">contraste élevé</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme_Follow">suivre le système</x:String>
     <x:String x:Key="Text_Settings_Performence">performance</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web">Paramètres liés au réseau</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_StartDelay">Démarrage retardé</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Port de communication enfichable</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Port de communication de l'appareil</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Règles de filtrage IP natives</x:String>
@@ -121,6 +122,7 @@
     <x:String x:Key="Text_Settings_Performence_LogFileMaxCount">limite du fichier journal</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileFlushInterval">Délai du cache du fichier journal</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileLevel">niveau de journalisation</x:String>
+    <x:String x:Key="Text_Settings_Performence_Update">Mettre à jour les paramètres associés</x:String>
     <x:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">La mise à jour vérifie le nombre de fichiers traités par thread</x:String>
     <x:String x:Key="Text_Settings_Update">renouveler</x:String>
     <x:String x:Key="Text_Settings_Update_Check">Vérifier les mises à jour</x:String>
@@ -147,39 +149,21 @@
     <x:String x:Key="Text_Settings_About_Found">trouvé par vous!~OvO</x:String>
     <x:String x:Key="Text_AnouncementWindow_Receive">recevoir</x:String>
     <x:String x:Key="Text_AnouncementWindow_ReceiveAll">recevoir tout</x:String>
-
-    <!--  GreetingStart  -->
-
-    <!--  MorningStart  -->
     <x:String x:Key="Text_Greeting_Morning_1">Bonjour! ο(=•ω＜=)ρ⌒☆</x:String>
     <x:String x:Key="Text_Greeting_Morning_2">Ayez de la bonne humeur tous les joursOvO</x:String>
     <x:String x:Key="Text_Greeting_Morning_3">l'événement d'aujourd'hui, la fin d'aujourd'hui!</x:String>
     <x:String x:Key="Text_Greeting_Morning_4">bonne journée commence~</x:String>
-    <!--  MorningEnd  -->
-
-    <!--  NoonStart  -->
+    <x:String x:Key="Text_Greeting_Morning_5">le matin est le début de la journée</x:String>
     <x:String x:Key="Text_Greeting_Noon_1">bonne après-midi! o(〃＾▽＾〃)o</x:String>
     <x:String x:Key="Text_Greeting_Noon_2">Il est midi, fais une pause~</x:String>
     <x:String x:Key="Text_Greeting_Noon_3">Aujourd'hui est aussi une matinée bien remplie</x:String>
-    <!--  NoonEnd  -->
-
-    <!--  AfterNoonStart  -->
     <x:String x:Key="Text_Greeting_AfterNoon_1">bonne après-midi! ヾ(≧▽≦*)o</x:String>
     <x:String x:Key="Text_Greeting_AfterNoon_2">l'heure du thé de l'après-midi!</x:String>
     <x:String x:Key="Text_Greeting_AfterNoon_3">Quelles tâches restent inachevées aujourd'hui ?</x:String>
-    <!--  AfterNoonEnd  -->
-
-    <!--  EveningStart  -->
     <x:String x:Key="Text_Greeting_Evening_1">bonsoir! o(*￣▽￣*)ブ</x:String>
     <x:String x:Key="Text_Greeting_Evening_2">je vais bien manger ce soir!</x:String>
-    <!--  EveningEnd  -->
-
-    <!--  NightStart  -->
     <x:String x:Key="Text_Greeting_Night_1">C'est calme la nuit! o(*￣▽￣*)ブ</x:String>
     <x:String x:Key="Text_Greeting_Night_2">Il est tard dans la nuit, repose-toi tôt</x:String>
     <x:String x:Key="Text_Greeting_Night_3">Demain sera une bonne journée!</x:String>
-    <!--  NightEnd  -->
-
-    <!--  GreetingEnd  -->
-
+    <x:String x:Key="Text_Greeting_Night_4">veille encore tard</x:String>
 </ResourceDictionary>

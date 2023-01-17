@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace KitX_Dashboard.Services;
 
@@ -17,15 +19,152 @@ internal class DebugService
         var args = cmd.Trim()[header.Length..].GetCommandArgs();
         if (args is null) return null;
         var name = header.ToFunctionName();
-        var foo = new DebugCommands().GetType().GetMethod(name);
-        return foo?.Invoke(null, new object[] { args }) as string;
+        if (name is null) return null;
+        var foo = typeof(DebugCommands).GetMethod(name);
+        if (foo is null) return null;
+        if (args.ContainsKey("--times"))
+        {
+            if (int.TryParse(args["--times"], out int times))
+                for (var i = 0; i < times - 1; ++i)
+                    _ = foo?.Invoke(null, new Dictionary<string, string>[] { args });
+        }
+        return foo?.Invoke(null, new Dictionary<string, string>[] { args }) as string;
     }
 }
 
 internal class DebugCommands
 {
-    internal string? Version(Dictionary<string, string> _)
-        => Assembly.GetEntryAssembly()?.GetName()?.Version?.ToString();
+    private static string SaveConfig()
+    {
+        Helper.SaveConfig();
+        return "Config saved!";
+    }
+
+    public static string? Help(Dictionary<string, string> args)
+    {
+        StringBuilder doc = new();
+        doc.AppendLine("You can append `help` to any command to see documents of this command.");
+        doc.AppendLine("Or append command name to `help` command to see documents of this command.");
+        if (args.Count == 1 && args.Keys.ToArray()[0].Equals("")) return doc.ToString();
+        foreach (var item in args.Keys)
+            doc.AppendLine(DebugService.ExecuteCommand($"{item} help") ?? $"No help doc for {item}.");
+        return doc.ToString();
+    }
+
+    public static string? Version(Dictionary<string, string> args)
+    {
+        if (args.ContainsKey("help"))
+            return "Print version of KitX Dashboard.";
+        return Assembly.GetEntryAssembly()?.GetName()?.Version?.ToString();
+    }
+
+    public static string? Save(Dictionary<string, string> args)
+    {
+        if (args.ContainsKey("help"))
+            return "" +
+                "Save datas to disk.\n" +
+                "\t--type [config] | save KitX Dashboard config file.\n" +
+                "\tconfig | save KitX Dashboard config file.\n";
+        if (args.ContainsKey("--type"))
+            switch (args["--type"])
+            {
+                case "config":
+                    return SaveConfig();
+                default:
+                    return "Missing value of `--type`.";
+            }
+        else if (args.ContainsKey("config"))
+        {
+            return SaveConfig();
+        }
+        else return "Missing arguments.";
+    }
+
+    public static string? Config(Dictionary<string, string> args)
+    {
+        if (args.ContainsKey("help"))
+        {
+            return "" +
+                "Edit KitX Dashboard app config.\n" +
+                "\t--set developing...\n" +
+                "\t--get developing...\n";
+        }
+        if (args.ContainsKey("--set"))
+        {
+            return "Missing value of `--set`.";
+        }
+        else if (args.ContainsKey("--get"))
+        {
+
+            return "Missing value of `--get`.";
+        }
+        else if (args.ContainsKey("save"))
+        {
+            return SaveConfig();
+        }
+        else return "Missing arguments.";
+    }
+
+    public static string? Send(Dictionary<string, string> args)
+    {
+        if (args.ContainsKey("help"))
+        {
+            return "" +
+                "Send data in network.\n" +
+                "\t--type [DeviceUdpPack, ClientMessage, HostMessage, HostBroadCast] |\n" +
+                "\t\tDeviceUdpPack | [--value] Send a device udp pack through string.\n" +
+                "\t\tClientMessage | [--value] Send client message to master device.\n" +
+                "\t\tHostMessage   | [--value] [--to] Send message to clients as master device.\n" +
+                "\t\tHostBroadcast | [--value] Broadcast a message to every clients.";
+        }
+        if (args.ContainsKey("--type"))
+        {
+            switch (args["--type"].ToLower())
+            {
+                //  DeviceUdpPack
+                case "deviceudppack":
+                    if (args.ContainsKey("--value"))
+                    {
+                        DevicesServer.Messages2BroadCast.Enqueue(args["--value"]);
+                        return "Appended value to broadcast list.";
+                    }
+                    else return "Missing value of `--value`.";
+                //  ClientMessage
+                case "clientmessage":
+                    if (args.ContainsKey("--value"))
+                    {
+                        Program.WebManager?.devicesServer?.SendMessage(args["--value"]);
+                        return $"Sent msg: {args["--value"]}";
+                    }
+                    else return "Missing value of `--value`.";
+                //  HostMessage
+                case "hostmessage":
+                    if (args.ContainsKey("--value"))
+                    {
+                        if (args.ContainsKey("--to"))
+                        {
+                            Program.WebManager?.devicesServer
+                                ?.SendMessage(args["--value"], args["--to"]);
+                            return $"Sent msg: {args["--value"]}, to: {args["--to"]}";
+                        }
+                        else return "Missing value of `--to`.";
+                    }
+                    else return "Missing value of `--value`.";
+                //  HostBroadcast
+                case "hostbroadcast":
+                    if (args.ContainsKey("--value"))
+                    {
+                        Program.WebManager?.devicesServer
+                            ?.BroadCastMessage(args["--value"], null);
+                        return $"Broadcast msg: {args["--value"]}";
+                    }
+                    else return "Missing value of `--value`";
+                default:
+                    return "Missing value of `--type`.";
+            }
+        }
+        else return "Missing arguments.";
+    }
 }
 
 internal static class DebugServiceTool
@@ -52,17 +191,61 @@ internal static class DebugServiceTool
     {
         var args = new Dictionary<string, string>();
         var command = cmd.Trim();
+        var quotes = command.ReplaceQuotes();
+        command = quotes.Item1;
+        var quoteMap = quotes.Item2;
         var pairs = command?.Split(' ');
         if (pairs is null) return args;
-        if (pairs.Length == 0
-            || (pairs.Length == 1
-                && (pairs[0].Equals("")
-                || pairs[0].Equals(string.Empty))))
-            return args;
-        if (pairs.Length % 2 != 0) return null;
-        for (var i = 0; i < pairs.Length; i += 2)
-            args.Add(pairs[i].Trim(), pairs[i + 1].Trim());
+        for (var i = 0; i < pairs.Length; i++)
+        {
+            if (pairs[i].Trim().StartsWith("--"))
+            {
+                if (i == pairs.Length - 1) return null;
+                args.Add(pairs[i], pairs[i + 1]);
+            }
+            else args.Add(pairs[i], string.Empty);
+        }
+        foreach (var item in args)
+        {
+            if (quoteMap.ContainsKey(item.Value))
+            {
+                args[item.Key] = quoteMap[item.Value];
+            }
+        }
         return args;
+    }
+
+    /// <summary>
+    /// 替换文本中的引号内容
+    /// </summary>
+    /// <param name="text">文本</param>
+    /// <returns>新的引号键以及对应的值</returns>
+    internal static (string, Dictionary<string, string>) ReplaceQuotes(this string text)
+    {
+        //  记录被替换的引号内容的键与内容
+        var rst = new Dictionary<string, string>();
+        var count = 0;  //  引号计数
+        var lastPosition = -1;  //  上一个开引号的位置, -1 表示上一个引号是闭引号
+        var len = text.Length;  //  源文本串长度
+        for (var i = 0; i < len; i++)
+        {
+            if (text[i].Equals('"'))
+            {
+                if (lastPosition == -1) lastPosition = i;
+                else
+                {
+                    var key = $"$$_Quotes_{++count}_$$";    //  按键数量替换
+                    var value = text[lastPosition..(i + 1)];    //  替换的文本
+                    var delta = key.Length - value.Length;  //  长度差值
+                    len += delta;   //  总长度设为替换后的总长度
+                    text = $"{text[0..lastPosition]}{key}{text[(i + 1)..]}";    //  替换
+                    rst.Add(key, value);  //  添加键与替换的文本
+                    i += delta; //  指针归位
+                    lastPosition = -1;  //  设为闭引号
+                }
+            }
+        }
+        return (text, rst);
     }
 
     /// <summary>

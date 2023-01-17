@@ -14,196 +14,197 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace KitX_Dashboard.ViewModels
+namespace KitX_Dashboard.ViewModels;
+
+internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
-    internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChanged
+    public PluginDetailWindowViewModel()
     {
-        public PluginDetailWindowViewModel()
+        InitCommands();
+
+        InitEvents();
+    }
+
+    internal void InitCommands()
+    {
+        FinishCommand = new(Finish);
+    }
+
+    internal void InitEvents()
+    {
+        EventHandlers.ThemeConfigChanged +=
+            () => PropertyChanged?.Invoke(this, new(nameof(TintColor)));
+    }
+
+    internal PluginStruct? PluginDetail { get; set; }
+
+    internal string? DisplayName
+    {
+        get
         {
-            InitCommands();
-
-            InitEvents();
-        }
-
-        internal void InitCommands()
-        {
-            FinishCommand = new(Finish);
-        }
-
-        internal void InitEvents()
-        {
-            EventHandlers.ThemeConfigChanged +=
-                () => PropertyChanged?.Invoke(this, new(nameof(ViewModels.PluginDetailWindowViewModel.TintColor)));
-        }
-
-        internal PluginStruct? PluginDetail { get; set; }
-
-        internal string? DisplayName
-        {
-            get
+            if (PluginDetail != null)
             {
-                if (PluginDetail != null)
-                {
-                    string key = Program.Config.App.AppLanguage;
-                    bool? exist = PluginDetail?.DisplayName.ContainsKey(key);
-                    if (exist != null && (bool)exist)
-                        return PluginDetail?.DisplayName[key];
-                    else return PluginDetail?.Name;
-                }
+                string key = Program.Config.App.AppLanguage;
+                bool? exist = PluginDetail?.DisplayName.ContainsKey(key);
+                if (exist != null && (bool)exist)
+                    return PluginDetail?.DisplayName[key];
                 else return PluginDetail?.Name;
             }
+            else return PluginDetail?.Name;
         }
+    }
 
-        internal string? Version => PluginDetail?.Version;
+    internal string? Version => PluginDetail?.Version;
 
-        internal string? AuthorName => PluginDetail?.AuthorName;
+    internal string? AuthorName => PluginDetail?.AuthorName;
 
-        internal string? PublisherName => PluginDetail?.PublisherName;
+    internal string? PublisherName => PluginDetail?.PublisherName;
 
-        internal string? AuthorLink => PluginDetail?.AuthorLink;
+    internal string? AuthorLink => PluginDetail?.AuthorLink;
 
-        internal string? PublisherLink => PluginDetail?.PublisherLink;
+    internal string? PublisherLink => PluginDetail?.PublisherLink;
 
-        internal string? SimpleDescription
+    internal string? SimpleDescription
+    {
+        get
         {
-            get
+            if (PluginDetail != null)
             {
-                if (PluginDetail != null)
-                {
-                    string key = Program.Config.App.AppLanguage;
-                    bool? exist = PluginDetail?.SimpleDescription.ContainsKey(key);
-                    if (exist != null && (bool)exist)
-                        return PluginDetail?.SimpleDescription[key];
-                    else return PluginDetail?.SimpleDescription.Values.ToArray()[0];
-                }
+                string key = Program.Config.App.AppLanguage;
+                bool? exist = PluginDetail?.SimpleDescription.ContainsKey(key);
+                if (exist != null && (bool)exist)
+                    return PluginDetail?.SimpleDescription[key];
                 else return PluginDetail?.SimpleDescription.Values.ToArray()[0];
             }
+            else return PluginDetail?.SimpleDescription.Values.ToArray()[0];
         }
+    }
 
-        internal string? ComplexDescription
+    internal string? ComplexDescription
+    {
+        get
         {
-            get
+            if (PluginDetail != null)
             {
-                if (PluginDetail != null)
-                {
-                    string key = Program.Config.App.AppLanguage;
-                    bool? exist = PluginDetail?.ComplexDescription.ContainsKey(key);
-                    if (exist != null && (bool)exist)
-                        return PluginDetail?.ComplexDescription[key];
-                    else return PluginDetail?.ComplexDescription.Values.ToArray()[0];
-                }
+                string key = Program.Config.App.AppLanguage;
+                bool? exist = PluginDetail?.ComplexDescription.ContainsKey(key);
+                if (exist != null && (bool)exist)
+                    return PluginDetail?.ComplexDescription[key];
                 else return PluginDetail?.ComplexDescription.Values.ToArray()[0];
             }
+            else return PluginDetail?.ComplexDescription.Values.ToArray()[0];
         }
+    }
 
-        internal string? TotalDescriptionInMarkdown
+    internal string? TotalDescriptionInMarkdown
+    {
+        get
         {
-            get
+            if (PluginDetail != null)
             {
-                if (PluginDetail != null)
-                {
-                    string key = Program.Config.App.AppLanguage;
-                    bool? exist = PluginDetail?.TotalDescriptionInMarkdown.ContainsKey(key);
-                    if (exist != null && (bool)exist)
-                        return PluginDetail?.TotalDescriptionInMarkdown[key];
-                    else return PluginDetail?.TotalDescriptionInMarkdown.Values.ToArray()[0];
-                }
+                string key = Program.Config.App.AppLanguage;
+                bool? exist = PluginDetail?.TotalDescriptionInMarkdown.ContainsKey(key);
+                if (exist != null && (bool)exist)
+                    return PluginDetail?.TotalDescriptionInMarkdown[key];
                 else return PluginDetail?.TotalDescriptionInMarkdown.Values.ToArray()[0];
             }
+            else return PluginDetail?.TotalDescriptionInMarkdown.Values.ToArray()[0];
         }
+    }
 
-        internal string? PublishDate => PluginDetail?.PublishDate.ToString("yyyy.MM.dd");
+    internal string? PublishDate =>
+        PluginDetail?.PublishDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-        internal string? LastUpdateDate => PluginDetail?.LastUpdateDate.ToString("yyyy.MM.dd");
+    internal string? LastUpdateDate =>
+        PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-        internal static Color TintColor => Program.Config.App.Theme switch
+    internal static Color TintColor => Program.Config.App.Theme switch
+    {
+        "Light" => Colors.WhiteSmoke,
+        "Dark" => Colors.Black,
+        "Follow" => AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme switch
         {
             "Light" => Colors.WhiteSmoke,
             "Dark" => Colors.Black,
-            "Follow" => AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme switch
-            {
-                "Light" => Colors.WhiteSmoke,
-                "Dark" => Colors.Black,
-                _ => Color.Parse(Program.Config.App.ThemeColor)
-            },
-            _ => Color.Parse(Program.Config.App.ThemeColor),
-        };
+            _ => Color.Parse(Program.Config.App.ThemeColor)
+        },
+        _ => Color.Parse(Program.Config.App.ThemeColor),
+    };
 
-        private readonly ObservableCollection<string> functions = new();
+    private readonly ObservableCollection<string> functions = new();
 
-        private readonly ObservableCollection<string> tags = new();
+    private readonly ObservableCollection<string> tags = new();
 
-        internal Bitmap IconDisplay
+    internal Bitmap IconDisplay
+    {
+        get
         {
-            get
+            try
             {
-                try
+                if (PluginDetail != null)
                 {
-                    if (PluginDetail != null)
-                    {
-                        byte[] src = Convert.FromBase64String(PluginDetail.Value.IconInBase64);
-                        using var ms = new MemoryStream(src);
-                        return new(ms);
-                    }
-                    else return App.DefaultIcon;
+                    byte[] src = Convert.FromBase64String(PluginDetail.Value.IconInBase64);
+                    using var ms = new MemoryStream(src);
+                    return new(ms);
                 }
-                catch (Exception e)
-                {
-                    Log.Warning($"Icon transform error from base64 to byte[] or " +
-                        $"create bitmap from MemoryStream error: {e.Message}");
-                    return App.DefaultIcon;
-                }
+                else return App.DefaultIcon;
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, $"Icon transform error from base64 to byte[] or " +
+                    $"create bitmap from MemoryStream error: {e.Message}");
+                return App.DefaultIcon;
             }
         }
-
-        internal void InitFunctionsAndTags()
-        {
-            if (PluginDetail != null && PluginDetail?.Functions != null && PluginDetail?.Tags != null)
-            {
-                string langKey = Program.Config.App.AppLanguage;
-                foreach (var func in PluginDetail.Value.Functions)
-                {
-                    StringBuilder sb = new();
-                    sb.Append(func.ReturnValueType);
-                    sb.Append(' ');
-                    if (func.DisplayNames.ContainsKey(langKey))
-                        sb.Append(func.DisplayNames[langKey]);
-                    else sb.Append(func.Name);
-                    sb.Append('(');
-                    if (func.Parameters.Count != func.ParametersType.Count)
-                        throw new InvalidDataException("Parameters return type count " +
-                            "didn't match parameters count.");
-                    int index = 0;
-                    foreach (var param in func.Parameters)
-                    {
-                        sb.Append(func.ParametersType[index]);
-                        ++index;
-                        sb.Append(' ');
-                        if (param.Value.ContainsKey(langKey))
-                            sb.Append(param.Value[langKey]);
-                        else sb.Append(param.Key);
-                        if (index != func.Parameters.Count)
-                            sb.Append(", ");
-                    }
-                    sb.Append(')');
-                    Functions.Add(sb.ToString());
-                }
-                foreach (var tag in PluginDetail.Value.Tags)
-                    Tags.Add($"{{{tag.Key}: {tag.Value}}}");
-            }
-        }
-
-        internal ObservableCollection<string> Functions => functions;
-
-        internal ObservableCollection<string> Tags => tags;
-
-        internal DelegateCommand? FinishCommand { get; set; }
-
-        internal void Finish(object parent)
-        {
-            (parent as Window)?.Close();
-        }
-
-        public new event PropertyChangedEventHandler? PropertyChanged;
     }
+
+    internal void InitFunctionsAndTags()
+    {
+        if (PluginDetail != null && PluginDetail?.Functions != null && PluginDetail?.Tags != null)
+        {
+            string langKey = Program.Config.App.AppLanguage;
+            foreach (var func in PluginDetail.Value.Functions)
+            {
+                StringBuilder sb = new();
+                sb.Append(func.ReturnValueType);
+                sb.Append(' ');
+                if (func.DisplayNames.ContainsKey(langKey))
+                    sb.Append(func.DisplayNames[langKey]);
+                else sb.Append(func.Name);
+                sb.Append('(');
+                if (func.Parameters.Count != func.ParametersType.Count)
+                    throw new InvalidDataException("Parameters return type count " +
+                        "didn't match parameters count.");
+                int index = 0;
+                foreach (var param in func.Parameters)
+                {
+                    sb.Append(func.ParametersType[index]);
+                    ++index;
+                    sb.Append(' ');
+                    if (param.Value.ContainsKey(langKey))
+                        sb.Append(param.Value[langKey]);
+                    else sb.Append(param.Key);
+                    if (index != func.Parameters.Count)
+                        sb.Append(", ");
+                }
+                sb.Append(')');
+                Functions.Add(sb.ToString());
+            }
+            foreach (var tag in PluginDetail.Value.Tags)
+                Tags.Add($"{{{tag.Key}: {tag.Value}}}");
+        }
+    }
+
+    internal ObservableCollection<string> Functions => functions;
+
+    internal ObservableCollection<string> Tags => tags;
+
+    internal DelegateCommand? FinishCommand { get; set; }
+
+    internal void Finish(object parent)
+    {
+        (parent as Window)?.Close();
+    }
+
+    public new event PropertyChangedEventHandler? PropertyChanged;
 }

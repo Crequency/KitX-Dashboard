@@ -5,48 +5,47 @@ using Serilog;
 using System;
 using System.IO;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls
+namespace KitX_Dashboard.ViewModels.Pages.Controls;
+
+internal class PluginCardViewModel
 {
-    internal class PluginCardViewModel
+    internal PluginStruct pluginStruct = new();
+
+    public PluginCardViewModel()
     {
-        internal PluginStruct pluginStruct = new();
+        pluginStruct.IconInBase64 = GlobalInfo.KitXIconBase64;
+        Log.Information($"Icon Loaded: {pluginStruct.IconInBase64}");
+    }
 
-        public PluginCardViewModel()
+    internal string DisplayName => pluginStruct.DisplayName
+        .ContainsKey(Program.Config.App.AppLanguage)
+        ? pluginStruct.DisplayName[Program.Config.App.AppLanguage]
+        : pluginStruct.DisplayName.Values.GetEnumerator().Current;
+
+    internal string Version => pluginStruct.Version;
+
+    internal string SimpleDescription => pluginStruct.SimpleDescription.ContainsKey(
+        Program.Config.App.AppLanguage)
+        ? pluginStruct.SimpleDescription[Program.Config.App.AppLanguage]
+        : string.Empty;
+
+    internal string IconInBase64 => pluginStruct.IconInBase64;
+
+    internal Bitmap IconDisplay
+    {
+        get
         {
-            pluginStruct.IconInBase64 = GlobalInfo.KitXIconBase64;
-            Log.Information($"Icon Loaded: {pluginStruct.IconInBase64}");
-        }
-
-        internal string DisplayName => pluginStruct.DisplayName
-            .ContainsKey(Program.Config.App.AppLanguage)
-            ? pluginStruct.DisplayName[Program.Config.App.AppLanguage]
-            : pluginStruct.DisplayName.Values.GetEnumerator().Current;
-
-        internal string Version => pluginStruct.Version;
-
-        internal string SimpleDescription => pluginStruct.SimpleDescription.ContainsKey(
-            Program.Config.App.AppLanguage)
-            ? pluginStruct.SimpleDescription[Program.Config.App.AppLanguage]
-            : string.Empty;
-
-        internal string IconInBase64 => pluginStruct.IconInBase64;
-
-        internal Bitmap IconDisplay
-        {
-            get
+            try
             {
-                try
-                {
-                    byte[] src = Convert.FromBase64String(IconInBase64);
-                    using var ms = new MemoryStream(src);
-                    return new(ms);
-                }
-                catch (Exception e)
-                {
-                    Log.Warning($"Icon transform error from base64 to byte[] or " +
-                        $"create bitmap from MemoryStream error: {e.Message}");
-                    return App.DefaultIcon;
-                }
+                byte[] src = Convert.FromBase64String(IconInBase64);
+                using var ms = new MemoryStream(src);
+                return new(ms);
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, $"Icon transform error from base64 to byte[] or " +
+                    $"create bitmap from MemoryStream error: {e.Message}");
+                return App.DefaultIcon;
             }
         }
     }

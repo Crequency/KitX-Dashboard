@@ -1,22 +1,21 @@
 ﻿using KitX_Dashboard.Services;
 
-namespace KitX_Dashboard.ViewModels.Pages
+namespace KitX_Dashboard.ViewModels.Pages;
+
+internal class SettingsPageViewModel : ViewModelBase
 {
-    internal class SettingsPageViewModel : ViewModelBase
+    internal SettingsPageViewModel()
     {
-        internal SettingsPageViewModel()
-        {
 
-        }
+    }
 
-        internal static bool IsPaneOpen
+    internal static bool IsPaneOpen
+    {
+        get => Program.Config.Pages.Settings.IsNavigationViewPaneOpened;
+        set
         {
-            get => Program.Config.Pages.Settings.IsNavigationViewPaneOpened;
-            set
-            {
-                Program.Config.Pages.Settings.IsNavigationViewPaneOpened = value;
-                EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
-            }
+            Program.Config.Pages.Settings.IsNavigationViewPaneOpened = value;
+            EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
         }
     }
 }

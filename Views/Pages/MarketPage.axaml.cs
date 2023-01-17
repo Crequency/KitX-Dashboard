@@ -2,23 +2,22 @@
 using Avalonia.Markup.Xaml;
 using KitX_Dashboard.ViewModels.Pages;
 
-namespace KitX_Dashboard.Views.Pages
+namespace KitX_Dashboard.Views.Pages;
+
+public partial class MarketPage : UserControl
 {
-    public partial class MarketPage : UserControl
+    private readonly MarketPageViewModel viewModel = new();
+
+    public MarketPage()
     {
-        private readonly MarketPageViewModel viewModel = new();
+        InitializeComponent();
 
-        public MarketPage()
-        {
-            InitializeComponent();
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
     }
 }
 

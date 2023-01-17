@@ -1,8 +1,7 @@
-﻿namespace KitX_Dashboard.Names
-{
-    internal class ActivityNames
-    {
+﻿namespace KitX_Dashboard.Names;
 
-        internal object? AppStart { get; } = null;
-    }
+internal class ActivityNames
+{
+
+    internal object? AppStart { get; } = null;
 }

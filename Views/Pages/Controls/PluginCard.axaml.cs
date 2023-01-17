@@ -3,36 +3,35 @@ using Avalonia.Markup.Xaml;
 using KitX.Web.Rules;
 using KitX_Dashboard.ViewModels.Pages.Controls;
 
-namespace KitX_Dashboard.Views.Pages.Controls
+namespace KitX_Dashboard.Views.Pages.Controls;
+
+public partial class PluginCard : UserControl
 {
-    public partial class PluginCard : UserControl
+    private readonly PluginCardViewModel viewModel = new();
+
+    public PluginCard()
     {
-        private readonly PluginCardViewModel viewModel = new();
+        InitializeComponent();
 
-        public PluginCard()
-        {
-            InitializeComponent();
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
+    public PluginCard(PluginStruct ps)
+    {
+        InitializeComponent();
 
-        public PluginCard(PluginStruct ps)
-        {
-            InitializeComponent();
+        pluginStruct = ps;
 
-            pluginStruct = ps;
+        viewModel.pluginStruct = ps;
 
-            viewModel.pluginStruct = ps;
+        DataContext = viewModel;
+    }
 
-            DataContext = viewModel;
-        }
+    public PluginStruct pluginStruct;
 
-        public PluginStruct pluginStruct;
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
     }
 }
 
