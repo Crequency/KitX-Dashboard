@@ -127,7 +127,7 @@
                                 <TextBlock Margin="5,0,0,0"
                                            FontFamily="{StaticResource SourceHanSans}"
                                            FontWeight="Bold"
-                                           Text="{Binding PublishDate}}"/>
+                                           Text="{Binding PublishDate}"/>
                                 <Border/>
                             </DockPanel>
                             <TextBlock Margin="0,5,0,0"

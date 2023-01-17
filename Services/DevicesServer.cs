@@ -142,13 +142,21 @@ internal class DevicesServer : IDisposable
                 Log.Warning(ex, "Logging network interface items.");
             }
 
-            if (adapterProperties.MulticastAddresses.Count == 0
-                // most of VPN adapters will be skipped
-                || !adapter.SupportsMulticast
-                // multicast is meaningless for this type of connection
-                || OperationalStatus.Up != adapter.OperationalStatus
-                // this adapter is off or not connected
-                || !adapter.Supports(NetworkInterfaceComponent.IPv4)
+            if (
+                (
+                    adapter.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
+                    adapter.NetworkInterfaceType != NetworkInterfaceType.Wireless80211
+                )
+                &&
+                (
+                    adapterProperties.MulticastAddresses.Count == 0 ||
+                    // most of VPN adapters will be skipped
+                    !adapter.SupportsMulticast ||
+                    // multicast is meaningless for this type of connection
+                    OperationalStatus.Up != adapter.OperationalStatus ||
+                    // this adapter is off or not connected
+                    !adapter.Supports(NetworkInterfaceComponent.IPv4)
+                )
                 ) continue;
             UnicastIPAddressInformationCollection unicastIPAddresses
                 = adapterProperties.UnicastAddresses;
@@ -166,6 +174,8 @@ internal class DevicesServer : IDisposable
             foreach (var udpClient in clients)
                 udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
         }
+
+        Log.Information($"Find {SurpportedNetworkInterfaces.Count} supported network interfaces.");
     }
 
     /// <summary>
