@@ -1,9 +1,4 @@
 ﻿using Avalonia.Controls;
-#if (IsBuild4WindowsPlatform == true)
-using Avalonia;
-using DesktopNotifications;
-using System.IO;
-#endif
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
@@ -16,10 +11,6 @@ namespace KitX_Dashboard.ViewModels;
 
 internal class MainWindowViewModel : ViewModelBase
 {
-
-#if (IsBuild4WindowsPlatform == true)
-    private static bool _firstTime2RefreshGreeting = true;
-#endif
 
     public MainWindowViewModel()
     {
@@ -74,27 +65,6 @@ internal class MainWindowViewModel : ViewModelBase
     {
         MainWindow? win = mainWindow as MainWindow;
         win?.UpdateGreetingText();
-#if (IsBuild4WindowsPlatform == true)
-        if (_firstTime2RefreshGreeting)
-        {
-            _firstTime2RefreshGreeting = false;
-            try
-            {
-                var notificationManager =
-                    AvaloniaLocator.Current.GetService<INotificationManager>()
-                    ?? throw new InvalidDataException("Missing notification manager.");
-                notificationManager.ShowNotification(new()
-                {
-                    Title = GlobalInfo.AppName,
-                    Body = "(ノω<。)ノ))☆.。",
-                });
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, ex.Message);
-            }
-        }
-#endif
     }
 }
 
