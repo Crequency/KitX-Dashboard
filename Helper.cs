@@ -356,8 +356,10 @@ public static class Helper
     {
         try
         {
-            using var db
-                = new LiteDatabase(Path.GetFullPath(GlobalInfo.ActivitiesDataBaseFilePath));
+            var dir = Path.GetFullPath(GlobalInfo.DataPath);
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            var dbfile = Path.GetFullPath(GlobalInfo.ActivitiesDataBaseFilePath);
+            using var db = new LiteDatabase(dbfile);
             Program.ActivitiesDataBase = db;
             string colName = DateTime.UtcNow.ToString("yyyy_MM").Num2UpperChar();
             var col = db.GetCollection<Activity>(colName);
