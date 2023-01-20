@@ -67,10 +67,10 @@ public class AppConfig
         };
 
         [JsonInclude]
-        public string LocalPluginsFileDirectory { get; set; } = "./Plugins/";
+        public string LocalPluginsFileFolder { get; set; } = "./Plugins/";
 
         [JsonInclude]
-        public string LocalPluginsDataDirectory { get; set; } = "./PluginsDatas/";
+        public string LocalPluginsDataFolder { get; set; } = "./PluginsDatas/";
 
         [JsonInclude]
         public bool DeveloperSetting { get; set; } = false;

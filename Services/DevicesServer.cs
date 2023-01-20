@@ -175,7 +175,8 @@ internal class DevicesServer : IDisposable
                 udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
         }
 
-        Log.Information($"Find {SurpportedNetworkInterfaces.Count} supported network interfaces.");
+        Log.Information($"" +
+            $"Find {SurpportedNetworkInterfaces.Count} supported network interfaces.");
     }
 
     /// <summary>
