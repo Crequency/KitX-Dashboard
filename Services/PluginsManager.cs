@@ -28,6 +28,8 @@ internal class PluginsManager
             var pluginStruct = (PluginStruct)JsonSerializer.Deserialize(msg,
                 typeof(PluginStruct));
 
+            pluginStruct.Tags ??= new();
+
             // 标注实例注册 ID
             pluginStruct.Tags.Add("Authorized_ID",
                 $"{pluginStruct.PublisherName}" +
