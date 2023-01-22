@@ -23,10 +23,19 @@
                        IsPaneOpen="{Binding IsPaneOpen, Mode=TwoWay}"
                        IsSettingsVisible="False"
                        OpenPaneLength="270"
-                       PaneDisplayMode="Top"
+                       PaneDisplayMode="{Binding NavigationViewPaneDisplayMode}"
                        SelectionChanged="SettingsNavigationView_SelectionChanged">
+        <ui:NavigationView.ContextFlyout>
+            <ui:MenuFlyout>
+                <ui:MenuFlyoutItem Command="{Binding ResetToAutoCommand}" Text="{DynamicResource Text_Public_ResetToAuto}"/>
+                <ui:MenuFlyoutItem Command="{Binding MoveToLeftCommand}" Text="{DynamicResource Text_Public_MoveToLeft}"/>
+                <ui:MenuFlyoutItem Command="{Binding MoveToTopCommand}" Text="{DynamicResource Text_Public_MoveToTop}"/>
+            </ui:MenuFlyout>
+        </ui:NavigationView.ContextFlyout>
+
         <ui:NavigationView.MenuItems>
             <ui:NavigationViewItem x:Name="View_General"
+                                   Margin="{Binding FirstItemMargin}"
                                    Tag="View_General"
                                    ToolTip.Tip="{DynamicResource Text_Settings_General}">
                 <ui:NavigationViewItem.Content>
