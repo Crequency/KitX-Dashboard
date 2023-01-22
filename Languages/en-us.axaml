@@ -24,6 +24,8 @@
     <x:String x:Key="Text_Public_Developing">Developing ...</x:String>
     <x:String x:Key="Text_Public_Empty">Empty</x:String>
     <x:String x:Key="Text_Public_Refresh">Refresh</x:String>
+    <x:String x:Key="Text_Public_MoveToTop">Move to Top</x:String>
+    <x:String x:Key="Text_Public_MoveToLeft">Move to Left</x:String>
     <x:String x:Key="Text_Log_Verbose">Verbose</x:String>
     <x:String x:Key="Text_Log_Debug">Debug</x:String>
     <x:String x:Key="Text_Log_Information">Infomation</x:String>

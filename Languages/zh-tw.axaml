@@ -24,6 +24,8 @@
     <x:String x:Key="Text_Public_Developing">該部分正在開發中</x:String>
     <x:String x:Key="Text_Public_Empty">清空</x:String>
     <x:String x:Key="Text_Public_Refresh">刷新</x:String>
+    <x:String x:Key="Text_Public_MoveToTop">移動到頂部</x:String>
+    <x:String x:Key="Text_Public_MoveToLeft">移動到左側</x:String>
     <x:String x:Key="Text_Log_Verbose">詳細</x:String>
     <x:String x:Key="Text_Log_Debug">調試</x:String>
     <x:String x:Key="Text_Log_Information">信息</x:String>

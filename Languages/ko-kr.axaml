@@ -24,6 +24,8 @@
     <x:String x:Key="Text_Public_Developing">개발 중</x:String>
     <x:String x:Key="Text_Public_Empty">비어 있는</x:String>
     <x:String x:Key="Text_Public_Refresh">새로 고침</x:String>
+    <x:String x:Key="Text_Public_MoveToTop">맨 위로 이동</x:String>
+    <x:String x:Key="Text_Public_MoveToLeft">왼쪽으로 이동</x:String>
     <x:String x:Key="Text_Log_Verbose">상세한</x:String>
     <x:String x:Key="Text_Log_Debug">디버깅</x:String>
     <x:String x:Key="Text_Log_Information">정보</x:String>
