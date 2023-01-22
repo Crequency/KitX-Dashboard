@@ -2,6 +2,7 @@
 using Serilog.Events;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using FluentAvalonia.UI.Controls;
 
 namespace KitX_Dashboard.Data;
 
@@ -67,10 +68,10 @@ public class AppConfig
         };
 
         [JsonInclude]
-        public string LocalPluginsFileDirectory { get; set; } = "./Plugins/";
+        public string LocalPluginsFileFolder { get; set; } = "./Plugins/";
 
         [JsonInclude]
-        public string LocalPluginsDataDirectory { get; set; } = "./PluginsDatas/";
+        public string LocalPluginsDataFolder { get; set; } = "./PluginsDatas/";
 
         [JsonInclude]
         public bool DeveloperSetting { get; set; } = false;
@@ -187,6 +188,10 @@ public class AppConfig
         public class Config_HomePage
         {
             [JsonInclude]
+            public NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode { get; set; }
+                = NavigationViewPaneDisplayMode.Auto;
+
+            [JsonInclude]
             public string SelectedViewName { get; set; } = "View_Recent";
 
             [JsonInclude]
@@ -209,6 +214,10 @@ public class AppConfig
         /// </summary>
         public class Config_SettingsPage
         {
+            [JsonInclude]
+            public NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode { get; set; }
+                = NavigationViewPaneDisplayMode.Auto;
+
             [JsonInclude]
             public string SelectedViewName { get; set; } = "View_General";
 

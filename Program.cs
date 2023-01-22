@@ -1,8 +1,5 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
-#if (IsBuild4WindowsPlatform == true)
-using DesktopNotifications.Avalonia;
-#endif
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
@@ -139,6 +136,7 @@ internal class Program
         }
 
         #endregion
+
     }
 
     /// <summary>
@@ -149,9 +147,6 @@ internal class Program
     /// Avalonia 配置项, 请不要删除; 同时也用于可视化设计器
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
         .UsePlatformDetect().LogToTrace().UseReactiveUI()
-#if (IsBuild4WindowsPlatform == true)
-        .SetupDesktopNotifications()
-#endif
         .With(new Win32PlatformOptions
         {
             UseWindowsUIComposition = true,

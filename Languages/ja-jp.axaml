@@ -24,6 +24,9 @@
     <x:String x:Key="Text_Public_Developing">開発中</x:String>
     <x:String x:Key="Text_Public_Empty">空の</x:String>
     <x:String x:Key="Text_Public_Refresh">リフレッシュする</x:String>
+    <x:String x:Key="Text_Public_MoveToTop">上に移動</x:String>
+    <x:String x:Key="Text_Public_MoveToLeft">左に移動</x:String>
+    <x:String x:Key="Text_Public_ResetToAuto">自動にリセット</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">情報</x:String>

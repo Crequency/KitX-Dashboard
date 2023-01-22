@@ -28,6 +28,8 @@ internal class PluginsManager
             var pluginStruct = (PluginStruct)JsonSerializer.Deserialize(msg,
                 typeof(PluginStruct));
 
+            pluginStruct.Tags ??= new();
+
             // 标注实例注册 ID
             pluginStruct.Tags.Add("Authorized_ID",
                 $"{pluginStruct.PublisherName}" +
@@ -177,7 +179,7 @@ internal class PluginsManager
                     Console.WriteLine($"No config file found!");
                     if (!inGraphic) Environment.Exit(ErrorCodes.ConfigFileDidntExists);
                 }
-                string pluginsavedir = config?.App?.LocalPluginsFileDirectory;
+                string pluginsavedir = config?.App?.LocalPluginsFileFolder;
                 if (pluginsavedir != null)
                     pluginsavedir = Path.GetFullPath(pluginsavedir);
                 string thisplugindir = $"{pluginsavedir}/" +
@@ -271,7 +273,7 @@ internal class PluginsManager
                                     }));
                         }
                         string pgfiledir = Path.GetFullPath(
-                            $"{Program.Config.App.LocalPluginsFileDirectory}/" +
+                            $"{Program.Config.App.LocalPluginsFileFolder}/" +
                             $"{pg.PluginDetails.PublisherName}_{pg.PluginDetails.AuthorName}/" +
                             $"{pg.PluginDetails.Name}/{pg.PluginDetails.Version}/"
                         );

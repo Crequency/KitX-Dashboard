@@ -54,10 +54,10 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal static string LocalPluginsFileDirectory
     {
-        get => Program.Config.App.LocalPluginsFileDirectory;
+        get => Program.Config.App.LocalPluginsFileFolder;
         set
         {
-            Program.Config.App.LocalPluginsFileDirectory = value;
+            Program.Config.App.LocalPluginsFileFolder = value;
             SaveChanges();
         }
     }
@@ -67,10 +67,10 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal static string LocalPluginsDataDirectory
     {
-        get => Program.Config.App.LocalPluginsDataDirectory;
+        get => Program.Config.App.LocalPluginsDataFolder;
         set
         {
-            Program.Config.App.LocalPluginsDataDirectory = value;
+            Program.Config.App.LocalPluginsDataFolder = value;
             SaveChanges();
         }
     }

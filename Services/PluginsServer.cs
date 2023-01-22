@@ -137,7 +137,7 @@ internal class PluginsServer : IDisposable
                     else if (msg.StartsWith("PluginStruct: "))
                     {
                         PluginsManager.Execute(msg[14..], endpoint);
-                        string workPath = Path.GetFullPath(Program.Config.App.LocalPluginsDataDirectory);
+                        string workPath = Path.GetFullPath(Program.Config.App.LocalPluginsDataFolder);
                         string sendtxt = $"WorkPath: {workPath}";
                         byte[] bytes = Encoding.UTF8.GetBytes(sendtxt);
                         stream.Write(bytes, 0, bytes.Length);

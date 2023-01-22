@@ -261,8 +261,8 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
                         .AppendIgnoreFolder("Languages")
                         .AppendIgnoreFolder("Log")
                         .AppendIgnoreFolder("Update")
-                        .AppendIgnoreFolder(Program.Config.App.LocalPluginsFileDirectory)
-                        .AppendIgnoreFolder(Program.Config.App.LocalPluginsDataDirectory);
+                        .AppendIgnoreFolder(Program.Config.App.LocalPluginsFileFolder)
+                        .AppendIgnoreFolder(Program.Config.App.LocalPluginsDataFolder);
                     foreach (var item in Program.Config.App.SurpportLanguages)
                         _ = checker.AppendIncludeFile($"{ld}/{item.Key}.axaml");
                     Tip = GetUpdateTip("Scan");
