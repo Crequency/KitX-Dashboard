@@ -17,11 +17,10 @@
                        IsPaneOpen="{Binding IsPaneOpen, Mode=TwoWay}"
                        IsSettingsVisible="False"
                        OpenPaneLength="270"
-                       PaneDisplayMode="Auto"
+                       PaneDisplayMode="Top"
                        SelectionChanged="HomeNavigationView_SelectionChanged">
         <ui:NavigationView.MenuItems>
             <ui:NavigationViewItem x:Name="View_Recent"
-                                   Margin="0,5,0,0"
                                    Tag="View_Recent"
                                    ToolTip.Tip="{DynamicResource Text_MainWindow_HomePage_Recent}">
                 <ui:NavigationViewItem.Content>
