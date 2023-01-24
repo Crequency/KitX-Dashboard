@@ -171,8 +171,17 @@ internal class DevicesServer : IDisposable
                 break;
             }
             if (ipAddress is null) continue;
-            foreach (var udpClient in clients)
-                udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
+            try
+            {
+                foreach (var udpClient in clients)
+                    udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex,
+                    $"In {nameof(DevicesServer)}.{nameof(FindSupportNetworkInterfaces)}:" +
+                    $"{ex.Message}");
+            }
         }
 
         Log.Information($"" +
@@ -187,7 +196,8 @@ internal class DevicesServer : IDisposable
         #region 初始化 UDP 客户端
 
         UdpClient udpClient = UdpClient_Send;
-        IPEndPoint multicast = new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
+        IPEndPoint multicast =
+            new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
             Program.Config.Web.UDPPortReceive);
         udpClient.Client.SetSocketOption(SocketOptionLevel.Socket,
             SocketOptionName.ReuseAddress, true);
