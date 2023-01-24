@@ -154,7 +154,6 @@
         <ProjectReference Include="..\KitX Rules\KitX.Web.Rules\KitX.Web.Rules.csproj" />
         <ProjectReference Include="..\Reference\Common.Activity\src\Common.Activity.csproj" />
         <ProjectReference Include="..\Reference\Common.Algorithm\Common.Algorithm.Interop\Common.Algorithm.Interop.csproj" />
-        <ProjectReference Include="..\Reference\Common.Algorithm\Common.Algorithm.UnitTest\Common.Algorithm.UnitTest.csproj" />
         <ProjectReference Include="..\Reference\Common.BasicHelper\Common.BasicHelper\Common.BasicHelper.csproj" />
         <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole.Console\Common.ExternalConsole.Console.csproj" Condition="$(Is2Publish) == 'False'" />
     </ItemGroup>
