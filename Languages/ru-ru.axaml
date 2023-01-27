@@ -27,6 +27,8 @@
     <x:String x:Key="Text_Public_MoveToTop">перейти к началу</x:String>
     <x:String x:Key="Text_Public_MoveToLeft">двигаться влево</x:String>
     <x:String x:Key="Text_Public_ResetToAuto">сбросить на авто</x:String>
+    <x:String x:Key="Text_Public_Random">случайный</x:String>
+    <x:String x:Key="Text_Public_Fixed">стабильный</x:String>
     <x:String x:Key="Text_Log_Verbose">подробный</x:String>
     <x:String x:Key="Text_Log_Debug">отладка</x:String>
     <x:String x:Key="Text_Log_Information">Информация</x:String>

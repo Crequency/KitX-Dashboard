@@ -27,6 +27,8 @@
     <x:String x:Key="Text_Public_MoveToTop">맨 위로 이동</x:String>
     <x:String x:Key="Text_Public_MoveToLeft">왼쪽으로 이동</x:String>
     <x:String x:Key="Text_Public_ResetToAuto">자동으로 재설정</x:String>
+    <x:String x:Key="Text_Public_Random">무작위의</x:String>
+    <x:String x:Key="Text_Public_Fixed">결정된</x:String>
     <x:String x:Key="Text_Log_Verbose">상세한</x:String>
     <x:String x:Key="Text_Log_Debug">디버깅</x:String>
     <x:String x:Key="Text_Log_Information">정보</x:String>

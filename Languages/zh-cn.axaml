@@ -27,6 +27,8 @@
     <x:String x:Key="Text_Public_MoveToTop">移动到顶部</x:String>
     <x:String x:Key="Text_Public_MoveToLeft">移动到左侧</x:String>
     <x:String x:Key="Text_Public_ResetToAuto">重置到自动</x:String>
+    <x:String x:Key="Text_Public_Random">随机</x:String>
+    <x:String x:Key="Text_Public_Fixed">固定</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">信息</x:String>

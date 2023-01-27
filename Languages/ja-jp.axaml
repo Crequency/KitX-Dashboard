@@ -27,6 +27,8 @@
     <x:String x:Key="Text_Public_MoveToTop">上に移動</x:String>
     <x:String x:Key="Text_Public_MoveToLeft">左に移動</x:String>
     <x:String x:Key="Text_Public_ResetToAuto">自動にリセット</x:String>
+    <x:String x:Key="Text_Public_Random">ランダム</x:String>
+    <x:String x:Key="Text_Public_Fixed">安定</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">情報</x:String>
