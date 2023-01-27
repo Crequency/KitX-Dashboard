@@ -5,6 +5,7 @@ using Common.BasicHelper.Util.Extension;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Models;
+using KitX_Dashboard.Names;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;
@@ -54,10 +55,10 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
                 item.LogLevelDisplayName = GetLogLevelInLanguages(item.LogLevelName);
             PropertyChanged?.Invoke(this, new(nameof(SurpportLogLevels)));
         };
-        EventHandlers.DevicesServerPortChanged += () =>
-        {
-            PropertyChanged?.Invoke(this, new(nameof(DevicesServerPort)));
-        };
+        EventHandlers.DevicesServerPortChanged += () => PropertyChanged?.Invoke(this,
+                new(nameof(DevicesServerPort)));
+        EventHandlers.PluginsServerPortChanged += () => PropertyChanged?.Invoke(this,
+                new(nameof(PluginsServerPort)));
     }
 
     private void InitCommands()
@@ -88,9 +89,40 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     }
 
     /// <summary>
+    /// 插件服务器端口是否可以编辑
+    /// </summary>
+    internal bool PluginsServerPortEditable => PluginsServerPortType != 0;
+
+    /// <summary>
+    /// 插件服务器端口类型
+    /// </summary>
+    internal int PluginsServerPortType
+    {
+        get => Program.Config.Web.UserSpecifiedPluginsServerPort is null ? 0 : 1;
+        set
+        {
+            if (value == 0)
+                Program.Config.Web.UserSpecifiedPluginsServerPort = null;
+            else
+                Program.Config.Web.UserSpecifiedPluginsServerPort = PluginsServerPort;
+            PropertyChanged?.Invoke(this,
+                new(nameof(PluginsServerPortEditable)));
+            SaveChanges();
+        }
+    }
+
+    /// <summary>
     /// 插件间服务端口属性
     /// </summary>
-    internal static int PluginsServerPort => GlobalInfo.PluginServerPort;
+    internal static int PluginsServerPort
+    {
+        get => GlobalInfo.PluginServerPort;
+        set
+        {
+            if (value >= 0 && value <= 65535)
+                Program.Config.Web.UserSpecifiedPluginsServerPort = value;
+        }
+    }
 
     /// <summary>
     /// 设备间服务端口属性

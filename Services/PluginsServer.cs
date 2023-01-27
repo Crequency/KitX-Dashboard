@@ -18,7 +18,8 @@ internal class PluginsServer : IDisposable
 {
     public PluginsServer()
     {
-        listener = new(IPAddress.Any, 0);
+        var port = Program.Config.Web.UserSpecifiedPluginsServerPort;
+        listener = new(IPAddress.Any, port ?? 0);
         acceptPluginThread = new(AcceptClient);
     }
 
@@ -33,6 +34,7 @@ internal class PluginsServer : IDisposable
 
         int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
         GlobalInfo.PluginServerPort = port; // 全局端口号标明
+        EventHandlers.Invoke(nameof(EventHandlers.PluginsServerPortChanged));
 
         Log.Information($"PluginsServer Port: {port}");
 

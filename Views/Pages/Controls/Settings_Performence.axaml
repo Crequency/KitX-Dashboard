@@ -11,6 +11,10 @@
              mc:Ignorable="d">
 
     <UserControl.Styles>
+        <Style Selector="ui|NumberBox.FontBase">
+            <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
         <Style Selector="ui|NumberBox.Disabled">
             <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -110,9 +114,19 @@
                                 <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_PluginsServerPort}"/>
                             </StackPanel>
 
-                            <ui:NumberBox Classes="Disabled"
+                            <ui:NumberBox Classes="FontBase"
+                                          DockPanel.Dock="Right"
+                                          IsEnabled="{Binding PluginsServerPortEditable}"
                                           SpinButtonPlacementMode="Compact"
                                           Value="{Binding PluginsServerPort}"/>
+
+                            <ComboBox Margin="0,0,15,0"
+                                      VerticalAlignment="Center"
+                                      DockPanel.Dock="Right"
+                                      SelectedIndex="{Binding PluginsServerPortType}">
+                                <ComboBoxItem Content="{DynamicResource Text_Public_Random}"/>
+                                <ComboBoxItem Content="{DynamicResource Text_Public_Fixed}"/>
+                            </ComboBox>
 
                             <Border/>
                         </DockPanel>

@@ -274,6 +274,9 @@ public class AppConfig
         public List<string>? AcceptedNetworkInterfaces { get; set; } = null;
 
         [JsonInclude]
+        public int? UserSpecifiedPluginsServerPort { get; set; } = null;
+
+        [JsonInclude]
         public int UDPPortSend { get; set; } = 23404;
 
         [JsonInclude]
