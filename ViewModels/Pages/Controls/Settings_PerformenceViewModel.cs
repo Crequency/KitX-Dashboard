@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Common.BasicHelper.IO;
+using Common.BasicHelper.Util.Extension;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Models;
@@ -10,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
@@ -105,6 +107,29 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         {
             Program.Config.Web.IPFilter = value;
             SaveChanges();
+        }
+    }
+
+    /// <summary>
+    /// 指定的网络适配器
+    /// </summary>
+    internal static string AcceptedNetworkInterfacesNames
+    {
+        get
+        {
+            var userPointed = Program.Config.Web.AcceptedNetworkInterfaces;
+            if (userPointed is null) return "Auto";
+            else return userPointed.ToCustomString(";");
+        }
+        set
+        {
+            if (value.Equals("Auto"))
+                Program.Config.Web.AcceptedNetworkInterfaces = null;
+            else
+            {
+                var userInput = value.Split(';');
+                Program.Config.Web.AcceptedNetworkInterfaces = userInput.ToList();
+            }
         }
     }
 

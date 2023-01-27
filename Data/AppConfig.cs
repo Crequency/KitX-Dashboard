@@ -271,6 +271,9 @@ public class AppConfig
         public string APIPath { get; set; } = "/apps/kitx/";
 
         [JsonInclude]
+        public List<string>? AcceptedNetworkInterfaces { get; set; } = null;
+
+        [JsonInclude]
         public int UDPPortSend { get; set; } = 23404;
 
         [JsonInclude]

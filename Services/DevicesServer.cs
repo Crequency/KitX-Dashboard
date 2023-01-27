@@ -122,6 +122,37 @@ internal class DevicesServer : IDisposable
         = new(new IPEndPoint(IPAddress.Any, Program.Config.Web.UDPPortReceive));
 
     /// <summary>
+    /// 检查网络适配器是否符合要求
+    /// </summary>
+    /// <param name="adapter">网络适配器</param>
+    /// <returns>是否符合要求</returns>
+    private static bool CheckNetworkInterface(
+        NetworkInterface adapter, IPInterfaceProperties adapterProperties)
+    {
+        var userPointed = Program.Config.Web.AcceptedNetworkInterfaces;
+        if (userPointed is not null && userPointed.Contains(adapter.Name))
+            return true;
+
+        if (
+            (
+                adapter.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
+                adapter.NetworkInterfaceType != NetworkInterfaceType.Wireless80211
+            )
+            &&
+            (
+                adapterProperties.MulticastAddresses.Count == 0 ||
+                // most of VPN adapters will be skipped
+                !adapter.SupportsMulticast ||
+                // multicast is meaningless for this type of connection
+                OperationalStatus.Up != adapter.OperationalStatus ||
+                // this adapter is off or not connected
+                !adapter.Supports(NetworkInterfaceComponent.IPv4)
+            )
+            ) return false;
+        return true;
+    }
+
+    /// <summary>
     /// 寻找受支持的网络适配器并把UDP客户端加入组播
     /// </summary>
     private static void FindSupportNetworkInterfaces(List<UdpClient> clients, IPAddress multicastAddress)
@@ -141,23 +172,7 @@ internal class DevicesServer : IDisposable
             {
                 Log.Warning(ex, "Logging network interface items.");
             }
-
-            if (
-                (
-                    adapter.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
-                    adapter.NetworkInterfaceType != NetworkInterfaceType.Wireless80211
-                )
-                &&
-                (
-                    adapterProperties.MulticastAddresses.Count == 0 ||
-                    // most of VPN adapters will be skipped
-                    !adapter.SupportsMulticast ||
-                    // multicast is meaningless for this type of connection
-                    OperationalStatus.Up != adapter.OperationalStatus ||
-                    // this adapter is off or not connected
-                    !adapter.Supports(NetworkInterfaceComponent.IPv4)
-                )
-                ) continue;
+            if (!CheckNetworkInterface(adapter, adapterProperties)) continue;
             UnicastIPAddressInformationCollection unicastIPAddresses
                 = adapterProperties.UnicastAddresses;
             IPv4InterfaceProperties p = adapterProperties.GetIPv4Properties();

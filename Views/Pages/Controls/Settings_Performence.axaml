@@ -151,6 +151,22 @@
                             <Border/>
                         </DockPanel>
                     </ui:InfoBar>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="Network"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_SpecifiedNetworkAdapters}"/>
+                            </StackPanel>
+
+                            <TextBox DockPanel.Dock="Right" Text="{Binding AcceptedNetworkInterfacesNames}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
                 </StackPanel>
 
             </Expander>
