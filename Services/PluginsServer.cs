@@ -19,6 +19,7 @@ internal class PluginsServer : IDisposable
     public PluginsServer()
     {
         var port = Program.Config.Web.UserSpecifiedPluginsServerPort;
+        if (port < 0 || port >= 65536) port = null;
         listener = new(IPAddress.Any, port ?? 0);
         acceptPluginThread = new(AcceptClient);
     }
