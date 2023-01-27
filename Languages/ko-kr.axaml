@@ -118,6 +118,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">플러그인 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">장치 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">기본 IP 필터링 규칙</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">지정된 네트워크 어댑터</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">인사말 업데이트가 지연되었습니다.</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">로그 파일 관련 설정</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">로그 파일이 공간을 차지했습니다.</x:String>

@@ -118,6 +118,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Plugins Communication Port</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Devices Communication Port</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Native IP Filter</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">Specified network adapter</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Greeting Text Update Interval</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Log File Related Settings</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">The log file has taken up space</x:String>

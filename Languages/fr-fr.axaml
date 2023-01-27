@@ -118,6 +118,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Port de communication enfichable</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Port de communication de l'appareil</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Règles de filtrage IP natives</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">adaptateur réseau spécifié</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Mise à jour du message d'accueil retardée</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Paramètres liés au fichier journal</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">Le fichier journal a pris de la place</x:String>
