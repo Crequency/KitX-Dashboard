@@ -2,6 +2,7 @@
 using KitX.Web.Rules;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Names;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -190,6 +191,7 @@ internal class DevicesServer : IDisposable
             {
                 foreach (var udpClient in clients)
                     udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
+                Program.WebManager?.NetworkInterfaceRegistered?.Add(adapter.Name);
             }
             catch (Exception ex)
             {
@@ -198,6 +200,8 @@ internal class DevicesServer : IDisposable
                     $"{ex.Message}");
             }
         }
+
+        Program.TasksManager?.RaiseSignal(nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal));
 
         Log.Information($"" +
             $"Find {SurpportedNetworkInterfaces.Count} supported network interfaces.");

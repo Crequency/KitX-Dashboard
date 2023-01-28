@@ -181,6 +181,26 @@
                             <Border/>
                         </DockPanel>
                     </ui:InfoBar>
+
+                    <Expander Margin="0,5" IsExpanded="{Binding WebRelatedAreaOfNetworkInterfacesExpanded}">
+                        <Expander.Header>
+                            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                <icon:MaterialIcon Margin="5,0" Kind="TableNetwork"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_AvailableNetworkInterfaces}"/>
+                            </StackPanel>
+                        </Expander.Header>
+
+                        <ListBox Margin="5" Items="{Binding AvailableNetworkInterfaces}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border>
+                                        <TextBlock Classes="Normal" Text="{Binding}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                    </Expander>
                 </StackPanel>
 
             </Expander>

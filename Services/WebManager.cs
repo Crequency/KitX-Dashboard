@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 
 namespace KitX_Dashboard.Services;
@@ -15,7 +16,7 @@ public class WebManager : IDisposable
     internal PluginsServer? pluginsServer;
     internal DevicesServer? devicesServer;
 
-    internal List<string>? NetworkInterfaceRegistered;
+    internal ObservableCollection<string>? NetworkInterfaceRegistered;
 
     /// <summary>
     /// 开始执行网络相关服务

@@ -25,6 +25,7 @@
                        OpenPaneLength="270"
                        PaneDisplayMode="{Binding NavigationViewPaneDisplayMode}"
                        SelectionChanged="SettingsNavigationView_SelectionChanged">
+
         <ui:NavigationView.ContextFlyout>
             <ui:MenuFlyout>
                 <ui:MenuFlyoutItem Command="{Binding ResetToAutoCommand}" Text="{DynamicResource Text_Public_ResetToAuto}"/>

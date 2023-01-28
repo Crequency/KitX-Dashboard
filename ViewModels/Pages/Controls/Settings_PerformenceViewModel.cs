@@ -10,6 +10,7 @@ using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -59,6 +60,15 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
                 new(nameof(DevicesServerPort)));
         EventHandlers.PluginsServerPortChanged += () => PropertyChanged?.Invoke(this,
                 new(nameof(PluginsServerPort)));
+
+        Program.TasksManager?.SignalRun(
+            nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal),
+            () =>
+            {
+                PropertyChanged?.Invoke(this,
+                    new(nameof(AvailableNetworkInterfaces)));
+            }
+        );
     }
 
     private void InitCommands()
@@ -166,6 +176,12 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     }
 
     /// <summary>
+    /// 可用的网络适配器
+    /// </summary>
+    internal static ObservableCollection<string>? AvailableNetworkInterfaces
+        => Program.WebManager?.NetworkInterfaceRegistered;
+
+    /// <summary>
     /// 招呼语更新延迟
     /// </summary>
     internal static int GreetingTextUpdateInterval
@@ -188,6 +204,19 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Pages.Settings.WebRelatedAreaExpanded = value;
+            SaveChanges();
+        }
+    }
+
+    /// <summary>
+    /// 网络相关设置中网络适配器区域是否展开
+    /// </summary>
+    internal static bool WebRelatedAreaOfNetworkInterfacesExpanded
+    {
+        get => Program.Config.Pages.Settings.WebRelatedAreaOfNetworkInterfacesExpanded;
+        set
+        {
+            Program.Config.Pages.Settings.WebRelatedAreaOfNetworkInterfacesExpanded = value;
             SaveChanges();
         }
     }

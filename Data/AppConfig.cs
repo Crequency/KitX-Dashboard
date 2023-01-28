@@ -234,6 +234,9 @@ public class AppConfig
             public bool WebRelatedAreaExpanded { get; set; } = true;
 
             [JsonInclude]
+            public bool WebRelatedAreaOfNetworkInterfacesExpanded { get; set; } = false;
+
+            [JsonInclude]
             public bool LogRelatedAreaExpanded { get; set; } = true;
 
             [JsonInclude]
