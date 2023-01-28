@@ -33,6 +33,8 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
             PluginsCount = PluginBars.Count.ToString();
             NoPlugins_TipHeight = PluginBars.Count == 0 ? 300 : 0;
         };
+
+        RefreshPlugins(new());
     }
 
     /// <summary>
