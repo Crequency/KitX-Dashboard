@@ -144,6 +144,39 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static string LocalIPFilter
     {
+        //get
+        //{
+        //    var value = Program.Config.Web.IPFilter;
+        //    var parts = value.Split('.').ToList();
+        //    var ints = new List<int>();
+        //    parts.ForEach(x => ints.Add(int.Parse(x)));
+        //    var sb = new StringBuilder();
+        //    for (var i = 0; i < ints.Count; ++i)
+        //    {
+        //        var part = ints[i];
+        //        sb.Append(part.ToString().PadLeft(3, '0'));
+        //        if (i != 3) sb.Append('.');
+        //    }
+        //    var delta = 4 - ints.Count;
+        //    while (delta > 0)
+        //    {
+        //        sb.Append(".___");
+        //        --delta;
+        //    }
+        //    return sb.ToString();
+        //}
+        //set
+        //{
+        //    var parts = value.Split('.').ToList();
+        //    var sb = new StringBuilder();
+        //    parts.ForEach(p =>
+        //    {
+        //        sb.Append(int.Parse(p.Replace("_", "")));
+        //        sb.Append('.');
+        //    });
+        //    Program.Config.Web.IPFilter = sb.ToString()[..^1];
+        //    SaveChanges();
+        //}
         get => Program.Config.Web.IPFilter;
         set
         {
@@ -180,6 +213,12 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static ObservableCollection<string>? AvailableNetworkInterfaces
         => Program.WebManager?.NetworkInterfaceRegistered;
+
+    /// <summary>
+    /// 用户选择的网络适配器
+    /// </summary>
+    internal static ObservableCollection<string>? SelectedNetworkInterfaces { get; }
+        = new();
 
     /// <summary>
     /// 招呼语更新延迟

@@ -124,8 +124,8 @@
                                       VerticalAlignment="Center"
                                       DockPanel.Dock="Right"
                                       SelectedIndex="{Binding PluginsServerPortType}">
-                                <ComboBoxItem Content="{DynamicResource Text_Public_Random}"/>
-                                <ComboBoxItem Content="{DynamicResource Text_Public_Fixed}"/>
+                                <ComboBoxItem VerticalAlignment="Center" Content="{DynamicResource Text_Public_Random}"/>
+                                <ComboBoxItem VerticalAlignment="Center" Content="{DynamicResource Text_Public_Fixed}"/>
                             </ComboBox>
 
                             <Border/>
@@ -160,6 +160,13 @@
                                 <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_MyIP_Filter}"/>
                             </StackPanel>
 
+                            <!--<MaskedTextBox AsciiOnly="True"
+                                           DockPanel.Dock="Right"
+                                           Mask="999\.999\.999\.999"
+                                           PromptChar="_"
+                                           ResetOnPrompt="True"
+                                           ResetOnSpace="True"
+                                           Text="{Binding LocalIPFilter}"/>-->
                             <TextBox DockPanel.Dock="Right" Text="{Binding LocalIPFilter}"/>
 
                             <Border/>
@@ -190,7 +197,10 @@
                             </StackPanel>
                         </Expander.Header>
 
-                        <ListBox Margin="5" Items="{Binding AvailableNetworkInterfaces}">
+                        <ListBox Margin="5"
+                                 Items="{Binding AvailableNetworkInterfaces}"
+                                 SelectedItems="{Binding SelectedNetworkInterfaces}"
+                                 SelectionMode="Multiple,Toggle">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Border>
