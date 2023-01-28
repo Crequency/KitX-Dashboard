@@ -38,6 +38,7 @@ internal class MainWindowViewModel : ViewModelBase
         win?.Show();
         win?.Activate();
         Program.Config.Windows.MainWindow.IsHidden = false;
+        EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
     }
 
     internal void Exit(object mainWindow)
