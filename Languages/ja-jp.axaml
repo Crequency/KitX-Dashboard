@@ -121,6 +121,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">デバイス通信ポート</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">ネイティブ IP フィルタリング ルール</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">指定されたネットワーク アダプタ</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">利用可能なネットワーク アダプタ</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">あいさつ更新が遅れる</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">ログファイル関連の設定</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">ログファイルがスペースを占有しています</x:String>
