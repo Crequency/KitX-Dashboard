@@ -69,7 +69,7 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
                 OperatingSystems.IOS => MaterialIconKind.AppleIos,
                 OperatingSystems.Linux => MaterialIconKind.Linux,
                 OperatingSystems.MacCatalyst => MaterialIconKind.Apple,
-                OperatingSystems.MacOS => MaterialIconKind.Apple,
+                OperatingSystems.MacOS => MaterialIconKind.AppleKeyboardCommand,
                 OperatingSystems.TvOS => MaterialIconKind.Apple,
                 OperatingSystems.WatchOS => MaterialIconKind.Apple,
                 OperatingSystems.Windows => MaterialIconKind.MicrosoftWindows,
