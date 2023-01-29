@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Common.BasicHelper.IO;
 using Common.BasicHelper.Util.Extension;
 using KitX_Dashboard.Commands;
@@ -14,6 +15,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
@@ -67,8 +69,38 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             {
                 PropertyChanged?.Invoke(this,
                     new(nameof(AvailableNetworkInterfaces)));
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var anin = AcceptedNetworkInterfacesNames;
+                    if (anin is not null && !anin.Equals("Auto"))
+                        foreach (var item in anin.Split(';'))
+                            if (AvailableNetworkInterfaces is not null &&
+                                AvailableNetworkInterfaces.Contains(item))
+                                SelectedNetworkInterfaces?.Add(item);
+                });
             }
         );
+
+        if (SelectedNetworkInterfaces is not null)
+            SelectedNetworkInterfaces.CollectionChanged += (_, _) =>
+            {
+                if (SelectedNetworkInterfaces.Count == 0)
+                    AcceptedNetworkInterfacesNames = "Auto";
+                else
+                {
+                    var sb = new StringBuilder();
+                    foreach (var adapter in SelectedNetworkInterfaces)
+                    {
+                        sb.Append(adapter);
+                        sb.Append(';');
+                    }
+                    AcceptedNetworkInterfacesNames = sb.ToString()[..^1];
+                }
+                PropertyChanged?.Invoke(this,
+                    new(nameof(AcceptedNetworkInterfacesNames)));
+                SaveChanges();
+            };
     }
 
     private void InitCommands()
@@ -194,7 +226,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         {
             var userPointed = Program.Config.Web.AcceptedNetworkInterfaces;
             if (userPointed is null) return "Auto";
-            else return userPointed.ToCustomString(";");
+            else return userPointed.ToCustomString(";")[..^1];
         }
         set
         {
