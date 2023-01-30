@@ -141,7 +141,7 @@ internal class DevicesManager
                         }
                         ++index;
                     }
-                    if (index != 0)
+                    if (localMachine is not null)
                     {
                         try
                         {
