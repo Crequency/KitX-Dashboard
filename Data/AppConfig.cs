@@ -298,7 +298,7 @@ public class AppConfig
         public int SocketBufferSize { get; set; } = 1024 * 100;
 
         [JsonInclude]
-        public int DeviceInfoStructTTLSeconds { get; set; } = 5;
+        public int DeviceInfoStructTTLSeconds { get; set; } = 7;
 
         [JsonInclude]
         public string UpdateServer { get; set; } = "api.catrol.cn";
