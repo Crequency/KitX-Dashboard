@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">내보내다</x:String>
     <x:String x:Key="Text_Public_Exit">그만두다</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">메인 창 표시</x:String>
+    <x:String x:Key="Text_Public_Millisecond">밀리초</x:String>
     <x:String x:Key="Text_Public_Second">초</x:String>
     <x:String x:Key="Text_Public_Minute">분</x:String>
     <x:String x:Key="Text_Public_Hour">시</x:String>

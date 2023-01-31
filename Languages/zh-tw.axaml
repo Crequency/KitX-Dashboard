@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">導出</x:String>
     <x:String x:Key="Text_Public_Exit">退出</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">顯示主窗口</x:String>
+    <x:String x:Key="Text_Public_Millisecond">毫秒</x:String>
     <x:String x:Key="Text_Public_Second">秒</x:String>
     <x:String x:Key="Text_Public_Minute">分鐘</x:String>
     <x:String x:Key="Text_Public_Hour">小時</x:String>
