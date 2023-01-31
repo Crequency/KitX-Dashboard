@@ -122,6 +122,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">本机IP过滤规则</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">指定的网络适配器</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">可用的网络适配器</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">刷新设备列表延迟</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">招呼语更新延迟</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">日志文件相关设置</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">日志文件已占用空间</x:String>

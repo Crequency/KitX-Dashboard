@@ -122,6 +122,7 @@
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Собственные правила IP-фильтрации</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">указанный сетевой адаптер</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">доступные сетевые адаптеры</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">Задержка обновления списка устройств</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Обновление приветствия отложено</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Настройки, связанные с файлом журнала</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">Файл журнала занял место</x:String>
