@@ -233,7 +233,8 @@ internal class DevicesManager
 
                     //RemoveDumplicatedCards();
 
-                    RemoveOfflineCards();
+                    if (!Program.Config.Web.DisableRemovingOfflineDeviceCard)
+                        RemoveOfflineCards();
 
                     MoveSelfCard2First();
 
