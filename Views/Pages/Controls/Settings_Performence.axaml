@@ -217,6 +217,30 @@
                         </ListBox>
 
                     </Expander>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="TimerRefresh"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_DevicesRefreshDelay}"/>
+                            </StackPanel>
+
+                            <TextBlock Margin="10,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Classes="Normal"
+                                       DockPanel.Dock="Right"
+                                       Text="{DynamicResource Text_Public_Millisecond}"/>
+                            <ui:NumberBox Classes="Enabled"
+                                          Minimum="100"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding DevicesListRefreshDelay}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
                 </StackPanel>
 
             </Expander>

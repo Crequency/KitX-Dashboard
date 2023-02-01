@@ -253,6 +253,19 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         = new();
 
     /// <summary>
+    /// 设备列表刷新延迟
+    /// </summary>
+    internal static int DevicesListRefreshDelay
+    {
+        get => Program.Config.Web.DevicesViewRefreshDelay;
+        set
+        {
+            Program.Config.Web.DevicesViewRefreshDelay = value;
+            SaveChanges();
+        }
+    }
+
+    /// <summary>
     /// 招呼语更新延迟
     /// </summary>
     internal static int GreetingTextUpdateInterval

@@ -177,6 +177,9 @@ public class AppConfig
         public Config_HomePage Home { get; set; } = new();
 
         [JsonInclude]
+        public Config_DevicePage Device { get; set; } = new();
+
+        [JsonInclude]
         public Config_MarketPage Market { get; set; } = new();
 
         [JsonInclude]
@@ -199,6 +202,14 @@ public class AppConfig
 
             [JsonInclude]
             public bool UseAreaExpanded { get; set; } = true;
+        }
+
+        /// <summary>
+        /// DevicePageConfig
+        /// </summary>
+        public class Config_DevicePage
+        {
+
         }
 
         /// <summary>
@@ -272,6 +283,9 @@ public class AppConfig
 
         [JsonInclude]
         public string APIPath { get; set; } = "/apps/kitx/";
+
+        [JsonInclude]
+        public int DevicesViewRefreshDelay { get; set; } = 1000;
 
         [JsonInclude]
         public List<string>? AcceptedNetworkInterfaces { get; set; } = null;
