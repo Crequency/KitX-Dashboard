@@ -300,7 +300,7 @@ public class AppConfig
         public int UDPPortReceive { get; set; } = 24040;
 
         [JsonInclude]
-        public int UDPSendFrequency { get; set; } = 2000;
+        public int UDPSendFrequency { get; set; } = 1000;
 
         [JsonInclude]
         public string UDPBroadcastAddress { get; set; } = "224.0.0.0";
@@ -312,7 +312,7 @@ public class AppConfig
         public int SocketBufferSize { get; set; } = 1024 * 100;
 
         [JsonInclude]
-        public int DeviceInfoStructTTLSeconds { get; set; } = 7;
+        public int DeviceInfoStructTTLSeconds { get; set; } = 11;
 
         [JsonInclude]
         public string UpdateServer { get; set; } = "api.catrol.cn";

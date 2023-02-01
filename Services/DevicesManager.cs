@@ -35,14 +35,29 @@ internal class DevicesManager
 
     private static bool KeepCheckAndRemoveTaskRunning = false;
 
+    /// <summary>
+    /// 判断设备是否应该标记为离线
+    /// </summary>
+    /// <param name="info">设备广播信息</param>
+    /// <returns>是否离线</returns>
+    private static bool CheckDeviceIsOffline(DeviceInfoStruct info)
+        => DateTime.UtcNow - info.SendTime.ToUniversalTime()
+           > new TimeSpan(0, 0, Program.Config.Web.DeviceInfoStructTTLSeconds);
+
+    /// <summary>
+    /// 更新数据源中的设备信息并添加数据源中没有的设备卡片
+    /// </summary>
     private static void UpdateSourceAndAddCards()
     {
         var need2addDevicesCount = 0;
+        var thisTurnAdded = new List<int>();
 
         while (deviceInfoStructs.Count > 0)
         {
             var deviceInfoStruct = deviceInfoStructs.Dequeue();
-            var findThis = false;
+            var hashCode = deviceInfoStruct.GetHashCode();
+            var findThis = thisTurnAdded.Contains(hashCode);
+            if (findThis) continue;
             foreach (var item in Program.DeviceCards)
             {
                 if (item.viewModel.DeviceInfo.DeviceName.Equals(deviceInfoStruct.DeviceName))
@@ -54,6 +69,7 @@ internal class DevicesManager
             }
             if (!findThis)
             {
+                thisTurnAdded.Add(hashCode);
                 lock (AddDeviceCard2ViewLock)
                 {
                     ++need2addDevicesCount;
@@ -72,6 +88,36 @@ internal class DevicesManager
         while (need2addDevicesCount != 0) ;
     }
 
+    /// <summary>
+    /// 移除离线设备
+    /// </summary>
+    private static void RemoveOfflineCards()
+    {
+        List<DeviceCard> DevicesNeed2BeRemoved = new();
+        foreach (var item in Program.DeviceCards)
+        {
+            var info = item.viewModel.DeviceInfo;
+            if (CheckDeviceIsOffline(info)) DevicesNeed2BeRemoved.Add(item);
+        }
+
+        var removeDeviceTaskRunning = true;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            lock (AddDeviceCard2ViewLock)
+            {
+                foreach (var item in DevicesNeed2BeRemoved)
+                    Program.DeviceCards.Remove(item);
+            }
+            removeDeviceTaskRunning = false;
+        });
+
+        while (removeDeviceTaskRunning) ;
+    }
+
+    /// <summary>
+    /// 移除重复设备卡片
+    /// </summary>
     private static void RemoveDumplicatedCards()
     {
         List<string>
@@ -95,10 +141,6 @@ internal class DevicesManager
             MacAddressVisited.Add(info.DeviceMacAddress);
             IPv4AddressVisited.Add(info.IPv4);
             IPv6AddressVisited.Add(info.IPv6);
-            if (DateTime.UtcNow - info.SendTime.ToUniversalTime()
-                > new TimeSpan(0, 0,
-                    Program.Config.Web.DeviceInfoStructTTLSeconds))
-                DevicesNeed2BeRemoved.Add(item);
         }
 
         var removeDeviceTaskRunning = true;
@@ -118,40 +160,49 @@ internal class DevicesManager
         while (removeDeviceTaskRunning) ;
     }
 
+    /// <summary>
+    /// 判断是否是本机卡片
+    /// </summary>
+    /// <param name="info">设备信息</param>
+    /// <returns>是否是本机卡片</returns>
+    private static bool IsSelfCard(DeviceInfoStruct info)
+    {
+        var self = DevicesServer.DefaultDeviceInfoStruct;
+        return info.DeviceMacAddress.Equals(self.DeviceMacAddress)
+            && info.DeviceName.Equals(self.DeviceName);
+    }
+
+    /// <summary>
+    /// 移动本机设备卡片到第一个
+    /// </summary>
     private static void MoveSelfCard2First()
     {
         var index = 0;
-        DeviceCard? localMachine = null;
+        var moveSelfCardTaskRunning = true;
         foreach (var item in Program.DeviceCards)
         {
             var info = item.viewModel.DeviceInfo;
-            var self = DevicesServer.DefaultDeviceInfoStruct;
-            if (info.DeviceMacAddress.Equals(self.DeviceMacAddress)
-                && info.DeviceName.Equals(self.DeviceName))
+            if (IsSelfCard(info))
             {
-                localMachine = item;
+                if (index != 0)
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        try
+                        {
+                            Program.DeviceCards.Move(index, 0);
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Warning(e, $"Can't move self 2 first. {e.Message}");
+                        }
+                        moveSelfCardTaskRunning = false;
+                    });
+                    while (moveSelfCardTaskRunning) ;
+                }
                 break;
             }
             ++index;
-        }
-        if (localMachine is not null)
-        {
-            try
-            {
-                var moveSelfCardTaskRunning = true;
-
-                Dispatcher.UIThread.Post(() =>
-                {
-                    Program.DeviceCards.Move(index, 0);
-                    moveSelfCardTaskRunning = false;
-                });
-
-                while (moveSelfCardTaskRunning) ;
-            }
-            catch (Exception e)
-            {
-                Log.Warning(e, $"Can't move self 2 first. {e.Message}");
-            }
         }
     }
 
@@ -162,7 +213,7 @@ internal class DevicesManager
     {
         Timer timer = new()
         {
-            Interval = 1000,
+            Interval = Program.Config.Web.DevicesViewRefreshDelay,
             AutoReset = true
         };
         timer.Elapsed += (_, _) =>
@@ -180,7 +231,9 @@ internal class DevicesManager
 
                     UpdateSourceAndAddCards();
 
-                    RemoveDumplicatedCards();
+                    //RemoveDumplicatedCards();
+
+                    RemoveOfflineCards();
 
                     MoveSelfCard2First();
 
@@ -194,6 +247,10 @@ internal class DevicesManager
             }
         };
         timer.Start();
+        EventHandlers.ConfigSettingsChanged += () =>
+        {
+            timer.Interval = Program.Config.Web.DevicesViewRefreshDelay;
+        };
     }
 
     /// <summary>
