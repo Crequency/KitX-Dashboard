@@ -29,6 +29,8 @@ internal class Program
 
     internal static LiteDatabase? ActivitiesDataBase;
 
+    internal static CacheManager? CacheManager;
+
     internal static MainWindow? MainWindow;
 
     /// <summary>
