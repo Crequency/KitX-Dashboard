@@ -763,8 +763,16 @@ internal class DevicesServer : IDisposable
     /// <param name="serverPort">主控端口</param>
     internal void AttendServer(string serverAddress, int serverPort)
     {
-        Log.Information($"Attending Server -> {serverAddress}:{serverPort}");
-        DevicesHost?.Connect(serverAddress, serverPort);
+        try
+        {
+            DevicesHost?.Connect(serverAddress, serverPort);
+            Log.Information($"Attending Server -> {serverAddress}:{serverPort}");
+        }
+        catch (Exception ex)
+        {
+            var location = $"{nameof(DevicesServer)}.{nameof(AttendServer)}";
+            Log.Error(ex, $"In {location}: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -773,8 +781,16 @@ internal class DevicesServer : IDisposable
     /// <param name="msg">消息内容</param>
     internal void SendMessage(string msg)
     {
-        DevicesHost?.Client.Send(Encoding.UTF8.GetBytes(msg));
-        Log.Information($"Sent Message to Host, msg: {msg}");
+        try
+        {
+            DevicesHost?.Client.Send(Encoding.UTF8.GetBytes(msg));
+            Log.Information($"Sent Message to Host, msg: {msg}");
+        }
+        catch (Exception e)
+        {
+            var location = $"{nameof(DevicesServer)}.{nameof(SendMessage)}";
+            Log.Error(e, $"In {location}: {e.Message}");
+        }
     }
 
     #endregion
