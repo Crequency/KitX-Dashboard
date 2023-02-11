@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">導出</x:String>
     <x:String x:Key="Text_Public_Exit">退出</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">顯示主窗口</x:String>
+    <x:String x:Key="Text_Public_Millisecond">毫秒</x:String>
     <x:String x:Key="Text_Public_Second">秒</x:String>
     <x:String x:Key="Text_Public_Minute">分鐘</x:String>
     <x:String x:Key="Text_Public_Hour">小時</x:String>
@@ -27,6 +28,8 @@
     <x:String x:Key="Text_Public_MoveToTop">移動到頂部</x:String>
     <x:String x:Key="Text_Public_MoveToLeft">移動到左側</x:String>
     <x:String x:Key="Text_Public_ResetToAuto">重置到自動</x:String>
+    <x:String x:Key="Text_Public_Random">隨機</x:String>
+    <x:String x:Key="Text_Public_Fixed">固定</x:String>
     <x:String x:Key="Text_Log_Verbose">詳細</x:String>
     <x:String x:Key="Text_Log_Debug">調試</x:String>
     <x:String x:Key="Text_Log_Information">信息</x:String>
@@ -118,6 +121,9 @@
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">插件通信端口</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">設備通信端口</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">本機IP過濾器</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">指定的網絡適配器</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">可用的網絡適配器</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">刷新設備列表延遲</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">招呼語更新延遲</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">日志文檔相關設定</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">日誌文件已佔用空間</x:String>

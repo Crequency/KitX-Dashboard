@@ -2,6 +2,7 @@
 using KitX.Web.Rules;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Models;
+using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
@@ -13,7 +14,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 #pragma warning disable CS8605 // 取消装箱可能为 null 的值。
 #pragma warning disable CS8600 // 将 null 字面量或可能为 null 的值转换为非 null 类型。
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Managers;
 
 internal class PluginsManager
 {
@@ -204,7 +205,7 @@ internal class PluginsManager
                 if (inGraphic) throw;       //  如果是图形界面调用, 则再次抛出便于给出图形化提示
             }
         }
-        EventHandlers.Invoke(nameof(EventHandlers.PluginsListChanged));
+        EventService.Invoke(nameof(EventService.PluginsListChanged));
     }
 
     /// <summary>
@@ -281,7 +282,7 @@ internal class PluginsManager
                     }
                 }
 
-                if (isPluginsListUpdated) EventHandlers.Invoke(nameof(EventHandlers.PluginsListChanged));
+                if (isPluginsListUpdated) EventService.Invoke(nameof(EventService.PluginsListChanged));
             }
             catch (Exception ex)
             {

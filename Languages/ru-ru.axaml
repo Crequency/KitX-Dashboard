@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">экспорт</x:String>
     <x:String x:Key="Text_Public_Exit">покидать</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">Показать главное окно</x:String>
+    <x:String x:Key="Text_Public_Millisecond">миллисекунда</x:String>
     <x:String x:Key="Text_Public_Second">второй</x:String>
     <x:String x:Key="Text_Public_Minute">минута</x:String>
     <x:String x:Key="Text_Public_Hour">Час</x:String>
@@ -27,6 +28,8 @@
     <x:String x:Key="Text_Public_MoveToTop">перейти к началу</x:String>
     <x:String x:Key="Text_Public_MoveToLeft">двигаться влево</x:String>
     <x:String x:Key="Text_Public_ResetToAuto">сбросить на авто</x:String>
+    <x:String x:Key="Text_Public_Random">случайный</x:String>
+    <x:String x:Key="Text_Public_Fixed">стабильный</x:String>
     <x:String x:Key="Text_Log_Verbose">подробный</x:String>
     <x:String x:Key="Text_Log_Debug">отладка</x:String>
     <x:String x:Key="Text_Log_Information">Информация</x:String>
@@ -118,6 +121,9 @@
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Подключаемый коммуникационный порт</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Порт связи устройства</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Собственные правила IP-фильтрации</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">указанный сетевой адаптер</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">доступные сетевые адаптеры</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">Задержка обновления списка устройств</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Обновление приветствия отложено</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Настройки, связанные с файлом журнала</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">Файл журнала занял место</x:String>

@@ -10,6 +10,7 @@ using FluentAvalonia.UI.Controls;
 using FluentAvalonia.UI.Media;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Generators;
 using KitX_Dashboard.Names;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;
@@ -142,7 +143,7 @@ public partial class MainWindow : CoreWindow
                 Program.Config.App.Theme;
 
         //  透明度变更事件, 让透明度变更立即生效
-        EventHandlers.MicaOpacityChanged += () =>
+        EventService.MicaOpacityChanged += () =>
         {
             if (Program.Config.Windows.MainWindow.EnabledMica)
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && IsWindows11)
@@ -169,8 +170,8 @@ public partial class MainWindow : CoreWindow
 
         //  每 Interval 更新一次招呼语
         UpdateGreetingText();
-        EventHandlers.LanguageChanged += () => UpdateGreetingText();
-        EventHandlers.GreetingTextIntervalUpdated += () => UpdateGreetingText();
+        EventService.LanguageChanged += () => UpdateGreetingText();
+        EventService.GreetingTextIntervalUpdated += () => UpdateGreetingText();
         Timer timer = new()
         {
             AutoReset = true,
@@ -187,7 +188,7 @@ public partial class MainWindow : CoreWindow
     /// </summary>
     private static void SaveChanges()
     {
-        EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     /// <summary>

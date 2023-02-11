@@ -1,4 +1,5 @@
 ﻿using KitX_Dashboard.Data;
+using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Timers;
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Managers;
 
 internal class StatisticsManager
 {
@@ -15,7 +16,7 @@ internal class StatisticsManager
 
     internal static void InitEvents()
     {
-        EventHandlers.UseStatisticsChanged += async () =>
+        EventService.UseStatisticsChanged += async () =>
         {
             try
             {
@@ -104,7 +105,7 @@ internal class StatisticsManager
                     {
                         UseStatistics.Add(today, 0.01);
                     }
-                    EventHandlers.Invoke(nameof(EventHandlers.UseStatisticsChanged));
+                    EventService.Invoke(nameof(EventService.UseStatisticsChanged));
                 }
             }
             catch (Exception ex)

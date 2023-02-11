@@ -50,11 +50,11 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     private void InitEvent()
     {
-        EventHandlers.DevelopSettingsChanged += () =>
+        EventService.DevelopSettingsChanged += () =>
         {
             MicaOpacityConfirmButtonVisibility = Program.Config.App.DeveloperSetting;
         };
-        EventHandlers.LanguageChanged += () =>
+        EventService.LanguageChanged += () =>
         {
             foreach (var item in SurpportThemes)
                 item.ThemeDisplayName = GetThemeInLanguages(item.ThemeName);
@@ -87,7 +87,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     private static void SaveChanges()
     {
-        EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     private Color2 nowColor = new();
@@ -157,7 +157,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
             Program.Config.App.Theme = value.ThemeName;
             var faTheme = AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>();
             faTheme.RequestedTheme = value.ThemeName == "Follow" ? null : value.ThemeName;
-            EventHandlers.Invoke(nameof(EventHandlers.ThemeConfigChanged));
+            EventService.Invoke(nameof(EventService.ThemeConfigChanged));
             SaveChanges();
         }
     }
@@ -186,7 +186,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
             Log.Warning($"Language File {lang}.axaml not found.");
         }
 
-        EventHandlers.Invoke(nameof(EventHandlers.LanguageChanged));
+        EventService.Invoke(nameof(EventService.LanguageChanged));
     }
 
     internal int languageSelected = -1;
@@ -248,7 +248,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Windows.MainWindow.MicaOpacity = value;
-            EventHandlers.Invoke(nameof(EventHandlers.MicaOpacityChanged));
+            EventService.Invoke(nameof(EventService.MicaOpacityChanged));
         }
     }
 

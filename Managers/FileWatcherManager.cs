@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Managers;
 
 internal class FileWatcherManager
 {

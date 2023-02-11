@@ -1,4 +1,6 @@
 ﻿using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
+using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -12,13 +14,15 @@ using System.Threading;
 #pragma warning disable CS8602 // 解引用可能出现空引用。
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Servers;
 
 internal class PluginsServer : IDisposable
 {
     public PluginsServer()
     {
-        listener = new(IPAddress.Any, 0);
+        var port = Program.Config.Web.UserSpecifiedPluginsServerPort;
+        if (port < 0 || port >= 65536) port = null;
+        listener = new(IPAddress.Any, port ?? 0);
         acceptPluginThread = new(AcceptClient);
     }
 
@@ -33,6 +37,7 @@ internal class PluginsServer : IDisposable
 
         int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
         GlobalInfo.PluginServerPort = port; // 全局端口号标明
+        EventService.Invoke(nameof(EventService.PluginsServerPortChanged));
 
         Log.Information($"PluginsServer Port: {port}");
 

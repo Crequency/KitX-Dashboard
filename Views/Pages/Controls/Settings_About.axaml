@@ -131,7 +131,7 @@
                 <StackPanel Margin="10">
                     <WrapPanel Margin="5">
                         <ui:HyperlinkButton Margin="4"
-                                            Content="常青园晚"
+                                            Content="调皮豆干"
                                             FontFamily="{StaticResource SourceHanSans}"
                                             FontWeight="Bold"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"

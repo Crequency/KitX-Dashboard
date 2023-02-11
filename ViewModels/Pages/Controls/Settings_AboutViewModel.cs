@@ -30,7 +30,7 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     private static void SaveChanges()
     {
-        EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     /// <summary>

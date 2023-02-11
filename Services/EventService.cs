@@ -2,7 +2,7 @@
 
 namespace KitX_Dashboard.Services;
 
-internal static class EventHandlers
+internal static class EventService
 {
 
     internal delegate void LanguageChangedHandler();
@@ -24,6 +24,8 @@ internal static class EventHandlers
     internal delegate void UseStatisticsChangedHandler();
 
     internal delegate void OnExitingHandler();
+
+    internal delegate void PluginsServerPortChangedHandler();
 
     internal delegate void DevicesServerPortChangedHandler();
 
@@ -53,6 +55,8 @@ internal static class EventHandlers
 
     internal static event OnExitingHandler? OnExiting;
 
+    internal static event PluginsServerPortChangedHandler? PluginsServerPortChanged;
+
     internal static event DevicesServerPortChangedHandler? DevicesServerPortChanged;
 
     internal static event OnReceivingDeviceInfoStructHandler? OnReceivingDeviceInfoStruct4DeviceNet;
@@ -78,6 +82,7 @@ internal static class EventHandlers
         DevicesServerPortChanged += () => { };
         OnReceivingDeviceInfoStruct4DeviceNet += dis => { };
         OnConfigHotReloaded += () => { };
+        PluginsServerPortChanged += () => { };
     }
 
     /// <summary>
@@ -123,6 +128,9 @@ internal static class EventHandlers
                 break;
             case nameof(OnConfigHotReloaded):
                 OnConfigHotReloaded?.Invoke();
+                break;
+            case nameof(PluginsServerPortChanged):
+                PluginsServerPortChanged?.Invoke();
                 break;
         }
     }

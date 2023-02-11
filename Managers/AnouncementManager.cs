@@ -9,7 +9,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Managers;
 
 internal class AnouncementManager
 {

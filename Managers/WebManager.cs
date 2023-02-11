@@ -1,19 +1,28 @@
-﻿using Serilog;
+﻿using KitX_Dashboard.Servers;
+using Serilog;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Managers;
 
 public class WebManager : IDisposable
 {
     public WebManager()
     {
-
+        NetworkInterfaceRegistered = new();
     }
 
     internal PluginsServer? pluginsServer;
     internal DevicesServer? devicesServer;
 
+    internal ObservableCollection<string>? NetworkInterfaceRegistered;
+
+    /// <summary>
+    /// 开始执行网络相关服务
+    /// </summary>
+    /// <returns>网络管理器本身</returns>
     public WebManager Start()
     {
         new Thread(() =>
@@ -44,6 +53,10 @@ public class WebManager : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// 停止执行网络相关服务
+    /// </summary>
+    /// <returns>网络管理器本身</returns>
     public WebManager Stop()
     {
         pluginsServer?.Stop();
@@ -55,6 +68,10 @@ public class WebManager : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// 重启网络相关服务
+    /// </summary>
+    /// <returns>网络管理器本身</returns>
     public WebManager Restart()
     {
         Stop();

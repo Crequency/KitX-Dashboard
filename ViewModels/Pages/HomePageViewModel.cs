@@ -26,7 +26,7 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             Program.Config.Pages.Home.IsNavigationViewPaneOpened = value;
-            EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
         }
     }
 
@@ -50,7 +50,7 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
                 new(nameof(NavigationViewPaneDisplayMode)));
             PropertyChanged?.Invoke(this,
                 new(nameof(FirstItemMargin)));
-            EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
         }
     }
 

@@ -8,6 +8,7 @@ using Common.BasicHelper.IO;
 using Common.BasicHelper.Util;
 using FluentAvalonia.Styling;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;
 using KitX_Dashboard.Views;
@@ -70,7 +71,7 @@ public partial class App : Application
 
         try
         {
-            EventHandlers.Invoke(nameof(EventHandlers.LanguageChanged));
+            EventService.Invoke(nameof(EventService.LanguageChanged));
         }
         catch (Exception e)
         {
@@ -115,7 +116,7 @@ public partial class App : Application
             };
         });
 
-        EventHandlers.ThemeConfigChanged += () =>
+        EventService.ThemeConfigChanged += () =>
         {
             switch (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme)
             {

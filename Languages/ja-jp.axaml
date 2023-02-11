@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">書き出す</x:String>
     <x:String x:Key="Text_Public_Exit">終了する</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">メインウィンドウを表示</x:String>
+    <x:String x:Key="Text_Public_Millisecond">ミリ秒</x:String>
     <x:String x:Key="Text_Public_Second">2番目</x:String>
     <x:String x:Key="Text_Public_Minute">分</x:String>
     <x:String x:Key="Text_Public_Hour">時間</x:String>
@@ -27,6 +28,8 @@
     <x:String x:Key="Text_Public_MoveToTop">上に移動</x:String>
     <x:String x:Key="Text_Public_MoveToLeft">左に移動</x:String>
     <x:String x:Key="Text_Public_ResetToAuto">自動にリセット</x:String>
+    <x:String x:Key="Text_Public_Random">ランダム</x:String>
+    <x:String x:Key="Text_Public_Fixed">安定</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">情報</x:String>
@@ -118,6 +121,9 @@
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">プラグイン通信ポート</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">デバイス通信ポート</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">ネイティブ IP フィルタリング ルール</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">指定されたネットワーク アダプタ</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">利用可能なネットワーク アダプタ</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">デバイス リストの更新の遅延</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">あいさつ更新が遅れる</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">ログファイル関連の設定</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">ログファイルがスペースを占有しています</x:String>

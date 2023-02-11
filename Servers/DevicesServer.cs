@@ -2,6 +2,9 @@
 using KitX.Web.Rules;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
+using KitX_Dashboard.Names;
+using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -13,7 +16,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Servers;
 
 internal class DevicesServer : IDisposable
 {
@@ -31,10 +34,18 @@ internal class DevicesServer : IDisposable
             {
                 //  寻找所有支持的网络适配器
                 Log.Information($"Start {nameof(FindSupportNetworkInterfaces)}");
-                FindSupportNetworkInterfaces(new()
+                try
                 {
-                    UdpClient_Send, UdpClient_Receive
-                }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
+                    FindSupportNetworkInterfaces(new()
+                    {
+                        UdpClient_Send, UdpClient_Receive
+                    }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
+                }
+                catch (Exception ex)
+                {
+                    var location = $"{nameof(DevicesServer)}.{nameof(Start)}";
+                    Log.Warning(ex, $"In {location}: {ex.Message}");
+                }
 
                 #region 组播收发消息
 
@@ -52,19 +63,6 @@ internal class DevicesServer : IDisposable
             {
                 var location = $"{nameof(DevicesServer)}.{nameof(Start)}()";
                 Log.Error(e, $"In {location}: {e.Message}");
-
-                //  寻找或组播收发失败, 不找了, 尝试系统默认适配器的组播收发
-                try
-                {
-                    MultiDevicesBroadCastSendDefault();
-                    MultiDevicesBroadCastReceiveDefault();
-                }
-                catch (Exception ex)
-                {
-                    location = $"{nameof(DevicesServer)}.{nameof(Start)}()";
-                    Log.Error(ex,
-                        $"In {location}: Default UDP functions: {ex.Message}");
-                }
             }
 
             try
@@ -122,10 +120,43 @@ internal class DevicesServer : IDisposable
         = new(new IPEndPoint(IPAddress.Any, Program.Config.Web.UDPPortReceive));
 
     /// <summary>
+    /// 检查网络适配器是否符合要求
+    /// </summary>
+    /// <param name="adapter">网络适配器</param>
+    /// <returns>是否符合要求</returns>
+    private static bool CheckNetworkInterface(
+        NetworkInterface adapter, IPInterfaceProperties adapterProperties)
+    {
+        var userPointed = Program.Config.Web.AcceptedNetworkInterfaces;
+        if (userPointed is not null && userPointed.Contains(adapter.Name))
+            return true;
+
+        if (
+
+                adapter.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
+                adapter.NetworkInterfaceType != NetworkInterfaceType.Wireless80211
+
+            &&
+            (
+                adapterProperties.MulticastAddresses.Count == 0 ||
+                // most of VPN adapters will be skipped
+                !adapter.SupportsMulticast ||
+                // multicast is meaningless for this type of connection
+                OperationalStatus.Up != adapter.OperationalStatus ||
+                // this adapter is off or not connected
+                !adapter.Supports(NetworkInterfaceComponent.IPv4)
+            )
+            ) return false;
+        return true;
+    }
+
+    /// <summary>
     /// 寻找受支持的网络适配器并把UDP客户端加入组播
     /// </summary>
     private static void FindSupportNetworkInterfaces(List<UdpClient> clients, IPAddress multicastAddress)
     {
+        var multicastGroupJoinedInterfacesCount = 0;
+
         NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
         foreach (NetworkInterface adapter in nics)
         {
@@ -141,23 +172,7 @@ internal class DevicesServer : IDisposable
             {
                 Log.Warning(ex, "Logging network interface items.");
             }
-
-            if (
-                (
-                    adapter.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
-                    adapter.NetworkInterfaceType != NetworkInterfaceType.Wireless80211
-                )
-                &&
-                (
-                    adapterProperties.MulticastAddresses.Count == 0 ||
-                    // most of VPN adapters will be skipped
-                    !adapter.SupportsMulticast ||
-                    // multicast is meaningless for this type of connection
-                    OperationalStatus.Up != adapter.OperationalStatus ||
-                    // this adapter is off or not connected
-                    !adapter.Supports(NetworkInterfaceComponent.IPv4)
-                )
-                ) continue;
+            if (!CheckNetworkInterface(adapter, adapterProperties)) continue;
             UnicastIPAddressInformationCollection unicastIPAddresses
                 = adapterProperties.UnicastAddresses;
             IPv4InterfaceProperties p = adapterProperties.GetIPv4Properties();
@@ -171,12 +186,27 @@ internal class DevicesServer : IDisposable
                 break;
             }
             if (ipAddress is null) continue;
-            foreach (var udpClient in clients)
-                udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
+            try
+            {
+                foreach (var udpClient in clients)
+                    udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
+                Program.WebManager?.NetworkInterfaceRegistered?.Add(adapter.Name);
+                ++multicastGroupJoinedInterfacesCount;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex,
+                    $"In {nameof(DevicesServer)}.{nameof(FindSupportNetworkInterfaces)}:" +
+                    $"{ex.Message}");
+            }
         }
+
+        Program.TasksManager?.RaiseSignal(nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal));
 
         Log.Information($"" +
             $"Find {SurpportedNetworkInterfaces.Count} supported network interfaces.");
+        Log.Information($"" +
+            $"Joined {multicastGroupJoinedInterfacesCount} multicast groups.");
     }
 
     /// <summary>
@@ -187,12 +217,16 @@ internal class DevicesServer : IDisposable
         #region 初始化 UDP 客户端
 
         UdpClient udpClient = UdpClient_Send;
-        IPEndPoint multicast = new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
+        IPEndPoint multicast =
+            new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
             Program.Config.Web.UDPPortReceive);
         udpClient.Client.SetSocketOption(SocketOptionLevel.Socket,
             SocketOptionName.ReuseAddress, true);
 
         #endregion
+
+        var erroredInterfacesIndexes = new List<int>();
+        var erroredInterfacesIndexesTTL = 60;
 
         System.Timers.Timer timer = new()
         {
@@ -210,95 +244,52 @@ internal class DevicesServer : IDisposable
         {
             try
             {
+                --erroredInterfacesIndexesTTL;
+                if (erroredInterfacesIndexesTTL <= 0)
+                {
+                    erroredInterfacesIndexesTTL = 60;
+                    erroredInterfacesIndexes.Clear();
+                }
+
                 UpdateDefaultDeviceInfoStruct();
                 string sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
                 byte[] sendBytes = Encoding.UTF8.GetBytes(sendText);
 
                 foreach (var item in SurpportedNetworkInterfaces)
                 {
-                    udpClient.Client.SetSocketOption(SocketOptionLevel.IP,
-                        SocketOptionName.MulticastInterface, item);
-                    udpClient.Send(sendBytes, sendBytes.Length, multicast);
+                    //  如果错误网络适配器中存在当前项的记录, 跳过
+                    if (erroredInterfacesIndexes.Contains(item)) continue;
 
-                    //  将自定义广播消息全部发送
-                    while (Messages2BroadCast.Count > 0)
+                    try
                     {
-                        byte[] messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
-                        udpClient.Send(messageBytes, messageBytes.Length, multicast);
+                        udpClient.Client.SetSocketOption(SocketOptionLevel.IP,
+                            SocketOptionName.MulticastInterface, item);
+                        udpClient.Send(sendBytes, sendBytes.Length, multicast);
+
+                        //  将自定义广播消息全部发送
+                        while (Messages2BroadCast.Count > 0)
+                        {
+                            byte[] messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
+                            udpClient.Send(messageBytes, messageBytes.Length, multicast);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        //  该网络适配器存在异常, 暂时记录到错误网络适配器中
+                        if (!erroredInterfacesIndexes.Contains(item))
+                            erroredInterfacesIndexes.Add(item);
+
+                        var location = $"{nameof(DevicesServer)}.{nameof(MultiDevicesBroadCastSend)}";
+                        Log.Warning(ex, $"In {location}: {ex.Message} - " +
+                            $"On interface index: {item}, recorded.");
                     }
                 }
             }
             catch (Exception e)
             {
                 Log.Error(e, $"In MultiDevicesBroadCastSend: {e.Message}");
-                try
-                {
-                    EndMultiDevicesBroadCastSend();
-                    //  组播发送失败, 尝试由系统决定发送的网络适配器
-                    Log.Information($"Start {nameof(MultiDevicesBroadCastSendDefault)}");
-                    MultiDevicesBroadCastSendDefault();
-                }
-                catch (Exception exc)
-                {
-                    Log.Error(exc, $"In {nameof(DevicesServer)}, " +
-                        $"{nameof(MultiDevicesBroadCastSendDefault)}");
-                }
             }
             if (!GlobalInfo.Running) EndMultiDevicesBroadCastSend();
-        };
-        timer.Start();
-    }
-
-    /// <summary>
-    /// 默认的多设备组播发送方法
-    /// </summary>
-    public static void MultiDevicesBroadCastSendDefault()
-    {
-        #region 初始化 UDP 客户端
-
-        UdpClient udpClient = new(Program.Config.Web.UDPPortSend);
-        udpClient.JoinMulticastGroup(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
-        IPEndPoint multicast = new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
-            Program.Config.Web.UDPPortReceive);
-
-        #endregion
-
-        System.Timers.Timer timer = new()
-        {
-            Interval = Program.Config.Web.UDPSendFrequency,
-            AutoReset = true
-        };
-        void EndMultiDevicesBroadCastSendDefault()
-        {
-            udpClient.Close();
-            udpClient.Dispose();
-            timer.Stop();
-            timer.Dispose();
-        }
-        timer.Elapsed += (_, _) =>
-        {
-            try
-            {
-                UpdateDefaultDeviceInfoStruct();
-                string sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
-                byte[] sendBytes = Encoding.UTF8.GetBytes(sendText);
-                udpClient.Send(sendBytes, sendBytes.Length, multicast);
-
-                //  将自定义广播消息全部发送
-                while (Messages2BroadCast.Count > 0)
-                {
-                    byte[] messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
-                    udpClient.Send(messageBytes, messageBytes.Length, multicast);
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, $"In MultiDevicesBroadCastSend: {e.Message}");
-                EndMultiDevicesBroadCastSendDefault();
-                //  默认发包方式发生问题, 尝试遍历适配器发送报文
-                MultiDevicesBroadCastSend();
-            }
-            if (!GlobalInfo.Running) EndMultiDevicesBroadCastSendDefault();
         };
         timer.Start();
     }
@@ -354,70 +345,7 @@ internal class DevicesServer : IDisposable
             }
             else
             {
-                try
-                {
-                    Log.Information($"Start {nameof(MultiDevicesBroadCastReceiveDefault)}");
-                    //  组播接收失败, 尝试由系统决定接收的网络适配器
-                    MultiDevicesBroadCastReceiveDefault();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "In MultiDevicesBroadCastReceiveDefault()");
-                }
-            }
-        }).Start();
-    }
 
-    /// <summary>
-    /// 默认的多设备组播接收方法
-    /// </summary>
-    public static void MultiDevicesBroadCastReceiveDefault()
-    {
-        UdpClient udpClient = new(Program.Config.Web.UDPPortReceive);
-        udpClient.JoinMulticastGroup(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
-        IPEndPoint multicast = new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
-            Program.Config.Web.UDPPortSend);
-        new Thread(() =>
-        {
-            try
-            {
-                while (GlobalInfo.Running)
-                {
-                    byte[] bytes = udpClient.Receive(ref multicast);
-                    string result = Encoding.UTF8.GetString(bytes);
-                    Log.Information($"UDP Receive: {result}");
-                    try
-                    {
-                        DeviceInfoStruct deviceInfo = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
-                        DevicesManager.Update(deviceInfo);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex, $"{ex.Message}");
-                    }
-                }
-                udpClient.Close();
-            }
-            catch (Exception e)
-            {
-                Log.Error(e.Message);
-            }
-            if (!GlobalInfo.Running)
-            {
-                udpClient.Close();
-            }
-            else
-            {
-                try
-                {
-                    Log.Information($"Start {nameof(MultiDevicesBroadCastReceive)}");
-                    //  组播接收失败, 尝试逐个适配器接收消息
-                    MultiDevicesBroadCastReceive();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "In MultiDevicesBroadCastReceive()");
-                }
             }
         }).Start();
     }
@@ -447,9 +375,9 @@ internal class DevicesServer : IDisposable
                         && !ip.ToString().Equals("127.0.0.1")
                         && (ip.ToString().StartsWith("192.168")                         //  192.168.x.x
                             || ip.ToString().StartsWith("10")                           //  10.x.x.x
-                            || (IPv4_2_4Parts(ip.ToString()).Item1 == 172               //  172.16-31.x.x
+                            || IPv4_2_4Parts(ip.ToString()).Item1 == 172               //  172.16-31.x.x
                                 && IPv4_2_4Parts(ip.ToString()).Item2 >= 16
-                                && IPv4_2_4Parts(ip.ToString()).Item2 <= 31))
+                                && IPv4_2_4Parts(ip.ToString()).Item2 <= 31)
                         && ip.ToString().StartsWith(Program.Config.Web.IPFilter)  //  满足自定义规则
                     select ip).First().ToString();
         }
@@ -571,7 +499,7 @@ internal class DevicesServer : IDisposable
 
         acceptDeviceThread.Start();
 
-        EventHandlers.Invoke(nameof(EventHandlers.DevicesServerPortChanged));
+        EventService.Invoke(nameof(EventService.DevicesServerPortChanged));
     }
 
     /// <summary>
@@ -734,8 +662,16 @@ internal class DevicesServer : IDisposable
     /// <param name="serverPort">主控端口</param>
     internal void AttendServer(string serverAddress, int serverPort)
     {
-        Log.Information($"Attending Server -> {serverAddress}:{serverPort}");
-        DevicesHost?.Connect(serverAddress, serverPort);
+        try
+        {
+            DevicesHost?.Connect(serverAddress, serverPort);
+            Log.Information($"Attending Server -> {serverAddress}:{serverPort}");
+        }
+        catch (Exception ex)
+        {
+            var location = $"{nameof(DevicesServer)}.{nameof(AttendServer)}";
+            Log.Error(ex, $"In {location}: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -744,8 +680,16 @@ internal class DevicesServer : IDisposable
     /// <param name="msg">消息内容</param>
     internal void SendMessage(string msg)
     {
-        DevicesHost?.Client.Send(Encoding.UTF8.GetBytes(msg));
-        Log.Information($"Sent Message to Host, msg: {msg}");
+        try
+        {
+            DevicesHost?.Client.Send(Encoding.UTF8.GetBytes(msg));
+            Log.Information($"Sent Message to Host, msg: {msg}");
+        }
+        catch (Exception e)
+        {
+            var location = $"{nameof(DevicesServer)}.{nameof(SendMessage)}";
+            Log.Error(e, $"In {location}: {e.Message}");
+        }
     }
 
     #endregion

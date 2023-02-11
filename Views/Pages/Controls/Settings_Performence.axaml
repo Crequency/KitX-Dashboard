@@ -11,6 +11,10 @@
              mc:Ignorable="d">
 
     <UserControl.Styles>
+        <Style Selector="ui|NumberBox.FontBase">
+            <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
         <Style Selector="ui|NumberBox.Disabled">
             <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -110,9 +114,19 @@
                                 <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_PluginsServerPort}"/>
                             </StackPanel>
 
-                            <ui:NumberBox Classes="Disabled"
+                            <ui:NumberBox Classes="FontBase"
+                                          DockPanel.Dock="Right"
+                                          IsEnabled="{Binding PluginsServerPortEditable}"
                                           SpinButtonPlacementMode="Compact"
                                           Value="{Binding PluginsServerPort}"/>
+
+                            <ComboBox Margin="0,0,15,0"
+                                      VerticalAlignment="Center"
+                                      DockPanel.Dock="Right"
+                                      SelectedIndex="{Binding PluginsServerPortType}">
+                                <ComboBoxItem VerticalAlignment="Center" Content="{DynamicResource Text_Public_Random}"/>
+                                <ComboBoxItem VerticalAlignment="Center" Content="{DynamicResource Text_Public_Fixed}"/>
+                            </ComboBox>
 
                             <Border/>
                         </DockPanel>
@@ -146,7 +160,83 @@
                                 <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_MyIP_Filter}"/>
                             </StackPanel>
 
+                            <!--<MaskedTextBox AsciiOnly="True"
+                                           DockPanel.Dock="Right"
+                                           Mask="999\.999\.999\.999"
+                                           PromptChar="_"
+                                           ResetOnPrompt="True"
+                                           ResetOnSpace="True"
+                                           Text="{Binding LocalIPFilter}"/>-->
                             <TextBox DockPanel.Dock="Right" Text="{Binding LocalIPFilter}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="Network"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_SpecifiedNetworkAdapters}"/>
+                            </StackPanel>
+
+                            <TextBox MaxWidth="400"
+                                     Margin="20,0,0,0"
+                                     Classes="Normal"
+                                     DockPanel.Dock="Right"
+                                     IsEnabled="False"
+                                     IsReadOnly="True"
+                                     Text="{Binding AcceptedNetworkInterfacesNames}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
+                    <Expander Margin="0,5" IsExpanded="{Binding WebRelatedAreaOfNetworkInterfacesExpanded}">
+                        <Expander.Header>
+                            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                <icon:MaterialIcon Margin="5,0" Kind="TableNetwork"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_AvailableNetworkInterfaces}"/>
+                            </StackPanel>
+                        </Expander.Header>
+
+                        <ListBox Margin="5"
+                                 Items="{Binding AvailableNetworkInterfaces}"
+                                 SelectedItems="{Binding SelectedNetworkInterfaces}"
+                                 SelectionMode="Multiple,Toggle">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border>
+                                        <TextBlock Classes="Normal" Text="{Binding}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                    </Expander>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="TimerRefresh"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performence_Web_DevicesRefreshDelay}"/>
+                            </StackPanel>
+
+                            <TextBlock Margin="10,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Classes="Normal"
+                                       DockPanel.Dock="Right"
+                                       Text="{DynamicResource Text_Public_Millisecond}"/>
+                            <ui:NumberBox Classes="Enabled"
+                                          Minimum="100"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding DevicesListRefreshDelay}"/>
 
                             <Border/>
                         </DockPanel>

@@ -1,15 +1,21 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Common.BasicHelper.IO;
+using Common.BasicHelper.Util.Extension;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Models;
+using KitX_Dashboard.Names;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading;
 
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
@@ -28,7 +34,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
     private void InitEvents()
     {
-        EventHandlers.LogConfigUpdated += () =>
+        EventService.LogConfigUpdated += () =>
         {
             string logdir = Path.GetFullPath(Program.Config.Log.LogFilePath);
             Log.Logger = new LoggerConfiguration()
@@ -46,16 +52,55 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
                 )
                 .CreateLogger();
         };
-        EventHandlers.LanguageChanged += () =>
+        EventService.LanguageChanged += () =>
         {
             foreach (var item in SurpportLogLevels)
                 item.LogLevelDisplayName = GetLogLevelInLanguages(item.LogLevelName);
             PropertyChanged?.Invoke(this, new(nameof(SurpportLogLevels)));
         };
-        EventHandlers.DevicesServerPortChanged += () =>
-        {
-            PropertyChanged?.Invoke(this, new(nameof(DevicesServerPort)));
-        };
+        EventService.DevicesServerPortChanged += () => PropertyChanged?.Invoke(this,
+                new(nameof(DevicesServerPort)));
+        EventService.PluginsServerPortChanged += () => PropertyChanged?.Invoke(this,
+                new(nameof(PluginsServerPort)));
+
+        Program.TasksManager?.SignalRun(
+            nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal),
+            () =>
+            {
+                PropertyChanged?.Invoke(this,
+                    new(nameof(AvailableNetworkInterfaces)));
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var anin = AcceptedNetworkInterfacesNames;
+                    if (anin is not null && !anin.Equals("Auto"))
+                        foreach (var item in anin.Split(';'))
+                            if (AvailableNetworkInterfaces is not null &&
+                                AvailableNetworkInterfaces.Contains(item))
+                                SelectedNetworkInterfaces?.Add(item);
+                });
+            }
+        );
+
+        if (SelectedNetworkInterfaces is not null)
+            SelectedNetworkInterfaces.CollectionChanged += (_, _) =>
+            {
+                if (SelectedNetworkInterfaces.Count == 0)
+                    AcceptedNetworkInterfacesNames = "Auto";
+                else
+                {
+                    var sb = new StringBuilder();
+                    foreach (var adapter in SelectedNetworkInterfaces)
+                    {
+                        sb.Append(adapter);
+                        sb.Append(';');
+                    }
+                    AcceptedNetworkInterfacesNames = sb.ToString()[..^1];
+                }
+                PropertyChanged?.Invoke(this,
+                    new(nameof(AcceptedNetworkInterfacesNames)));
+                SaveChanges();
+            };
     }
 
     private void InitCommands()
@@ -69,7 +114,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     private static void SaveChanges()
     {
-        EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     /// <summary>
@@ -86,9 +131,40 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     }
 
     /// <summary>
+    /// 插件服务器端口是否可以编辑
+    /// </summary>
+    internal bool PluginsServerPortEditable => PluginsServerPortType != 0;
+
+    /// <summary>
+    /// 插件服务器端口类型
+    /// </summary>
+    internal int PluginsServerPortType
+    {
+        get => Program.Config.Web.UserSpecifiedPluginsServerPort is null ? 0 : 1;
+        set
+        {
+            if (value == 0)
+                Program.Config.Web.UserSpecifiedPluginsServerPort = null;
+            else
+                Program.Config.Web.UserSpecifiedPluginsServerPort = PluginsServerPort;
+            PropertyChanged?.Invoke(this,
+                new(nameof(PluginsServerPortEditable)));
+            SaveChanges();
+        }
+    }
+
+    /// <summary>
     /// 插件间服务端口属性
     /// </summary>
-    internal static int PluginsServerPort => GlobalInfo.PluginServerPort;
+    internal static int PluginsServerPort
+    {
+        get => GlobalInfo.PluginServerPort;
+        set
+        {
+            if (value >= 0 && value <= 65535)
+                Program.Config.Web.UserSpecifiedPluginsServerPort = value;
+        }
+    }
 
     /// <summary>
     /// 设备间服务端口属性
@@ -100,10 +176,91 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static string LocalIPFilter
     {
+        //get
+        //{
+        //    var value = Program.Config.Web.IPFilter;
+        //    var parts = value.Split('.').ToList();
+        //    var ints = new List<int>();
+        //    parts.ForEach(x => ints.Add(int.Parse(x)));
+        //    var sb = new StringBuilder();
+        //    for (var i = 0; i < ints.Count; ++i)
+        //    {
+        //        var part = ints[i];
+        //        sb.Append(part.ToString().PadLeft(3, '0'));
+        //        if (i != 3) sb.Append('.');
+        //    }
+        //    var delta = 4 - ints.Count;
+        //    while (delta > 0)
+        //    {
+        //        sb.Append(".___");
+        //        --delta;
+        //    }
+        //    return sb.ToString();
+        //}
+        //set
+        //{
+        //    var parts = value.Split('.').ToList();
+        //    var sb = new StringBuilder();
+        //    parts.ForEach(p =>
+        //    {
+        //        sb.Append(int.Parse(p.Replace("_", "")));
+        //        sb.Append('.');
+        //    });
+        //    Program.Config.Web.IPFilter = sb.ToString()[..^1];
+        //    SaveChanges();
+        //}
         get => Program.Config.Web.IPFilter;
         set
         {
             Program.Config.Web.IPFilter = value;
+            SaveChanges();
+        }
+    }
+
+    /// <summary>
+    /// 指定的网络适配器
+    /// </summary>
+    internal static string AcceptedNetworkInterfacesNames
+    {
+        get
+        {
+            var userPointed = Program.Config.Web.AcceptedNetworkInterfaces;
+            if (userPointed is null) return "Auto";
+            else return userPointed.ToCustomString(";")[..^1];
+        }
+        set
+        {
+            if (value.Equals("Auto"))
+                Program.Config.Web.AcceptedNetworkInterfaces = null;
+            else
+            {
+                var userInput = value.Split(';');
+                Program.Config.Web.AcceptedNetworkInterfaces = userInput.ToList();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 可用的网络适配器
+    /// </summary>
+    internal static ObservableCollection<string>? AvailableNetworkInterfaces
+        => Program.WebManager?.NetworkInterfaceRegistered;
+
+    /// <summary>
+    /// 用户选择的网络适配器
+    /// </summary>
+    internal static ObservableCollection<string>? SelectedNetworkInterfaces { get; }
+        = new();
+
+    /// <summary>
+    /// 设备列表刷新延迟
+    /// </summary>
+    internal static int DevicesListRefreshDelay
+    {
+        get => Program.Config.Web.DevicesViewRefreshDelay;
+        set
+        {
+            Program.Config.Web.DevicesViewRefreshDelay = value;
             SaveChanges();
         }
     }
@@ -117,7 +274,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Windows.MainWindow.GreetingUpdateInterval = value;
-            EventHandlers.Invoke(nameof(EventHandlers.GreetingTextIntervalUpdated));
+            EventService.Invoke(nameof(EventService.GreetingTextIntervalUpdated));
             SaveChanges();
         }
     }
@@ -131,6 +288,19 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Pages.Settings.WebRelatedAreaExpanded = value;
+            SaveChanges();
+        }
+    }
+
+    /// <summary>
+    /// 网络相关设置中网络适配器区域是否展开
+    /// </summary>
+    internal static bool WebRelatedAreaOfNetworkInterfacesExpanded
+    {
+        get => Program.Config.Pages.Settings.WebRelatedAreaOfNetworkInterfacesExpanded;
+        set
+        {
+            Program.Config.Pages.Settings.WebRelatedAreaOfNetworkInterfacesExpanded = value;
             SaveChanges();
         }
     }
@@ -177,7 +347,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Log.LogFileSingleMaxSize = value * 1024 * 1024;
-            EventHandlers.Invoke(nameof(EventHandlers.LogConfigUpdated));
+            EventService.Invoke(nameof(EventService.LogConfigUpdated));
             SaveChanges();
         }
     }
@@ -191,7 +361,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Log.LogFileMaxCount = value;
-            EventHandlers.Invoke(nameof(EventHandlers.LogConfigUpdated));
+            EventService.Invoke(nameof(EventService.LogConfigUpdated));
             SaveChanges();
         }
     }
@@ -205,7 +375,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Log.LogFileFlushInterval = value;
-            EventHandlers.Invoke(nameof(EventHandlers.LogConfigUpdated));
+            EventService.Invoke(nameof(EventService.LogConfigUpdated));
             SaveChanges();
         }
     }
@@ -295,7 +465,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             if (value != null)
             {
                 Program.Config.Log.LogLevel = value.LogEventLevel;
-                EventHandlers.Invoke(nameof(EventHandlers.LogConfigUpdated));
+                EventService.Invoke(nameof(EventService.LogConfigUpdated));
                 SaveChanges();
             }
         }

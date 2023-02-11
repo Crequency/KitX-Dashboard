@@ -38,13 +38,14 @@ internal class MainWindowViewModel : ViewModelBase
         win?.Show();
         win?.Activate();
         Program.Config.Windows.MainWindow.IsHidden = false;
+        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     internal void Exit(object mainWindow)
     {
         MainWindow? win = mainWindow as MainWindow;
         GlobalInfo.Exiting = true;
-        EventHandlers.Invoke(nameof(EventHandlers.OnExiting));
+        EventService.Invoke(nameof(EventService.OnExiting));
         win?.Close();
 
         new Thread(() =>

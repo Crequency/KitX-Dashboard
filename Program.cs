@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
 using KitX_Dashboard.Views.Pages.Controls;
@@ -29,6 +30,8 @@ internal class Program
 
     internal static LiteDatabase? ActivitiesDataBase;
 
+    internal static CacheManager? CacheManager;
+
     internal static MainWindow? MainWindow;
 
     /// <summary>
@@ -46,7 +49,7 @@ internal class Program
 
         #region 必要的初始化
 
-        EventHandlers.Init();
+        EventService.Init();
 
         #endregion
 

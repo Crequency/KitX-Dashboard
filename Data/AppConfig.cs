@@ -177,6 +177,9 @@ public class AppConfig
         public Config_HomePage Home { get; set; } = new();
 
         [JsonInclude]
+        public Config_DevicePage Device { get; set; } = new();
+
+        [JsonInclude]
         public Config_MarketPage Market { get; set; } = new();
 
         [JsonInclude]
@@ -199,6 +202,14 @@ public class AppConfig
 
             [JsonInclude]
             public bool UseAreaExpanded { get; set; } = true;
+        }
+
+        /// <summary>
+        /// DevicePageConfig
+        /// </summary>
+        public class Config_DevicePage
+        {
+
         }
 
         /// <summary>
@@ -232,6 +243,9 @@ public class AppConfig
 
             [JsonInclude]
             public bool WebRelatedAreaExpanded { get; set; } = true;
+
+            [JsonInclude]
+            public bool WebRelatedAreaOfNetworkInterfacesExpanded { get; set; } = false;
 
             [JsonInclude]
             public bool LogRelatedAreaExpanded { get; set; } = true;
@@ -271,13 +285,22 @@ public class AppConfig
         public string APIPath { get; set; } = "/apps/kitx/";
 
         [JsonInclude]
+        public int DevicesViewRefreshDelay { get; set; } = 1000;
+
+        [JsonInclude]
+        public List<string>? AcceptedNetworkInterfaces { get; set; } = null;
+
+        [JsonInclude]
+        public int? UserSpecifiedPluginsServerPort { get; set; } = null;
+
+        [JsonInclude]
         public int UDPPortSend { get; set; } = 23404;
 
         [JsonInclude]
         public int UDPPortReceive { get; set; } = 24040;
 
         [JsonInclude]
-        public int UDPSendFrequency { get; set; } = 2000;
+        public int UDPSendFrequency { get; set; } = 1000;
 
         [JsonInclude]
         public string UDPBroadcastAddress { get; set; } = "224.0.0.0";
@@ -289,7 +312,10 @@ public class AppConfig
         public int SocketBufferSize { get; set; } = 1024 * 100;
 
         [JsonInclude]
-        public int DeviceInfoStructTTLSeconds { get; set; } = 5;
+        public int DeviceInfoStructTTLSeconds { get; set; } = 7;
+
+        [JsonInclude]
+        public bool DisableRemovingOfflineDeviceCard { get; set; } = false;
 
         [JsonInclude]
         public string UpdateServer { get; set; } = "api.catrol.cn";

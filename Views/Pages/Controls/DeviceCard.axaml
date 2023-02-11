@@ -89,7 +89,7 @@
                            FontFamily="{StaticResource SourceHanSans}"
                            FontSize="10"
                            FontWeight="Bold"
-                           Text="{Binding IPv6}"
+                           Text="{Binding IPv6, Converter={StaticResource WideString}, ConverterParameter=30}"
                            ToolTip.Tip="{Binding IPv6}"/>
                 <Border/>
             </DockPanel>

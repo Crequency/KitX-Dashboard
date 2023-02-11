@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">내보내다</x:String>
     <x:String x:Key="Text_Public_Exit">그만두다</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">메인 창 표시</x:String>
+    <x:String x:Key="Text_Public_Millisecond">밀리초</x:String>
     <x:String x:Key="Text_Public_Second">초</x:String>
     <x:String x:Key="Text_Public_Minute">분</x:String>
     <x:String x:Key="Text_Public_Hour">시</x:String>
@@ -27,6 +28,8 @@
     <x:String x:Key="Text_Public_MoveToTop">맨 위로 이동</x:String>
     <x:String x:Key="Text_Public_MoveToLeft">왼쪽으로 이동</x:String>
     <x:String x:Key="Text_Public_ResetToAuto">자동으로 재설정</x:String>
+    <x:String x:Key="Text_Public_Random">무작위의</x:String>
+    <x:String x:Key="Text_Public_Fixed">결정된</x:String>
     <x:String x:Key="Text_Log_Verbose">상세한</x:String>
     <x:String x:Key="Text_Log_Debug">디버깅</x:String>
     <x:String x:Key="Text_Log_Information">정보</x:String>
@@ -118,6 +121,9 @@
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">플러그인 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">장치 통신 포트</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">기본 IP 필터링 규칙</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">지정된 네트워크 어댑터</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">사용 가능한 네트워크 어댑터</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">기기 목록 지연 새로고침</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">인사말 업데이트가 지연되었습니다.</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">로그 파일 관련 설정</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">로그 파일이 공간을 차지했습니다.</x:String>

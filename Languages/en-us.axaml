@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">Export</x:String>
     <x:String x:Key="Text_Public_Exit">Exit</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">Show Main Window</x:String>
+    <x:String x:Key="Text_Public_Millisecond">Millisecond</x:String>
     <x:String x:Key="Text_Public_Second">s</x:String>
     <x:String x:Key="Text_Public_Minute">minute</x:String>
     <x:String x:Key="Text_Public_Hour">hour</x:String>
@@ -27,6 +28,8 @@
     <x:String x:Key="Text_Public_MoveToTop">Move to Top</x:String>
     <x:String x:Key="Text_Public_MoveToLeft">Move to Left</x:String>
     <x:String x:Key="Text_Public_ResetToAuto">Reset to Auto</x:String>
+    <x:String x:Key="Text_Public_Random">Random</x:String>
+    <x:String x:Key="Text_Public_Fixed">Fixed</x:String>
     <x:String x:Key="Text_Log_Verbose">Verbose</x:String>
     <x:String x:Key="Text_Log_Debug">Debug</x:String>
     <x:String x:Key="Text_Log_Information">Infomation</x:String>
@@ -118,6 +121,9 @@
     <x:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Plugins Communication Port</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Devices Communication Port</x:String>
     <x:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Native IP Filter</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">Specified network adapter</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">Available network adapters</x:String>
+    <x:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">Refresh device list delay</x:String>
     <x:String x:Key="Text_Settings_Performence_Greeting_Interval">Greeting Text Update Interval</x:String>
     <x:String x:Key="Text_Settings_Performence_Log">Log File Related Settings</x:String>
     <x:String x:Key="Text_Settings_Performence_LogFileSizeUsage">The log file has taken up space</x:String>

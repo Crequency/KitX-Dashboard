@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Managers;
 
 internal class TasksManager
 {

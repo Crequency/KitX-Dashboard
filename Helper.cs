@@ -2,6 +2,7 @@
 using Common.BasicHelper.IO;
 using Common.BasicHelper.Util.Extension;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Names;
 using KitX_Dashboard.Services;
 using LiteDB;
@@ -82,6 +83,12 @@ public static class Helper
 
         #endregion
 
+        #region 初始化缓存管理器
+
+        Program.CacheManager = new();
+
+        #endregion
+
         #region 初始化数据库
 
         InitDataBase();
@@ -119,9 +126,9 @@ public static class Helper
 
         #region 初始化事件
 
-        EventHandlers.ConfigSettingsChanged += () => SaveConfig();
+        EventService.ConfigSettingsChanged += () => SaveConfig();
 
-        EventHandlers.PluginsListChanged += () => SavePluginsListConfig();
+        EventService.PluginsListChanged += () => SavePluginsListConfig();
 
         #endregion
 
@@ -150,7 +157,7 @@ public static class Helper
                 {
                     Program.Config = JsonSerializer.Deserialize<AppConfig>(
                         File.ReadAllText(GlobalInfo.ConfigFilePath));
-                    EventHandlers.Invoke(nameof(EventHandlers.OnConfigHotReloaded));
+                    EventService.Invoke(nameof(EventService.OnConfigHotReloaded));
                 }
             }
             catch (Exception ex)

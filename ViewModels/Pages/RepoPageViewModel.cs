@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Models;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
@@ -33,6 +34,8 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
             PluginsCount = PluginBars.Count.ToString();
             NoPlugins_TipHeight = PluginBars.Count == 0 ? 300 : 0;
         };
+
+        RefreshPlugins(new());
     }
 
     /// <summary>
@@ -40,7 +43,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     private void InitEvents()
     {
-        EventHandlers.ConfigSettingsChanged += () =>
+        EventService.ConfigSettingsChanged += () =>
         {
             ImportButtonVisibility = Program.Config.App.DeveloperSetting;
         };
