@@ -4,6 +4,7 @@ using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Names;
+using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Servers;
 
 internal class DevicesServer : IDisposable
 {
@@ -131,10 +132,10 @@ internal class DevicesServer : IDisposable
             return true;
 
         if (
-            (
+
                 adapter.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
                 adapter.NetworkInterfaceType != NetworkInterfaceType.Wireless80211
-            )
+
             &&
             (
                 adapterProperties.MulticastAddresses.Count == 0 ||
@@ -374,9 +375,9 @@ internal class DevicesServer : IDisposable
                         && !ip.ToString().Equals("127.0.0.1")
                         && (ip.ToString().StartsWith("192.168")                         //  192.168.x.x
                             || ip.ToString().StartsWith("10")                           //  10.x.x.x
-                            || (IPv4_2_4Parts(ip.ToString()).Item1 == 172               //  172.16-31.x.x
+                            || IPv4_2_4Parts(ip.ToString()).Item1 == 172               //  172.16-31.x.x
                                 && IPv4_2_4Parts(ip.ToString()).Item2 >= 16
-                                && IPv4_2_4Parts(ip.ToString()).Item2 <= 31))
+                                && IPv4_2_4Parts(ip.ToString()).Item2 <= 31)
                         && ip.ToString().StartsWith(Program.Config.Web.IPFilter)  //  满足自定义规则
                     select ip).First().ToString();
         }

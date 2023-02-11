@@ -10,6 +10,7 @@ using FluentAvalonia.UI.Controls;
 using FluentAvalonia.UI.Media;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Generators;
 using KitX_Dashboard.Names;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;

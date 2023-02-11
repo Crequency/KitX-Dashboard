@@ -1,5 +1,6 @@
 ﻿using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
+using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ using System.Threading;
 #pragma warning disable CS8602 // 解引用可能出现空引用。
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Servers;
 
 internal class PluginsServer : IDisposable
 {
