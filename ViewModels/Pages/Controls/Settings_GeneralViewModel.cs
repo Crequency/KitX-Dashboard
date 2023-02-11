@@ -38,7 +38,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     private void InitEvents()
     {
-        EventHandlers.DevelopSettingsChanged +=
+        EventService.DevelopSettingsChanged +=
             () => PropertyChanged?.Invoke(this, new(nameof(DeveloperSettingEnabled)));
     }
 
@@ -47,7 +47,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     private static void SaveChanges()
     {
-        EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             Program.Config.App.DeveloperSetting = value == 0;
-            EventHandlers.Invoke(nameof(EventHandlers.DevelopSettingsChanged));
+            EventService.Invoke(nameof(EventService.DevelopSettingsChanged));
             SaveChanges();
         }
     }

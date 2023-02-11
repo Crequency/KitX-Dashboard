@@ -71,7 +71,7 @@ public partial class App : Application
 
         try
         {
-            EventHandlers.Invoke(nameof(EventHandlers.LanguageChanged));
+            EventService.Invoke(nameof(EventService.LanguageChanged));
         }
         catch (Exception e)
         {
@@ -116,7 +116,7 @@ public partial class App : Application
             };
         });
 
-        EventHandlers.ThemeConfigChanged += () =>
+        EventService.ThemeConfigChanged += () =>
         {
             switch (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme)
             {

@@ -205,7 +205,7 @@ internal class PluginsManager
                 if (inGraphic) throw;       //  如果是图形界面调用, 则再次抛出便于给出图形化提示
             }
         }
-        EventHandlers.Invoke(nameof(EventHandlers.PluginsListChanged));
+        EventService.Invoke(nameof(EventService.PluginsListChanged));
     }
 
     /// <summary>
@@ -282,7 +282,7 @@ internal class PluginsManager
                     }
                 }
 
-                if (isPluginsListUpdated) EventHandlers.Invoke(nameof(EventHandlers.PluginsListChanged));
+                if (isPluginsListUpdated) EventService.Invoke(nameof(EventService.PluginsListChanged));
             }
             catch (Exception ex)
             {

@@ -45,7 +45,7 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void InitEvents()
     {
-        EventHandlers.UseStatisticsChanged += RecoveryUseCount;
+        EventService.UseStatisticsChanged += RecoveryUseCount;
     }
 
     internal void RecoveryUseCount()
@@ -88,7 +88,7 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
         {
             Program.Config.Pages.Home.UseAreaExpanded = value;
             PropertyChanged?.Invoke(this, new(nameof(UseAreaExpanded)));
-            EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
         }
     }
 

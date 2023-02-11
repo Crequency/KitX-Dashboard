@@ -43,7 +43,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     private void InitEvents()
     {
-        EventHandlers.ConfigSettingsChanged += () =>
+        EventService.ConfigSettingsChanged += () =>
         {
             ImportButtonVisibility = Program.Config.App.DeveloperSetting;
         };

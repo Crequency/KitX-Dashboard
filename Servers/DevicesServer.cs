@@ -499,7 +499,7 @@ internal class DevicesServer : IDisposable
 
         acceptDeviceThread.Start();
 
-        EventHandlers.Invoke(nameof(EventHandlers.DevicesServerPortChanged));
+        EventService.Invoke(nameof(EventService.DevicesServerPortChanged));
     }
 
     /// <summary>

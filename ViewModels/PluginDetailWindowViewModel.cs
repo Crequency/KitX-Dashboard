@@ -32,7 +32,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal void InitEvents()
     {
-        EventHandlers.ThemeConfigChanged +=
+        EventService.ThemeConfigChanged +=
             () => PropertyChanged?.Invoke(this, new(nameof(TintColor)));
     }
 

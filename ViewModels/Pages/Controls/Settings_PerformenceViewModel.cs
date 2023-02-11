@@ -34,7 +34,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
     private void InitEvents()
     {
-        EventHandlers.LogConfigUpdated += () =>
+        EventService.LogConfigUpdated += () =>
         {
             string logdir = Path.GetFullPath(Program.Config.Log.LogFilePath);
             Log.Logger = new LoggerConfiguration()
@@ -52,15 +52,15 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
                 )
                 .CreateLogger();
         };
-        EventHandlers.LanguageChanged += () =>
+        EventService.LanguageChanged += () =>
         {
             foreach (var item in SurpportLogLevels)
                 item.LogLevelDisplayName = GetLogLevelInLanguages(item.LogLevelName);
             PropertyChanged?.Invoke(this, new(nameof(SurpportLogLevels)));
         };
-        EventHandlers.DevicesServerPortChanged += () => PropertyChanged?.Invoke(this,
+        EventService.DevicesServerPortChanged += () => PropertyChanged?.Invoke(this,
                 new(nameof(DevicesServerPort)));
-        EventHandlers.PluginsServerPortChanged += () => PropertyChanged?.Invoke(this,
+        EventService.PluginsServerPortChanged += () => PropertyChanged?.Invoke(this,
                 new(nameof(PluginsServerPort)));
 
         Program.TasksManager?.SignalRun(
@@ -114,7 +114,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     private static void SaveChanges()
     {
-        EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     /// <summary>
@@ -274,7 +274,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Windows.MainWindow.GreetingUpdateInterval = value;
-            EventHandlers.Invoke(nameof(EventHandlers.GreetingTextIntervalUpdated));
+            EventService.Invoke(nameof(EventService.GreetingTextIntervalUpdated));
             SaveChanges();
         }
     }
@@ -347,7 +347,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Log.LogFileSingleMaxSize = value * 1024 * 1024;
-            EventHandlers.Invoke(nameof(EventHandlers.LogConfigUpdated));
+            EventService.Invoke(nameof(EventService.LogConfigUpdated));
             SaveChanges();
         }
     }
@@ -361,7 +361,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Log.LogFileMaxCount = value;
-            EventHandlers.Invoke(nameof(EventHandlers.LogConfigUpdated));
+            EventService.Invoke(nameof(EventService.LogConfigUpdated));
             SaveChanges();
         }
     }
@@ -375,7 +375,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             Program.Config.Log.LogFileFlushInterval = value;
-            EventHandlers.Invoke(nameof(EventHandlers.LogConfigUpdated));
+            EventService.Invoke(nameof(EventService.LogConfigUpdated));
             SaveChanges();
         }
     }
@@ -465,7 +465,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             if (value != null)
             {
                 Program.Config.Log.LogLevel = value.LogEventLevel;
-                EventHandlers.Invoke(nameof(EventHandlers.LogConfigUpdated));
+                EventService.Invoke(nameof(EventService.LogConfigUpdated));
                 SaveChanges();
             }
         }

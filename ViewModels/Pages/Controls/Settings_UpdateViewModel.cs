@@ -136,7 +136,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
                 2 => "alpha",
                 _ => "stable"
             };
-            EventHandlers.Invoke(nameof(EventHandlers.ConfigSettingsChanged));
+            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
         }
     }
 

@@ -49,7 +49,7 @@ internal class Program
 
         #region 必要的初始化
 
-        EventHandlers.Init();
+        EventService.Init();
 
         #endregion
 

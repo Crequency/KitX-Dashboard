@@ -37,7 +37,7 @@ internal class PluginsServer : IDisposable
 
         int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
         GlobalInfo.PluginServerPort = port; // 全局端口号标明
-        EventHandlers.Invoke(nameof(EventHandlers.PluginsServerPortChanged));
+        EventService.Invoke(nameof(EventService.PluginsServerPortChanged));
 
         Log.Information($"PluginsServer Port: {port}");
 

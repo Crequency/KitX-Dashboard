@@ -126,9 +126,9 @@ public static class Helper
 
         #region 初始化事件
 
-        EventHandlers.ConfigSettingsChanged += () => SaveConfig();
+        EventService.ConfigSettingsChanged += () => SaveConfig();
 
-        EventHandlers.PluginsListChanged += () => SavePluginsListConfig();
+        EventService.PluginsListChanged += () => SavePluginsListConfig();
 
         #endregion
 
@@ -157,7 +157,7 @@ public static class Helper
                 {
                     Program.Config = JsonSerializer.Deserialize<AppConfig>(
                         File.ReadAllText(GlobalInfo.ConfigFilePath));
-                    EventHandlers.Invoke(nameof(EventHandlers.OnConfigHotReloaded));
+                    EventService.Invoke(nameof(EventService.OnConfigHotReloaded));
                 }
             }
             catch (Exception ex)

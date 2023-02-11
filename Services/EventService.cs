@@ -2,7 +2,7 @@
 
 namespace KitX_Dashboard.Services;
 
-internal static class EventHandlers
+internal static class EventService
 {
 
     internal delegate void LanguageChangedHandler();

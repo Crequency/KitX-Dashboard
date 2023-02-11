@@ -16,7 +16,7 @@ internal class StatisticsManager
 
     internal static void InitEvents()
     {
-        EventHandlers.UseStatisticsChanged += async () =>
+        EventService.UseStatisticsChanged += async () =>
         {
             try
             {
@@ -105,7 +105,7 @@ internal class StatisticsManager
                     {
                         UseStatistics.Add(today, 0.01);
                     }
-                    EventHandlers.Invoke(nameof(EventHandlers.UseStatisticsChanged));
+                    EventService.Invoke(nameof(EventService.UseStatisticsChanged));
                 }
             }
             catch (Exception ex)

@@ -36,7 +36,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal void InitEvents()
     {
-        EventHandlers.LanguageChanged += () =>
+        EventService.LanguageChanged += () =>
         {
             PropertyChanged?.Invoke(this, new(nameof(DisplayName)));
         };

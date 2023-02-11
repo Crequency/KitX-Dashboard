@@ -16,7 +16,7 @@ internal class DevicesManager
 {
     internal static void InitEvents()
     {
-        EventHandlers.OnReceivingDeviceInfoStruct4DeviceNet += dis =>
+        EventService.OnReceivingDeviceInfoStruct4DeviceNet += dis =>
         {
             if (GlobalInfo.IsMainMachine)
                 if (dis.DeviceServerBuildTime < GlobalInfo.ServerBuildTime)
@@ -250,7 +250,7 @@ internal class DevicesManager
             }
         };
         timer.Start();
-        EventHandlers.ConfigSettingsChanged += () =>
+        EventService.ConfigSettingsChanged += () =>
         {
             timer.Interval = Program.Config.Web.DevicesViewRefreshDelay;
         };
@@ -266,7 +266,7 @@ internal class DevicesManager
         receivedDeviceInfoStruct4Watch?.Add(deviceInfo);
 
         if (deviceInfo.IsMainDevice)
-            EventHandlers.Invoke(nameof(EventHandlers.OnReceivingDeviceInfoStruct4DeviceNet),
+            EventService.Invoke(nameof(EventService.OnReceivingDeviceInfoStruct4DeviceNet),
                 deviceInfo);
     }
 
