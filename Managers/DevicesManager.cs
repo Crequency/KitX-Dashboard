@@ -1,6 +1,7 @@
 ﻿using Avalonia.Threading;
 using KitX.Web.Rules;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
@@ -8,7 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Timer = System.Timers.Timer;
 
-namespace KitX_Dashboard.Services;
+namespace KitX_Dashboard.Managers;
 
 internal class DevicesManager
 {

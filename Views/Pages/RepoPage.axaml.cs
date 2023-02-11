@@ -1,7 +1,7 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
-using KitX_Dashboard.Services;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.ViewModels.Pages;
 using Serilog;
 using System;

@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Models;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;

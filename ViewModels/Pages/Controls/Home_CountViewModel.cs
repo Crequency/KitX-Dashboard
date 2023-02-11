@@ -1,4 +1,5 @@
-﻿using KitX_Dashboard.Services;
+﻿using KitX_Dashboard.Managers;
+using KitX_Dashboard.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using System.Collections.Generic;

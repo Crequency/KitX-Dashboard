@@ -8,6 +8,7 @@ using Common.BasicHelper.IO;
 using Common.BasicHelper.Util;
 using FluentAvalonia.Styling;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;
 using KitX_Dashboard.Views;

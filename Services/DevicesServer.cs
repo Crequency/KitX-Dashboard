@@ -2,6 +2,7 @@
 using KitX.Web.Rules;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Names;
 using Serilog;
 using System;

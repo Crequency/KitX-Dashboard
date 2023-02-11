@@ -1,5 +1,6 @@
 ﻿using Common.ExternalConsole;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;

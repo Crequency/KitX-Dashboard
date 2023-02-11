@@ -2,6 +2,7 @@
 using Common.BasicHelper.IO;
 using Common.BasicHelper.Util.Extension;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Names;
 using KitX_Dashboard.Services;
 using LiteDB;
