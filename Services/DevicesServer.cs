@@ -224,6 +224,9 @@ internal class DevicesServer : IDisposable
 
         #endregion
 
+        var erroredInterfacesIndexes = new List<int>();
+        var erroredInterfacesIndexesTTL = 60;
+
         System.Timers.Timer timer = new()
         {
             Interval = Program.Config.Web.UDPSendFrequency,
@@ -240,14 +243,22 @@ internal class DevicesServer : IDisposable
         {
             try
             {
+                --erroredInterfacesIndexesTTL;
+                if (erroredInterfacesIndexesTTL <= 0)
+                {
+                    erroredInterfacesIndexesTTL = 60;
+                    erroredInterfacesIndexes.Clear();
+                }
+
                 UpdateDefaultDeviceInfoStruct();
                 string sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
                 byte[] sendBytes = Encoding.UTF8.GetBytes(sendText);
 
-                //Log.Information($"Sending {sendText}");
-
                 foreach (var item in SurpportedNetworkInterfaces)
                 {
+                    //  如果错误网络适配器中存在当前项的记录, 跳过
+                    if (erroredInterfacesIndexes.Contains(item)) continue;
+
                     try
                     {
                         udpClient.Client.SetSocketOption(SocketOptionLevel.IP,
@@ -263,8 +274,13 @@ internal class DevicesServer : IDisposable
                     }
                     catch (Exception ex)
                     {
+                        //  该网络适配器存在异常, 暂时记录到错误网络适配器中
+                        if (!erroredInterfacesIndexes.Contains(item))
+                            erroredInterfacesIndexes.Add(item);
+
                         var location = $"{nameof(DevicesServer)}.{nameof(MultiDevicesBroadCastSend)}";
-                        Log.Warning(ex, $"In {location}: {ex.Message}");
+                        Log.Warning(ex, $"In {location}: {ex.Message} - " +
+                            $"On interface index: {item}, recorded.");
                     }
                 }
             }
