@@ -33,10 +33,18 @@ internal class DevicesServer : IDisposable
             {
                 //  寻找所有支持的网络适配器
                 Log.Information($"Start {nameof(FindSupportNetworkInterfaces)}");
-                FindSupportNetworkInterfaces(new()
+                try
                 {
-                    UdpClient_Send, UdpClient_Receive
-                }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
+                    FindSupportNetworkInterfaces(new()
+                    {
+                        UdpClient_Send, UdpClient_Receive
+                    }, IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
+                }
+                catch (Exception ex)
+                {
+                    var location = $"{nameof(DevicesServer)}.{nameof(Start)}";
+                    Log.Warning(ex, $"In {location}: {ex.Message}");
+                }
 
                 #region 组播收发消息
 
@@ -146,6 +154,8 @@ internal class DevicesServer : IDisposable
     /// </summary>
     private static void FindSupportNetworkInterfaces(List<UdpClient> clients, IPAddress multicastAddress)
     {
+        var multicastGroupJoinedInterfacesCount = 0;
+
         NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
         foreach (NetworkInterface adapter in nics)
         {
@@ -180,6 +190,7 @@ internal class DevicesServer : IDisposable
                 foreach (var udpClient in clients)
                     udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
                 Program.WebManager?.NetworkInterfaceRegistered?.Add(adapter.Name);
+                ++multicastGroupJoinedInterfacesCount;
             }
             catch (Exception ex)
             {
@@ -193,6 +204,8 @@ internal class DevicesServer : IDisposable
 
         Log.Information($"" +
             $"Find {SurpportedNetworkInterfaces.Count} supported network interfaces.");
+        Log.Information($"" +
+            $"Joined {multicastGroupJoinedInterfacesCount} multicast groups.");
     }
 
     /// <summary>
@@ -231,24 +244,33 @@ internal class DevicesServer : IDisposable
                 string sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
                 byte[] sendBytes = Encoding.UTF8.GetBytes(sendText);
 
+                //Log.Information($"Sending {sendText}");
+
                 foreach (var item in SurpportedNetworkInterfaces)
                 {
-                    udpClient.Client.SetSocketOption(SocketOptionLevel.IP,
-                        SocketOptionName.MulticastInterface, item);
-                    udpClient.Send(sendBytes, sendBytes.Length, multicast);
-
-                    //  将自定义广播消息全部发送
-                    while (Messages2BroadCast.Count > 0)
+                    try
                     {
-                        byte[] messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
-                        udpClient.Send(messageBytes, messageBytes.Length, multicast);
+                        udpClient.Client.SetSocketOption(SocketOptionLevel.IP,
+                            SocketOptionName.MulticastInterface, item);
+                        udpClient.Send(sendBytes, sendBytes.Length, multicast);
+
+                        //  将自定义广播消息全部发送
+                        while (Messages2BroadCast.Count > 0)
+                        {
+                            byte[] messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
+                            udpClient.Send(messageBytes, messageBytes.Length, multicast);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        var location = $"{nameof(DevicesServer)}.{nameof(MultiDevicesBroadCastSend)}";
+                        Log.Warning(ex, $"In {location}: {ex.Message}");
                     }
                 }
             }
             catch (Exception e)
             {
                 Log.Error(e, $"In MultiDevicesBroadCastSend: {e.Message}");
-                EndMultiDevicesBroadCastSend();
             }
             if (!GlobalInfo.Running) EndMultiDevicesBroadCastSend();
         };
