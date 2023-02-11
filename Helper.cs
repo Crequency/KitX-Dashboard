@@ -82,6 +82,12 @@ public static class Helper
 
         #endregion
 
+        #region 初始化缓存管理器
+
+        Program.CacheManager = new();
+
+        #endregion
+
         #region 初始化数据库
 
         InitDataBase();
