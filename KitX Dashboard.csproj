@@ -100,6 +100,9 @@
         <None Update="Assets\KitX.Base64.txt">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="clean-debug.sh">
+            <CopyToOutputDirectory Condition="'$(Configuration)' == 'Debug'">PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Assets\KitX-Icon-256x.ico">
