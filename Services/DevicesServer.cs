@@ -53,19 +53,6 @@ internal class DevicesServer : IDisposable
             {
                 var location = $"{nameof(DevicesServer)}.{nameof(Start)}()";
                 Log.Error(e, $"In {location}: {e.Message}");
-
-                //  寻找或组播收发失败, 不找了, 尝试系统默认适配器的组播收发
-                try
-                {
-                    MultiDevicesBroadCastSendDefault();
-                    MultiDevicesBroadCastReceiveDefault();
-                }
-                catch (Exception ex)
-                {
-                    location = $"{nameof(DevicesServer)}.{nameof(Start)}()";
-                    Log.Error(ex,
-                        $"In {location}: Default UDP functions: {ex.Message}");
-                }
             }
 
             try
@@ -260,74 +247,9 @@ internal class DevicesServer : IDisposable
             catch (Exception e)
             {
                 Log.Error(e, $"In MultiDevicesBroadCastSend: {e.Message}");
-                try
-                {
-                    EndMultiDevicesBroadCastSend();
-                    //  组播发送失败, 尝试由系统决定发送的网络适配器
-                    Log.Information($"Start {nameof(MultiDevicesBroadCastSendDefault)}");
-                    MultiDevicesBroadCastSendDefault();
-                }
-                catch (Exception exc)
-                {
-                    Log.Error(exc, $"In {nameof(DevicesServer)}, " +
-                        $"{nameof(MultiDevicesBroadCastSendDefault)}");
-                }
+                EndMultiDevicesBroadCastSend();
             }
             if (!GlobalInfo.Running) EndMultiDevicesBroadCastSend();
-        };
-        timer.Start();
-    }
-
-    /// <summary>
-    /// 默认的多设备组播发送方法
-    /// </summary>
-    public static void MultiDevicesBroadCastSendDefault()
-    {
-        #region 初始化 UDP 客户端
-
-        UdpClient udpClient = new(Program.Config.Web.UDPPortSend);
-        udpClient.JoinMulticastGroup(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
-        IPEndPoint multicast = new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
-            Program.Config.Web.UDPPortReceive);
-
-        #endregion
-
-        System.Timers.Timer timer = new()
-        {
-            Interval = Program.Config.Web.UDPSendFrequency,
-            AutoReset = true
-        };
-        void EndMultiDevicesBroadCastSendDefault()
-        {
-            udpClient.Close();
-            udpClient.Dispose();
-            timer.Stop();
-            timer.Dispose();
-        }
-        timer.Elapsed += (_, _) =>
-        {
-            try
-            {
-                UpdateDefaultDeviceInfoStruct();
-                string sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
-                byte[] sendBytes = Encoding.UTF8.GetBytes(sendText);
-                udpClient.Send(sendBytes, sendBytes.Length, multicast);
-
-                //  将自定义广播消息全部发送
-                while (Messages2BroadCast.Count > 0)
-                {
-                    byte[] messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
-                    udpClient.Send(messageBytes, messageBytes.Length, multicast);
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, $"In MultiDevicesBroadCastSend: {e.Message}");
-                EndMultiDevicesBroadCastSendDefault();
-                //  默认发包方式发生问题, 尝试遍历适配器发送报文
-                MultiDevicesBroadCastSend();
-            }
-            if (!GlobalInfo.Running) EndMultiDevicesBroadCastSendDefault();
         };
         timer.Start();
     }
@@ -383,70 +305,7 @@ internal class DevicesServer : IDisposable
             }
             else
             {
-                try
-                {
-                    Log.Information($"Start {nameof(MultiDevicesBroadCastReceiveDefault)}");
-                    //  组播接收失败, 尝试由系统决定接收的网络适配器
-                    MultiDevicesBroadCastReceiveDefault();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "In MultiDevicesBroadCastReceiveDefault()");
-                }
-            }
-        }).Start();
-    }
 
-    /// <summary>
-    /// 默认的多设备组播接收方法
-    /// </summary>
-    public static void MultiDevicesBroadCastReceiveDefault()
-    {
-        UdpClient udpClient = new(Program.Config.Web.UDPPortReceive);
-        udpClient.JoinMulticastGroup(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress));
-        IPEndPoint multicast = new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
-            Program.Config.Web.UDPPortSend);
-        new Thread(() =>
-        {
-            try
-            {
-                while (GlobalInfo.Running)
-                {
-                    byte[] bytes = udpClient.Receive(ref multicast);
-                    string result = Encoding.UTF8.GetString(bytes);
-                    Log.Information($"UDP Receive: {result}");
-                    try
-                    {
-                        DeviceInfoStruct deviceInfo = JsonSerializer.Deserialize<DeviceInfoStruct>(result);
-                        DevicesManager.Update(deviceInfo);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex, $"{ex.Message}");
-                    }
-                }
-                udpClient.Close();
-            }
-            catch (Exception e)
-            {
-                Log.Error(e.Message);
-            }
-            if (!GlobalInfo.Running)
-            {
-                udpClient.Close();
-            }
-            else
-            {
-                try
-                {
-                    Log.Information($"Start {nameof(MultiDevicesBroadCastReceive)}");
-                    //  组播接收失败, 尝试逐个适配器接收消息
-                    MultiDevicesBroadCastReceive();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "In MultiDevicesBroadCastReceive()");
-                }
             }
         }).Start();
     }
