@@ -1,8 +1,8 @@
 ﻿using Avalonia.Controls;
+using FluentAvalonia.UI.Controls;
 using Serilog.Events;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using FluentAvalonia.UI.Controls;
 
 namespace KitX_Dashboard.Data;
 

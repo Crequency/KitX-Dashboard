@@ -1,7 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using Common.ExternalConsole.Client;
 using Common.Update.Checker;
 using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
