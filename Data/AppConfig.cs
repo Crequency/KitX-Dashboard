@@ -337,6 +337,9 @@ public class AppConfig
 
         [JsonInclude]
         public string UpdateSource { get; set; } = "latest-components.json";
+
+        [JsonInclude]
+        public int DebugServicesServerPort { get; set; } = 7777;
     }
 
     /// <summary>
