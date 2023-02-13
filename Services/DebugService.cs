@@ -1,4 +1,6 @@
 ﻿using KitX_Dashboard.Servers;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -67,13 +69,11 @@ internal class DebugCommands
                 "\t--type [config] | save KitX Dashboard config file.\n" +
                 "\tconfig | save KitX Dashboard config file.\n";
         if (args.ContainsKey("--type"))
-            switch (args["--type"])
+            return args["--type"] switch
             {
-                case "config":
-                    return SaveConfig();
-                default:
-                    return "Missing value of `--type`.";
-            }
+                "config" => SaveConfig(),
+                _ => "Missing value of `--type`.",
+            };
         else if (args.ContainsKey("config"))
         {
             return SaveConfig();
@@ -162,6 +162,45 @@ internal class DebugCommands
                     else return "Missing value of `--value`";
                 default:
                     return "Missing value of `--type`.";
+            }
+        }
+        else return "Missing arguments.";
+    }
+
+    public static string? Cache(Dictionary<string, string> args)
+    {
+
+        if (args.ContainsKey("--file"))
+        {
+            var path = args["--file"];
+            if (path.StartsWith('"') && path.EndsWith('"'))
+                path = path[1..^1];
+            Log.Information(path);
+            var id = Program.CacheManager?.LoadFileToCache(path);
+            return $"File loaded, ID (MD5): {id?.Result ?? "null"}";
+        }
+        else return "Missing arguments.";
+    }
+
+    public static string? Dispose(Dictionary<string, string> args)
+    {
+
+        if (args.ContainsKey("--type"))
+        {
+            switch (args["--type"])
+            {
+                case "file":
+                    if (args.ContainsKey("--id"))
+                    {
+                        var id = args["--id"];
+                        var result = Program.CacheManager?.DisposeFileCache(id);
+                        if (result is null) return "Unknown error occursed.";
+                        if (!(bool)result) return "Dispose failed.";
+                        return "Disposed.";
+                    }
+                    else return "Missing ID for file.";
+                default:
+                    return "Missing value of `--type`";
             }
         }
         else return "Missing arguments.";
