@@ -1,9 +1,11 @@
-﻿using Common.ExternalConsole;
+﻿using Common.BasicHelper.Util.Extension;
+using Common.ExternalConsole;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -14,7 +16,7 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls;
 internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
 {
 
-    private static Manager _manager = new();
+    private static ExternalConsolesManager _manager = new();
     private static int _consolesCount = 0;
 
     internal Settings_GeneralViewModel()
@@ -39,7 +41,8 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     private void InitEvents()
     {
         EventService.DevelopSettingsChanged +=
-            () => PropertyChanged?.Invoke(this, new(nameof(DeveloperSettingEnabled)));
+            () => PropertyChanged?.Invoke(this,
+            new(nameof(DeveloperSettingEnabled)));
     }
 
     /// <summary>
@@ -136,53 +139,99 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
         }).Start();
     }
 
-    private void OpenDebugTool(object _)
+    private async void OpenDebugTool(object _)
     {
         ++_consolesCount;
+
+        var port = Program.Config.Web.DebugServicesServerPort;
+        if (!_manager.ServerLaunched) _manager = await _manager.LaunchServer(port);
+
         var name = $"KitX_DebugTool_{_consolesCount}";
         var console = _manager.Register(name);
-        try
+
+        new Thread(() =>
         {
-            console.Start();
-
-            ProcessStartInfo psi = new()
+            try
             {
-                FileName = Path.GetFullPath($"./Common.ExternalConsole.Console" +
-                    $"{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
-                Arguments = $"--connect CommonExternalConsole{name}",
-                CreateNoWindow = false,
-                UseShellExecute = true,
-            };
-            var process = new Process
-            {
-                StartInfo = psi
-            };
-            process.Start();
-
-            //  Receive Thread
-            new Thread(() =>
-            {
-                try
+                ProcessStartInfo psi = new()
                 {
-                    while (!process.HasExited)
+                    FileName = Path.GetFullPath($"./Common.ExternalConsole.ExternalConsole" +
+                        $"{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
+                    Arguments = $"--port {port} --name {name}",
+                    CreateNoWindow = false,
+                    UseShellExecute = true,
+                };
+                var process = new Process
+                {
+                    StartInfo = psi
+                };
+                process.Start();
+
+                var keepWorking = true;
+                var messages2Send = new Queue<string>()
+                    .Push(@"|^disable_debug|")
+                ;
+
+                async void Reader(StreamReader reader)
+                {
+                    try
                     {
-                        var remote = console.ReadLine();
-                        if (remote is null) continue;
-                        var result = DebugService.ExecuteCommand(remote);
-                        console.WriteLine(result ?? "No this command.");
+                        while (keepWorking)
+                        {
+                            var message = await reader.ReadLineAsync();
+
+                            switch (message)
+                            {
+                                case null:
+                                    continue;
+                                case @"|^console_exit|":
+                                    keepWorking = false;
+                                    break;
+                                case "":
+                                    continue;
+                                default:
+                                    if (message.Equals(string.Empty)) continue;
+
+                                    var result = DebugService.ExecuteCommand(message);
+                                    messages2Send.Enqueue(result ?? "No this command.");
+                                    break;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        console.Dispose();
+
+                        var location = $"{nameof(Settings_UpdateViewModel)}.{nameof(OpenDebugTool)}";
+                        Log.Warning(ex, $"In {location}: {ex.Message}");
                     }
                 }
-                catch (Exception ex)
+
+                async void Writer(StreamWriter writer)
                 {
-                    Log.Warning(ex, $"In OpenDebugTool(_): Receive Thread: {ex.Message}");
+                    while (keepWorking)
+                    {
+                        if (messages2Send.Count > 0)
+                        {
+                            await writer.WriteLineAsync(
+                                messages2Send.Dequeue()
+                                .Replace("\r\n", "\n")
+                                .Replace("\n", "|^new_line|")
+                            );
+                            await writer.FlushAsync();
+                        }
+                    }
                 }
-            }).Start();
-        }
-        catch (Exception ex)
-        {
-            console.Dispose();
-            Log.Error(ex, $"In OpenDebugTool(_): {ex.Message}");
-        }
+
+                console.HandleMessages(Reader, Writer);
+            }
+            catch (Exception ex)
+            {
+                console.Dispose();
+                var location = $"{nameof(Settings_GeneralViewModel)}.{nameof(OpenDebugTool)}";
+                Log.Error(ex, $"In {location}: {ex.Message}");
+            }
+        }).Start();
     }
 
     public new event PropertyChangedEventHandler? PropertyChanged;

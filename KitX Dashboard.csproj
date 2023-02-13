@@ -158,7 +158,8 @@
         <ProjectReference Include="..\Reference\Common.Activity\src\Common.Activity.csproj" />
         <ProjectReference Include="..\Reference\Common.Algorithm\Common.Algorithm.Interop\Common.Algorithm.Interop.csproj" />
         <ProjectReference Include="..\Reference\Common.BasicHelper\Common.BasicHelper\Common.BasicHelper.csproj" />
-        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole.Console\Common.ExternalConsole.Console.csproj" Condition="$(Is2Publish) == 'False'" />
+        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole\Common.ExternalConsole.csproj"/>
+        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole.ExternalConsole\Common.ExternalConsole.ExternalConsole.csproj"  Condition="$(Is2Publish) == 'False'" />
         <ProjectReference Include="..\Reference\Common.Update\Common.Update.Checker\Common.Update.Checker.csproj" />
     </ItemGroup>
 </Project>
