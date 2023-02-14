@@ -1,6 +1,8 @@
 ﻿using KitX_Dashboard.Servers;
 using Serilog;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -168,17 +170,53 @@ internal class DebugCommands
 
     public static string? Cache(Dictionary<string, string> args)
     {
-
-        if (args.ContainsKey("--file"))
+        try
         {
-            var path = args["--file"];
-            if (path.StartsWith('"') && path.EndsWith('"'))
-                path = path[1..^1];
-            Log.Information(path);
-            var id = Program.CacheManager?.LoadFileToCache(path);
-            return $"File loaded, ID (MD5): {id?.Result ?? "null"}";
+            if (args.ContainsKey("help"))
+            {
+                return "" +
+                    "Load file to CacheManager.\n" +
+                    "\t--file | with path of file, if contain space, quote it.";
+            }
+            if (args.ContainsKey("--file"))
+            {
+                var path = args["--file"];
+
+                if (path.StartsWith('"') && path.EndsWith('"'))
+                    path = path[1..^1];
+
+                Log.Information($"Debug Tool: Request CacheManager to load {path}");
+
+                path = Path.GetFullPath(path);
+
+                if (!File.Exists(path)) return "File not found.";
+
+                if (args.ContainsKey("--way"))
+                {
+                    switch (args["--way"])
+                    {
+                        case "complete": break;
+                        case "fragment":
+                            //ToDo: Load file in fragments.
+                            return "";
+                    }
+                }
+
+                var info = new FileInfo(path);
+
+                if (info.Length > 2.0 * 1024 * 1024 * 1024 - 500)
+                    return "File larger than 2 GB, unsupported by this way";
+
+                var id = Program.CacheManager?.LoadFileToCache(path);
+
+                return $"File loaded, ID (MD5): {id?.Result ?? "null"}";
+            }
+            else return "Missing arguments.";
         }
-        else return "Missing arguments.";
+        catch (Exception ex)
+        {
+            return $"Error when executing, ex: {ex.Message}";
+        }
     }
 
     public static string? Dispose(Dictionary<string, string> args)
