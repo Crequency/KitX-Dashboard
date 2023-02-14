@@ -209,17 +209,28 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
 
                 async void Writer(StreamWriter writer)
                 {
-                    while (keepWorking)
+                    try
                     {
-                        if (messages2Send.Count > 0)
+                        while (keepWorking)
                         {
-                            await writer.WriteLineAsync(
-                                messages2Send.Dequeue()
-                                .Replace("\r\n", "\n")
-                                .Replace("\n", "|^new_line|")
-                            );
-                            await writer.FlushAsync();
+                            if (messages2Send.Count > 0)
+                            {
+                                await writer.WriteLineAsync(
+                                    messages2Send.Dequeue()
+                                    .Replace("\r\n", "\n")
+                                    .Replace("\n", "|^new_line|")
+                                );
+                                await writer.FlushAsync();
+                            }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        await writer.DisposeAsync();
+                        console.Dispose();
+
+                        var location = $"{nameof(Settings_UpdateViewModel)}.{nameof(OpenDebugTool)}";
+                        Log.Warning(ex, $"In {location}: {ex.Message}");
                     }
                 }
 
