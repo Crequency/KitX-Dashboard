@@ -462,7 +462,8 @@ internal class DevicesServer : IDisposable
                     var buildVersion = command.ExecuteAsCommand("-buildVersion");
 
                     if (productName is not null && productVersion is not null && buildVersion is not null)
-                        result = $"{productName} {productVersion} {buildVersion}";
+                        result = $"{productName} {productVersion} {buildVersion}"
+                            .Replace("\n", "");
 
                     break;
             }
