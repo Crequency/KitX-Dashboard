@@ -490,7 +490,8 @@ internal class DevicesServer : IDisposable
 
         listener.Start();
 
-        int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
+
         GlobalInfo.DeviceServerPort = port; // 全局端口号标明
         GlobalInfo.ServerBuildTime = DateTime.UtcNow;
         GlobalInfo.IsMainMachine = true;

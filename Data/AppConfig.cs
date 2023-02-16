@@ -1,8 +1,8 @@
 ﻿using Avalonia.Controls;
+using FluentAvalonia.UI.Controls;
 using Serilog.Events;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using FluentAvalonia.UI.Controls;
 
 namespace KitX_Dashboard.Data;
 
@@ -337,6 +337,9 @@ public class AppConfig
 
         [JsonInclude]
         public string UpdateSource { get; set; } = "latest-components.json";
+
+        [JsonInclude]
+        public int DebugServicesServerPort { get; set; } = 7777;
     }
 
     /// <summary>
