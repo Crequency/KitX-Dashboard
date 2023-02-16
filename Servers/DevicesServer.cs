@@ -448,7 +448,7 @@ internal class DevicesServer : IDisposable
                 case OperatingSystems.Linux:
 
                     var versionFilePath = "/etc/os-release";
-                    var versionSegament = "PRETTRY_NAME";
+                    var versionSegament = "PRETTY_NAME";
                     var needFindInIssue = false;
 
                     if (File.Exists(versionFilePath))
