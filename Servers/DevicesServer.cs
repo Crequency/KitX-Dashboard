@@ -446,13 +446,37 @@ internal class DevicesServer : IDisposable
             switch (OperatingSystem2Enum.GetOSType())
             {
                 case OperatingSystems.Linux:
-                    var versionFilePath = "/etc/issue";
+
+                    var versionFilePath = "/etc/os-release";
+                    var versionSegament = "PRETTRY_NAME";
+                    var needFindInIssue = false;
+
                     if (File.Exists(versionFilePath))
                     {
-                        var issue = File.ReadAllText(versionFilePath);
-                        var lines = issue.Split('\n');
-                        result = lines.First(x => !x.Equals(string.Empty));
+                        var osRelease = File.ReadAllLines(versionFilePath)
+                            .Select(line => line.Split('='))
+                            .ToDictionary
+                            (
+                                parts => parts[0],
+                                parts => parts[1].Trim('"')
+                            );
+
+                        if (osRelease.TryGetValue(versionSegament, out var version))
+                            result = version;
+                        else needFindInIssue = true;
                     }
+
+                    if (needFindInIssue)
+                    {
+                        var issueFilePath = "/etc/issue";
+                        if (File.Exists(issueFilePath))
+                        {
+                            var issue = File.ReadAllText(issueFilePath);
+                            var lines = issue.Split('\n');
+                            result = lines.First(x => !x.Equals(string.Empty));
+                        }
+                    }
+
                     break;
                 case OperatingSystems.MacOS:
                     var command = "sw_vers";
