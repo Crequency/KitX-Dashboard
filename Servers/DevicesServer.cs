@@ -457,9 +457,9 @@ internal class DevicesServer : IDisposable
                 case OperatingSystems.MacOS:
                     var command = "sw_vers";
 
-                    var productName = command.ExecuteAsCommand("--productName");
-                    var productVersion = command.ExecuteAsCommand("--productVersion");
-                    var buildVersion = command.ExecuteAsCommand("--buildVersion");
+                    var productName = command.ExecuteAsCommand("-productName");
+                    var productVersion = command.ExecuteAsCommand("-productVersion");
+                    var buildVersion = command.ExecuteAsCommand("-buildVersion");
 
                     if (productName is not null && productVersion is not null && buildVersion is not null)
                         result = $"{productName} {productVersion} {buildVersion}";
