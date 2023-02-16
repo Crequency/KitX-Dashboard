@@ -385,6 +385,8 @@ public class AppConfig
     {
         [JsonInclude]
         public int UpdatingCheckPerThreadFilesCount { get; set; } = 20;
+
+        public int OperatingSystemVersionUpdateInterval { get; set; } = 60;
     }
 
     /// <summary>

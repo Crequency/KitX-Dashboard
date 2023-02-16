@@ -1,4 +1,5 @@
-﻿using Common.BasicHelper.Util.Extension;
+﻿using Common.BasicHelper.Core.Shell;
+using Common.BasicHelper.Util.Extension;
 using KitX.Web.Rules;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
@@ -8,6 +9,7 @@ using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -433,6 +435,47 @@ internal class DevicesServer : IDisposable
     }
 
     /// <summary>
+    /// 尝试获取系统版本
+    /// </summary>
+    /// <returns>系统版本</returns>
+    private static string? TryGetOSVersionString()
+    {
+        var result = Environment.OSVersion.VersionString;
+        try
+        {
+            switch (OperatingSystem2Enum.GetOSType())
+            {
+                case OperatingSystems.Linux:
+                    var versionFilePath = "/etc/issue";
+                    if (File.Exists(versionFilePath))
+                    {
+                        var issue = File.ReadAllText(versionFilePath);
+                        var lines = issue.Split('\n');
+                        result = lines.First(x => !x.Equals(string.Empty));
+                    }
+                    break;
+                case OperatingSystems.MacOS:
+                    var command = "sw_vers";
+
+                    var productName = command.ExecuteAsCommand("--productName");
+                    var productVersion = command.ExecuteAsCommand("--productVersion");
+                    var buildVersion = command.ExecuteAsCommand("--buildVersion");
+
+                    if (productName is not null && productVersion is not null && buildVersion is not null)
+                        result = $"{productName} {productVersion} {buildVersion}";
+
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            var location = $"{nameof(DevicesServer)}.{nameof(TryGetOSVersionString)}";
+            Log.Error(ex, $"In {location}: {ex.Message}");
+        }
+        return result;
+    }
+
+    /// <summary>
     /// 获取设备信息
     /// </summary>
     /// <returns>设备信息结构体</returns>
@@ -443,7 +486,7 @@ internal class DevicesServer : IDisposable
         IsMainDevice = GlobalInfo.IsMainMachine,
         SendTime = DateTime.UtcNow,
         DeviceOSType = OperatingSystem2Enum.GetOSType(),
-        DeviceOSVersion = Environment.OSVersion.VersionString,
+        DeviceOSVersion = TryGetOSVersionString(),
         IPv4 = GetInterNetworkIPv4(),
         IPv6 = GetInterNetworkIPv6(),
         PluginServerPort = GlobalInfo.PluginServerPort,
@@ -452,6 +495,10 @@ internal class DevicesServer : IDisposable
         PluginsCount = Program.PluginCards.Count,
     };
 
+    private static int DeviceInfoStructUpdatedTimes = 0;
+
+    private static int LastTimeToOSVersionUpdated = 0;
+
     /// <summary>
     /// 更新默认设备信息结构
     /// </summary>
@@ -459,7 +506,6 @@ internal class DevicesServer : IDisposable
     {
         DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
         DefaultDeviceInfoStruct.SendTime = DateTime.UtcNow;
-        DefaultDeviceInfoStruct.DeviceOSVersion = Environment.OSVersion.VersionString;
         DefaultDeviceInfoStruct.IPv4 = GetInterNetworkIPv4();
         DefaultDeviceInfoStruct.IPv6 = GetInterNetworkIPv6();
         DefaultDeviceInfoStruct.PluginServerPort = GlobalInfo.PluginServerPort;
@@ -467,6 +513,17 @@ internal class DevicesServer : IDisposable
         DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
         DefaultDeviceInfoStruct.DeviceServerPort = GlobalInfo.DeviceServerPort;
         DefaultDeviceInfoStruct.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;
+
+        if (LastTimeToOSVersionUpdated > Program.Config.IO.OperatingSystemVersionUpdateInterval)
+        {
+            LastTimeToOSVersionUpdated = 0;
+            DefaultDeviceInfoStruct.DeviceOSVersion = TryGetOSVersionString();
+        }
+
+        ++DeviceInfoStructUpdatedTimes;
+        ++LastTimeToOSVersionUpdated;
+
+        if (DeviceInfoStructUpdatedTimes < 0) DeviceInfoStructUpdatedTimes = 0;
     }
 
     #endregion
