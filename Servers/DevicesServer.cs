@@ -130,8 +130,10 @@ internal class DevicesServer : IDisposable
         NetworkInterface adapter, IPInterfaceProperties adapterProperties)
     {
         var userPointed = Program.Config.Web.AcceptedNetworkInterfaces;
-        if (userPointed is not null && userPointed.Contains(adapter.Name))
+        if (userPointed is not null)
+            if (userPointed.Contains(adapter.Name))
             return true;
+            else return false;
 
         if (
 
