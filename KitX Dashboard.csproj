@@ -64,22 +64,22 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Assets\KitX-Icon-256x256.ico" />
-    </ItemGroup>
-    <ItemGroup>
         <Content Include="Languages\*.axaml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-    </ItemGroup>
-    <ItemGroup>
         <None Update="Assets\**\*.*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <EmbeddedResource Include="Assets\**\*.ico">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
     </ItemGroup>
+
     <ItemGroup>
         <TrimmableAssembly Include="Avalonia.Themes.Fluent" />
         <TrimmableAssembly Include="Avalonia.Themes.Default" />
     </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="0.10.18" />
         <PackageReference Include="Avalonia.Desktop" Version="0.10.18" />
