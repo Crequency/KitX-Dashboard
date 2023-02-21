@@ -8,6 +8,8 @@
         <TrimMode>copyused</TrimMode>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationIcon>Assets\KitX-Icon-256x.ico</ApplicationIcon>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <FileVersion>$(Version)</FileVersion>
         <Version>3.23.04.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2005-06-06"))).TotalDays)</Version>
@@ -62,70 +64,22 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Assets\KitX-Icon-256x256.ico" />
-    </ItemGroup>
-    <ItemGroup>
-        <Content Include="Languages\en-us.axaml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <Content Include="Languages\*.axaml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-        <Content Include="Languages\ja-jp.axaml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Languages\ko-kr.axaml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Languages\ru-ru.axaml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Languages\fr-fr.axaml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Languages\zh-cn.axaml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Languages\zh-tw.axaml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </Content>
-    </ItemGroup>
-    <ItemGroup>
-        <None Update="Assets\KitX-Icon-1920x-margin-2x.png">
+        <None Update="Assets\**\*.*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Assets\KitX-Icon-Background.png">
+        <EmbeddedResource Include="Assets\**\*.ico">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="Assets\ThirdPartLicense.md">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="Assets\KitX.Base64.txt">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="clean-debug.sh">
-            <CopyToOutputDirectory Condition="'$(Configuration)' == 'Debug'">PreserveNewest</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
-    <ItemGroup>
-        <EmbeddedResource Include="Assets\KitX-Icon-256x.ico">
-            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="Assets\KitX-Icon-256x256.ico" />
-        <EmbeddedResource Include="Assets\KitX-Icon-64x.ico">
-            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="Assets\KitX-Icon-48x.ico">
-            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="Assets\KitX-Icon-32x.ico">
-            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="Assets\KitX-Icon-16x.ico">
-            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </EmbeddedResource>
     </ItemGroup>
+
     <ItemGroup>
         <TrimmableAssembly Include="Avalonia.Themes.Fluent" />
         <TrimmableAssembly Include="Avalonia.Themes.Default" />
     </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="0.10.18" />
         <PackageReference Include="Avalonia.Desktop" Version="0.10.18" />
@@ -158,8 +112,8 @@
         <ProjectReference Include="..\Reference\Common.Activity\src\Common.Activity.csproj" />
         <ProjectReference Include="..\Reference\Common.Algorithm\Common.Algorithm.Interop\Common.Algorithm.Interop.csproj" />
         <ProjectReference Include="..\Reference\Common.BasicHelper\Common.BasicHelper\Common.BasicHelper.csproj" />
-        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole\Common.ExternalConsole.csproj"/>
-        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole.ExternalConsole\Common.ExternalConsole.ExternalConsole.csproj"  Condition="$(Is2Publish) == 'False'" />
+        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole\Common.ExternalConsole.csproj" />
+        <ProjectReference Include="..\Reference\Common.ExternalConsole\Common.ExternalConsole.ExternalConsole\Common.ExternalConsole.ExternalConsole.csproj" Condition="$(Is2Publish) == 'False'" />
         <ProjectReference Include="..\Reference\Common.Update\Common.Update.Checker\Common.Update.Checker.csproj" />
     </ItemGroup>
 </Project>

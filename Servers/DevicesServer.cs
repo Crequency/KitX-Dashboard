@@ -130,8 +130,10 @@ internal class DevicesServer : IDisposable
         NetworkInterface adapter, IPInterfaceProperties adapterProperties)
     {
         var userPointed = Program.Config.Web.AcceptedNetworkInterfaces;
-        if (userPointed is not null && userPointed.Contains(adapter.Name))
-            return true;
+        if (userPointed is not null)
+            if (userPointed.Contains(adapter.Name))
+                return true;
+            else return false;
 
         if (
 
@@ -159,10 +161,10 @@ internal class DevicesServer : IDisposable
     {
         var multicastGroupJoinedInterfacesCount = 0;
 
-        NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
-        foreach (NetworkInterface adapter in nics)
+        foreach (var adapter in NetworkInterface.GetAllNetworkInterfaces())
         {
-            IPInterfaceProperties adapterProperties = adapter.GetIPProperties();
+            var adapterProperties = adapter.GetIPProperties();
+            if (adapterProperties is null) continue;
 
             try
             {
@@ -174,32 +176,35 @@ internal class DevicesServer : IDisposable
             {
                 Log.Warning(ex, "Logging network interface items.");
             }
+
             if (!CheckNetworkInterface(adapter, adapterProperties)) continue;
-            UnicastIPAddressInformationCollection unicastIPAddresses
-                = adapterProperties.UnicastAddresses;
-            IPv4InterfaceProperties p = adapterProperties.GetIPv4Properties();
+
+            var unicastIPAddresses = adapterProperties.UnicastAddresses;
+            if (unicastIPAddresses is null) continue;
+
+            var p = adapterProperties.GetIPv4Properties();
             if (p is null) continue;    // IPv4 is not configured on this adapter
+
             SurpportedNetworkInterfaces.Add(IPAddress.HostToNetworkOrder(p.Index));
-            IPAddress? ipAddress = null;
-            foreach (UnicastIPAddressInformation unicastIPAddress in unicastIPAddresses)
+
+            foreach (var ipAddress in unicastIPAddresses
+                .Select(x => x.Address)
+                .Where(x => x.AddressFamily == AddressFamily.InterNetwork))
             {
-                if (unicastIPAddress.Address.AddressFamily != AddressFamily.InterNetwork) continue;
-                ipAddress = unicastIPAddress.Address;
-                break;
-            }
-            if (ipAddress is null) continue;
-            try
-            {
-                foreach (var udpClient in clients)
-                    udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
-                Program.WebManager?.NetworkInterfaceRegistered?.Add(adapter.Name);
-                ++multicastGroupJoinedInterfacesCount;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex,
-                    $"In {nameof(DevicesServer)}.{nameof(FindSupportNetworkInterfaces)}:" +
-                    $"{ex.Message}");
+                try
+                {
+                    foreach (var udpClient in clients)
+                        udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
+
+                    Program.WebManager?.NetworkInterfaceRegistered?.Add(adapter.Name);
+
+                    ++multicastGroupJoinedInterfacesCount;
+                }
+                catch (Exception ex)
+                {
+                    var location = $"{nameof(DevicesServer)}.{nameof(FindSupportNetworkInterfaces)}";
+                    Log.Error(ex, $"In {location}: {ex.Message}");
+                }
             }
         }
 
