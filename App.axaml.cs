@@ -20,9 +20,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
-#pragma warning disable CA2211 // Non-constant fields should not be visible
-
 namespace KitX_Dashboard;
 
 public partial class App : Application
@@ -31,30 +28,44 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 
-        #region 加载语言
+        LoadLanguage();
 
-        string lang = Program.Config.App.AppLanguage;
+        CalculateThemeColor();
+
+        InitLiveCharts();
+    }
+
+    /// <summary>
+    /// 加载语言
+    /// </summary>
+    private void LoadLanguage()
+    {
+        var lang = Program.Config.App.AppLanguage;
+        var backup_lang = Program.Config.App.SurpportLanguages.Keys.First();
+        var path = Path.GetFullPath($"{GlobalInfo.LanguageFilePath}/{lang}.axaml");
+        var backup_langPath = $"{GlobalInfo.LanguageFilePath}/{backup_lang}.axaml";
+        backup_langPath = Path.GetFullPath(backup_langPath);
+
         try
         {
             Resources.MergedDictionaries.Clear();
             Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
-                    FileHelper.ReadAll($"{GlobalInfo.LanguageFilePath}/{lang}.axaml")
-                ) as ResourceDictionary
+                    FileHelper.ReadAll(path)
+                ) as ResourceDictionary ?? new()
             );
         }
         catch (Result<bool>)
         {
             Log.Warning($"Language File {lang}.axaml not found.");
 
-            string backup_lang = Program.Config.App.SurpportLanguages.Keys.First();
             Resources.MergedDictionaries.Clear();
             try
             {
                 Resources.MergedDictionaries.Add(
                     AvaloniaRuntimeXamlLoader.Load(
-                        FileHelper.ReadAll($"{GlobalInfo.LanguageFilePath}/{backup_lang}.axaml")
-                    ) as ResourceDictionary
+                        FileHelper.ReadAll(backup_langPath)
+                    ) as ResourceDictionary ?? new()
                 );
 
                 Program.Config.App.AppLanguage = backup_lang;
@@ -77,11 +88,13 @@ public partial class App : Application
         {
             Log.Warning(e, $"Failed to invoke language changed event.");
         }
+    }
 
-        #endregion
-
-        #region 计算主题色
-
+    /// <summary>
+    /// 计算主题色
+    /// </summary>
+    private static void CalculateThemeColor()
+    {
         Color c = Color.Parse(Program.Config.App.ThemeColor);
 
         if (Current != null)
@@ -99,11 +112,13 @@ public partial class App : Application
                     new SolidColorBrush(new Color((byte)(i * 10 + i), c.R, c.G, c.B));
             }
         }
+    }
 
-        #endregion
-
-        #region 初始化图表系统
-
+    /// <summary>
+    /// 初始化图表系统
+    /// </summary>
+    private static void InitLiveCharts()
+    {
         LiveCharts.Configure(config =>
         {
             config.AddSkiaSharp()
@@ -125,8 +140,6 @@ public partial class App : Application
                 default: LiveCharts.CurrentSettings.AddLightTheme(); break;
             };
         };
-
-        #endregion
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -158,9 +171,6 @@ public partial class App : Application
     public static Bitmap DefaultIcon = new(Path.GetFullPath(
         $"{GlobalInfo.AssetsPath}{Program.Config.App.CoverIconFileName}"));
 }
-
-#pragma warning restore CA2211 // Non-constant fields should not be visible
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
 
 //                                         .....'',;;::cccllllllllllllcccc:::;;,,,''...'',,'..
 //                              ..';cldkO00KXNNNNXXXKK000OOkkkkkxxxxxddoooddddddxxxxkkkkOO0XXKx:.

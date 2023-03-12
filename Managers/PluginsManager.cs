@@ -193,7 +193,8 @@ internal class PluginsManager
                 _ = Directory.CreateDirectory(thisplugindir);
                 _ = decoder.Decode(thisplugindir);
 
-                if (!Program.PluginsList.Plugins.Exists(x => x.InstallPath.Equals(thisplugindir)))
+                if (!Program.PluginsList.Plugins.Exists(
+                        x => x.InstallPath?.Equals(thisplugindir) ?? false))
                     Program.PluginsList.Plugins.Add(new()
                     {
                         InstallPath = thisplugindir
