@@ -1,6 +1,6 @@
 ﻿using Common.Activity;
 using Common.BasicHelper.IO;
-using Common.BasicHelper.Util.Extension;
+using Common.BasicHelper.Utils.Extensions;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Names;
@@ -340,20 +340,24 @@ public static class Helper
     /// </summary>
     public static void InitEnvironment()
     {
+
         #region 检查 Common.Algorithm 库环境并安装环境
-        if (!Common.Algorithm.Interop.Environment.CheckEnvironment())
-            new Thread(() =>
+
+        if (!Common.Algorithm.Interop.Environment.Check())
+            new Thread(async () =>
             {
                 try
                 {
-                    Common.Algorithm.Interop.Environment.InstallEnvironment();
+                    await Common.Algorithm.Interop.Environment.InstallAsync();
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "In Helper.InitEnvironment()");
                 }
             }).Start();
+
         #endregion
+
     }
 
     /// <summary>
