@@ -5,7 +5,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Common.BasicHelper.IO;
-using Common.BasicHelper.Util;
+using Common.BasicHelper.Utils;
 using FluentAvalonia.Styling;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
@@ -121,8 +121,10 @@ public partial class App : Application
     {
         LiveCharts.Configure(config =>
         {
-            config.AddSkiaSharp()
+            config
+                .AddSkiaSharp()
                 .AddDefaultMappers();
+
             switch (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme)
             {
                 case "Light": config.AddLightTheme(); break;
@@ -135,9 +137,15 @@ public partial class App : Application
         {
             switch (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme)
             {
-                case "Light": LiveCharts.CurrentSettings.AddLightTheme(); break;
-                case "Dark": LiveCharts.CurrentSettings.AddDarkTheme(); break;
-                default: LiveCharts.CurrentSettings.AddLightTheme(); break;
+                case "Light":
+                    LiveCharts.Configure(config => config.AddLightTheme());
+                    break;
+                case "Dark":
+                    LiveCharts.Configure(config => config.AddDarkTheme());
+                    break;
+                default:
+                    LiveCharts.Configure(config => config.AddLightTheme());
+                    break;
             };
         };
     }
