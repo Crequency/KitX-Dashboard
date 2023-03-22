@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
-using Common.BasicHelper.UI.Screen;
+using Common.BasicHelper.Graphics.Screen;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.ViewModels;
 using System.Collections.Generic;

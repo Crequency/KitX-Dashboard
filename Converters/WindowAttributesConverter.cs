@@ -1,5 +1,5 @@
 ﻿using Avalonia.Controls;
-using Common.BasicHelper.UI.Screen;
+using Common.BasicHelper.Graphics.Screen;
 
 #pragma warning disable CS8629 // 可为 null 的值类型可为 null。
 

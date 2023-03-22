@@ -1,5 +1,5 @@
 ﻿using Avalonia.Controls;
-using Common.BasicHelper.UI.Screen;
+using Common.BasicHelper.Graphics.Screen;
 using KitX.Web.Rules;
 using KitX_Dashboard.ViewModels;
 
