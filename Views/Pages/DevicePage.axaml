@@ -35,6 +35,24 @@
                            Classes="Font"
                            Text="{DynamicResource Text_Device_Tip_Detected}"/>
             </StackPanel>
+
+            <StackPanel Margin="0,0,20,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+
+                <Button Command="{Binding RestartDevicesServerCommand}">
+                    <icon:MaterialIcon Width="20"
+                                       Height="20"
+                                       Kind="Refresh"/>
+                </Button>
+                <Button Margin="10,0" Command="{Binding StopDevicesServerCommand}">
+                    <icon:MaterialIcon Width="20"
+                                       Height="20"
+                                       Kind="Stop"/>
+                </Button>
+
+            </StackPanel>
         </Grid>
         <DockPanel Margin="10">
             <Border Height="{Binding NoDevice_TipHeight}" DockPanel.Dock="Top">
