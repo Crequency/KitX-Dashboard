@@ -36,6 +36,16 @@ internal class DevicesServer : IDisposable
             {
                 CloseDevicesServerUDPNetworkRequest = false;
 
+                UdpClient_Send = new(Program.Config.Web.UDPPortSend,
+                    AddressFamily.InterNetwork)
+                {
+                    EnableBroadcast = true,
+                    MulticastLoopback = true
+                };
+
+                UdpClient_Receive = new(new IPEndPoint(IPAddress.Any,
+                    Program.Config.Web.UDPPortReceive));
+
                 //  寻找所有支持的网络适配器
                 Log.Information($"Start {nameof(FindSupportNetworkInterfaces)}");
                 try
@@ -114,18 +124,12 @@ internal class DevicesServer : IDisposable
     /// <summary>
     /// UDP 发包客户端
     /// </summary>
-    private static readonly UdpClient UdpClient_Send
-        = new(Program.Config.Web.UDPPortSend, AddressFamily.InterNetwork)
-        {
-            EnableBroadcast = true,
-            MulticastLoopback = true
-        };
+    private static UdpClient? UdpClient_Send = null;
 
     /// <summary>
     /// UDP 收包客户端
     /// </summary>
-    private static readonly UdpClient UdpClient_Receive
-        = new(new IPEndPoint(IPAddress.Any, Program.Config.Web.UDPPortReceive));
+    private static UdpClient? UdpClient_Receive = null;
 
     /// <summary>
     /// 检查网络适配器是否符合要求
@@ -200,7 +204,7 @@ internal class DevicesServer : IDisposable
                 try
                 {
                     foreach (var udpClient in clients)
-                        udpClient.JoinMulticastGroup(multicastAddress, ipAddress);
+                        udpClient?.JoinMulticastGroup(multicastAddress, ipAddress);
 
                     Program.WebManager?.NetworkInterfaceRegistered?.Add(adapter.Name);
 
@@ -229,11 +233,11 @@ internal class DevicesServer : IDisposable
     {
         #region 初始化 UDP 客户端
 
-        UdpClient udpClient = UdpClient_Send;
+        UdpClient? udpClient = UdpClient_Send;
         IPEndPoint multicast =
             new(IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
             Program.Config.Web.UDPPortReceive);
-        udpClient.Client.SetSocketOption(SocketOptionLevel.Socket,
+        udpClient?.Client.SetSocketOption(SocketOptionLevel.Socket,
             SocketOptionName.ReuseAddress, true);
 
         #endregion
@@ -250,7 +254,7 @@ internal class DevicesServer : IDisposable
         {
             timer.Stop();
             timer.Dispose();
-            udpClient.Close();
+            udpClient?.Close();
         }
         timer.Elapsed += (_, _) =>
         {
@@ -278,15 +282,15 @@ internal class DevicesServer : IDisposable
 
                     try
                     {
-                        udpClient.Client.SetSocketOption(SocketOptionLevel.IP,
+                        udpClient?.Client.SetSocketOption(SocketOptionLevel.IP,
                             SocketOptionName.MulticastInterface, item);
-                        udpClient.Send(sendBytes, sendBytes.Length, multicast);
+                        udpClient?.Send(sendBytes, sendBytes.Length, multicast);
 
                         //  将自定义广播消息全部发送
                         while (Messages2BroadCast.Count > 0)
                         {
                             byte[] messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
-                            udpClient.Send(messageBytes, messageBytes.Length, multicast);
+                            udpClient?.Send(messageBytes, messageBytes.Length, multicast);
                         }
                     }
                     catch (Exception ex)
@@ -317,9 +321,9 @@ internal class DevicesServer : IDisposable
     {
         #region 初始化 UDP 客户端
 
-        UdpClient udpClient = UdpClient_Receive;
+        UdpClient? udpClient = UdpClient_Receive;
         IPEndPoint multicast = new(IPAddress.Any, 0);
-        udpClient.Client.SetSocketOption(SocketOptionLevel.Socket,
+        udpClient?.Client.SetSocketOption(SocketOptionLevel.Socket,
             SocketOptionName.ReuseAddress, true);
 
         #endregion
@@ -330,7 +334,7 @@ internal class DevicesServer : IDisposable
             {
                 while (GlobalInfo.Running && !CloseDevicesServerUDPNetworkRequest)
                 {
-                    var bytes = udpClient.Receive(ref multicast);
+                    var bytes = udpClient?.Receive(ref multicast);
                     if (bytes is null) continue;    //  null byte[] cause exception in next line.
                     var result = Encoding.UTF8.GetString(bytes);
                     if (result is null) continue;   //  null string skip.
@@ -349,7 +353,7 @@ internal class DevicesServer : IDisposable
                         Log.Warning(ex, $"{ex.Message}");
                     }
                 }
-                udpClient.Close();
+                udpClient?.Close();
             }
             catch (Exception e)
             {
@@ -357,7 +361,7 @@ internal class DevicesServer : IDisposable
             }
             if (!GlobalInfo.Running)
             {
-                udpClient.Close();
+                udpClient?.Close();
             }
             else
             {

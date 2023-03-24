@@ -243,17 +243,38 @@ internal class DebugCommands
         else return "Missing arguments.";
     }
 
+    public static string? Start(Dictionary<string, string> args)
+    {
+        if (args.ContainsKey("help"))
+            return "" +
+                "- plugins-server\n" +
+                "- devices-server\n" +
+                "- all\n";
+
+        if (args.ContainsKey("plugins-server"))
+            Program.WebManager?.Start(startDevicesServer: false);
+        if (args.ContainsKey("devices-server"))
+            Program.WebManager?.Start(startPluginsServer: false);
+        if (args.ContainsKey("all"))
+            Program.WebManager?.Start();
+
+        return "Start action requested.";
+    }
+
     public static string? Stop(Dictionary<string, string> args)
     {
         if (args.ContainsKey("help"))
             return "" +
-                "1. plugins-server\n" +
-                "2. devices-server";
+                "- plugins-server\n" +
+                "- devices-server\n" +
+                "- all";
 
         if (args.ContainsKey("plugins-server"))
             Program.WebManager?.Stop(stopDevicesServer: false);
         if (args.ContainsKey("devices-server"))
             Program.WebManager?.Stop(stopPluginsServer: false);
+        if (args.ContainsKey("all"))
+            Program.WebManager?.Stop();
 
         return "Stop action requested.";
     }

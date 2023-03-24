@@ -22,7 +22,7 @@ public class WebManager : IDisposable
     /// 开始执行网络相关服务
     /// </summary>
     /// <returns>网络管理器本身</returns>
-    public WebManager Start()
+    public WebManager Start(bool startPluginsServer = true, bool startDevicesServer = true)
     {
         new Thread(() =>
         {
@@ -30,18 +30,24 @@ public class WebManager : IDisposable
             {
                 Log.Information("WebManager: Starting...");
 
-                DevicesManager.InitEvents();
+                if (startDevicesServer)
+                {
+                    DevicesManager.InitEvents();
+                    DevicesManager.KeepCheckAndRemove();
+                    DevicesManager.Watch4MainDevice();
 
-                DevicesManager.KeepCheckAndRemove();
-                DevicesManager.Watch4MainDevice();
-                PluginsManager.KeepCheckAndRemove();
-                PluginsManager.KeepCheckAndRemoveOrDelete();
+                    devicesServer = new();
+                    devicesServer.Start();
+                }
 
-                pluginsServer = new();
-                devicesServer = new();
+                if (startPluginsServer)
+                {
+                    PluginsManager.KeepCheckAndRemove();
+                    PluginsManager.KeepCheckAndRemoveOrDelete();
 
-                pluginsServer.Start();
-                devicesServer.Start();
+                    pluginsServer = new();
+                    pluginsServer.Start();
+                }
             }
             catch (Exception ex)
             {
