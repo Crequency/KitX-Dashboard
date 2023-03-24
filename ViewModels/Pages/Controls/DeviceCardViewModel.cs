@@ -21,9 +21,9 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
     /// <param name="str">字符串</param>
     /// <param name="key">提示语言文件键值</param>
     /// <returns>字符串或者提示</returns>
-    internal static string CheckString(string str, string key)
+    internal static string CheckString(string? str, string key)
     {
-        if (str.Equals("") || str.Equals(string.Empty) || str == null)
+        if (str is null || str.Equals(string.Empty) || str.Equals(""))
         {
             if (Application.Current != null
                 && Application.Current.TryFindResource(key, out object? result))
