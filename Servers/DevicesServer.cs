@@ -34,6 +34,8 @@ internal class DevicesServer : IDisposable
         {
             try
             {
+                CloseDevicesServerUDPNetworkRequest = false;
+
                 //  寻找所有支持的网络适配器
                 Log.Information($"Start {nameof(FindSupportNetworkInterfaces)}");
                 try
@@ -83,6 +85,8 @@ internal class DevicesServer : IDisposable
 
     public void Stop()
     {
+        CloseDevicesServerUDPNetworkRequest = true;
+
         keepListen = false;
 
         foreach (KeyValuePair<string, TcpClient> item in clients)
@@ -104,6 +108,8 @@ internal class DevicesServer : IDisposable
     internal static readonly Queue<string> Messages2BroadCast = new();
 
     internal static DeviceInfoStruct DefaultDeviceInfoStruct = GetDeviceInfo();
+
+    internal static bool CloseDevicesServerUDPNetworkRequest = false;
 
     /// <summary>
     /// UDP 发包客户端
@@ -245,7 +251,6 @@ internal class DevicesServer : IDisposable
             timer.Stop();
             timer.Dispose();
             udpClient.Close();
-            udpClient.Dispose();
         }
         timer.Elapsed += (_, _) =>
         {
@@ -259,6 +264,10 @@ internal class DevicesServer : IDisposable
                 }
 
                 UpdateDefaultDeviceInfoStruct();
+
+                if (CloseDevicesServerUDPNetworkRequest)
+                    DefaultDeviceInfoStruct.SendTime -= TimeSpan.FromSeconds(20);
+
                 string sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
                 byte[] sendBytes = Encoding.UTF8.GetBytes(sendText);
 
@@ -296,7 +305,7 @@ internal class DevicesServer : IDisposable
             {
                 Log.Error(e, $"In MultiDevicesBroadCastSend: {e.Message}");
             }
-            if (!GlobalInfo.Running) EndMultiDevicesBroadCastSend();
+            if (!GlobalInfo.Running || CloseDevicesServerUDPNetworkRequest) EndMultiDevicesBroadCastSend();
         };
         timer.Start();
     }
@@ -319,7 +328,7 @@ internal class DevicesServer : IDisposable
         {
             try
             {
-                while (GlobalInfo.Running)
+                while (GlobalInfo.Running && !CloseDevicesServerUDPNetworkRequest)
                 {
                     var bytes = udpClient.Receive(ref multicast);
                     if (bytes is null) continue;    //  null byte[] cause exception in next line.

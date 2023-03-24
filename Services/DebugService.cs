@@ -242,6 +242,21 @@ internal class DebugCommands
         }
         else return "Missing arguments.";
     }
+
+    public static string? Stop(Dictionary<string, string> args)
+    {
+        if (args.ContainsKey("help"))
+            return "" +
+                "1. plugins-server\n" +
+                "2. devices-server";
+
+        if (args.ContainsKey("plugins-server"))
+            Program.WebManager?.Stop(stopDevicesServer: false);
+        if (args.ContainsKey("devices-server"))
+            Program.WebManager?.Stop(stopPluginsServer: false);
+
+        return "Stop action requested.";
+    }
 }
 
 internal static class DebugServiceTool

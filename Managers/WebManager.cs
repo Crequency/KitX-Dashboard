@@ -56,13 +56,19 @@ public class WebManager : IDisposable
     /// 停止执行网络相关服务
     /// </summary>
     /// <returns>网络管理器本身</returns>
-    public WebManager Stop()
+    public WebManager Stop(bool stopPluginsServer = true, bool stopDevicesServer = true)
     {
-        pluginsServer?.Stop();
-        devicesServer?.Stop();
+        if (stopPluginsServer)
+        {
+            pluginsServer?.Stop();
+            pluginsServer?.Dispose();
+        }
 
-        pluginsServer?.Dispose();
-        devicesServer?.Dispose();
+        if (stopDevicesServer)
+        {
+            devicesServer?.Stop();
+            devicesServer?.Dispose();
+        }
 
         return this;
     }
