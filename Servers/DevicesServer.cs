@@ -438,11 +438,12 @@ internal class DevicesServer : IDisposable
     {
         try
         {
-            string? result = NetworkInterface.GetAllNetworkInterfaces()
+            var mac = NetworkInterface.GetAllNetworkInterfaces()
                 .Where(nic => nic.OperationalStatus == OperationalStatus.Up
                     && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
                 .Select(nic => nic.GetPhysicalAddress().ToString()).FirstOrDefault();
-            return result;
+
+            return mac?.SeparateGroup(2, sb => sb.Append(':'));
         }
         catch (Exception ex)
         {
