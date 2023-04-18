@@ -47,6 +47,18 @@ internal class DevicesManager
            > new TimeSpan(0, 0, Program.Config.Web.DeviceInfoStructTTLSeconds);
 
     /// <summary>
+    /// 判断是否是本机卡片
+    /// </summary>
+    /// <param name="info">设备信息</param>
+    /// <returns>是否是本机卡片</returns>
+    private static bool CheckIsCurrentMachine(DeviceInfoStruct info)
+    {
+        var self = DevicesServer.DefaultDeviceInfoStruct;
+        return info.DeviceMacAddress.Equals(self.DeviceMacAddress)
+            && info.DeviceName.Equals(self.DeviceName);
+    }
+
+    /// <summary>
     /// 更新数据源中的设备信息并添加数据源中没有的设备卡片
     /// </summary>
     private static void UpdateSourceAndAddCards()
@@ -163,28 +175,18 @@ internal class DevicesManager
     }
 
     /// <summary>
-    /// 判断是否是本机卡片
-    /// </summary>
-    /// <param name="info">设备信息</param>
-    /// <returns>是否是本机卡片</returns>
-    private static bool IsSelfCard(DeviceInfoStruct info)
-    {
-        var self = DevicesServer.DefaultDeviceInfoStruct;
-        return info.DeviceMacAddress.Equals(self.DeviceMacAddress)
-            && info.DeviceName.Equals(self.DeviceName);
-    }
-
-    /// <summary>
     /// 移动本机设备卡片到第一个
     /// </summary>
     private static void MoveSelfCard2First()
     {
         var index = 0;
         var moveSelfCardTaskRunning = true;
+
         foreach (var item in Program.DeviceCards)
         {
             var info = item.viewModel.DeviceInfo;
-            if (IsSelfCard(info))
+
+            if (CheckIsCurrentMachine(info))
             {
                 if (index != 0)
                 {
@@ -200,6 +202,7 @@ internal class DevicesManager
                         }
                         moveSelfCardTaskRunning = false;
                     });
+
                     while (moveSelfCardTaskRunning) ;
                 }
                 break;
@@ -280,16 +283,19 @@ internal class DevicesManager
             try
             {
                 receivedDeviceInfoStruct4Watch = new();
+
                 var checkedTime = 0;
                 var hadMainDevice = false;
                 var earliestBuiltServerTime = DateTime.UtcNow;
                 var serverPort = 0;
                 var serverAddress = string.Empty;
+
                 while (checkedTime < 7)
                 {
                     try
                     {
                         if (receivedDeviceInfoStruct4Watch is null) continue;
+
                         foreach (var item in receivedDeviceInfoStruct4Watch)
                         {
                             if (item.IsMainDevice)
@@ -303,21 +309,26 @@ internal class DevicesManager
                                 hadMainDevice = true;
                             }
                         }
+
                         ++checkedTime;
+
                         Log.Information($"In Watch4MainDevice: " +
                             $"Watched for {checkedTime} times.");
+
                         if (checkedTime == 7)
                         {
                             receivedDeviceInfoStruct4Watch?.Clear();
                             receivedDeviceInfoStruct4Watch = null;
                             WatchingOver(hadMainDevice, serverAddress, serverPort);
                         }
+
                         Thread.Sleep(1 * 1000); //  Sleep 1 second.
                     }
                     catch (Exception e)
                     {
                         receivedDeviceInfoStruct4Watch?.Clear();
                         receivedDeviceInfoStruct4Watch = null;
+
                         Log.Error(e, "In Watch4MainDevice");
                     }
                 }
@@ -326,6 +337,7 @@ internal class DevicesManager
             {
                 receivedDeviceInfoStruct4Watch?.Clear();
                 receivedDeviceInfoStruct4Watch = null;
+
                 Log.Error(ex, "In Watch4MainDevice");
             }
         }).Start();
@@ -338,6 +350,7 @@ internal class DevicesManager
     {
         Log.Information($"In WatchingOver: hadMainDevice: {hadMainDevice}, " +
             $"serverAddress: {serverAddress}, serverPort: {serverPort}");
+
         if (hadMainDevice)
         {
             Program.WebManager?.devicesServer?.AttendServer(serverAddress, serverPort);

@@ -92,7 +92,7 @@ internal class PluginsServer : IDisposable
                         }
                         catch (Exception ex)
                         {
-                            Log.Error(ex, "In WebManager.AcceptClient().ReciveMessage()", ex);
+                            Log.Error(ex, "In WebManager.AcceptClient().ReceiveMessageFromHost()", ex);
                         }
                     }).Start();
                 }
@@ -168,7 +168,7 @@ internal class PluginsServer : IDisposable
         }
         catch (Exception ex)
         {
-            Log.Error(ex, $"Error: In ReciveMessage() : {ex.Message}");
+            Log.Error(ex, $"Error: In ReceiveMessageFromHost() : {ex.Message}");
             Log.Information($"Connection broke from: {endpoint}");
 
             //Read是阻塞方法 客户端退出是会引发异常 释放资源 结束此线程

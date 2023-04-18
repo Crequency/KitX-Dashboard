@@ -135,7 +135,7 @@ internal class DebugCommands
                 case "clientmessage":
                     if (args.ContainsKey("--value"))
                     {
-                        Program.WebManager?.devicesServer?.SendMessage(args["--value"]);
+                        Program.WebManager?.devicesServer?.SendMessageToHost(args["--value"]);
                         return $"Sent msg: {args["--value"]}";
                     }
                     else return "Missing value of `--value`.";

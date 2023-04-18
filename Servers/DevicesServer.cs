@@ -575,6 +575,7 @@ internal class DevicesServer : IDisposable
     #region TCP Socket 服务于设备间组网
 
     internal Thread? acceptDeviceThread;
+    internal Thread? receiveMessageThread;
     internal TcpClient? DevicesHost;
     internal TcpListener? listener;
     internal bool keepListen = true;
@@ -612,6 +613,8 @@ internal class DevicesServer : IDisposable
         GlobalInfo.IsMainMachine = false;
         GlobalInfo.DeviceServerPort = -1;
 
+        EventService.Invoke(nameof(EventService.DevicesServerPortChanged));
+
         keepListen = false;
         acceptDeviceThread?.Join();
 
@@ -644,12 +647,12 @@ internal class DevicesServer : IDisposable
                         {
                             try
                             {
-                                ReciveMessage(client);
+                                ReceiveMessage(client);
                             }
                             catch (Exception e)
                             {
                                 Log.Error(e,
-                                    "In DevicesServer.AcceptClient().ReciveMessage()");
+                                    "In DevicesServer.AcceptClient().ReceiveMessageFromHost()");
                             }
                         }).Start();
                     }
@@ -667,10 +670,21 @@ internal class DevicesServer : IDisposable
     }
 
     /// <summary>
-    /// 接收消息
+    /// 向客户端发送消息
+    /// </summary>
+    /// <param name="msg">消息内容</param>
+    /// <param name="client">客户端</param>
+    internal void SendMessage(string msg, string client)
+    {
+        if (clients.ContainsKey(client))
+            clients[client].Client.Send(Encoding.UTF8.GetBytes(msg));
+    }
+
+    /// <summary>
+    /// 接收客户端消息
     /// </summary>
     /// <param name="obj">TcpClient</param>
-    private async void ReciveMessage(object obj)
+    private async void ReceiveMessage(object obj)
     {
         TcpClient? client = obj as TcpClient;
         IPEndPoint? endpoint = null;
@@ -684,9 +698,12 @@ internal class DevicesServer : IDisposable
             while (keepListen && stream != null)
             {
                 byte[] data = new byte[Program.Config.Web.SocketBufferSize];
+
                 //如果远程主机已关闭连接,Read将立即返回零字节
                 //int length = await stream.ReadAsync(data, 0, data.Length);
+
                 int length = await stream.ReadAsync(data);
+
                 if (length > 0)
                 {
                     string msg = Encoding.UTF8.GetString(data, 0, length);
@@ -714,7 +731,7 @@ internal class DevicesServer : IDisposable
         }
         catch (Exception ex)
         {
-            Log.Error($"Error: In ReciveMessage() : {ex.Message}");
+            Log.Error($"Error: In ReceiveMessageFromHost() : {ex.Message}");
             Log.Information($"Connection broke from: {endpoint}");
 
             //Read是阻塞方法 客户端退出是会引发异常 释放资源 结束此线程
@@ -726,6 +743,7 @@ internal class DevicesServer : IDisposable
             {
                 clients.Remove(endpoint.ToString());
             }
+
             stream?.Close();
             stream?.Dispose();
             client?.Dispose();
@@ -733,18 +751,7 @@ internal class DevicesServer : IDisposable
     }
 
     /// <summary>
-    /// 向客户端发送消息
-    /// </summary>
-    /// <param name="msg">消息内容</param>
-    /// <param name="client">客户端</param>
-    internal void SendMessage(string msg, string client)
-    {
-        if (clients.ContainsKey(client))
-            clients[client].Client.Send(Encoding.UTF8.GetBytes(msg));
-    }
-
-    /// <summary>
-    /// 广播消息
+    /// 向所有客户端广播消息
     /// </summary>
     /// <param name="msg">消息</param>
     internal void BroadCastMessage(string msg, Func<TcpClient, bool>? pattern)
@@ -767,11 +774,19 @@ internal class DevicesServer : IDisposable
         try
         {
             DevicesHost?.Connect(serverAddress, serverPort);
+
+            keepListen = true;
+
+            receiveMessageThread = new(ReceiveMessageFromHost);
+
+            receiveMessageThread.Start();
+
             Log.Information($"Attending Server -> {serverAddress}:{serverPort}");
         }
         catch (Exception ex)
         {
             var location = $"{nameof(DevicesServer)}.{nameof(AttendServer)}";
+
             Log.Error(ex, $"In {location}: {ex.Message}");
         }
     }
@@ -780,17 +795,85 @@ internal class DevicesServer : IDisposable
     /// 向主控发送消息
     /// </summary>
     /// <param name="msg">消息内容</param>
-    internal void SendMessage(string msg)
+    internal void SendMessageToHost(string msg)
     {
         try
         {
-            DevicesHost?.Client.Send(Encoding.UTF8.GetBytes(msg));
+            var stream = DevicesHost?.GetStream();
+
+            if (stream is null) return;
+
+            var data = Encoding.UTF8.GetBytes(msg);
+
+            stream.Write(data, 0, data.Length);
+            stream.Flush();
+
+            //DevicesHost?.Client.Send(Encoding.UTF8.GetBytes(msg));
+
             Log.Information($"Sent Message to Host, msg: {msg}");
         }
         catch (Exception e)
         {
             var location = $"{nameof(DevicesServer)}.{nameof(SendMessage)}";
+
             Log.Error(e, $"In {location}: {e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 从主控接收消息
+    /// </summary>
+    internal async void ReceiveMessageFromHost()
+    {
+        if (DevicesHost is null) return;
+
+        var stream = DevicesHost?.GetStream();
+
+        if (stream is null) return;
+
+        var buffer = new byte[Program.Config.Web.SocketBufferSize];  //  Default 10 MB buffer
+
+        try
+        {
+            while (keepListen)
+            {
+
+                if (buffer is null) break;
+
+                var length = await stream.ReadAsync(buffer);
+
+                if (length > 0)
+                {
+                    var msg = Encoding.UTF8.GetString(buffer, 0, length);
+
+                    Log.Information($"Receive from Host: {msg}");
+                }
+                else
+                {
+                    keepListen = false;
+                    break;
+                }
+            }
+
+            stream.Close();
+            stream.Dispose();
+
+            Log.Information($"Closing `{nameof(ReceiveMessageFromHost)}` thread.");
+
+            Program.WebManager?.Restart(restartPluginsServer: false);
+        }
+        catch (Exception e)
+        {
+            var location = $"{nameof(DevicesServer)}.{nameof(ReceiveMessage)}";
+            Log.Error(e, $"In {location}: {e.Message}");
+
+            stream.Close();
+            stream.Dispose();
+
+            DevicesHost?.Close();
+            DevicesHost?.Dispose();
+
+            Program.WebManager?.Restart(restartPluginsServer: false);
         }
     }
 
