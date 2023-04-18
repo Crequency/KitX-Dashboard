@@ -817,6 +817,8 @@ internal class DevicesServer : IDisposable
             var location = $"{nameof(DevicesServer)}.{nameof(SendMessage)}";
 
             Log.Error(e, $"In {location}: {e.Message}");
+
+            Program.WebManager?.Restart(restartPluginsServer: false);
         }
     }
 
