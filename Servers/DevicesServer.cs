@@ -814,7 +814,7 @@ internal class DevicesServer : IDisposable
         }
         catch (Exception e)
         {
-            var location = $"{nameof(DevicesServer)}.{nameof(SendMessage)}";
+            var location = $"{nameof(DevicesServer)}.{nameof(SendMessageToHost)}";
 
             Log.Error(e, $"In {location}: {e.Message}");
 
@@ -866,7 +866,7 @@ internal class DevicesServer : IDisposable
         }
         catch (Exception e)
         {
-            var location = $"{nameof(DevicesServer)}.{nameof(ReceiveMessage)}";
+            var location = $"{nameof(DevicesServer)}.{nameof(ReceiveMessageFromHost)}";
             Log.Error(e, $"In {location}: {e.Message}");
 
             stream.Close();
