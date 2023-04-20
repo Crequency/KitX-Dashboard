@@ -105,10 +105,10 @@ public static class Helper
 
         Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
         {
-            new Thread(() =>
+            new Thread(async () =>
             {
                 Thread.Sleep(Program.Config.Web.DelayStartSeconds * 1000);
-                Program.WebManager = new WebManager().Start();
+                Program.WebManager = await new WebManager().Start();
             }).Start();
         });
 

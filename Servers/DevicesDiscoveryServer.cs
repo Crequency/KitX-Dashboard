@@ -50,7 +50,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     }
 
     /// <summary>
-    /// 寻找受支持的网络适配器并把UDP客户端加入组播
+    /// 寻找受支持的网络适配器并把 UDP 客户端加入组播
     /// </summary>
     private static void FindSupportNetworkInterfaces(List<UdpClient> clients, IPAddress multicastAddress)
     {

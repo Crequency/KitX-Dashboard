@@ -55,18 +55,25 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
     internal static void RestartDevicvesServer(object _)
     {
         Program.WebManager?.Restart(
-            restartPluginsServer: false,
+            restartAll: false,
+            restartDevicesServer: false,
+            restartDevicesDiscoveryServer: true,
             actionBeforeStarting: () => DeviceCards.Clear()
         );
     }
 
     internal static void StopDevicvesServer(object _)
     {
-        Program.WebManager?.Stop(stopPluginsServer: false);
+        Program.WebManager?.Stop(
+            stopAll: false,
+            stopDevicesServer: true,
+            stopDevicesDiscoveryServer: true
+        );
 
         Task.Run(async () =>
         {
             await Task.Delay(Program.Config.Web.UDPSendFrequency + 200);
+
             DeviceCards.Clear();
         });
     }
