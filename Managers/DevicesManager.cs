@@ -53,7 +53,7 @@ internal class DevicesManager
     /// <returns>是否是本机卡片</returns>
     private static bool CheckIsCurrentMachine(DeviceInfoStruct info)
     {
-        var self = DevicesServer.DefaultDeviceInfoStruct;
+        var self = DevicesDiscoveryServer.DefaultDeviceInfoStruct;
         return info.DeviceMacAddress.Equals(self.DeviceMacAddress)
             && info.DeviceName.Equals(self.DeviceName);
     }

@@ -310,7 +310,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         string link = "https://" +
             Program.Config.Web.UpdateServer +
             Program.Config.Web.UpdatePath.Replace("%platform%",
-                DevicesServer.DefaultDeviceInfoStruct.DeviceOSType switch
+                DevicesDiscoveryServer.DefaultDeviceInfoStruct.DeviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",
@@ -521,7 +521,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         string downloadLinkBase = "https://" +
         Program.Config.Web.UpdateServer +
         Program.Config.Web.UpdateDownloadPath.Replace("%platform%",
-            DevicesServer.DefaultDeviceInfoStruct.DeviceOSType switch
+            DevicesDiscoveryServer.DefaultDeviceInfoStruct.DeviceOSType switch
             {
                 OperatingSystems.Windows => "win",
                 OperatingSystems.Linux => "linux",

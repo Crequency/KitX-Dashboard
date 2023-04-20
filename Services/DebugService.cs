@@ -127,7 +127,7 @@ internal class DebugCommands
                 case "deviceudppack":
                     if (args.ContainsKey("--value"))
                     {
-                        DevicesServer.Messages2BroadCast.Enqueue(args["--value"]);
+                        DevicesDiscoveryServer.Messages2BroadCast.Enqueue(args["--value"]);
                         return "Appended value to broadcast list.";
                     }
                     else return "Missing value of `--value`.";
