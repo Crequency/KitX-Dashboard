@@ -17,6 +17,8 @@ public class WebManager : IDisposable
     internal PluginsServer? pluginsServer;
     internal DevicesServer? devicesServer;
 
+    internal DevicesDiscoveryServer? devicesDiscoveryServer;
+
     internal ObservableCollection<string>? NetworkInterfaceRegistered;
 
     /// <summary>
@@ -27,7 +29,7 @@ public class WebManager : IDisposable
     /// <returns>网络管理器本身</returns>
     public WebManager Start(bool startPluginsServer = true, bool startDevicesServer = true)
     {
-        new Thread(() =>
+        new Thread(async () =>
         {
             try
             {
@@ -51,6 +53,8 @@ public class WebManager : IDisposable
                     pluginsServer = new();
                     pluginsServer.Start();
                 }
+
+                devicesDiscoveryServer = await new DevicesDiscoveryServer().Start();
             }
             catch (Exception ex)
             {
@@ -80,6 +84,8 @@ public class WebManager : IDisposable
             devicesServer?.Stop();
             devicesServer?.Dispose();
         }
+
+        devicesDiscoveryServer?.Stop();
 
         return this;
     }
