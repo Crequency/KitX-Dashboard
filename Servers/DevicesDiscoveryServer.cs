@@ -34,9 +34,20 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     private static readonly List<int> SupportedNetworkInterfacesIndexes = new();
 
+    private static ServerStatus status = ServerStatus.Unknown;
+
     internal static readonly Queue<string> Messages2BroadCast = new();
 
     internal static DeviceInfoStruct DefaultDeviceInfoStruct = NetworkHelper.GetDeviceInfo();
+
+    internal static ServerStatus Status
+    {
+        get => status;
+        set
+        {
+            status = value;
+        }
+    }
 
     /// <summary>
     /// 寻找受支持的网络适配器并把UDP客户端加入组播
@@ -252,6 +263,8 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             catch (Exception e)
             {
                 Log.Error(e, $"In {location}: {e.Message}");
+
+                Status = ServerStatus.Errored;
             }
 
             await Stop();
@@ -271,6 +284,8 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     public async Task<DevicesDiscoveryServer> Start()
     {
+        Status = ServerStatus.Starting;
+
         Init();
 
         UdpSender = new(Program.Config.Web.UDPPortSend, AddressFamily.InterNetwork)
@@ -312,11 +327,15 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             nameof(MultiDevicesBroadCastReceive)
         ); // 开始接收组播报文
 
+        Status = ServerStatus.Running;
+
         return this;
     }
 
     public async Task<DevicesDiscoveryServer> Stop()
     {
+        Status = ServerStatus.Stopping;
+
         await Task.Run(() =>
         {
             CloseDevicesDiscoveryServerRequest = true;
@@ -328,6 +347,8 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             UdpSender?.Close();
             UdpReceiver?.Close();
         });
+
+        Status = ServerStatus.Pending;
 
         return this;
     }
