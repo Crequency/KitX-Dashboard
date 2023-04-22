@@ -1,110 +1,63 @@
-﻿using KitX_Dashboard.Data;
+﻿using Common.BasicHelper.Utils.Extensions;
+using KitX_Dashboard.Data;
+using KitX_Dashboard.Interfaces.Network;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
-#pragma warning disable CS8600 // 将 null 字面量或可能为 null 的值转换为非 null 类型。
 #pragma warning disable CS8602 // 解引用可能出现空引用。
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
 
 namespace KitX_Dashboard.Network;
 
-internal class PluginsServer : IDisposable
+internal class PluginsServer : IKitXServer<PluginsServer>
 {
-    public PluginsServer()
-    {
-        var port = Program.Config.Web.UserSpecifiedPluginsServerPort;
-        if (port < 0 || port >= 65536) port = null;
-        listener = new(IPAddress.Any, port ?? 0);
-        acceptPluginThread = new(AcceptClient);
-    }
+    private static TcpListener? listener = null;
 
-    #region TCP Socket 服务于 Loaders 的服务器
+    private static bool keepListen = true;
 
-    /// <summary>
-    /// 开始执行
-    /// </summary>
-    public void Start()
-    {
-        listener.Start();
+    private static readonly Dictionary<string, TcpClient> clients = new();
 
-        int port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
-        GlobalInfo.PluginServerPort = port; // 全局端口号标明
-        EventService.Invoke(nameof(EventService.PluginsServerPortChanged));
-
-        Log.Information($"PluginsServer Port: {port}");
-
-        acceptPluginThread.Start();
-    }
-
-    /// <summary>
-    /// 停止进程
-    /// </summary>
-    public void Stop()
-    {
-        keepListen = false;
-
-        foreach (KeyValuePair<string, TcpClient> item in clients)
-        {
-            item.Value.Close();
-            item.Value.Dispose();
-        }
-
-        acceptPluginThread.Join();
-    }
-
-    public Thread acceptPluginThread;
-    public TcpListener listener;
-    public bool keepListen = true;
-
-    public readonly Dictionary<string, TcpClient> clients = new();
+    private static Action<byte[], int?, string>? onReceive = null;
 
     /// <summary>
     /// 接收客户端
     /// </summary>
-    private void AcceptClient()
+    private static void AcceptClient()
     {
+        var location = $"{nameof(PluginsServer)}.{nameof(AcceptClient)}";
+
         try
         {
             while (keepListen)
             {
                 if (listener.Pending())
                 {
-                    TcpClient client = listener.AcceptTcpClient();
-                    IPEndPoint endpoint = client.Client.RemoteEndPoint as IPEndPoint;
+                    var client = listener.AcceptTcpClient();
+                    var endpoint = client.Client.RemoteEndPoint as IPEndPoint;
+
                     clients.Add(endpoint.ToString(), client);
 
                     Log.Information($"New plugin connection: {endpoint}");
 
-                    // 新建并运行接收消息线程
-                    new Thread(() =>
-                    {
-                        try
-                        {
-                            ReciveMessage(client);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "In WebManager.AcceptClient().ReceiveMessageFromHost()", ex);
-                        }
-                    }).Start();
+                    ReciveMessage(client);
                 }
-                else
-                {
-                    Thread.Sleep(100);
-                }
+                //else
+                //{
+                //    Thread.Sleep(100);
+                //}
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, $"In AcceptClient() : {ex.Message}");
+            Log.Error(ex, $"In {location}: {ex.Message}");
         }
     }
 
@@ -112,89 +65,167 @@ internal class PluginsServer : IDisposable
     /// 接收消息
     /// </summary>
     /// <param name="obj">TcpClient</param>
-    private async void ReciveMessage(object obj)
+    private static void ReciveMessage(TcpClient client)
     {
-        TcpClient client = obj as TcpClient;
-        IPEndPoint endpoint = null;
-        NetworkStream stream = null;
+        var location = $"{nameof(PluginsServer)}.{nameof(ReciveMessage)}";
 
-        try
+        IPEndPoint? endpoint = null;
+        NetworkStream? stream = null;
+
+        new Thread(async () =>
         {
-            endpoint = client.Client.RemoteEndPoint as IPEndPoint;
-            stream = client.GetStream();
-
-            while (keepListen)
+            try
             {
-                byte[] data = new byte[Program.Config.Web.SocketBufferSize];
-                //如果远程主机已关闭连接,Read将立即返回零字节
-                //int length = await stream.ReadAsync(data, 0, data.Length);
-                int length = await stream.ReadAsync(data);
-                if (length > 0)
+                endpoint = client.Client.RemoteEndPoint as IPEndPoint;
+                stream = client.GetStream();
+
+                while (keepListen)
                 {
-                    string msg = Encoding.UTF8.GetString(data, 0, length);
+                    var buffer = new byte[Program.Config.Web.SocketBufferSize];
 
-                    Log.Information($"From: {endpoint}\tReceive: {msg}");
+                    var length = await stream.ReadAsync(buffer);
 
-                    if (false)
+                    if (length > 0)
                     {
+                        onReceive?.Invoke(buffer, length, endpoint.ToString());
 
+                        var msg = Encoding.UTF8.GetString(buffer, 0, length);
+
+                        Log.Information($"From: {endpoint}\tReceive: {msg}");
+
+                        if (msg.StartsWith("PluginStruct: "))
+                        {
+                            PluginsManager.Execute(msg[14..], endpoint);
+
+                            var workPath = Program.Config.App.LocalPluginsDataFolder.GetFullPath();
+                            var sendtxt = $"WorkPath: {workPath}";
+                            var bytes = Encoding.UTF8.GetBytes(sendtxt);
+
+                            stream?.Write(bytes, 0, bytes.Length);
+                        }
+
+                        //发送到其他客户端
+                        //foreach (KeyValuePair<string, TcpClient> kvp in clients)
+                        //{
+                        //    if (kvp.Value != client)
+                        //    {
+                        //        byte[] writeData = Encoding.UTF8.GetBytes(msg);
+                        //        NetworkStream writeStream = kvp.Value.GetStream();
+                        //        writeStream.Write(writeData, 0, writeData.Length);
+                        //    }
+                        //}
                     }
-                    else if (msg.StartsWith("PluginStruct: "))
-                    {
-                        PluginsManager.Execute(msg[14..], endpoint);
-                        string workPath = Path.GetFullPath(Program.Config.App.LocalPluginsDataFolder);
-                        string sendtxt = $"WorkPath: {workPath}";
-                        byte[] bytes = Encoding.UTF8.GetBytes(sendtxt);
-                        stream.Write(bytes, 0, bytes.Length);
-                    }
-
-                    //发送到其他客户端
-                    //foreach (KeyValuePair<string, TcpClient> kvp in clients)
-                    //{
-                    //    if (kvp.Value != client)
-                    //    {
-                    //        byte[] writeData = Encoding.UTF8.GetBytes(msg);
-                    //        NetworkStream writeStream = kvp.Value.GetStream();
-                    //        writeStream.Write(writeData, 0, writeData.Length);
-                    //    }
-                    //}
-                }
-                else
-                {
-
-                    break; //客户端断开连接 跳出循环
+                    else break; //客户端断开连接 跳出循环
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, $"Error: In ReceiveMessageFromHost() : {ex.Message}");
-            Log.Information($"Connection broke from: {endpoint}");
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"In {location}: {ex.Message}");
+                Log.Information($"Connection broke from: {endpoint}");
+            }
+            finally
+            {
+                PluginsManager.Disconnect(endpoint);
 
-            //Read是阻塞方法 客户端退出是会引发异常 释放资源 结束此线程
-        }
-        finally
-        {
-            //释放资源
-            PluginsManager.Disconnect(endpoint); //注销插件
-            stream.Close();
-            stream.Dispose();
-            clients.Remove(endpoint.ToString());
-            client.Dispose();
-        }
+                stream?.CloseAndDispose();
+
+                clients.Remove(endpoint.ToString());
+
+                client.Dispose();
+            }
+        }).Start();
     }
-    #endregion
+
+    private static void Init()
+    {
+        var port = Program.Config.Web.UserSpecifiedPluginsServerPort;
+
+        if (port < 0 || port > 65535) port = null;
+
+        listener = new(IPAddress.Any, port ?? 0);
+    }
+
+    public async Task<PluginsServer> Broadcast(byte[] content)
+    {
+        await Task.Run(() => { });
+
+        return this;
+    }
+
+    public async Task<PluginsServer> BroadCast(byte[] content, Func<TcpClient, bool>? pattern)
+    {
+        await Task.Run(() => { });
+
+        return this;
+    }
+
+    public async Task<PluginsServer> Send(byte[] content, string target)
+    {
+        await Task.Run(() => { });
+
+        return this;
+    }
+
+    public PluginsServer OnReceive(Action<byte[], int?, string> action)
+    {
+        onReceive = action;
+
+        return this;
+    }
+
+    public async Task<PluginsServer> Start()
+    {
+        await TasksManager.RunTaskAsync(() =>
+        {
+            Init();
+
+            listener.Start();
+
+            var port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
+
+            GlobalInfo.PluginServerPort = port; // 全局端口号标明
+
+            EventService.Invoke(nameof(EventService.PluginsServerPortChanged));
+
+            Log.Information($"PluginsServer Port: {port}");
+
+            new Thread(AcceptClient).Start();
+        });
+
+        return this;
+    }
+
+    public async Task<PluginsServer> Stop()
+    {
+        keepListen = false;
+
+        await Task.Run(() =>
+        {
+            foreach (KeyValuePair<string, TcpClient> item in clients)
+            {
+                item.Value.Close();
+                item.Value.Dispose();
+            }
+        });
+
+        return this;
+    }
+
+    public async Task<PluginsServer> Restart()
+    {
+        await Task.Run(() => { });
+
+        return this;
+    }
 
     public void Dispose()
     {
         keepListen = false;
         listener.Stop();
-        acceptPluginThread.Join();
+
         GC.SuppressFinalize(this);
     }
-
 }
 
 #pragma warning restore CS8604 // 引用类型参数可能为 null。
 #pragma warning restore CS8602 // 解引用可能出现空引用。
-#pragma warning restore CS8600 // 将 null 字面量或可能为 null 的值转换为非 null 类型。

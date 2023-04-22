@@ -59,8 +59,7 @@ public class WebManager : IDisposable
                     PluginsManager.KeepCheckAndRemove();
                     PluginsManager.KeepCheckAndRemoveOrDelete();
 
-                    pluginsServer = new();
-                    pluginsServer.Start();
+                    pluginsServer = await new PluginsServer().Start();
                 }
             }
             catch (Exception ex)
@@ -91,19 +90,19 @@ public class WebManager : IDisposable
     )
     {
         if (stopAll || stopPluginsServer)
-        {
-            pluginsServer?.Stop();
-            pluginsServer?.Dispose();
-        }
+            pluginsServer?.Stop().ContinueWith(
+                server => server.Dispose()
+            );
 
         if (stopAll || stopDevicesServer)
-        {
-            devicesServer?.Stop();
-            devicesServer?.Dispose();
-        }
+            devicesServer?.Stop().ContinueWith(
+                server => server.Dispose()
+            );
 
         if (stopAll || stopDevicesDiscoveryServer)
-            devicesDiscoveryServer?.Stop();
+            devicesDiscoveryServer?.Stop().ContinueWith(
+                server => server.Dispose()
+            );
 
         return this;
     }
@@ -146,6 +145,7 @@ public class WebManager : IDisposable
                 restartDevicesDiscoveryServer
             );
         });
+
         return this;
     }
 
