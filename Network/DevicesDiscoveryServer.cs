@@ -39,7 +39,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     private static ServerStatus status = ServerStatus.Unknown;
 
-    private static Action<byte[], string>? onReceive = null;
+    private static Action<byte[], int?, string>? onReceive = null;
 
     internal static readonly Queue<string> Messages2BroadCast = new();
 
@@ -171,6 +171,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         UdpSendTimer.Elapsed += async (_, _) =>
         {
             --erroredInterfacesIndexesTTL;
+
             if (erroredInterfacesIndexesTTL <= 0)
             {
                 erroredInterfacesIndexesTTL = 60;
@@ -187,6 +188,8 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
             foreach (var item in SupportedNetworkInterfacesIndexes)
             {
+                if (!GlobalInfo.Running || CloseDevicesDiscoveryServerRequest) break;
+
                 // 如果错误网络适配器中存在当前项的记录, 跳过
                 if (erroredInterfacesIndexes.Contains(item)) continue;
 
@@ -251,7 +254,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
                     if (bytes is null) continue;    //  null byte[] cause exception in next line.
 
-                    onReceive?.Invoke(bytes, client);
+                    onReceive?.Invoke(bytes, null, client);
 
                     var result = Encoding.UTF8.GetString(bytes);
 
@@ -399,9 +402,9 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     /// </summary>
     /// <param name="action">处理代码, 参数一为接收到的数据 (byte[]), 参数二是数据发送者, ip:port</param>
     /// <returns>设备自发现网络服务器本身</returns>
-    public async Task<DevicesDiscoveryServer> OnReceive(Action<byte[], string> action)
+    public DevicesDiscoveryServer OnReceive(Action<byte[], int?, string> action)
     {
-        await Task.Run(() => onReceive = action);
+        onReceive = action;
 
         return this;
     }

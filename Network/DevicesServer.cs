@@ -348,10 +348,8 @@ internal class DevicesServer : IKitXServer<DevicesServer>
         return this;
     }
 
-    public async Task<DevicesServer> OnReceive(Action<byte[], string> action)
+    public DevicesServer OnReceive(Action<byte[], int?, string> action)
     {
-        await Task.Run(() => { });
-
         return this;
     }
 

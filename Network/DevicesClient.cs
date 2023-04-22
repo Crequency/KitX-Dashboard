@@ -20,10 +20,8 @@ internal class DevicesClient : IKitXClient<DevicesClient>
         return this;
     }
 
-    public async Task<DevicesClient> OnReceive(Action<byte[]> action)
+    public DevicesClient OnReceive(Action<byte[], int?> action)
     {
-        await Task.Run(() => { });
-
         return this;
     }
 
