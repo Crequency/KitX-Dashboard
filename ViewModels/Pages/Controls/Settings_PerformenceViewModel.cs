@@ -410,7 +410,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     /// <summary>
     /// 支持的日志级别列表
     /// </summary>
-    internal static List<SurpportLogLevel> SurpportLogLevels { get; } = new()
+    internal static List<SupportedLogLevel> SupportedLogLevels { get; } = new()
     {
         new()
         {
@@ -450,13 +450,13 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         },
     };
 
-    internal SurpportLogLevel? _currentLogLevel = SurpportLogLevels.Find(
+    internal SupportedLogLevel? _currentLogLevel = SupportedLogLevels.Find(
         x => x.LogEventLevel == Program.Config.Log.LogLevel);
 
     /// <summary>
     /// 当前日志记录级别
     /// </summary>
-    internal SurpportLogLevel? CurrentLogLevel
+    internal SupportedLogLevel? CurrentLogLevel
     {
         get => _currentLogLevel;
         set
