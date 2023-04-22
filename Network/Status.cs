@@ -1,4 +1,4 @@
-﻿namespace KitX_Dashboard.Servers;
+﻿namespace KitX_Dashboard.Network;
 
 internal enum NetworkStatus
 {
@@ -17,4 +17,11 @@ internal enum ServerStatus
     Stopping = 3,
     Pending = 4,
     Errored = 5,
+}
+
+internal enum NetworkType
+{
+    Unknown = 0,
+    Server = 1,
+    Client = 2,
 }

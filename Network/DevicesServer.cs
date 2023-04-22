@@ -1,4 +1,5 @@
 ﻿using KitX_Dashboard.Data;
+using KitX_Dashboard.Interfaces.Network;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using Serilog;
@@ -8,50 +9,13 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Servers;
+namespace KitX_Dashboard.Network;
 
-internal class DevicesServer : IDisposable
+internal class DevicesServer : IKitXServer<DevicesServer>
 {
-
-    public DevicesServer()
-    {
-
-    }
-
-    public void Start()
-    {
-        new Thread(() =>
-        {
-            try
-            {
-                Log.Information($"Start Init {nameof(DevicesHost)}");
-                //  初始化自组网
-                DevicesHost = new();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"In {nameof(DevicesServer)}, " +
-                    $"Init {nameof(DevicesHost)}");
-            }
-        }).Start();
-    }
-
-    public void Stop()
-    {
-        keepListen = false;
-
-        foreach (KeyValuePair<string, TcpClient> item in clients)
-        {
-            item.Value.Close();
-            item.Value.Dispose();
-        }
-
-        acceptDeviceThread?.Join();
-
-        DevicesHost?.Close();
-        DevicesHost?.Dispose();
-    }
+    public NetworkType Type { get; set; } = NetworkType.Unknown;
 
     internal Thread? acceptDeviceThread;
     internal Thread? receiveMessageThread;
@@ -363,4 +327,73 @@ internal class DevicesServer : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    public async Task<DevicesServer> Broadcast(byte[] content)
+    {
+        await Task.Run(() => { });
+
+        return this;
+    }
+
+    public async Task<DevicesServer> BroadCast(byte[] content, Func<TcpClient, bool>? pattern)
+    {
+        await Task.Run(() => { });
+
+        return this;
+    }
+
+    public async Task<DevicesServer> Send(byte[] content, string target)
+    {
+        await Task.Run(() => { });
+
+        return this;
+    }
+
+    public async Task<DevicesServer> OnReceive(Action<byte[], string> action)
+    {
+        await Task.Run(() => { });
+
+        return this;
+    }
+
+    public async Task<DevicesServer> Start()
+    {
+        await TasksManager.RunTaskAsync(() =>
+        {
+            DevicesHost = new();
+        }, $"{nameof(DevicesServer)}.{nameof(Start)}");
+
+        return this;
+    }
+
+    public async Task<DevicesServer> Stop()
+    {
+        await Task.Run(() =>
+        {
+            keepListen = false;
+
+            foreach (KeyValuePair<string, TcpClient> item in clients)
+            {
+                item.Value.Close();
+                item.Value.Dispose();
+            }
+
+            acceptDeviceThread?.Join();
+
+            DevicesHost?.Close();
+            DevicesHost?.Dispose();
+        });
+
+        return this;
+    }
+
+    public async Task<DevicesServer> Restart()
+    {
+        await Task.Run(async () =>
+        {
+            await Start();
+            await Stop();
+        });
+
+        return this;
+    }
 }

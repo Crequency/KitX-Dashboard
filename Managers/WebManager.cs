@@ -1,4 +1,4 @@
-﻿using KitX_Dashboard.Servers;
+﻿using KitX_Dashboard.Network;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
@@ -51,8 +51,7 @@ public class WebManager : IDisposable
                     DevicesManager.KeepCheckAndRemove();
                     DevicesManager.Watch4MainDevice();
 
-                    devicesServer = new();
-                    devicesServer.Start();
+                    devicesServer = await new DevicesServer().Start();
                 }
 
                 if (startAll || startPluginsServer)

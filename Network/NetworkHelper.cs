@@ -11,7 +11,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-namespace KitX_Dashboard.Servers;
+namespace KitX_Dashboard.Network;
 
 internal static class NetworkHelper
 {

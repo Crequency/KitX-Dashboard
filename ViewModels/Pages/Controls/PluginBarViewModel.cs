@@ -4,7 +4,7 @@ using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Models;
-using KitX_Dashboard.Servers;
+using KitX_Dashboard.Network;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
 using KitX_Dashboard.Views.Pages.Controls;

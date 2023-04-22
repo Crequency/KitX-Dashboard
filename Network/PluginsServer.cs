@@ -14,7 +14,7 @@ using System.Threading;
 #pragma warning disable CS8602 // 解引用可能出现空引用。
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
 
-namespace KitX_Dashboard.Servers;
+namespace KitX_Dashboard.Network;
 
 internal class PluginsServer : IDisposable
 {

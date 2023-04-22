@@ -16,8 +16,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Servers;
+namespace KitX_Dashboard.Network;
 
+/// <summary>
+/// 设备自发现网络服务器
+/// </summary>
 internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 {
     private static UdpClient? UdpSender = null;
@@ -35,6 +38,8 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     private static readonly List<int> SupportedNetworkInterfacesIndexes = new();
 
     private static ServerStatus status = ServerStatus.Unknown;
+
+    private static Action<byte[], string>? onReceive = null;
 
     internal static readonly Queue<string> Messages2BroadCast = new();
 
@@ -242,9 +247,13 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                 while (GlobalInfo.Running && !CloseDevicesDiscoveryServerRequest)
                 {
                     var bytes = UdpReceiver?.Receive(ref multicast);
-                    if (bytes is null) continue;    //  null byte[] cause exception in next line.
-                    var result = Encoding.UTF8.GetString(bytes);
                     var client = $"{multicast.Address}:{multicast.Port}";
+
+                    if (bytes is null) continue;    //  null byte[] cause exception in next line.
+
+                    onReceive?.Invoke(bytes, client);
+
+                    var result = Encoding.UTF8.GetString(bytes);
 
                     Log.Information($"UDP From: {client,-21}, Receive: {result}");
 
@@ -381,6 +390,18 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     public async Task<DevicesDiscoveryServer> BroadCast(byte[] content, Func<TcpClient, bool>? pattern)
     {
         await Task.Run(() => { });
+
+        return this;
+    }
+
+    /// <summary>
+    /// 设定当接收到数据时的处理代码
+    /// </summary>
+    /// <param name="action">处理代码, 参数一为接收到的数据 (byte[]), 参数二是数据发送者, ip:port</param>
+    /// <returns>设备自发现网络服务器本身</returns>
+    public async Task<DevicesDiscoveryServer> OnReceive(Action<byte[], string> action)
+    {
+        await Task.Run(() => onReceive = action);
 
         return this;
     }
