@@ -11,5 +11,5 @@ internal interface IKitXClient<T> : IModuleController<T>
 
     Task<T> Send(byte[] content);
 
-    Task<T> OnReceive(Action<byte[]> action);
+    T OnReceive(Action<byte[], int?> action);
 }
