@@ -11,4 +11,6 @@ internal interface IKitXServer<T> : IModuleController<T>
     Task<T> BroadCast(byte[] content, Func<TcpClient, bool>? pattern);
 
     Task<T> Send(byte[] content, string target);
+
+    Task<T> OnReceive(Action<byte[], string> action);
 }
