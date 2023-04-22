@@ -13,6 +13,7 @@ using KitX_Dashboard.Models;
 using KitX_Dashboard.Services;
 using MessageBox.Avalonia;
 using Serilog;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -169,21 +170,24 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static void LoadLanguage()
     {
-        string lang = Program.Config.App.AppLanguage;
+        var lang = Program.Config.App.AppLanguage;
+
         try
         {
             Application.Current.Resources.MergedDictionaries.Clear();
+
             Application.Current.Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
                     FileHelper.ReadAll($"{GlobalInfo.LanguageFilePath}/{lang}.axaml")
                 ) as ResourceDictionary
             );
         }
-        catch (Result<bool>)
+        catch (Exception ex)
         {
             MessageBoxManager.GetMessageBoxStandardWindow("Error", "No this language file.",
                 icon: MessageBox.Avalonia.Enums.Icon.Error).Show();
-            Log.Warning($"Language File {lang}.axaml not found.");
+
+            Log.Warning(ex, $"Language File {lang}.axaml not found.");
         }
 
         EventService.Invoke(nameof(EventService.LanguageChanged));

@@ -5,7 +5,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Common.BasicHelper.IO;
-using Common.BasicHelper.Utils;
+using Common.BasicHelper.Utils.Extensions;
 using FluentAvalonia.Styling;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
@@ -42,24 +42,27 @@ public partial class App : Application
     {
         var lang = Program.Config.App.AppLanguage;
         var backup_lang = Program.Config.App.SurpportLanguages.Keys.First();
-        var path = Path.GetFullPath($"{GlobalInfo.LanguageFilePath}/{lang}.axaml");
+        var path = $"{GlobalInfo.LanguageFilePath}/{lang}.axaml".GetFullPath();
         var backup_langPath = $"{GlobalInfo.LanguageFilePath}/{backup_lang}.axaml";
-        backup_langPath = Path.GetFullPath(backup_langPath);
+
+        backup_langPath = backup_langPath.GetFullPath();
 
         try
         {
             Resources.MergedDictionaries.Clear();
+
             Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
                     FileHelper.ReadAll(path)
                 ) as ResourceDictionary ?? new()
             );
         }
-        catch (Result<bool>)
+        catch (Exception ex)
         {
-            Log.Warning($"Language File {lang}.axaml not found.");
+            Log.Warning(ex, $"Language File {lang}.axaml not found.");
 
             Resources.MergedDictionaries.Clear();
+
             try
             {
                 Resources.MergedDictionaries.Add(

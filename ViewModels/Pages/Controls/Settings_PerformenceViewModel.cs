@@ -1,7 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using Common.BasicHelper.IO;
 using Common.BasicHelper.Utils.Extensions;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
@@ -16,7 +15,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
+using System.Threading.Tasks;
 
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
 
@@ -36,7 +35,8 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     {
         EventService.LogConfigUpdated += () =>
         {
-            string logdir = Path.GetFullPath(Program.Config.Log.LogFilePath);
+            var logdir = Program.Config.Log.LogFilePath.GetFullPath();
+
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
                 .WriteTo.File(
@@ -52,14 +52,17 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
                 )
                 .CreateLogger();
         };
+
         EventService.LanguageChanged += () =>
         {
-            foreach (var item in SurpportLogLevels)
+            foreach (var item in SupportedLogLevels)
                 item.LogLevelDisplayName = GetLogLevelInLanguages(item.LogLevelName);
-            PropertyChanged?.Invoke(this, new(nameof(SurpportLogLevels)));
+            PropertyChanged?.Invoke(this, new(nameof(SupportedLogLevels)));
         };
+
         EventService.DevicesServerPortChanged += () => PropertyChanged?.Invoke(this,
                 new(nameof(DevicesServerPort)));
+
         EventService.PluginsServerPortChanged += () => PropertyChanged?.Invoke(this,
                 new(nameof(PluginsServerPort)));
 
@@ -90,15 +93,18 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
                 else
                 {
                     var sb = new StringBuilder();
+
                     foreach (var adapter in SelectedNetworkInterfaces)
                     {
                         sb.Append(adapter);
                         sb.Append(';');
                     }
+
                     AcceptedNetworkInterfacesNames = sb.ToString()[..^1];
                 }
                 PropertyChanged?.Invoke(this,
                     new(nameof(AcceptedNetworkInterfacesNames)));
+
                 SaveChanges();
             };
     }
@@ -335,8 +341,8 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     /// 日志文件空间占用
     /// 单位, MB
     /// </summary>
-    internal static int LogFileSizeUsage => (int)(DirectoryHelper.GetDirectorySize
-        (Path.GetFullPath(Program.Config.Log.LogFilePath)) / 1000 / 1024);
+    internal static int LogFileSizeUsage
+        => (int)(Program.Config.Log.LogFilePath.GetTotalSize() / 1000 / 1024);
 
     /// <summary>
     /// 单个文件体积限制上限
@@ -483,29 +489,27 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
     private void EmptyLogs(object obj)
     {
-        try
+        var location = $"{nameof(Settings_PerformenceViewModel)}.{nameof(EmptyLogs)}";
+
+        Task.Run(() =>
         {
-            new Thread(() =>
+            var dir = new DirectoryInfo(Program.Config.Log.LogFilePath.GetFullPath());
+
+            foreach (var file in dir.GetFiles())
             {
-                DirectoryInfo dir = new(Path.GetFullPath(Program.Config.Log.LogFilePath));
-                foreach (var file in dir.GetFiles())
+                try
                 {
-                    try
-                    {
-                        File.Delete(file.FullName);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, $"In Settings_Performence.EmptyLogs(): {ex.Message}");
-                    }
+                    File.Delete(file.FullName);
                 }
-                PropertyChanged?.Invoke(this, new(nameof(LogFileSizeUsage)));
-            }).Start();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, $"In Settings_Performence.EmptyLogs(): {ex.Message}");
-        }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"In {location}: {ex.Message}");
+                }
+            }
+
+            PropertyChanged?.Invoke(this,
+                new(nameof(LogFileSizeUsage)));
+        });
     }
 
     private void RefreshLogsUsage(object obj) =>
