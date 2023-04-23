@@ -8,12 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
 
 namespace KitX_Dashboard.Network;
 
@@ -27,6 +23,8 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
     private static Action<byte[], int?, string>? onReceive = null;
 
+    public static ServerStatus? Status { get; set; } = ServerStatus.Unknown;
+
     /// <summary>
     /// 接收客户端
     /// </summary>
@@ -36,23 +34,20 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
         try
         {
-            while (keepListen)
+            while (keepListen && listener is not null)
             {
                 if (listener.Pending())
                 {
                     var client = listener.AcceptTcpClient();
-                    var endpoint = client.Client.RemoteEndPoint as IPEndPoint;
+
+                    if (client.Client.RemoteEndPoint is not IPEndPoint endpoint) continue;
 
                     clients.Add(endpoint.ToString(), client);
 
                     Log.Information($"New plugin connection: {endpoint}");
 
-                    ReciveMessage(client);
+                    ReceiveMessage(client);
                 }
-                //else
-                //{
-                //    Thread.Sleep(100);
-                //}
             }
         }
         catch (Exception ex)
@@ -65,9 +60,9 @@ internal class PluginsServer : IKitXServer<PluginsServer>
     /// 接收消息
     /// </summary>
     /// <param name="obj">TcpClient</param>
-    private static void ReciveMessage(TcpClient client)
+    private static void ReceiveMessage(TcpClient client)
     {
-        var location = $"{nameof(PluginsServer)}.{nameof(ReciveMessage)}";
+        var location = $"{nameof(PluginsServer)}.{nameof(ReceiveMessage)}";
 
         IPEndPoint? endpoint = null;
         NetworkStream? stream = null;
@@ -77,19 +72,22 @@ internal class PluginsServer : IKitXServer<PluginsServer>
             try
             {
                 endpoint = client.Client.RemoteEndPoint as IPEndPoint;
+
                 stream = client.GetStream();
+
+                if (endpoint is null || stream is null) return;
 
                 while (keepListen)
                 {
                     var buffer = new byte[Program.Config.Web.SocketBufferSize];
 
-                    var length = await stream.ReadAsync(buffer);
+                    var length = stream is null ? 0 : await stream.ReadAsync(buffer);
 
                     if (length > 0)
                     {
                         onReceive?.Invoke(buffer, length, endpoint.ToString());
 
-                        var msg = Encoding.UTF8.GetString(buffer, 0, length);
+                        var msg = buffer.ToUTF8(0, length);
 
                         Log.Information($"From: {endpoint}\tReceive: {msg}");
 
@@ -99,7 +97,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
                             var workPath = Program.Config.App.LocalPluginsDataFolder.GetFullPath();
                             var sendtxt = $"WorkPath: {workPath}";
-                            var bytes = Encoding.UTF8.GetBytes(sendtxt);
+                            var bytes = sendtxt.FromUTF8();
 
                             stream?.Write(bytes, 0, bytes.Length);
                         }
@@ -125,11 +123,14 @@ internal class PluginsServer : IKitXServer<PluginsServer>
             }
             finally
             {
-                PluginsManager.Disconnect(endpoint);
+                if (endpoint is not null)
+                {
+                    PluginsManager.Disconnect(endpoint);
+
+                    clients.Remove(endpoint.ToString());
+                }
 
                 stream?.CloseAndDispose();
-
-                clients.Remove(endpoint.ToString());
 
                 client.Dispose();
             }
@@ -138,6 +139,8 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
     private static void Init()
     {
+        clients.Clear();
+
         var port = Program.Config.Web.UserSpecifiedPluginsServerPort;
 
         if (port < 0 || port > 65535) port = null;
@@ -178,6 +181,8 @@ internal class PluginsServer : IKitXServer<PluginsServer>
         await TasksManager.RunTaskAsync(() =>
         {
             Init();
+
+            if (listener is null) return;
 
             listener.Start();
 
@@ -221,11 +226,9 @@ internal class PluginsServer : IKitXServer<PluginsServer>
     public void Dispose()
     {
         keepListen = false;
-        listener.Stop();
+
+        listener?.Stop();
 
         GC.SuppressFinalize(this);
     }
 }
-
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
-#pragma warning restore CS8602 // 解引用可能出现空引用。

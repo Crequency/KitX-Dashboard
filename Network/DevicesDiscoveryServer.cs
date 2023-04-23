@@ -11,7 +11,6 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -184,13 +183,13 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                 DefaultDeviceInfoStruct.SendTime -= TimeSpan.FromSeconds(20);
 
             var sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
-            var sendBytes = Encoding.UTF8.GetBytes(sendText);
+            var sendBytes = sendText.FromUTF8();
 
             foreach (var item in SupportedNetworkInterfacesIndexes)
             {
                 if (!GlobalInfo.Running || CloseDevicesDiscoveryServerRequest) break;
 
-                // 如果错误网络适配器中存在当前项的记录, 跳过
+                //  如果错误网络适配器中存在当前项的记录, 跳过
                 if (erroredInterfacesIndexes.Contains(item)) continue;
 
                 try
@@ -202,11 +201,12 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                     );
                     UdpSender?.Send(sendBytes, sendBytes.Length, multicast);
 
+                    //  将自定义广播消息全部发送
                     while (Messages2BroadCast.Count > 0)
                     {
-                        var messageBytes = Encoding.UTF8.GetBytes(Messages2BroadCast.Dequeue());
+                        var messageBytes = Messages2BroadCast.Dequeue().FromUTF8();
                         UdpSender?.Send(messageBytes, messageBytes.Length, multicast);
-                    } // 将自定义广播消息全部发送
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -256,7 +256,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
                     onReceive?.Invoke(bytes, null, client);
 
-                    var result = Encoding.UTF8.GetString(bytes);
+                    var result = bytes.ToUTF8();
 
                     Log.Information($"UDP From: {client,-21}, Receive: {result}");
 

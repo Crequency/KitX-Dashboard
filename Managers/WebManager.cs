@@ -15,6 +15,7 @@ public class WebManager : IDisposable
 
     internal PluginsServer? pluginsServer;
     internal DevicesServer? devicesServer;
+    internal DevicesClient? devicesClient;
     internal DevicesDiscoveryServer? devicesDiscoveryServer;
 
     internal ObservableCollection<string>? NetworkInterfaceRegistered;
@@ -23,7 +24,7 @@ public class WebManager : IDisposable
     /// 开始执行网络相关服务
     /// </summary>
     /// <param name="startAll">是否启动全部</param>
-    /// <param name="startPluginsServer">是否启动插件服务器</param>
+    /// <param name="startPluginsServices">是否启动插件服务器</param>
     /// <param name="startDevicesServer">是否启动设备服务器</param>
     /// <param name="startDevicesDiscoveryServer">是否启动设备自发现服务器</param>
     /// <returns>网络管理器本身</returns>
@@ -31,8 +32,8 @@ public class WebManager : IDisposable
     (
         bool startAll = true,
 
-        bool startPluginsServer = false,
-        bool startDevicesServer = false,
+        bool startPluginsServices = false,
+        bool startDevicesServices = false,
         bool startDevicesDiscoveryServer = false
     )
     {
@@ -45,16 +46,17 @@ public class WebManager : IDisposable
                 if (startAll || startDevicesDiscoveryServer)
                     devicesDiscoveryServer = await new DevicesDiscoveryServer().Start();
 
-                if (startAll || startDevicesServer)
+                if (startAll || startDevicesServices)
                 {
+                    devicesServer = new();
+                    devicesClient = new();
+
                     DevicesManager.InitEvents();
                     DevicesManager.KeepCheckAndRemove();
                     DevicesManager.Watch4MainDevice();
-
-                    devicesServer = await new DevicesServer().Start();
                 }
 
-                if (startAll || startPluginsServer)
+                if (startAll || startPluginsServices)
                 {
                     PluginsManager.KeepCheckAndRemove();
                     PluginsManager.KeepCheckAndRemoveOrDelete();
@@ -65,11 +67,11 @@ public class WebManager : IDisposable
             catch (Exception ex)
             {
                 Log.Error(ex, $"In {location}: " +
-                    $"{nameof(startPluginsServer)}: {startPluginsServer}," +
-                    $"{nameof(startDevicesServer)}: {startDevicesServer}," +
+                    $"{nameof(startPluginsServices)}: {startPluginsServices}," +
+                    $"{nameof(startDevicesServices)}: {startDevicesServices}," +
                     $"{nameof(startDevicesDiscoveryServer)}: {startDevicesDiscoveryServer}");
             }
-        }, "WebManager.Start");
+        }, location);
 
         return this;
     }
@@ -77,27 +79,33 @@ public class WebManager : IDisposable
     /// <summary>
     /// 停止执行网络相关服务
     /// </summary>
-    /// <param name="stopPluginsServer">是否停止插件服务器</param>
-    /// <param name="stopDevicesServer">是否停止设备服务器</param>
+    /// <param name="stopPluginsServices">是否停止插件服务器</param>
+    /// <param name="stopDevicesServices">是否停止设备服务器</param>
     /// <returns>网络管理器本身</returns>
     public WebManager Stop
     (
         bool stopAll = true,
 
-        bool stopPluginsServer = true,
-        bool stopDevicesServer = true,
+        bool stopPluginsServices = true,
+        bool stopDevicesServices = true,
         bool stopDevicesDiscoveryServer = true
     )
     {
-        if (stopAll || stopPluginsServer)
+        if (stopAll || stopPluginsServices)
             pluginsServer?.Stop().ContinueWith(
                 server => server.Dispose()
             );
 
-        if (stopAll || stopDevicesServer)
+        if (stopAll || stopDevicesServices)
+        {
             devicesServer?.Stop().ContinueWith(
                 server => server.Dispose()
             );
+
+            devicesClient?.Stop().ContinueWith(
+                client => client.Dispose()
+            );
+        }
 
         if (stopAll || stopDevicesDiscoveryServer)
             devicesDiscoveryServer?.Stop().ContinueWith(
@@ -110,16 +118,16 @@ public class WebManager : IDisposable
     /// <summary>
     /// 重启网络相关服务
     /// </summary>
-    /// <param name="restartPluginsServer">是否重启插件服务器</param>
-    /// <param name="restartDevicesServer">是否重启设备服务器</param>
+    /// <param name="restartPluginsServices">是否重启插件服务器</param>
+    /// <param name="restartDevicesServices">是否重启设备服务器</param>
     /// <param name="actionBeforeStarting">重新启动前要执行的操作</param>
     /// <returns>网络管理器本身</returns>
     public WebManager Restart
     (
         bool restartAll = true,
 
-        bool restartPluginsServer = false,
-        bool restartDevicesServer = false,
+        bool restartPluginsServices = false,
+        bool restartDevicesServices = false,
         bool restartDevicesDiscoveryServer = false,
 
         Action? actionBeforeStarting = null
@@ -127,8 +135,8 @@ public class WebManager : IDisposable
     {
         Stop(
             restartAll,
-            restartPluginsServer,
-            restartDevicesServer,
+            restartPluginsServices,
+            restartDevicesServices,
             restartDevicesDiscoveryServer
         );
 
@@ -140,8 +148,8 @@ public class WebManager : IDisposable
 
             await Start(
                 restartAll,
-                restartPluginsServer,
-                restartDevicesServer,
+                restartPluginsServices,
+                restartDevicesServices,
                 restartDevicesDiscoveryServer
             );
         });
@@ -156,6 +164,7 @@ public class WebManager : IDisposable
     {
         pluginsServer?.Dispose();
         devicesServer?.Dispose();
+        devicesClient?.Dispose();
         devicesDiscoveryServer?.Dispose();
 
         GC.SuppressFinalize(this);
