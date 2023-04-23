@@ -1,4 +1,5 @@
-﻿using KitX_Dashboard.Servers;
+﻿using Common.BasicHelper.Utils.Extensions;
+using KitX_Dashboard.Network;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -127,7 +128,7 @@ internal class DebugCommands
                 case "deviceudppack":
                     if (args.ContainsKey("--value"))
                     {
-                        DevicesServer.Messages2BroadCast.Enqueue(args["--value"]);
+                        DevicesDiscoveryServer.Messages2BroadCast.Enqueue(args["--value"]);
                         return "Appended value to broadcast list.";
                     }
                     else return "Missing value of `--value`.";
@@ -135,7 +136,7 @@ internal class DebugCommands
                 case "clientmessage":
                     if (args.ContainsKey("--value"))
                     {
-                        Program.WebManager?.devicesServer?.SendMessageToHost(args["--value"]);
+                        Program.WebManager?.devicesClient?.Send(args["--value"].FromUTF8());
                         return $"Sent msg: {args["--value"]}";
                     }
                     else return "Missing value of `--value`.";
@@ -145,8 +146,10 @@ internal class DebugCommands
                     {
                         if (args.ContainsKey("--to"))
                         {
-                            Program.WebManager?.devicesServer
-                                ?.SendMessage(args["--value"], args["--to"]);
+                            Program.WebManager?.devicesServer?.Send(
+                                args["--value"].FromUTF8(),
+                                args["--to"]
+                            );
                             return $"Sent msg: {args["--value"]}, to: {args["--to"]}";
                         }
                         else return "Missing value of `--to`.";
@@ -156,8 +159,10 @@ internal class DebugCommands
                 case "hostbroadcast":
                     if (args.ContainsKey("--value"))
                     {
-                        Program.WebManager?.devicesServer
-                            ?.BroadCastMessage(args["--value"], null);
+                        Program.WebManager?.devicesServer?.BroadCast(
+                            args["--value"].FromUTF8(),
+                            null
+                        );
                         return $"Broadcast msg: {args["--value"]}";
                     }
                     else return "Missing value of `--value`";
@@ -247,14 +252,17 @@ internal class DebugCommands
     {
         if (args.ContainsKey("help"))
             return "" +
-                "- plugins-server\n" +
-                "- devices-server\n" +
+                "- plugins-services\n" +
+                "- devices-services\n" +
+                "- devices-discovery-server\n" +
                 "- all\n";
 
-        if (args.ContainsKey("plugins-server"))
-            Program.WebManager?.Start(startDevicesServer: false);
-        if (args.ContainsKey("devices-server"))
-            Program.WebManager?.Start(startPluginsServer: false);
+        if (args.ContainsKey("plugins-services"))
+            Program.WebManager?.Start(startAll: false, startPluginsServices: true);
+        if (args.ContainsKey("devices-services"))
+            Program.WebManager?.Start(startAll: false, startDevicesServices: true);
+        if (args.ContainsKey("devices-discovery-server"))
+            Program.WebManager?.Start(startAll: false, startDevicesDiscoveryServer: true);
         if (args.ContainsKey("all"))
             Program.WebManager?.Start();
 
@@ -265,14 +273,17 @@ internal class DebugCommands
     {
         if (args.ContainsKey("help"))
             return "" +
-                "- plugins-server\n" +
-                "- devices-server\n" +
+                "- plugins-services\n" +
+                "- devices-services\n" +
+                "- devices-discovery-server\n" +
                 "- all";
 
-        if (args.ContainsKey("plugins-server"))
-            Program.WebManager?.Stop(stopDevicesServer: false);
-        if (args.ContainsKey("devices-server"))
-            Program.WebManager?.Stop(stopPluginsServer: false);
+        if (args.ContainsKey("plugins-services"))
+            Program.WebManager?.Stop(stopAll: false, stopPluginsServices: true);
+        if (args.ContainsKey("devices-services"))
+            Program.WebManager?.Stop(stopAll: false, stopDevicesServices: true);
+        if (args.ContainsKey("devices-discovery-server"))
+            Program.WebManager?.Stop(stopAll: false, stopDevicesDiscoveryServer: true);
         if (args.ContainsKey("all"))
             Program.WebManager?.Stop();
 

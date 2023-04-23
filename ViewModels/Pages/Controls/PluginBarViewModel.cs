@@ -4,7 +4,7 @@ using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Models;
-using KitX_Dashboard.Servers;
+using KitX_Dashboard.Network;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
 using KitX_Dashboard.Views.Pages.Controls;
@@ -147,12 +147,14 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
         {
             try
             {
-                string? loaderName = PluginDetail?.RequiredLoaderStruct.LoaderName;
+                var loaderName = PluginDetail?.RequiredLoaderStruct.LoaderName;
                 var pd = PluginDetail?.PluginDetails;
                 string pluginPath = $"{PluginDetail?.InstallPath}/{pd?.RootStartupFileName}";
                 string pluginFile = Path.GetFullPath(pluginPath);
-                string connectStr = $"{DevicesServer.DefaultDeviceInfoStruct.IPv4}" +
-                    $":{GlobalInfo.PluginServerPort}";
+                string connectStr = "" +
+                    $"{DevicesDiscoveryServer.DefaultDeviceInfoStruct.IPv4}" +
+                    $":" +
+                    $"{GlobalInfo.PluginServerPort}";
                 if (PluginDetail != null && PluginDetail.RequiredLoaderStruct.SelfLoad)
                     Process.Start(pluginFile, $"--connect {connectStr}");
                 else

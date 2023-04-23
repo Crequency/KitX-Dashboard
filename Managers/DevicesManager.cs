@@ -1,7 +1,7 @@
 ﻿using Avalonia.Threading;
 using KitX.Web.Rules;
 using KitX_Dashboard.Data;
-using KitX_Dashboard.Servers;
+using KitX_Dashboard.Network;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
@@ -16,18 +16,22 @@ internal class DevicesManager
 {
     internal static void InitEvents()
     {
-        EventService.OnReceivingDeviceInfoStruct4DeviceNet += dis =>
+        EventService.OnReceivingDeviceInfoStruct += dis =>
         {
-            if (GlobalInfo.IsMainMachine)
-                if (dis.DeviceServerBuildTime < GlobalInfo.ServerBuildTime)
-                {
-                    Program.WebManager?.devicesServer?.CancleBuildServer();
-                    Log.Information($"In DevicesManager: Watched for earlier built server. " +
-                        $"DeviceServerAddress: {dis.IPv4}:{dis.DeviceServerPort} " +
-                        $"DeviceServerBuildTime: {dis.DeviceServerBuildTime}");
-                }
+            if (dis.IsMainDevice && dis.DeviceServerBuildTime < GlobalInfo.ServerBuildTime)
+            {
+                Program.WebManager?.devicesServer?.Stop();
+
+                Watch4MainDevice();
+
+                Log.Information($"In DevicesManager: Watched earlier built server. " +
+                    $"DeviceServerAddress: {dis.IPv4}:{dis.DeviceServerPort} " +
+                    $"DeviceServerBuildTime: {dis.DeviceServerBuildTime}");
+            }
         };
     }
+
+    private static readonly object _receivedDeviceInfoStruct4WatchLock = new();
 
     internal static List<DeviceInfoStruct>? receivedDeviceInfoStruct4Watch;
 
@@ -53,7 +57,7 @@ internal class DevicesManager
     /// <returns>是否是本机卡片</returns>
     private static bool CheckIsCurrentMachine(DeviceInfoStruct info)
     {
-        var self = DevicesServer.DefaultDeviceInfoStruct;
+        var self = DevicesDiscoveryServer.DefaultDeviceInfoStruct;
         return info.DeviceMacAddress.Equals(self.DeviceMacAddress)
             && info.DeviceName.Equals(self.DeviceName);
     }
@@ -266,11 +270,16 @@ internal class DevicesManager
     internal static void Update(DeviceInfoStruct deviceInfo)
     {
         deviceInfoStructs.Enqueue(deviceInfo);
-        receivedDeviceInfoStruct4Watch?.Add(deviceInfo);
 
-        if (deviceInfo.IsMainDevice)
-            EventService.Invoke(nameof(EventService.OnReceivingDeviceInfoStruct4DeviceNet),
-                deviceInfo);
+        if (receivedDeviceInfoStruct4Watch is not null)
+        {
+            lock (_receivedDeviceInfoStruct4WatchLock)
+            {
+                receivedDeviceInfoStruct4Watch.Add(deviceInfo);
+            }
+        }
+
+        EventService.Invoke(nameof(EventService.OnReceivingDeviceInfoStruct), deviceInfo);
     }
 
     /// <summary>
@@ -278,30 +287,31 @@ internal class DevicesManager
     /// </summary>
     internal static void Watch4MainDevice()
     {
+        var location = $"{nameof(DevicesManager)}.{nameof(Watch4MainDevice)}";
+
         new Thread(() =>
         {
-            try
+            receivedDeviceInfoStruct4Watch = new();
+
+            var checkedTime = 0;
+            var hadMainDevice = false;
+            var earliestBuiltServerTime = DateTime.UtcNow;
+            var serverPort = 0;
+            var serverAddress = string.Empty;
+
+            while (checkedTime < 7)
             {
-                receivedDeviceInfoStruct4Watch = new();
-
-                var checkedTime = 0;
-                var hadMainDevice = false;
-                var earliestBuiltServerTime = DateTime.UtcNow;
-                var serverPort = 0;
-                var serverAddress = string.Empty;
-
-                while (checkedTime < 7)
+                try
                 {
-                    try
-                    {
-                        if (receivedDeviceInfoStruct4Watch is null) continue;
+                    if (receivedDeviceInfoStruct4Watch is null) continue;
 
+                    lock (_receivedDeviceInfoStruct4WatchLock)
+                    {
                         foreach (var item in receivedDeviceInfoStruct4Watch)
                         {
                             if (item.IsMainDevice)
                             {
-                                if (item.DeviceServerBuildTime.ToUniversalTime()
-                                    < earliestBuiltServerTime)
+                                if (item.DeviceServerBuildTime.ToUniversalTime() < earliestBuiltServerTime)
                                 {
                                     serverPort = item.DeviceServerPort;
                                     serverAddress = item.IPv4;
@@ -309,36 +319,31 @@ internal class DevicesManager
                                 hadMainDevice = true;
                             }
                         }
-
-                        ++checkedTime;
-
-                        Log.Information($"In Watch4MainDevice: " +
-                            $"Watched for {checkedTime} times.");
-
-                        if (checkedTime == 7)
-                        {
-                            receivedDeviceInfoStruct4Watch?.Clear();
-                            receivedDeviceInfoStruct4Watch = null;
-                            WatchingOver(hadMainDevice, serverAddress, serverPort);
-                        }
-
-                        Thread.Sleep(1 * 1000); //  Sleep 1 second.
                     }
-                    catch (Exception e)
+
+                    ++checkedTime;
+
+                    Log.Information($"In {location}: Watched for {checkedTime} times.");
+
+                    if (checkedTime == 7)
                     {
                         receivedDeviceInfoStruct4Watch?.Clear();
                         receivedDeviceInfoStruct4Watch = null;
 
-                        Log.Error(e, "In Watch4MainDevice");
+                        WatchingOver(hadMainDevice, serverAddress, serverPort);
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                receivedDeviceInfoStruct4Watch?.Clear();
-                receivedDeviceInfoStruct4Watch = null;
 
-                Log.Error(ex, "In Watch4MainDevice");
+                    Thread.Sleep(1 * 1000); //  Sleep 1 second.
+                }
+                catch (Exception e)
+                {
+                    receivedDeviceInfoStruct4Watch?.Clear();
+                    receivedDeviceInfoStruct4Watch = null;
+
+                    Log.Error(e, $"In {location}: {e.Message} Rewatch.");
+
+                    Watch4MainDevice();
+                }
             }
         }).Start();
     }
@@ -346,18 +351,30 @@ internal class DevicesManager
     /// <summary>
     /// 观察结束
     /// </summary>
-    internal static void WatchingOver(bool hadMainDevice, string serverAddress, int serverPort)
+    internal static async void WatchingOver(bool foundMainDevice, string serverAddress, int serverPort)
     {
-        Log.Information($"In WatchingOver: hadMainDevice: {hadMainDevice}, " +
-            $"serverAddress: {serverAddress}, serverPort: {serverPort}");
+        var location = $"{nameof(DevicesManager)}.{nameof(WatchingOver)}";
 
-        if (hadMainDevice)
+        Log.Information($"In {location}: " +
+            $"{nameof(foundMainDevice)} -> {foundMainDevice}, " +
+            $"{nameof(serverAddress)} -> {serverAddress}, " +
+            $"{nameof(serverPort)} -> {serverPort}");
+
+        if (foundMainDevice)
         {
-            Program.WebManager?.devicesServer?.AttendServer(serverAddress, serverPort);
+            var client = Program.WebManager?.devicesClient;
+
+            if (client is null) return;
+
+            await client
+                .SetServerAddress(serverAddress)
+                .SetServerPort(serverPort)
+                .Start()
+                ;
         }
         else
         {
-            Program.WebManager?.devicesServer?.BuildServer();
+            Program.WebManager?.devicesServer?.Start();
         }
     }
 }

@@ -59,7 +59,7 @@ internal static class EventService
 
     internal static event DevicesServerPortChangedHandler? DevicesServerPortChanged;
 
-    internal static event OnReceivingDeviceInfoStructHandler? OnReceivingDeviceInfoStruct4DeviceNet;
+    internal static event OnReceivingDeviceInfoStructHandler? OnReceivingDeviceInfoStruct;
 
     internal static event OnConfigHotReloadedHandler? OnConfigHotReloaded;
 
@@ -80,7 +80,7 @@ internal static class EventService
         UseStatisticsChanged += () => { };
         OnExiting += () => { };
         DevicesServerPortChanged += () => { };
-        OnReceivingDeviceInfoStruct4DeviceNet += dis => { };
+        OnReceivingDeviceInfoStruct += dis => { };
         OnConfigHotReloaded += () => { };
         PluginsServerPortChanged += () => { };
     }
@@ -144,8 +144,8 @@ internal static class EventService
     {
         switch (eventName)
         {
-            case nameof(OnReceivingDeviceInfoStruct4DeviceNet):
-                OnReceivingDeviceInfoStruct4DeviceNet?.Invoke((DeviceInfoStruct)arg);
+            case nameof(OnReceivingDeviceInfoStruct):
+                OnReceivingDeviceInfoStruct?.Invoke((DeviceInfoStruct)arg);
                 break;
         }
     }
