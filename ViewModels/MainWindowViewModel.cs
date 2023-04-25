@@ -3,9 +3,6 @@ using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
-using Serilog;
-using System;
-using System.Threading;
 
 namespace KitX_Dashboard.ViewModels;
 
@@ -32,39 +29,29 @@ internal class MainWindowViewModel : ViewModelBase
 
     internal void TrayIconClicked(object mainWindow)
     {
-        MainWindow? win = mainWindow as MainWindow;
+        var win = mainWindow as MainWindow;
+
         if (win?.WindowState == WindowState.Minimized)
             win.WindowState = WindowState.Normal;
         win?.Show();
         win?.Activate();
+
         Program.Config.Windows.MainWindow.IsHidden = false;
         EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     internal void Exit(object mainWindow)
     {
-        MainWindow? win = mainWindow as MainWindow;
         GlobalInfo.Exiting = true;
         EventService.Invoke(nameof(EventService.OnExiting));
-        win?.Close();
 
-        new Thread(() =>
-        {
-            try
-            {
-                Thread.Sleep(GlobalInfo.LastBreakAfterExit);
-                Environment.Exit(0);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, $"In MainWindow.Exit(): {ex.Message}");
-            }
-        }).Start();
+        var win = mainWindow as MainWindow;
+        win?.Close();
     }
 
     internal void RefreshGreeting(object mainWindow)
     {
-        MainWindow? win = mainWindow as MainWindow;
+        var win = mainWindow as MainWindow;
         win?.UpdateGreetingText();
     }
 }

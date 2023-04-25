@@ -14,8 +14,6 @@ public class WebManager : IDisposable
     }
 
     internal PluginsServer? pluginsServer;
-    internal DevicesServer? devicesServer;
-    internal DevicesClient? devicesClient;
     internal DevicesDiscoveryServer? devicesDiscoveryServer;
 
     internal ObservableCollection<string>? NetworkInterfaceRegistered;
@@ -47,14 +45,7 @@ public class WebManager : IDisposable
                     devicesDiscoveryServer = await new DevicesDiscoveryServer().Start();
 
                 if (startAll || startDevicesServices)
-                {
-                    devicesServer = new();
-                    devicesClient = new();
-
-                    DevicesManager.InitEvents();
-                    DevicesManager.KeepCheckAndRemove();
-                    DevicesManager.Watch4MainDevice();
-                }
+                    DevicesNetwork.Start();
 
                 if (startAll || startPluginsServices)
                 {
@@ -86,31 +77,41 @@ public class WebManager : IDisposable
     (
         bool stopAll = true,
 
-        bool stopPluginsServices = true,
-        bool stopDevicesServices = true,
-        bool stopDevicesDiscoveryServer = true
+        bool stopPluginsServices = false,
+        bool stopDevicesServices = false,
+        bool stopDevicesDiscoveryServer = false
     )
     {
-        if (stopAll || stopPluginsServices)
-            pluginsServer?.Stop().ContinueWith(
-                server => server.Dispose()
-            );
+        var location = $"{nameof(WebManager)}.{nameof(Stop)}";
 
-        if (stopAll || stopDevicesServices)
+        try
         {
-            devicesServer?.Stop().ContinueWith(
-                server => server.Dispose()
-            );
+            if (stopAll || stopPluginsServices)
+                pluginsServer?.Stop().ContinueWith(
+                    server => server.Dispose()
+                );
 
-            devicesClient?.Stop().ContinueWith(
-                client => client.Dispose()
-            );
+            if (stopAll || stopDevicesServices)
+                DevicesNetwork.Stop();
+
+            if (stopAll || stopDevicesDiscoveryServer)
+            {
+                devicesDiscoveryServer?.Stop().ContinueWith(
+                    async server =>
+                    {
+                        await Task.Delay(Program.Config.Web.UDPSendFrequency + 500);
+
+                        server.Dispose();
+                    }
+                );
+
+                while (DevicesDiscoveryServer.CloseDevicesDiscoveryServerRequest) { }
+            }
         }
-
-        if (stopAll || stopDevicesDiscoveryServer)
-            devicesDiscoveryServer?.Stop().ContinueWith(
-                server => server.Dispose()
-            );
+        catch (Exception ex)
+        {
+            Log.Warning(ex, $"In {location}: {ex.Message}");
+        }
 
         return this;
     }
@@ -162,11 +163,6 @@ public class WebManager : IDisposable
     /// </summary>
     public void Dispose()
     {
-        pluginsServer?.Dispose();
-        devicesServer?.Dispose();
-        devicesClient?.Dispose();
-        devicesDiscoveryServer?.Dispose();
-
         GC.SuppressFinalize(this);
     }
 }

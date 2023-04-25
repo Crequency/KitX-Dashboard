@@ -116,11 +116,7 @@ public static class Helper
 
         #region 初始化数据记录管理器
 
-        StatisticsManager.InitEvents();
-
-        StatisticsManager.RecoverOldStatistics();
-
-        StatisticsManager.BeginRecord();
+        StatisticsManager.Start();
 
         #endregion
 
@@ -295,11 +291,17 @@ public static class Helper
     {
         try
         {
-            if (!Directory.Exists(Path.GetFullPath(GlobalInfo.ConfigPath)))
-                _ = Directory.CreateDirectory(Path.GetFullPath(GlobalInfo.ConfigPath));
-            if (!File.Exists(Path.GetFullPath(GlobalInfo.ConfigFilePath))) SaveConfig();
+            var configDir = GlobalInfo.ConfigPath.GetFullPath();
+            var configFilePath = GlobalInfo.ConfigFilePath.GetFullPath();
+            var pluginsListConfigFilePath = GlobalInfo.PluginsListConfigFilePath.GetFullPath();
+
+            if (!Directory.Exists(configDir))
+                _ = Directory.CreateDirectory(configDir);
+
+            if (!File.Exists(configFilePath)) SaveConfig();
             else LoadConfig();
-            if (!File.Exists(Path.GetFullPath(GlobalInfo.PluginsListConfigFilePath)))
+
+            if (!File.Exists(pluginsListConfigFilePath))
                 SavePluginsListConfig();
             else LoadPluginsListConfig();
         }
@@ -324,6 +326,8 @@ public static class Helper
     /// </summary>
     public static void Exit()
     {
+        var location = $"{nameof(Helper)}.{nameof(Exit)}";
+
         Log.CloseAndFlush();
 
         Program.WebManager?.Stop();
@@ -333,6 +337,19 @@ public static class Helper
         Program.ActivitiesDataBase?.Dispose();
 
         GlobalInfo.Running = false;
+
+        new Thread(() =>
+        {
+            try
+            {
+                Thread.Sleep(GlobalInfo.LastBreakAfterExit);
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, $"In {location}: {ex.Message}");
+            }
+        }).Start();
     }
 
     /// <summary>

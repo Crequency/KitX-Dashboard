@@ -56,8 +56,9 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
     {
         Program.WebManager?.Restart(
             restartAll: false,
-            restartDevicesServices: false,
+            restartDevicesServices: true,
             restartDevicesDiscoveryServer: true,
+            restartPluginsServices: false,
             actionBeforeStarting: () => DeviceCards.Clear()
         );
     }
@@ -67,7 +68,8 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
         Program.WebManager?.Stop(
             stopAll: false,
             stopDevicesServices: true,
-            stopDevicesDiscoveryServer: true
+            stopDevicesDiscoveryServer: true,
+            stopPluginsServices: false
         );
 
         Task.Run(async () =>

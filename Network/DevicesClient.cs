@@ -29,7 +29,7 @@ internal class DevicesClient : IKitXClient<DevicesClient>
             status = value;
 
             if (status == ClientStatus.Errored)
-                DevicesManager.Watch4MainDevice();
+                DevicesNetwork.Restart();
         }
     }
 

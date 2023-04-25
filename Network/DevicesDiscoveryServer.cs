@@ -32,13 +32,13 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     private static int LastTimeToOSVersionUpdated = 0;
 
-    private static bool CloseDevicesDiscoveryServerRequest = false;
-
     private static readonly List<int> SupportedNetworkInterfacesIndexes = new();
 
     private static ServerStatus status = ServerStatus.Unknown;
 
     private static Action<byte[], int?, string>? onReceive = null;
+
+    internal static bool CloseDevicesDiscoveryServerRequest = false;
 
     internal static readonly Queue<string> Messages2BroadCast = new();
 
@@ -167,8 +167,10 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             Interval = Program.Config.Web.UDPSendFrequency,
             AutoReset = true
         };
-        UdpSendTimer.Elapsed += async (_, _) =>
+        UdpSendTimer.Elapsed += (_, _) =>
         {
+            var closingRequest = CloseDevicesDiscoveryServerRequest;
+
             --erroredInterfacesIndexesTTL;
 
             if (erroredInterfacesIndexesTTL <= 0)
@@ -179,7 +181,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
             UpdateDefaultDeviceInfoStruct();
 
-            if (CloseDevicesDiscoveryServerRequest)
+            if (closingRequest)
                 DefaultDeviceInfoStruct.SendTime -= TimeSpan.FromSeconds(20);
 
             var sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
@@ -187,7 +189,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
             foreach (var item in SupportedNetworkInterfacesIndexes)
             {
-                if (!GlobalInfo.Running || CloseDevicesDiscoveryServerRequest) break;
+                if (!GlobalInfo.Running) break;
 
                 //  如果错误网络适配器中存在当前项的记录, 跳过
                 if (erroredInterfacesIndexes.Contains(item)) continue;
@@ -221,10 +223,17 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                 }
             }
 
-            if (CloseDevicesDiscoveryServerRequest)
-                CloseDevicesDiscoveryServerRequest = false;
+            if (closingRequest)
+            {
+                UdpSendTimer?.Stop();
+                UdpSendTimer?.Close();
 
-            if (!GlobalInfo.Running || CloseDevicesDiscoveryServerRequest) await Stop();
+                UdpSender?.Close();
+
+                UdpReceiver?.Close();
+
+                CloseDevicesDiscoveryServerRequest = false;
+            }
         };
         UdpSendTimer.Start();
     }
@@ -262,7 +271,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
                     try
                     {
-                        DevicesManager.Update(
+                        DevicesNetwork.Update(
                             JsonSerializer.Deserialize<DeviceInfoStruct>(result)
                         );
                     }
@@ -346,21 +355,14 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     public async Task<DevicesDiscoveryServer> Stop()
     {
-        Status = ServerStatus.Stopping;
-
         await Task.Run(() =>
         {
+            Status = ServerStatus.Stopping;
+
             CloseDevicesDiscoveryServerRequest = true;
 
-            while (CloseDevicesDiscoveryServerRequest) { }
-
-            UdpSendTimer?.Close();
-
-            UdpSender?.Close();
-            UdpReceiver?.Close();
+            Status = ServerStatus.Pending;
         });
-
-        Status = ServerStatus.Pending;
 
         return this;
     }

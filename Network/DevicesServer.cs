@@ -33,7 +33,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
             status = value;
 
             if (status == ServerStatus.Errored)
-                DevicesManager.Watch4MainDevice();
+                DevicesNetwork.Restart();
         }
     }
 

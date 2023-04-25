@@ -1,7 +1,6 @@
 ﻿using Avalonia.Threading;
 using KitX.Web.Rules;
 using KitX_Dashboard.Data;
-using KitX_Dashboard.Network;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
@@ -10,21 +9,25 @@ using System.Collections.Generic;
 using System.Threading;
 using Timer = System.Timers.Timer;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX_Dashboard.Network;
 
-internal class DevicesManager
+internal class DevicesNetwork
 {
-    internal static void InitEvents()
+    internal static DevicesServer? devicesServer = null;
+
+    internal static DevicesClient? devicesClient = null;
+
+    private static void InitEvents()
     {
         EventService.OnReceivingDeviceInfoStruct += dis =>
         {
             if (dis.IsMainDevice && dis.DeviceServerBuildTime < GlobalInfo.ServerBuildTime)
             {
-                Program.WebManager?.devicesServer?.Stop();
+                Stop();
 
                 Watch4MainDevice();
 
-                Log.Information($"In DevicesManager: Watched earlier built server. " +
+                Log.Information($"In DevicesService: Watched earlier built server. " +
                     $"DeviceServerAddress: {dis.IPv4}:{dis.DeviceServerPort} " +
                     $"DeviceServerBuildTime: {dis.DeviceServerBuildTime}");
             }
@@ -218,13 +221,14 @@ internal class DevicesManager
     /// <summary>
     /// 持续检查并移除
     /// </summary>
-    internal static void KeepCheckAndRemove()
+    private static void KeepCheckAndRemove()
     {
-        Timer timer = new()
+        var timer = new Timer()
         {
             Interval = Program.Config.Web.DevicesViewRefreshDelay,
             AutoReset = true
         };
+
         timer.Elapsed += (_, _) =>
         {
             try
@@ -252,11 +256,13 @@ internal class DevicesManager
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(DevicesManager)}.{nameof(KeepCheckAndRemove)}()";
+                var location = $"{nameof(DevicesNetwork)}.{nameof(KeepCheckAndRemove)}()";
                 Log.Error(ex, $"In {location}: {ex.Message}");
             }
         };
+
         timer.Start();
+
         EventService.ConfigSettingsChanged += () =>
         {
             timer.Interval = Program.Config.Web.DevicesViewRefreshDelay;
@@ -287,7 +293,7 @@ internal class DevicesManager
     /// </summary>
     internal static void Watch4MainDevice()
     {
-        var location = $"{nameof(DevicesManager)}.{nameof(Watch4MainDevice)}";
+        var location = $"{nameof(DevicesNetwork)}.{nameof(Watch4MainDevice)}";
 
         new Thread(() =>
         {
@@ -343,6 +349,8 @@ internal class DevicesManager
                     Log.Error(e, $"In {location}: {e.Message} Rewatch.");
 
                     Watch4MainDevice();
+
+                    break;
                 }
             }
         }).Start();
@@ -353,7 +361,7 @@ internal class DevicesManager
     /// </summary>
     internal static async void WatchingOver(bool foundMainDevice, string serverAddress, int serverPort)
     {
-        var location = $"{nameof(DevicesManager)}.{nameof(WatchingOver)}";
+        var location = $"{nameof(DevicesNetwork)}.{nameof(WatchingOver)}";
 
         Log.Information($"In {location}: " +
             $"{nameof(foundMainDevice)} -> {foundMainDevice}, " +
@@ -362,11 +370,9 @@ internal class DevicesManager
 
         if (foundMainDevice)
         {
-            var client = Program.WebManager?.devicesClient;
+            devicesClient ??= new();
 
-            if (client is null) return;
-
-            await client
+            await devicesClient
                 .SetServerAddress(serverAddress)
                 .SetServerPort(serverPort)
                 .Start()
@@ -374,8 +380,33 @@ internal class DevicesManager
         }
         else
         {
-            Program.WebManager?.devicesServer?.Start();
+            devicesServer?.Start();
         }
+    }
+
+    public static void Start()
+    {
+        devicesServer = new();
+
+        devicesClient = new();
+
+        InitEvents();
+
+        KeepCheckAndRemove();
+
+        Watch4MainDevice();
+    }
+
+    public static void Stop()
+    {
+        devicesServer?.Stop().ContinueWith(server => server.Dispose());
+
+        devicesClient?.Stop().ContinueWith(client => client.Dispose());
+    }
+
+    public static void Restart()
+    {
+
     }
 }
 

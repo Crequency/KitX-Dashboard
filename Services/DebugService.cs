@@ -68,8 +68,8 @@ internal class DebugCommands
         if (args.ContainsKey("help"))
             return "" +
                 "Save datas to disk.\n" +
-                "\t--type [config] | save KitX Dashboard config file.\n" +
-                "\tconfig | save KitX Dashboard config file.\n";
+                "\t--type [config] | saveAction KitX Dashboard config file.\n" +
+                "\tconfig | saveAction KitX Dashboard config file.\n";
         if (args.ContainsKey("--type"))
             return args["--type"] switch
             {
@@ -101,7 +101,7 @@ internal class DebugCommands
 
             return "Missing value of `--get`.";
         }
-        else if (args.ContainsKey("save"))
+        else if (args.ContainsKey("saveAction"))
         {
             return SaveConfig();
         }
@@ -136,7 +136,7 @@ internal class DebugCommands
                 case "clientmessage":
                     if (args.ContainsKey("--value"))
                     {
-                        Program.WebManager?.devicesClient?.Send(args["--value"].FromUTF8());
+                        DevicesNetwork.devicesClient?.Send(args["--value"].FromUTF8());
                         return $"Sent msg: {args["--value"]}";
                     }
                     else return "Missing value of `--value`.";
@@ -146,7 +146,7 @@ internal class DebugCommands
                     {
                         if (args.ContainsKey("--to"))
                         {
-                            Program.WebManager?.devicesServer?.Send(
+                            DevicesNetwork.devicesServer?.Send(
                                 args["--value"].FromUTF8(),
                                 args["--to"]
                             );
@@ -159,7 +159,7 @@ internal class DebugCommands
                 case "hostbroadcast":
                     if (args.ContainsKey("--value"))
                     {
-                        Program.WebManager?.devicesServer?.BroadCast(
+                        DevicesNetwork.devicesServer?.BroadCast(
                             args["--value"].FromUTF8(),
                             null
                         );
