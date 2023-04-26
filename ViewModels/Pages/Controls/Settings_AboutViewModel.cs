@@ -1,5 +1,6 @@
 ﻿using Common.BasicHelper.IO;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using System.ComponentModel;
 using System.Reflection;
@@ -70,10 +71,10 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     public static bool AboutAreaExpanded
     {
-        get => Program.Config.Pages.Settings.AboutAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.AboutAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.AboutAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.AboutAreaExpanded = value;
             SaveChanges();
         }
     }
@@ -83,10 +84,10 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     public static bool AuthorsAreaExpanded
     {
-        get => Program.Config.Pages.Settings.AuthorsAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.AuthorsAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.AuthorsAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.AuthorsAreaExpanded = value;
             SaveChanges();
         }
     }
@@ -96,10 +97,10 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     public static bool LinksAreaExpanded
     {
-        get => Program.Config.Pages.Settings.LinksAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.LinksAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.LinksAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.LinksAreaExpanded = value;
             SaveChanges();
         }
     }
@@ -109,10 +110,10 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     public static bool ThirdPartyLicensesAreaExpanded
     {
-        get => Program.Config.Pages.Settings.ThirdPartyLicensesAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.ThirdPartyLicensesAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded = value;
             SaveChanges();
         }
     }

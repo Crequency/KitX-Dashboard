@@ -5,6 +5,7 @@ using Avalonia.Media.Imaging;
 using FluentAvalonia.Styling;
 using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;
@@ -44,7 +45,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             if (PluginDetail != null)
             {
-                string key = Program.Config.App.AppLanguage;
+                string key = ConfigManager.AppConfig.App.AppLanguage;
                 bool? exist = PluginDetail?.DisplayName.ContainsKey(key);
                 if (exist != null && (bool)exist)
                     return PluginDetail?.DisplayName[key];
@@ -70,7 +71,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             if (PluginDetail != null)
             {
-                string key = Program.Config.App.AppLanguage;
+                string key = ConfigManager.AppConfig.App.AppLanguage;
                 bool? exist = PluginDetail?.SimpleDescription.ContainsKey(key);
                 if (exist != null && (bool)exist)
                     return PluginDetail?.SimpleDescription[key];
@@ -86,7 +87,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             if (PluginDetail != null)
             {
-                string key = Program.Config.App.AppLanguage;
+                string key = ConfigManager.AppConfig.App.AppLanguage;
                 bool? exist = PluginDetail?.ComplexDescription.ContainsKey(key);
                 if (exist != null && (bool)exist)
                     return PluginDetail?.ComplexDescription[key];
@@ -102,7 +103,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             if (PluginDetail != null)
             {
-                string key = Program.Config.App.AppLanguage;
+                string key = ConfigManager.AppConfig.App.AppLanguage;
                 bool? exist = PluginDetail?.TotalDescriptionInMarkdown.ContainsKey(key);
                 if (exist != null && (bool)exist)
                     return PluginDetail?.TotalDescriptionInMarkdown[key];
@@ -118,7 +119,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     internal string? LastUpdateDate =>
         PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-    internal static Color TintColor => Program.Config.App.Theme switch
+    internal static Color TintColor => ConfigManager.AppConfig.App.Theme switch
     {
         "Light" => Colors.WhiteSmoke,
         "Dark" => Colors.Black,
@@ -126,9 +127,9 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             "Light" => Colors.WhiteSmoke,
             "Dark" => Colors.Black,
-            _ => Color.Parse(Program.Config.App.ThemeColor)
+            _ => Color.Parse(ConfigManager.AppConfig.App.ThemeColor)
         },
-        _ => Color.Parse(Program.Config.App.ThemeColor),
+        _ => Color.Parse(ConfigManager.AppConfig.App.ThemeColor),
     };
 
     private readonly ObservableCollection<string> functions = new();
@@ -162,7 +163,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     {
         if (PluginDetail != null && PluginDetail?.Functions != null && PluginDetail?.Tags != null)
         {
-            string langKey = Program.Config.App.AppLanguage;
+            string langKey = ConfigManager.AppConfig.App.AppLanguage;
             foreach (var func in PluginDetail.Value.Functions)
             {
                 StringBuilder sb = new();

@@ -130,7 +130,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         DefaultDeviceInfoStruct.DeviceServerPort = GlobalInfo.DeviceServerPort;
         DefaultDeviceInfoStruct.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;
 
-        if (LastTimeToOSVersionUpdated > Program.Config.IO.OperatingSystemVersionUpdateInterval)
+        if (LastTimeToOSVersionUpdated > ConfigManager.AppConfig.IO.OperatingSystemVersionUpdateInterval)
         {
             LastTimeToOSVersionUpdated = 0;
             DefaultDeviceInfoStruct.DeviceOSVersion = NetworkHelper.TryGetOSVersionString();
@@ -150,8 +150,8 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastSend)}";
 
         IPEndPoint multicast = new(
-            IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress),
-            Program.Config.Web.UDPPortReceive
+            IPAddress.Parse(ConfigManager.AppConfig.Web.UDPBroadcastAddress),
+ConfigManager.AppConfig.Web.UDPPortReceive
         );
         UdpSender?.Client.SetSocketOption(
             SocketOptionLevel.Socket,
@@ -164,7 +164,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         UdpSendTimer = new()
         {
-            Interval = Program.Config.Web.UDPSendFrequency,
+            Interval = ConfigManager.AppConfig.Web.UDPSendFrequency,
             AutoReset = true
         };
         UdpSendTimer.Elapsed += (_, _) =>
@@ -309,14 +309,14 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         Init();
 
-        UdpSender = new(Program.Config.Web.UDPPortSend, AddressFamily.InterNetwork)
+        UdpSender = new(ConfigManager.AppConfig.Web.UDPPortSend, AddressFamily.InterNetwork)
         {
             EnableBroadcast = true,
             MulticastLoopback = true
         };
 
         UdpReceiver = new(
-            new IPEndPoint(IPAddress.Any, Program.Config.Web.UDPPortReceive)
+            new IPEndPoint(IPAddress.Any, ConfigManager.AppConfig.Web.UDPPortReceive)
         );
 
         await TasksManager.RunTaskAsync(() =>
@@ -328,7 +328,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                     {
                         UdpSender, UdpReceiver
                     },
-                    IPAddress.Parse(Program.Config.Web.UDPBroadcastAddress)
+                    IPAddress.Parse(ConfigManager.AppConfig.Web.UDPBroadcastAddress)
                 ); // 寻找所有支持的网络适配器
             }
             catch (Exception ex)

@@ -4,43 +4,36 @@ using Common.BasicHelper.Utils.Extensions;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Names;
-using KitX_Dashboard.Services;
 using LiteDB;
 using Serilog;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
-using System.Text.Json;
 using System.Threading;
 using Activity = Common.Activity.Activity;
-using JsonSerializer = System.Text.Json.JsonSerializer;
-
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-#pragma warning disable CS8601 // 引用类型赋值可能为 null。
 
 namespace KitX_Dashboard;
 
 public static class Helper
 {
+    private static readonly object _activityRecordLock = new();
+
     /// <summary>
     /// 启动时检查
     /// </summary>
     public static void StartUpCheck()
     {
-        #region 初始化 Config 并加载资源
+        if (GlobalInfo.EnabledConfigFileHotReload)
+            Program.FileWatcherManager = new();
 
-        InitConfig();
+        ConfigManager.Init();   //  初始化配置管理器
 
-        LoadResource();
-
-        #endregion
+        LoadResource();         //  加载资源
 
         #region 初始化日志系统
 
-        //InitLiteLogger(Program.LocalLogger);
-
-        string logdir = Path.GetFullPath(Program.Config.Log.LogFilePath);
+        var logdir = ConfigManager.AppConfig.Log.LogFilePath.GetFullPath();
 
         if (!Directory.Exists(logdir))
             Directory.CreateDirectory(logdir);
@@ -49,14 +42,14 @@ public static class Helper
             .MinimumLevel.Information()
             .WriteTo.File(
                 $"{logdir}Log_.log",
-                outputTemplate: Program.Config.Log.LogTemplate,
+                outputTemplate: ConfigManager.AppConfig.Log.LogTemplate,
                 rollingInterval: RollingInterval.Hour,
-                fileSizeLimitBytes: Program.Config.Log.LogFileSingleMaxSize,
+                fileSizeLimitBytes: ConfigManager.AppConfig.Log.LogFileSingleMaxSize,
                 buffered: true,
-                flushToDiskInterval: new(0, 0, Program.Config.Log.LogFileFlushInterval),
-                restrictedToMinimumLevel: Program.Config.Log.LogLevel,
+                flushToDiskInterval: new(0, 0, ConfigManager.AppConfig.Log.LogFileFlushInterval),
+                restrictedToMinimumLevel: ConfigManager.AppConfig.Log.LogLevel,
                 rollOnFileSizeLimit: true,
-                retainedFileCountLimit: Program.Config.Log.LogFileMaxCount
+                retainedFileCountLimit: ConfigManager.AppConfig.Log.LogFileMaxCount
             )
             .CreateLogger();
 
@@ -64,18 +57,11 @@ public static class Helper
 
         #endregion
 
-        #region 初始化全局异常捕获
-
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
-            if (e.ExceptionObject is Exception)
-            {
-                var ex = e.ExceptionObject as Exception;
+            if (e.ExceptionObject is Exception ex)
                 Log.Error(ex, $"Au oh! Fatal: {ex.Message}");
-            }
         };
-
-        #endregion
 
         #region 初始化环境
 
@@ -107,7 +93,7 @@ public static class Helper
         {
             new Thread(async () =>
             {
-                Thread.Sleep(Program.Config.Web.DelayStartSeconds * 1000);
+                Thread.Sleep(ConfigManager.AppConfig.Web.DelayStartSeconds * 1000);
                 Program.WebManager = await new WebManager().Start();
             }).Start();
         });
@@ -120,236 +106,6 @@ public static class Helper
 
         #endregion
 
-        #region 初始化事件
-
-        EventService.ConfigSettingsChanged += () => SaveConfig();
-
-        EventService.PluginsListChanged += () => SavePluginsListConfig();
-
-        #endregion
-
-        #region 初始化文件监控管理器
-
-        if (GlobalInfo.EnabledConfigFileHotReload)
-            InitFileWatchers();
-
-        #endregion
-    }
-
-    /// <summary>
-    /// 初始化文件监控器
-    /// </summary>
-    private static void InitFileWatchers()
-    {
-        Program.FileWatcherManager = new();
-        var wm = Program.FileWatcherManager;
-        wm.RegisterWatcher(nameof(FileWatcherNames), GlobalInfo.ConfigFilePath,
-            new((x, y) =>
-        {
-            Log.Information($"OnChanged: {y.Name}");
-            try
-            {
-                lock (_configWriteLock)
-                {
-                    Program.Config = JsonSerializer.Deserialize<AppConfig>(
-                        File.ReadAllText(GlobalInfo.ConfigFilePath));
-                    EventService.Invoke(nameof(EventService.OnConfigHotReloaded));
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "In Config Hot Reload: ");
-            }
-        }));
-    }
-
-    /// <summary>
-    /// 检查当前是否是单进程状态
-    /// </summary>
-    public static void SingleProcessCheck()
-    {
-        Process[] processnow = Process.GetProcesses();
-        int count = 0;
-        foreach (var item in processnow)
-        {
-            if (item.ProcessName.Replace(".exe", "").Equals("KitX Dashboard"))
-                ++count;
-            if (count >= 2) Environment.Exit(0);
-        }
-    }
-
-    private static readonly object _configWriteLock = new();
-    private static readonly object _activityRecordLock = new();
-
-    /// <summary>
-    /// 保存配置
-    /// </summary>
-    public static void SaveConfig()
-    {
-        JsonSerializerOptions options = new()
-        {
-            WriteIndented = true,
-            IncludeFields = true,
-        };
-
-        new Thread(() =>
-        {
-            try
-            {
-                lock (_configWriteLock)
-                {
-                    FileHelper.WriteIn(GlobalInfo.ConfigFilePath,
-                        JsonSerializer.Serialize(Program.Config, options));
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "In Helper.SaveConfig()");
-            }
-        }).Start();
-    }
-
-    /// <summary>
-    /// 保存插件列表配置
-    /// </summary>
-    public static void SavePluginsListConfig()
-    {
-        JsonSerializerOptions options = new()
-        {
-            WriteIndented = true,
-            IncludeFields = true,
-        };
-
-        new Thread(() =>
-        {
-            try
-            {
-                FileHelper.WriteIn(GlobalInfo.PluginsListConfigFilePath,
-                    JsonSerializer.Serialize(Program.PluginsList, options));
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "In Helper.SavePluginsListConfig()");
-            }
-        }).Start();
-    }
-
-    /// <summary>
-    /// 读取配置
-    /// </summary>
-    public static async void LoadConfig()
-    {
-        try
-        {
-            Program.Config = JsonSerializer.Deserialize<AppConfig>(
-                await FileHelper.ReadAllAsync(GlobalInfo.ConfigFilePath));
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "In Helper.LoadConfig()");
-            Program.Config = new AppConfig();
-        }
-    }
-
-    /// <summary>
-    /// 读取插件列表配置
-    /// </summary>
-    public static async void LoadPluginsListConfig()
-    {
-        try
-        {
-            Program.PluginsList = JsonSerializer.Deserialize<PluginsList>(
-                await FileHelper.ReadAllAsync(GlobalInfo.PluginsListConfigFilePath));
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "In Helper.LoadPluginsListConfig()");
-        }
-    }
-
-    /// <summary>
-    /// 读取资源
-    /// </summary>
-    public static async void LoadResource()
-    {
-        try
-        {
-            GlobalInfo.KitXIconBase64 = await FileHelper.ReadAllAsync(Path.GetFullPath(
-                $"{GlobalInfo.AssetsPath}{GlobalInfo.IconBase64FileName}"
-            ));
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "In Helper.LoadResource()");
-        }
-    }
-
-    /// <summary>
-    /// 初始化配置
-    /// </summary>
-    public static void InitConfig()
-    {
-        try
-        {
-            var configDir = GlobalInfo.ConfigPath.GetFullPath();
-            var configFilePath = GlobalInfo.ConfigFilePath.GetFullPath();
-            var pluginsListConfigFilePath = GlobalInfo.PluginsListConfigFilePath.GetFullPath();
-
-            if (!Directory.Exists(configDir))
-                _ = Directory.CreateDirectory(configDir);
-
-            if (!File.Exists(configFilePath)) SaveConfig();
-            else LoadConfig();
-
-            if (!File.Exists(pluginsListConfigFilePath))
-                SavePluginsListConfig();
-            else LoadPluginsListConfig();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "In Helper.InitConfig()");
-        }
-    }
-
-    /// <summary>
-    /// 保存信息
-    /// </summary>
-    public static void SaveInfo()
-    {
-        SaveConfig();
-        SavePluginsListConfig();
-        Log.CloseAndFlush();
-    }
-
-    /// <summary>
-    /// 退出
-    /// </summary>
-    public static void Exit()
-    {
-        var location = $"{nameof(Helper)}.{nameof(Exit)}";
-
-        Log.CloseAndFlush();
-
-        Program.WebManager?.Stop();
-        Program.WebManager?.Dispose();
-
-        Program.ActivitiesDataBase?.Commit();
-        Program.ActivitiesDataBase?.Dispose();
-
-        GlobalInfo.Running = false;
-
-        new Thread(() =>
-        {
-            try
-            {
-                Thread.Sleep(GlobalInfo.LastBreakAfterExit);
-                Environment.Exit(0);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, $"In {location}: {ex.Message}");
-            }
-        }).Start();
     }
 
     /// <summary>
@@ -357,8 +113,7 @@ public static class Helper
     /// </summary>
     public static void InitEnvironment()
     {
-
-        #region 检查 Common.Algorithm 库环境并安装环境
+        var location = $"{nameof(Helper)}.{nameof(InitEnvironment)}";
 
         if (!Common.Algorithm.Interop.Environment.Check())
             new Thread(async () =>
@@ -369,12 +124,9 @@ public static class Helper
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "In Helper.InitEnvironment()");
+                    Log.Error(ex, $"In {location}: {ex.Message}");
                 }
             }).Start();
-
-        #endregion
-
     }
 
     /// <summary>
@@ -413,12 +165,46 @@ public static class Helper
             };
             RecordActivity(activity, colName, new Action(() =>
             {
-                activity.ID = Program.Config.Activity.TotalRecorded + 1;
+                activity.ID = ConfigManager.AppConfig.Activity.TotalRecorded + 1;
             }), x => x.ID);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "In Helper.InitDataBase()");
+        }
+    }
+
+    /// <summary>
+    /// 检查当前是否是单进程状态
+    /// </summary>
+    public static void SingleProcessCheck()
+    {
+        Process[] processnow = Process.GetProcesses();
+        int count = 0;
+        foreach (var item in processnow)
+        {
+            if (item.ProcessName.Replace(".exe", "").Equals("KitX Dashboard"))
+                ++count;
+            if (count >= 2) Environment.Exit(0);
+        }
+    }
+
+    /// <summary>
+    /// 读取资源
+    /// </summary>
+    public static async void LoadResource()
+    {
+        var location = $"{nameof(Helper)}.{nameof(LoadResource)}";
+
+        try
+        {
+            GlobalInfo.KitXIconBase64 = await FileHelper.ReadAllAsync(
+                $"{GlobalInfo.AssetsPath}{GlobalInfo.IconBase64FileName}".GetFullPath()
+            );
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"In {location}: {ex.Message}");
         }
     }
 
@@ -429,17 +215,27 @@ public static class Helper
     /// <param name="colName">集合名称</param>
     /// <param name="action">添加后行动</param>
     /// <param name="keySelector">键选择器</param>
-    public static void RecordActivity(Activity activity, string colName,
-        Action action, Expression<Func<Activity, int>> keySelector)
+    public static void RecordActivity
+    (
+        Activity activity,
+        string colName,
+        Action action,
+        Expression<Func<Activity, int>> keySelector
+    )
     {
         lock (_activityRecordLock)
         {
-            var col = Program.ActivitiesDataBase.GetCollection<Activity>(colName);
-            col.Insert(activity);
+            var col = Program.ActivitiesDataBase?.GetCollection<Activity>(colName);
+
+            col?.Insert(activity);
+
             action();
-            col.Update(activity);
-            col.EnsureIndex(keySelector);
-            Program.Config.Activity.TotalRecorded += 1;
+
+            col?.Update(activity);
+
+            col?.EnsureIndex(keySelector);
+
+            ConfigManager.AppConfig.Activity.TotalRecorded += 1;
         }
     }
 
@@ -454,7 +250,7 @@ public static class Helper
             if (!File.Exists(kxpPath))
             {
                 Console.WriteLine($"No this file: {kxpPath}");
-                throw new Exception("Plugin Package Doesn't Exist.");
+                throw new Exception("Plugins Package Doesn't Exist.");
             }
             else
             {
@@ -466,10 +262,40 @@ public static class Helper
             Log.Error(ex, "In Helper.ImportPlugin()");
         }
     }
-}
 
-#pragma warning restore CS8601 // 引用类型赋值可能为 null。
-#pragma warning restore CS8602 // 解引用可能出现空引用。
+    /// <summary>
+    /// 退出
+    /// </summary>
+    public static void Exit()
+    {
+        var location = $"{nameof(Helper)}.{nameof(Exit)}";
+
+        ConfigManager.SaveConfigs();
+
+        Log.CloseAndFlush();
+
+        Program.WebManager?.Stop();
+        Program.WebManager?.Dispose();
+
+        Program.ActivitiesDataBase?.Commit();
+        Program.ActivitiesDataBase?.Dispose();
+
+        GlobalInfo.Running = false;
+
+        new Thread(() =>
+        {
+            try
+            {
+                Thread.Sleep(GlobalInfo.LastBreakAfterExit);
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, $"In {location}: {ex.Message}");
+            }
+        }).Start();
+    }
+}
 
 //                      __..-----')
 //            ,.--._ .-'_..--...-'

@@ -91,7 +91,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
                 while (keepListen)
                 {
-                    var buffer = new byte[Program.Config.Web.SocketBufferSize];
+                    var buffer = new byte[ConfigManager.AppConfig.Web.SocketBufferSize];
 
                     var length = await stream.ReadAsync(buffer);
 

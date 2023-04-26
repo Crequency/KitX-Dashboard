@@ -24,10 +24,14 @@ internal class PluginsNetwork
     /// <param name="msg">消息</param>
     internal static void Execute(string msg, IPEndPoint endPoint)
     {
+        var location = $"{nameof(PluginsNetwork)}.{nameof(Execute)}";
+
         try
         {
-            var pluginStruct = (PluginStruct)JsonSerializer.Deserialize(msg,
-                typeof(PluginStruct));
+            var pluginStruct = (PluginStruct)JsonSerializer.Deserialize(
+                msg,
+                typeof(PluginStruct)
+            );
 
             pluginStruct.Tags ??= new();
 
@@ -47,9 +51,11 @@ internal class PluginsNetwork
         }
         catch (Exception e)
         {
-            Log.Error(e, $"PluginsManager.Execute(msg) => msg: {msg}; {e.Message}");
+            Log.Error(e, $"In {location}: (msg) => msg: {msg}; {e.Message}");
         }
     }
+
+    internal static List<Plugin> Plugins = new();
 
     internal static readonly Queue<IPEndPoint> pluginsToRemove = new();
 
@@ -66,11 +72,14 @@ internal class PluginsNetwork
     /// </summary>
     internal static void KeepCheckAndRemove()
     {
+        var location = $"{nameof(PluginsNetwork)}.{nameof(KeepCheckAndRemove)}";
+
         System.Timers.Timer timer = new()
         {
             Interval = 10,
             AutoReset = true
         };
+
         timer.Elapsed += (_, _) =>
         {
             try
@@ -130,10 +139,10 @@ internal class PluginsNetwork
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(PluginsNetwork)}.{nameof(KeepCheckAndRemove)}()";
                 Log.Error(ex, $"In {location}: {ex.Message}");
             }
         };
+
         timer.Start();
     }
 
@@ -171,7 +180,7 @@ internal class PluginsNetwork
                 LoaderStruct loaderStruct = JsonSerializer.Deserialize<LoaderStruct>(rst.Item1);
                 PluginStruct pluginStruct = JsonSerializer.Deserialize<PluginStruct>(rst.Item2);
                 AppConfig? config = null;
-                if (inGraphic) config = Program.Config;
+                if (inGraphic) config = ConfigManager.AppConfig;
                 else config = JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(
                     Path.GetFullPath($"{GlobalInfo.ConfigPath}config.json")
                 ));
@@ -193,9 +202,9 @@ internal class PluginsNetwork
                 _ = Directory.CreateDirectory(thisplugindir);
                 _ = decoder.Decode(thisplugindir);
 
-                if (!Program.PluginsList.Plugins.Exists(
+                if (!Plugins.Exists(
                         x => x.InstallPath?.Equals(thisplugindir) ?? false))
-                    Program.PluginsList.Plugins.Add(new()
+                    Plugins.Add(new()
                     {
                         InstallPath = thisplugindir
                     });
@@ -226,33 +235,40 @@ internal class PluginsNetwork
     /// </summary>
     internal static void KeepCheckAndRemoveOrDelete()
     {
+        var location = $"{nameof(PluginsNetwork)}.{nameof(KeepCheckAndRemoveOrDelete)}";
+
         System.Timers.Timer timer = new()
         {
             Interval = 2000,
             AutoReset = true
         };
+
         timer.Elapsed += (_, _) =>
         {
             try
             {
-                bool isPluginsListUpdated = false;
+                var isPluginsListUpdated = false;
 
                 if (pluginsToRemoveFromDB.Count > 0)
                 {
                     isPluginsListUpdated = true;
+
                     while (pluginsToRemoveFromDB.Count > 0)
                     {
-                        Plugin pg = pluginsToRemoveFromDB.Dequeue();
+                        var plugin = pluginsToRemoveFromDB.Dequeue();
+
                         lock (PluginsListOperationLock)
                         {
-                            Program.PluginsList.Plugins.RemoveAt(
-                                Program.PluginsList.Plugins.FindIndex(
+                            Plugins.RemoveAt(
+                                Plugins.FindIndex(
                                     x =>
                                     {
-                                        if (x.InstallPath != null)
-                                            return x.InstallPath.Equals(pg.InstallPath);
-                                        else return false;
-                                    }));
+                                        if (x.InstallPath is null) return false;
+
+                                        return x.InstallPath.Equals(plugin.InstallPath);
+                                    }
+                                )
+                            );
                         }
                     }
                 }
@@ -260,25 +276,31 @@ internal class PluginsNetwork
                 if (pluginsToDelete.Count > 0)
                 {
                     isPluginsListUpdated = true;
+
                     while (pluginsToDelete.Count > 0)
                     {
-                        Plugin pg = pluginsToDelete.Dequeue();
+                        var plugin = pluginsToDelete.Dequeue();
+
                         lock (PluginsListOperationLock)
                         {
-                            Program.PluginsList.Plugins.RemoveAt(
-                                Program.PluginsList.Plugins.FindIndex(
+                            Plugins.RemoveAt(
+                                Plugins.FindIndex(
                                     x =>
                                     {
                                         if (x.InstallPath != null)
-                                            return x.InstallPath.Equals(pg.InstallPath);
+                                            return x.InstallPath.Equals(plugin.InstallPath);
                                         else return false;
-                                    }));
+                                    }
+                                )
+                            );
                         }
-                        string pgfiledir = Path.GetFullPath(
-                            $"{Program.Config.App.LocalPluginsFileFolder}/" +
-                            $"{pg.PluginDetails.PublisherName}_{pg.PluginDetails.AuthorName}/" +
-                            $"{pg.PluginDetails.Name}/{pg.PluginDetails.Version}/"
+
+                        var pgfiledir = Path.GetFullPath(
+                            $"{ConfigManager.AppConfig.App.LocalPluginsFileFolder}/" +
+                            $"{plugin.PluginDetails.PublisherName}_{plugin.PluginDetails.AuthorName}/" +
+                            $"{plugin.PluginDetails.Name}/{plugin.PluginDetails.Version}/"
                         );
+
                         Directory.Delete(pgfiledir, true);
                     }
                 }
@@ -287,10 +309,10 @@ internal class PluginsNetwork
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(PluginsNetwork)}.{nameof(KeepCheckAndRemoveOrDelete)}()";
                 Log.Error(ex, $"In {location}: {ex.Message}");
             }
         };
+
         timer.Start();
     }
 }

@@ -40,8 +40,8 @@ public partial class App : Application
     /// </summary>
     private void LoadLanguage()
     {
-        var lang = Program.Config.App.AppLanguage;
-        var backup_lang = Program.Config.App.SurpportLanguages.Keys.First();
+        var lang = ConfigManager.AppConfig.App.AppLanguage;
+        var backup_lang = ConfigManager.AppConfig.App.SurpportLanguages.Keys.First();
         var path = $"{GlobalInfo.LanguageFilePath}/{lang}.axaml".GetFullPath();
         var backup_langPath = $"{GlobalInfo.LanguageFilePath}/{backup_lang}.axaml";
 
@@ -70,8 +70,7 @@ public partial class App : Application
                         FileHelper.ReadAll(backup_langPath)
                     ) as ResourceDictionary ?? new()
                 );
-
-                Program.Config.App.AppLanguage = backup_lang;
+                ConfigManager.AppConfig.App.AppLanguage = backup_lang;
             }
             catch (Exception e)
             {
@@ -98,7 +97,7 @@ public partial class App : Application
     /// </summary>
     private static void CalculateThemeColor()
     {
-        Color c = Color.Parse(Program.Config.App.ThemeColor);
+        Color c = Color.Parse(ConfigManager.AppConfig.App.ThemeColor);
 
         if (Current != null)
         {
@@ -163,7 +162,7 @@ public partial class App : Application
             };
         }
 
-        if (Program.Config.App.ShowAnnouncementWhenStart)
+        if (ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
             new Thread(async () =>
             {
                 try
@@ -180,7 +179,7 @@ public partial class App : Application
     }
 
     public static Bitmap DefaultIcon = new(Path.GetFullPath(
-        $"{GlobalInfo.AssetsPath}{Program.Config.App.CoverIconFileName}"));
+        $"{GlobalInfo.AssetsPath}{ConfigManager.AppConfig.App.CoverIconFileName}"));
 }
 
 //                                         .....'',;;::cccllllllllllllcccc:::;;,,,''...'',,'..

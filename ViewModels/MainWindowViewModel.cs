@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
 
@@ -35,8 +36,7 @@ internal class MainWindowViewModel : ViewModelBase
             win.WindowState = WindowState.Normal;
         win?.Show();
         win?.Activate();
-
-        Program.Config.Windows.MainWindow.IsHidden = false;
+        ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
         EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 

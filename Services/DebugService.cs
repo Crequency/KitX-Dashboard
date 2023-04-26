@@ -1,4 +1,5 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Network;
 using Serilog;
 using System;
@@ -41,8 +42,9 @@ internal class DebugCommands
 {
     private static string SaveConfig()
     {
-        Helper.SaveConfig();
-        return "Config saved!";
+        ConfigManager.SaveConfigs();
+
+        return "AppConfig saved!";
     }
 
     public static string? Help(Dictionary<string, string> args)

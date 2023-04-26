@@ -79,7 +79,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
                 while (keepListen)
                 {
-                    var buffer = new byte[Program.Config.Web.SocketBufferSize];
+                    var buffer = new byte[ConfigManager.AppConfig.Web.SocketBufferSize];
 
                     var length = stream is null ? 0 : await stream.ReadAsync(buffer);
 
@@ -95,7 +95,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
                         {
                             PluginsNetwork.Execute(msg[14..], endpoint);
 
-                            var workPath = Program.Config.App.LocalPluginsDataFolder.GetFullPath();
+                            var workPath = ConfigManager.AppConfig.App.LocalPluginsDataFolder.GetFullPath();
                             var sendtxt = $"WorkPath: {workPath}";
                             var bytes = sendtxt.FromUTF8();
 
@@ -141,7 +141,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
     {
         clients.Clear();
 
-        var port = Program.Config.Web.UserSpecifiedPluginsServerPort;
+        var port = ConfigManager.AppConfig.Web.UserSpecifiedPluginsServerPort;
 
         if (port < 0 || port > 65535) port = null;
 

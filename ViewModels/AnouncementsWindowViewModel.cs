@@ -1,6 +1,7 @@
 ﻿using FluentAvalonia.UI.Controls;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Views;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -28,14 +29,14 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal static double Window_Width
     {
-        get => Program.Config.Windows.AnnouncementWindow.Window_Width;
-        set => Program.Config.Windows.AnnouncementWindow.Window_Width = value;
+        get => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width;
+        set => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width = value;
     }
 
     internal static double Window_Height
     {
-        get => Program.Config.Windows.AnnouncementWindow.Window_Height;
-        set => Program.Config.Windows.AnnouncementWindow.Window_Height = value;
+        get => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height;
+        set => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height = value;
     }
 
     private NavigationViewItem? selectedMenuItem;

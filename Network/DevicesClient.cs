@@ -62,7 +62,7 @@ internal class DevicesClient : IKitXClient<DevicesClient>
 
         if (stream is null) return;
 
-        var buffer = new byte[Program.Config.Web.SocketBufferSize];  //  Default 10 MB buffer
+        var buffer = new byte[ConfigManager.AppConfig.Web.SocketBufferSize];  //  Default 10 MB buffer
 
         try
         {

@@ -14,8 +14,6 @@ namespace KitX_Dashboard;
 
 internal class Program
 {
-    internal static AppConfig Config = new();
-
     internal static TasksManager? TasksManager;
 
     internal static WebManager? WebManager;
@@ -25,8 +23,6 @@ internal class Program
     internal static ObservableCollection<PluginCard> PluginCards = new();
 
     internal static ObservableCollection<DeviceCard> DeviceCards = new();
-
-    internal static PluginsList PluginsList = new();
 
     internal static LiteDatabase? ActivitiesDataBase;
 
@@ -46,12 +42,7 @@ internal class Program
     [STAThread]
     public static void Main(string[] args)
     {
-
-        #region 必要的初始化
-
         EventService.Init();
-
-        #endregion
 
         #region 处理启动参数
 
@@ -90,43 +81,18 @@ internal class Program
 
         #endregion
 
-        #region 单进程模式检查
-
-        if (GlobalInfo.IsSingleProcessStartMode)
-            Helper.SingleProcessCheck();
-
-        #endregion
-
-        #region 正常启动流程
-
         try
         {
-
-            #region 执行启动时检查
+            if (GlobalInfo.IsSingleProcessStartMode)
+                Helper.SingleProcessCheck();
 
             Helper.StartUpCheck();
-
-            #endregion
-
-            Config.App.RanTime++;
-
-            #region 进入应用生命周期循环
+            ConfigManager.
+                        AppConfig.App.RanTime++;
 
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
-            #endregion
-
-            #region 保存配置信息
-
-            Helper.SaveInfo();
-
-            #endregion
-
-            #region 退出进程
-
             Helper.Exit();
-
-            #endregion
 
         }
         catch (Exception e)
@@ -137,9 +103,6 @@ internal class Program
             Environment.Exit(1);
 #endif
         }
-
-        #endregion
-
     }
 
     /// <summary>

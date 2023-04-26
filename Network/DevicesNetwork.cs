@@ -1,6 +1,7 @@
 ﻿using Avalonia.Threading;
 using KitX.Web.Rules;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
@@ -51,7 +52,7 @@ internal class DevicesNetwork
     /// <returns>是否离线</returns>
     private static bool CheckDeviceIsOffline(DeviceInfoStruct info)
         => DateTime.UtcNow - info.SendTime.ToUniversalTime()
-           > new TimeSpan(0, 0, Program.Config.Web.DeviceInfoStructTTLSeconds);
+           > new TimeSpan(0, 0, ConfigManager.AppConfig.Web.DeviceInfoStructTTLSeconds);
 
     /// <summary>
     /// 判断是否是本机卡片
@@ -225,7 +226,7 @@ internal class DevicesNetwork
     {
         var timer = new Timer()
         {
-            Interval = Program.Config.Web.DevicesViewRefreshDelay,
+            Interval = ConfigManager.AppConfig.Web.DevicesViewRefreshDelay,
             AutoReset = true
         };
 
@@ -246,7 +247,7 @@ internal class DevicesNetwork
 
                     //RemoveDumplicatedCards();
 
-                    if (!Program.Config.Web.DisableRemovingOfflineDeviceCard)
+                    if (!ConfigManager.AppConfig.Web.DisableRemovingOfflineDeviceCard)
                         RemoveOfflineCards();
 
                     MoveSelfCard2First();
@@ -265,7 +266,7 @@ internal class DevicesNetwork
 
         EventService.ConfigSettingsChanged += () =>
         {
-            timer.Interval = Program.Config.Web.DevicesViewRefreshDelay;
+            timer.Interval = ConfigManager.AppConfig.Web.DevicesViewRefreshDelay;
         };
     }
 

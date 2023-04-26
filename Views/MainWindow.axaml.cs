@@ -11,6 +11,7 @@ using FluentAvalonia.UI.Media;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Generators;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Names;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;
@@ -46,19 +47,19 @@ public partial class MainWindow : CoreWindow
 
         SuggestResolutionAndLocation();
 
-        Resolution nowRes = Resolution.Parse($"{Program.Config.Windows.MainWindow.Window_Width}" +
-            $"x{Program.Config.Windows.MainWindow.Window_Height}");
+        Resolution nowRes = Resolution.Parse($"{ConfigManager.AppConfig.Windows.MainWindow.Window_Width}" +
+            $"x{ConfigManager.AppConfig.Windows.MainWindow.Window_Height}");
 
         // 设置窗体坐标
         try
         {
             Position = new(
                 WindowAttributesConverter.PositionCameCenter(
-                    Program.Config.Windows.MainWindow.Window_Left,
+ConfigManager.AppConfig.Windows.MainWindow.Window_Left,
                     true, Screens, nowRes
                 ),
                 WindowAttributesConverter.PositionCameCenter(
-                    Program.Config.Windows.MainWindow.Window_Top,
+ConfigManager.AppConfig.Windows.MainWindow.Window_Top,
                     false, Screens, nowRes
                 )
             );
@@ -72,13 +73,13 @@ public partial class MainWindow : CoreWindow
         {
             if (OperatingSystem.IsWindows())
             {
-                Width = Program.Config.Windows.MainWindow.Window_Width;
-                Height = Program.Config.Windows.MainWindow.Window_Height + 30;
+                Width = ConfigManager.AppConfig.Windows.MainWindow.Window_Width;
+                Height = ConfigManager.AppConfig.Windows.MainWindow.Window_Height + 30;
             }
             else
             {
-                Width = Program.Config.Windows.MainWindow.Window_Width;
-                Height = Program.Config.Windows.MainWindow.Window_Height;
+                Width = ConfigManager.AppConfig.Windows.MainWindow.Window_Width;
+                Height = ConfigManager.AppConfig.Windows.MainWindow.Window_Height;
             }
         }
         catch (Exception e)
@@ -90,8 +91,8 @@ public partial class MainWindow : CoreWindow
         try
         {
             Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal),
-                () => WindowState = Program.Config.Windows.MainWindow.WindowState);
-            if (Program.Config.Windows.MainWindow.IsHidden)
+                () => WindowState = ConfigManager.AppConfig.Windows.MainWindow.WindowState);
+            if (ConfigManager.AppConfig.Windows.MainWindow.IsHidden)
                 Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal),
                     () => Hide());
         }
@@ -112,8 +113,8 @@ public partial class MainWindow : CoreWindow
     /// </summary>
     private void SuggestResolutionAndLocation()
     {
-        if (Program.Config.Windows.MainWindow.Window_Width == 1280
-            && Program.Config.Windows.MainWindow.Window_Height == 720)
+        if (ConfigManager.AppConfig.Windows.MainWindow.Window_Width == 1280
+            && ConfigManager.AppConfig.Windows.MainWindow.Window_Height == 720)
         {
             Resolution suggest = Resolution.Suggest(
                 Resolution.Parse("2560x1440"),
@@ -123,8 +124,8 @@ public partial class MainWindow : CoreWindow
             if (suggest.Width != null
                 && suggest.Height != null)
             {
-                Program.Config.Windows.MainWindow.Window_Width = (double)suggest.Width;
-                Program.Config.Windows.MainWindow.Window_Height = (double)suggest.Height;
+                ConfigManager.AppConfig.Windows.MainWindow.Window_Width = (double)suggest.Width;
+                ConfigManager.AppConfig.Windows.MainWindow.Window_Height = (double)suggest.Height;
             }
         }
     }
@@ -138,14 +139,14 @@ public partial class MainWindow : CoreWindow
         MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
 
         //  如果主题不设置为 `跟随系统` 则手动变更主题
-        if (!Program.Config.App.Theme.Equals("Follow"))
+        if (!ConfigManager.AppConfig.App.Theme.Equals("Follow"))
             AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>().RequestedTheme =
-                Program.Config.App.Theme;
+ConfigManager.AppConfig.App.Theme;
 
         //  透明度变更事件, 让透明度变更立即生效
         EventService.MicaOpacityChanged += () =>
         {
-            if (Program.Config.Windows.MainWindow.EnabledMica)
+            if (ConfigManager.AppConfig.Windows.MainWindow.EnabledMica)
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && IsWindows11)
                 {
                     switch (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>().RequestedTheme)
@@ -155,14 +156,14 @@ public partial class MainWindow : CoreWindow
                                 out var value1) ? (Color2)(Color)value1 : new Color2(32, 32, 32);
 
                             Background = new ImmutableSolidColorBrush(color1,
-                                Program.Config.Windows.MainWindow.MicaOpacity);
+ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
                             break;
                         case "Dark":
                             var color2 = this.TryFindResource("SolidBackgroundFillColorBase",
                                 out var value2) ? (Color2)(Color)value2 : new Color2(243, 243, 243);
 
                             Background = new ImmutableSolidColorBrush(color2,
-                                Program.Config.Windows.MainWindow.MicaOpacity);
+ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
                             break;
                     }
                 }
@@ -175,7 +176,7 @@ public partial class MainWindow : CoreWindow
         Timer timer = new()
         {
             AutoReset = true,
-            Interval = 1000 * 60 * Program.Config.Windows.MainWindow.GreetingUpdateInterval
+            Interval = 1000 * 60 * ConfigManager.AppConfig.Windows.MainWindow.GreetingUpdateInterval
         };
         timer.Elapsed += (_, _) => UpdateGreetingText();
         timer.Start();
@@ -233,10 +234,10 @@ public partial class MainWindow : CoreWindow
     /// </summary>
     private static string SelectedPageName
     {
-        get => Program.Config.Windows.MainWindow.Tags["SelectedPage"];
+        get => ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"];
         set
         {
-            Program.Config.Windows.MainWindow.Tags["SelectedPage"] = value;
+            ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"] = value;
             SaveChanges();
         }
     }
@@ -269,21 +270,21 @@ public partial class MainWindow : CoreWindow
         {
             if (WindowState != WindowState.Minimized)
             {
-                Program.Config.Windows.MainWindow.Window_Left = Position.X;
-                Program.Config.Windows.MainWindow.Window_Top = Position.Y;
+                ConfigManager.AppConfig.Windows.MainWindow.Window_Left = Position.X;
+                ConfigManager.AppConfig.Windows.MainWindow.Window_Top = Position.Y;
             }
             if (OperatingSystem.IsWindows())
             {
-                Program.Config.Windows.MainWindow.Window_Width = Width;
-                Program.Config.Windows.MainWindow.Window_Height = Height - 30;
+                ConfigManager.AppConfig.Windows.MainWindow.Window_Width = Width;
+                ConfigManager.AppConfig.Windows.MainWindow.Window_Height = Height - 30;
             }
             else
             {
-                Program.Config.Windows.MainWindow.Window_Width = Width;
-                Program.Config.Windows.MainWindow.Window_Height = Height;
+                ConfigManager.AppConfig.Windows.MainWindow.Window_Width = Width;
+                ConfigManager.AppConfig.Windows.MainWindow.Window_Height = Height;
             }
         }
-        Program.Config.Windows.MainWindow.
+        ConfigManager.AppConfig.Windows.MainWindow.
             Tags["SelectedPage"] = SelectedPageName;
     }
 
@@ -293,8 +294,8 @@ public partial class MainWindow : CoreWindow
     /// <param name="state">窗口状态</param>
     protected override void HandleWindowStateChanged(WindowState state)
     {
-        Program.Config.Windows.MainWindow.WindowState = state;
-        Program.Config.Windows.MainWindow.IsHidden = false;
+        ConfigManager.AppConfig.Windows.MainWindow.WindowState = state;
+        ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
 
         SaveChanges();
 
@@ -315,7 +316,7 @@ public partial class MainWindow : CoreWindow
         {
             e.Cancel = true;
             Hide();
-            Program.Config.Windows.MainWindow.IsHidden = true;
+            ConfigManager.AppConfig.Windows.MainWindow.IsHidden = true;
             SaveChanges();
         }
         else
@@ -337,7 +338,7 @@ public partial class MainWindow : CoreWindow
 
         // 如果是 Windows 系统, 且数据库表示启用 Mica 效果
         //if ((bool)(Helper.local_db_table.Query(1).ReturnResult as List<object>)[5]
-        if (Program.Config.Windows.MainWindow.EnabledMica
+        if (ConfigManager.AppConfig.Windows.MainWindow.EnabledMica
             && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             // 如果是 Windows 11 而且没有选择 `高对比度` 主题
@@ -388,7 +389,7 @@ public partial class MainWindow : CoreWindow
             color = color.LightenPercent(-0.8f);
 
             Background = new ImmutableSolidColorBrush(color,
-                Program.Config.Windows.MainWindow.MicaOpacity);
+ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
         }
         else if (thm.RequestedTheme == FluentAvaloniaTheme.LightModeString)
         {
@@ -398,7 +399,7 @@ public partial class MainWindow : CoreWindow
             color = color.LightenPercent(0.5f);
 
             Background = new ImmutableSolidColorBrush(color,
-                Program.Config.Windows.MainWindow.MicaOpacity);
+ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
         }
     }
 }

@@ -36,7 +36,7 @@ public class AppConfig
     public Config_Loaders Loaders { get; set; } = new();
 
     /// <summary>
-    /// Config
+    /// AppConfig
     /// </summary>
     public class Config_App
     {

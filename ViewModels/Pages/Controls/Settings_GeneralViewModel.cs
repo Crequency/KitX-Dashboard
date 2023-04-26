@@ -58,10 +58,10 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal static string LocalPluginsFileDirectory
     {
-        get => Program.Config.App.LocalPluginsFileFolder;
+        get => ConfigManager.AppConfig.App.LocalPluginsFileFolder;
         set
         {
-            Program.Config.App.LocalPluginsFileFolder = value;
+            ConfigManager.AppConfig.App.LocalPluginsFileFolder = value;
             SaveChanges();
         }
     }
@@ -71,10 +71,10 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal static string LocalPluginsDataDirectory
     {
-        get => Program.Config.App.LocalPluginsDataFolder;
+        get => ConfigManager.AppConfig.App.LocalPluginsDataFolder;
         set
         {
-            Program.Config.App.LocalPluginsDataFolder = value;
+            ConfigManager.AppConfig.App.LocalPluginsDataFolder = value;
             SaveChanges();
         }
     }
@@ -84,10 +84,10 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal static int ShowAnnouncementsStatus
     {
-        get => Program.Config.App.ShowAnnouncementWhenStart ? 0 : 1;
+        get => ConfigManager.AppConfig.App.ShowAnnouncementWhenStart ? 0 : 1;
         set
         {
-            Program.Config.App.ShowAnnouncementWhenStart = value == 0;
+            ConfigManager.AppConfig.App.ShowAnnouncementWhenStart = value == 0;
             SaveChanges();
         }
     }
@@ -97,7 +97,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal static bool DeveloperSettingEnabled
     {
-        get => Program.Config.App.DeveloperSetting;
+        get => ConfigManager.AppConfig.App.DeveloperSetting;
     }
 
     /// <summary>
@@ -105,10 +105,10 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal static int DeveloperSettingStatus
     {
-        get => Program.Config.App.DeveloperSetting ? 0 : 1;
+        get => ConfigManager.AppConfig.App.DeveloperSetting ? 0 : 1;
         set
         {
-            Program.Config.App.DeveloperSetting = value == 0;
+            ConfigManager.AppConfig.App.DeveloperSetting = value == 0;
             EventService.Invoke(nameof(EventService.DevelopSettingsChanged));
             SaveChanges();
         }
@@ -143,7 +143,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     {
         ++_consolesCount;
 
-        var port = Program.Config.Web.DebugServicesServerPort;
+        var port = ConfigManager.AppConfig.Web.DebugServicesServerPort;
         if (!_manager.ServerLaunched) _manager = await _manager.LaunchServer(port);
 
         var name = $"KitX_DebugTool_{_consolesCount}";

@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using System.ComponentModel;
 
@@ -22,10 +23,10 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal static bool IsPaneOpen
     {
-        get => Program.Config.Pages.Home.IsNavigationViewPaneOpened;
+        get => ConfigManager.AppConfig.Pages.Home.IsNavigationViewPaneOpened;
         set
         {
-            Program.Config.Pages.Home.IsNavigationViewPaneOpened = value;
+            ConfigManager.AppConfig.Pages.Home.IsNavigationViewPaneOpened = value;
             EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
         }
     }
@@ -42,10 +43,10 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
     {
-        get => Program.Config.Pages.Home.NavigationViewPaneDisplayMode;
+        get => ConfigManager.AppConfig.Pages.Home.NavigationViewPaneDisplayMode;
         set
         {
-            Program.Config.Pages.Home.NavigationViewPaneDisplayMode = value;
+            ConfigManager.AppConfig.Pages.Home.NavigationViewPaneDisplayMode = value;
             PropertyChanged?.Invoke(this,
                 new(nameof(NavigationViewPaneDisplayMode)));
             PropertyChanged?.Invoke(this,

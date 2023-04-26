@@ -45,7 +45,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     {
         EventService.ConfigSettingsChanged += () =>
         {
-            ImportButtonVisibility = Program.Config.App.DeveloperSetting;
+            ImportButtonVisibility = ConfigManager.AppConfig.App.DeveloperSetting;
         };
     }
 
@@ -86,10 +86,10 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal bool ImportButtonVisibility
     {
-        get => Program.Config.App.DeveloperSetting;
+        get => ConfigManager.AppConfig.App.DeveloperSetting;
         set
         {
-            Program.Config.App.DeveloperSetting = value;
+            ConfigManager.AppConfig.App.DeveloperSetting = value;
             PropertyChanged?.Invoke(this, new(nameof(ImportButtonVisibility)));
         }
     }
@@ -147,7 +147,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         PluginBars.Clear();
         lock (PluginsNetwork.PluginsListOperationLock)
         {
-            foreach (var item in Program.PluginsList.Plugins)
+            foreach (var item in PluginsNetwork.Plugins)
             {
                 try
                 {

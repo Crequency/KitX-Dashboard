@@ -1,4 +1,5 @@
 ﻿using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Views.Pages.Controls;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -74,7 +75,7 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
 
         Task.Run(async () =>
         {
-            await Task.Delay(Program.Config.Web.UDPSendFrequency + 200);
+            await Task.Delay(ConfigManager.AppConfig.Web.UDPSendFrequency + 200);
 
             DeviceCards.Clear();
         });

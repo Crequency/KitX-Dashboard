@@ -52,8 +52,8 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
         {
             if (PluginDetail != null)
                 return PluginDetail.PluginDetails.DisplayName
-                    .ContainsKey(Program.Config.App.AppLanguage)
-                    ? PluginDetail.PluginDetails.DisplayName[Program.Config.App.AppLanguage]
+                    .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
+                    ? PluginDetail.PluginDetails.DisplayName[ConfigManager.AppConfig.App.AppLanguage]
                     : PluginDetail.PluginDetails.DisplayName.Values.GetEnumerator().Current;
             return null;
         }
@@ -159,7 +159,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
                     Process.Start(pluginFile, $"--connect {connectStr}");
                 else
                 {
-                    string loaderFile = $"{Program.Config.Loaders.InstallPath}/{loaderName}/{loaderName}";
+                    string loaderFile = $"{ConfigManager.AppConfig.Loaders.InstallPath}/{loaderName}/{loaderName}";
                     if (OperatingSystem.IsWindows())
                         loaderFile += ".exe";
                     loaderFile = Path.GetFullPath(loaderFile);

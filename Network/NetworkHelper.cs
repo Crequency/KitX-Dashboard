@@ -3,6 +3,7 @@ using Common.BasicHelper.Utils.Extensions;
 using KitX.Web.Rules;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using Serilog;
 using System;
 using System.IO;
@@ -26,7 +27,7 @@ internal static class NetworkHelper
         IPInterfaceProperties adapterProperties
     )
     {
-        var userPointed = Program.Config.Web.AcceptedNetworkInterfaces;
+        var userPointed = ConfigManager.AppConfig.Web.AcceptedNetworkInterfaces;
         if (userPointed is not null)
             if (userPointed.Contains(adapter.Name))
                 return true;
@@ -76,7 +77,7 @@ internal static class NetworkHelper
                             || IPv4_2_4Parts(ip.ToString()).Item1 == 172               //  172.16-31.x.x
                                 && IPv4_2_4Parts(ip.ToString()).Item2 >= 16
                                 && IPv4_2_4Parts(ip.ToString()).Item2 <= 31)
-                        && ip.ToString().StartsWith(Program.Config.Web.IPFilter)  //  满足自定义规则
+                        && ip.ToString().StartsWith(ConfigManager.AppConfig.Web.IPFilter)  //  满足自定义规则
                     select ip).First().ToString();
         }
         catch (Exception ex)

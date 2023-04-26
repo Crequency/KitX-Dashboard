@@ -24,8 +24,8 @@ internal class AnouncementManager
 
         //  链接头部
         string linkBase = $"http://" +
-            $"{Program.Config.Web.APIServer}" +
-            $"{Program.Config.Web.APIPath}";
+            $"{ConfigManager.AppConfig.Web.APIServer}" +
+            $"{ConfigManager.AppConfig.Web.APIPath}";
 
         //  获取公告列表的api链接
         string link = $"{linkBase}{GlobalInfo.Api_Get_Announcements}";
@@ -66,7 +66,7 @@ internal class AnouncementManager
                 //  获取单个公告的链接
                 string apiLink = $"{linkBase}{GlobalInfo.Api_Get_Announcement}" +
                     $"?" +
-                    $"lang={Program.Config.App.AppLanguage}" +
+                    $"lang={ConfigManager.AppConfig.App.AppLanguage}" +
                     $"&" +
                     $"date={item:yyyy-MM-dd HH-mm}";
                 string? md = JsonSerializer.Deserialize<string>(await client.GetStringAsync(apiLink));

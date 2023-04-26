@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using FluentAvalonia.UI.Controls;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels.Pages;
 using KitX_Dashboard.Views.Pages.Controls;
@@ -70,10 +71,10 @@ public partial class SettingsPage : UserControl
 
     private static string SelectedViewName
     {
-        get => Program.Config.Pages.Settings.SelectedViewName;
+        get => ConfigManager.AppConfig.Pages.Settings.SelectedViewName;
         set
         {
-            Program.Config.Pages.Settings.SelectedViewName = value;
+            ConfigManager.AppConfig.Pages.Settings.SelectedViewName = value;
             SaveChanges();
         }
     }
