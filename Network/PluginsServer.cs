@@ -93,7 +93,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
                         if (msg.StartsWith("PluginStruct: "))
                         {
-                            PluginsManager.Execute(msg[14..], endpoint);
+                            PluginsNetwork.Execute(msg[14..], endpoint);
 
                             var workPath = Program.Config.App.LocalPluginsDataFolder.GetFullPath();
                             var sendtxt = $"WorkPath: {workPath}";
@@ -125,7 +125,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
             {
                 if (endpoint is not null)
                 {
-                    PluginsManager.Disconnect(endpoint);
+                    PluginsNetwork.Disconnect(endpoint);
 
                     clients.Remove(endpoint.ToString());
                 }

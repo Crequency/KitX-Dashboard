@@ -458,7 +458,7 @@ public static class Helper
             }
             else
             {
-                PluginsManager.ImportPlugin(new string[] { kxpPath });
+                PluginsNetwork.ImportPlugin(new string[] { kxpPath });
             }
         }
         catch (Exception ex)

@@ -49,8 +49,8 @@ public class WebManager : IDisposable
 
                 if (startAll || startPluginsServices)
                 {
-                    PluginsManager.KeepCheckAndRemove();
-                    PluginsManager.KeepCheckAndRemoveOrDelete();
+                    PluginsNetwork.KeepCheckAndRemove();
+                    PluginsNetwork.KeepCheckAndRemoveOrDelete();
 
                     pluginsServer = await new PluginsServer().Start();
                 }

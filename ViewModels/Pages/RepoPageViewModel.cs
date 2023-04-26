@@ -126,7 +126,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
             {
                 try
                 {
-                    PluginsManager.ImportPlugin(files, true);
+                    PluginsNetwork.ImportPlugin(files, true);
                 }
                 catch (Exception ex)
                 {
@@ -145,7 +145,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         //LiteDatabase? pgdb = Program.PluginsDataBase;
 
         PluginBars.Clear();
-        lock (PluginsManager.PluginsListOperationLock)
+        lock (PluginsNetwork.PluginsListOperationLock)
         {
             foreach (var item in Program.PluginsList.Plugins)
             {

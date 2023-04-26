@@ -16,7 +16,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace KitX_Dashboard.Managers;
 
-internal class PluginsManager
+internal class PluginsNetwork
 {
     /// <summary>
     /// 执行 Socket 消息
@@ -130,7 +130,7 @@ internal class PluginsManager
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(PluginsManager)}.{nameof(KeepCheckAndRemove)}()";
+                var location = $"{nameof(PluginsNetwork)}.{nameof(KeepCheckAndRemove)}()";
                 Log.Error(ex, $"In {location}: {ex.Message}");
             }
         };
@@ -287,7 +287,7 @@ internal class PluginsManager
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(PluginsManager)}.{nameof(KeepCheckAndRemoveOrDelete)}()";
+                var location = $"{nameof(PluginsNetwork)}.{nameof(KeepCheckAndRemoveOrDelete)}()";
                 Log.Error(ex, $"In {location}: {ex.Message}");
             }
         };

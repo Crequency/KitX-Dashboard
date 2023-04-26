@@ -120,7 +120,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
         if (PluginDetail != null && PluginBar != null)
         {
             PluginBars?.Remove(PluginBar);
-            PluginsManager.RequireRemovePlugin(PluginDetail);
+            PluginsNetwork.RequireRemovePlugin(PluginDetail);
         }
     }
 
@@ -133,7 +133,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
         if (PluginDetail != null && PluginBar != null)
         {
             PluginBars?.Remove(PluginBar);
-            PluginsManager.RequireDeletePlugin(PluginDetail);
+            PluginsNetwork.RequireDeletePlugin(PluginDetail);
         }
     }
 
