@@ -1,6 +1,5 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
-using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
@@ -42,58 +41,19 @@ internal class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        EventService.Init();
-
-        #region 处理启动参数
-
         try
         {
-            for (int i = 0; i < args.Length; i++)
-            {
-                switch (args[i])
-                {
-                    case "--import-plugin":
-                        if (i != args.Length - 1)
-                            try
-                            {
-                                Helper.ImportPlugin(args[i + 1]);
-                            }
-                            catch (Exception e)
-                            {
-                                Console.WriteLine(e.Message);
-                            }
-                        else throw new Exception("No arguments for plugin location.");
-                        break;
-                    case "--disable-single-process-check":
-                        GlobalInfo.IsSingleProcessStartMode = false;
-                        break;
-                    case "--disable-config-hot-reload":
-                        GlobalInfo.EnabledConfigFileHotReload = false;
-                        break;
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e.Message);
-            Environment.Exit(ErrorCodes.StartUpArgumentsError);
-        }
+            EventService.Init();
 
-        #endregion
-
-        try
-        {
-            if (GlobalInfo.IsSingleProcessStartMode)
-                Helper.SingleProcessCheck();
+            Helper.ProcessStartupArguments(args);
 
             Helper.StartUpCheck();
-            ConfigManager.
-                        AppConfig.App.RanTime++;
+
+            ConfigManager.AppConfig.App.RanTime++;
 
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
             Helper.Exit();
-
         }
         catch (Exception e)
         {
@@ -112,20 +72,28 @@ internal class Program
     /// Avalonia configuration, don't remove; also used by visual designer.
     /// Avalonia 配置项, 请不要删除; 同时也用于可视化设计器
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
-        .UsePlatformDetect().LogToTrace().UseReactiveUI()
-        .With(new Win32PlatformOptions
-        {
-            UseWindowsUIComposition = true,
-            EnableMultitouch = true,
-        })
-        .With(new MacOSPlatformOptions
-        {
-            ShowInDock = true
-        })
-        .With(new X11PlatformOptions
-        {
-            EnableMultiTouch = true
-        });
+        .UsePlatformDetect()
+        .LogToTrace()
+        .UseReactiveUI()
+        .With(
+            new Win32PlatformOptions
+            {
+                UseWindowsUIComposition = true,
+                EnableMultitouch = true,
+            }
+        )
+        .With(
+            new MacOSPlatformOptions
+            {
+                ShowInDock = true
+            }
+        )
+        .With(
+            new X11PlatformOptions
+            {
+                EnableMultiTouch = true,
+            }
+        );
 }
 
 //                                                                                                      

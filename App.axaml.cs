@@ -16,7 +16,6 @@ using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using Serilog;
 using System;
-using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -178,8 +177,9 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    public static Bitmap DefaultIcon = new(Path.GetFullPath(
-        $"{GlobalInfo.AssetsPath}{ConfigManager.AppConfig.App.CoverIconFileName}"));
+    public static readonly Bitmap DefaultIcon = new(
+        $"{GlobalInfo.AssetsPath}{ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
+    );
 }
 
 //                                         .....'',;;::cccllllllllllllcccc:::;;,,,''...'',,'..

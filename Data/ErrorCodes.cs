@@ -6,5 +6,5 @@ internal static class ErrorCodes
 
     internal const int ConfigFileDidntExists = 1002;
 
-
+    internal const int AlraedyStartedOneProcess = 1003;
 }
