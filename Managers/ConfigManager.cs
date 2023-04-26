@@ -182,15 +182,14 @@ internal class ConfigManager
         {
             try
             {
-                PluginsNetwork.Plugins = JsonSerializer.Deserialize<List<Plugin>>(
+                PluginsManager.Plugins = JsonSerializer.Deserialize<List<Plugin>>(
                     await FileHelper.ReadAllAsync(GlobalInfo.PluginsListConfigFilePath)
                 ) ?? new();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, $"In {location}: {ex.Message}");
-
-                PluginsNetwork.Plugins = new();
+                PluginsManager.Plugins = new();
             }
         }, location);
     }
@@ -211,7 +210,7 @@ internal class ConfigManager
             {
                 File.WriteAllText(
                     GlobalInfo.PluginsListConfigFilePath.GetFullPath(),
-                    JsonSerializer.Serialize(PluginsNetwork.Plugins, options)
+                    JsonSerializer.Serialize(PluginsManager.Plugins, options)
                 );
             }
         }, location);

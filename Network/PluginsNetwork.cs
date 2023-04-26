@@ -9,10 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using JsonSerializer = System.Text.Json.JsonSerializer;
-
-#pragma warning disable CS8605 // 取消装箱可能为 null 的值。
-#pragma warning disable CS8600 // 将 null 字面量或可能为 null 的值转换为非 null 类型。
+using System.Text.Json;
 
 namespace KitX_Dashboard.Managers;
 
@@ -28,10 +25,7 @@ internal class PluginsNetwork
 
         try
         {
-            var pluginStruct = (PluginStruct)JsonSerializer.Deserialize(
-                msg,
-                typeof(PluginStruct)
-            );
+            var pluginStruct = JsonSerializer.Deserialize<PluginStruct>(msg);
 
             pluginStruct.Tags ??= new();
 
@@ -54,8 +48,6 @@ internal class PluginsNetwork
             Log.Error(e, $"In {location}: (msg) => msg: {msg}; {e.Message}");
         }
     }
-
-    internal static List<Plugin> Plugins = new();
 
     internal static readonly Queue<IPEndPoint> pluginsToRemove = new();
 
@@ -156,69 +148,6 @@ internal class PluginsNetwork
     }
 
     /// <summary>
-    /// 导入插件
-    /// </summary>
-    /// <param name="kxpfiles">.kxp files list</param>
-    internal static void ImportPlugin(string[] kxpfiles, bool inGraphic = false)
-    {
-        string? workbasef = Environment.ProcessPath;
-        string? workbase;
-        if (workbasef == null)
-            throw new Exception("Can not get path of \"KitX Dashboard.exe\"");
-        else
-        {
-            workbase = Path.GetDirectoryName(workbasef);
-            if (workbase == null)
-                throw new Exception("Can not get path of \"KitX\"");
-        }
-        foreach (var item in kxpfiles)
-        {
-            try
-            {
-                KitX.KXP.Helper.Decoder decoder = new(item);
-                Tuple<string, string> rst = decoder.GetLoaderAndPluginStruct();
-                LoaderStruct loaderStruct = JsonSerializer.Deserialize<LoaderStruct>(rst.Item1);
-                PluginStruct pluginStruct = JsonSerializer.Deserialize<PluginStruct>(rst.Item2);
-                AppConfig? config = null;
-                if (inGraphic) config = ConfigManager.AppConfig;
-                else config = JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(
-                    Path.GetFullPath($"{GlobalInfo.ConfigPath}config.json")
-                ));
-                if (config == null)
-                {
-                    Console.WriteLine($"No config file found!");
-                    if (!inGraphic) Environment.Exit(ErrorCodes.ConfigFileDidntExists);
-                }
-                string pluginsavedir = config?.App?.LocalPluginsFileFolder;
-                if (pluginsavedir != null)
-                    pluginsavedir = Path.GetFullPath(pluginsavedir);
-                string thisplugindir = $"{pluginsavedir}/" +
-                    $"{pluginStruct.PublisherName}_{pluginStruct.AuthorName}/" +
-                    $"{pluginStruct.Name}/" +
-                    $"{pluginStruct.Version}/";
-                thisplugindir = Path.GetFullPath(thisplugindir);
-                if (Directory.Exists(thisplugindir))
-                    Directory.Delete(thisplugindir, true);
-                _ = Directory.CreateDirectory(thisplugindir);
-                _ = decoder.Decode(thisplugindir);
-
-                if (!Plugins.Exists(
-                        x => x.InstallPath?.Equals(thisplugindir) ?? false))
-                    Plugins.Add(new()
-                    {
-                        InstallPath = thisplugindir
-                    });
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Processing {item} occurs error: {e.Message}");
-                if (inGraphic) throw;       //  如果是图形界面调用, 则再次抛出便于给出图形化提示
-            }
-        }
-        EventService.Invoke(nameof(EventService.PluginsListChanged));
-    }
-
-    /// <summary>
     /// 请求移除插件
     /// </summary>
     /// <param name="plugin">插件的安装信息</param>
@@ -259,8 +188,8 @@ internal class PluginsNetwork
 
                         lock (PluginsListOperationLock)
                         {
-                            Plugins.RemoveAt(
-                                Plugins.FindIndex(
+                            PluginsManager.Plugins.RemoveAt(
+PluginsManager.Plugins.FindIndex(
                                     x =>
                                     {
                                         if (x.InstallPath is null) return false;
@@ -283,8 +212,8 @@ internal class PluginsNetwork
 
                         lock (PluginsListOperationLock)
                         {
-                            Plugins.RemoveAt(
-                                Plugins.FindIndex(
+                            PluginsManager.Plugins.RemoveAt(
+PluginsManager.Plugins.FindIndex(
                                     x =>
                                     {
                                         if (x.InstallPath != null)
@@ -316,9 +245,6 @@ internal class PluginsNetwork
         timer.Start();
     }
 }
-
-#pragma warning restore CS8600 // 将 null 字面量或可能为 null 的值转换为非 null 类型。
-#pragma warning restore CS8605 // 取消装箱可能为 null 的值。
 
 //                                   _----_
 //                              ,__./#%  o `,

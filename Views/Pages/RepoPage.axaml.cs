@@ -43,7 +43,7 @@ public partial class RepoPage : UserControl
             {
                 try
                 {
-                    PluginsNetwork.ImportPlugin(files, true);
+                    PluginsManager.ImportPlugin(files, true);
                 }
                 catch (Exception ex)
                 {

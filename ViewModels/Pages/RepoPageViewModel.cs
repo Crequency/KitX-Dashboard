@@ -126,7 +126,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
             {
                 try
                 {
-                    PluginsNetwork.ImportPlugin(files, true);
+                    PluginsManager.ImportPlugin(files, true);
                 }
                 catch (Exception ex)
                 {
@@ -147,7 +147,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         PluginBars.Clear();
         lock (PluginsNetwork.PluginsListOperationLock)
         {
-            foreach (var item in PluginsNetwork.Plugins)
+            foreach (var item in PluginsManager.Plugins)
             {
                 try
                 {
