@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using Common.BasicHelper.Graphics.Screen;
 using KitX.Web.Rules;
+using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;
 
 namespace KitX_Dashboard.Views;
@@ -35,6 +36,8 @@ public partial class PluginDetailWindow : Window
         };
 
         Opened += (_, _) => viewModel.InitFunctionsAndTags();
+
+        EventService.OnExiting += Close;
     }
 
     public PluginDetailWindow SetPluginStruct(PluginStruct ps)

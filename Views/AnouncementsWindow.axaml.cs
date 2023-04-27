@@ -4,6 +4,7 @@ using Avalonia.Markup.Xaml;
 using Common.BasicHelper.Graphics.Screen;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Managers;
+using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -24,7 +25,7 @@ public partial class AnouncementsWindow : Window
 
         DataContext = viewModel;
 
-        Resolution nowRes = Resolution.Parse($"" +
+        var nowRes = Resolution.Parse($"" +
             $"{ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width}" +
             $"x{ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height}");
 
@@ -32,18 +33,21 @@ public partial class AnouncementsWindow : Window
 
         Position = new(
             WindowAttributesConverter.PositionCameCenter(
-ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Left,
+                ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Left,
                 true, Screens, nowRes
             ),
             WindowAttributesConverter.PositionCameCenter(
-ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Top,
+                ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Top,
                 false, Screens, nowRes
             )
         );
 
+        EventService.OnExiting += Close;
+
 #if DEBUG
         this.AttachDevTools();
 #endif
+
     }
 
     private void SuggestResolutionAndLocation()
@@ -51,11 +55,12 @@ ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Top,
         if (ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width == 1280
             && ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height == 720)
         {
-            Resolution suggest = Resolution.Suggest(
+            var suggest = Resolution.Suggest(
                 Resolution.Parse("2560x1440"),
                 Resolution.Parse("1280x720"),
                 Resolution.Parse($"{Screens.Primary.Bounds.Width}x" +
                 $"{Screens.Primary.Bounds.Height}")).Integerization();
+
             if (suggest.Width != null
                 && suggest.Height != null)
             {

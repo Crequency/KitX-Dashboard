@@ -34,18 +34,24 @@ internal class MainWindowViewModel : ViewModelBase
 
         if (win?.WindowState == WindowState.Minimized)
             win.WindowState = WindowState.Normal;
+
         win?.Show();
+
         win?.Activate();
+
         ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
+
         EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     internal void Exit(object mainWindow)
     {
         GlobalInfo.Exiting = true;
+
         EventService.Invoke(nameof(EventService.OnExiting));
 
         var win = mainWindow as MainWindow;
+
         win?.Close();
     }
 
