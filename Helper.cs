@@ -5,12 +5,15 @@ using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Names;
 using LiteDB;
+using ReactiveUI;
 using Serilog;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
+using System.Reactive;
 using System.Threading;
+using System.Threading.Tasks;
 using Activity = Common.Activity.Activity;
 
 namespace KitX_Dashboard;
@@ -95,7 +98,7 @@ public static class Helper
     public static void StartUpCheck()
     {
         if (GlobalInfo.IsSingleProcessStartMode)
-            Helper.SingleProcessCheck();
+            SingleProcessCheck();
 
         if (GlobalInfo.EnabledConfigFileHotReload)
             Program.FileWatcherManager = new();
@@ -130,11 +133,25 @@ public static class Helper
 
         #endregion
 
+        #region 初始化全局异常捕获
+
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
             if (e.ExceptionObject is Exception ex)
                 Log.Error(ex, $"Au oh! Fatal: {ex.Message}");
         };
+
+        TaskScheduler.UnobservedTaskException += (sender, e) =>
+        {
+            Log.Error(e.Exception, $"Au oh! Fatal: {e.Exception.Message}");
+        };
+
+        RxApp.DefaultExceptionHandler = Observer.Create<Exception>(ex =>
+        {
+            Log.Error(ex, $"Au oh! Fatal: {ex.Message}");
+        });
+
+        #endregion
 
         #region 初始化环境
 
