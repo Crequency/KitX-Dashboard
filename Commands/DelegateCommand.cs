@@ -17,7 +17,7 @@ public class DelegateCommand : ICommand
 
     public DelegateCommand()
     {
-
+        CanExecuteChanged += (_, _) => { };
     }
 
     public DelegateCommand(Action<object?> executeAction) => ExecuteAction = executeAction;
