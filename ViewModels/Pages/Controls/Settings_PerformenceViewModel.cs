@@ -18,8 +18,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
-
 namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyChanged
@@ -46,7 +44,11 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
                     rollingInterval: RollingInterval.Hour,
                     fileSizeLimitBytes: ConfigManager.AppConfig.Log.LogFileSingleMaxSize,
                     buffered: true,
-                    flushToDiskInterval: new(0, 0, ConfigManager.AppConfig.Log.LogFileFlushInterval),
+                    flushToDiskInterval: new(
+                        0,
+                        0,
+                        ConfigManager.AppConfig.Log.LogFileFlushInterval
+                    ),
                     restrictedToMinimumLevel: ConfigManager.AppConfig.Log.LogLevel,
                     rollOnFileSizeLimit: true,
                     retainedFileCountLimit: ConfigManager.AppConfig.Log.LogFileMaxCount
@@ -57,31 +59,43 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         EventService.LanguageChanged += () =>
         {
             foreach (var item in SupportedLogLevels)
-                item.LogLevelDisplayName = GetLogLevelInLanguages(item.LogLevelName);
-            PropertyChanged?.Invoke(this, new(nameof(SupportedLogLevels)));
+                item.LogLevelDisplayName = GetLogLevelInLanguages(item.LogLevelName ?? "");
+
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(SupportedLogLevels))
+            );
         };
 
-        EventService.DevicesServerPortChanged += () => PropertyChanged?.Invoke(this,
-                new(nameof(DevicesServerPort)));
+        EventService.DevicesServerPortChanged += () => PropertyChanged?.Invoke(
+            this,
+            new(nameof(DevicesServerPort))
+        );
 
-        EventService.PluginsServerPortChanged += () => PropertyChanged?.Invoke(this,
-                new(nameof(PluginsServerPort)));
+        EventService.PluginsServerPortChanged += () => PropertyChanged?.Invoke(
+            this,
+            new(nameof(PluginsServerPort))
+        );
 
         Program.TasksManager?.SignalRun(
             nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal),
             () =>
             {
-                PropertyChanged?.Invoke(this,
-                    new(nameof(AvailableNetworkInterfaces)));
+                PropertyChanged?.Invoke(
+                    this,
+                    new(nameof(AvailableNetworkInterfaces))
+                );
 
                 Dispatcher.UIThread.Post(() =>
                 {
                     var anin = AcceptedNetworkInterfacesNames;
-                    if (anin is not null && !anin.Equals("Auto"))
-                        foreach (var item in anin.Split(';'))
-                            if (AvailableNetworkInterfaces is not null &&
-                                AvailableNetworkInterfaces.Contains(item))
-                                SelectedNetworkInterfaces?.Add(item);
+
+                    if (anin is null || anin.Equals("Auto")) return;
+
+                    foreach (var item in anin.Split(';'))
+                        if (AvailableNetworkInterfaces is not null &&
+                            AvailableNetworkInterfaces.Contains(item))
+                            SelectedNetworkInterfaces?.Add(item);
                 });
             }
         );
@@ -103,8 +117,11 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
                     AcceptedNetworkInterfacesNames = sb.ToString()[..^1];
                 }
-                PropertyChanged?.Invoke(this,
-                    new(nameof(AcceptedNetworkInterfacesNames)));
+
+                PropertyChanged?.Invoke(
+                    this,
+                    new(nameof(AcceptedNetworkInterfacesNames))
+                );
 
                 SaveChanges();
             };
@@ -113,6 +130,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     private void InitCommands()
     {
         EmptyLogsCommand = new(EmptyLogs);
+
         RefreshLogsUsageCommand = new(RefreshLogsUsage);
     }
 
@@ -407,11 +425,13 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     /// <returns>显示名称</returns>
     internal static string GetLogLevelInLanguages(string key)
     {
-        if (Application.Current.TryFindResource($"Text_Log_{key}",
-            out object? result))
-            if (result != null) return (string)result;
-            else return string.Empty;
-        else return string.Empty;
+        if (Application.Current is null) return string.Empty;
+
+        _ = Application.Current.TryFindResource($"Text_Log_{key}", out var result);
+
+        if (result is null) return string.Empty;
+
+        return (string)result;
     }
 
     /// <summary>
@@ -458,7 +478,8 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     };
 
     internal SupportedLogLevel? _currentLogLevel = SupportedLogLevels.Find(
-        x => x.LogEventLevel == ConfigManager.AppConfig.Log.LogLevel);
+        x => x.LogEventLevel == ConfigManager.AppConfig.Log.LogLevel
+    );
 
     /// <summary>
     /// 当前日志记录级别
@@ -469,7 +490,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             _currentLogLevel = value;
-            if (value != null)
+            if (value is not null)
             {
                 ConfigManager.AppConfig.Log.LogLevel = value.LogEventLevel;
                 EventService.Invoke(nameof(EventService.LogConfigUpdated));
@@ -488,7 +509,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal DelegateCommand? RefreshLogsUsageCommand { get; set; }
 
-    private void EmptyLogs(object obj)
+    private void EmptyLogs(object? obj)
     {
         var location = $"{nameof(Settings_PerformenceViewModel)}.{nameof(EmptyLogs)}";
 
@@ -513,13 +534,11 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         });
     }
 
-    private void RefreshLogsUsage(object obj) =>
+    private void RefreshLogsUsage(object? obj) =>
         PropertyChanged?.Invoke(this, new(nameof(LogFileSizeUsage)));
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
 
 //                     ______
 //                 -~~`      `~~~~---,__

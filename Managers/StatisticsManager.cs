@@ -63,7 +63,7 @@ internal class StatisticsManager
 
                 UseStatistics = JsonSerializer.Deserialize<Dictionary<string, double>>(useCountJson);
 
-                if (UseStatistics != null)
+                if (UseStatistics is not null)
                 {
                     var lastDT = DateTime.Parse(UseStatistics.Keys.Last());
                     while (!lastDT.ToString("MM.dd").Equals(DateTime.Now.ToString("MM.dd")))

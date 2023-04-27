@@ -8,9 +8,6 @@ using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
 
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-#pragma warning disable CS8601 // 引用类型赋值可能为 null。
-
 namespace KitX_Dashboard.Views.Pages;
 
 public partial class SettingsPage : UserControl
@@ -53,14 +50,18 @@ public partial class SettingsPage : UserControl
     /// </summary>
     /// <param name="sender">被点击的 NavigationViewItem</param>
     /// <param name="e">路由事件参数</param>
-    private void SettingsNavigationView_SelectionChanged(object? sender,
+    private void SettingsNavigationView_SelectionChanged(
+        object? sender,
         NavigationViewSelectionChangedEventArgs e)
     {
         try
         {
-            SelectedViewName = (
-                (sender as NavigationView).SelectedItem as Control
-            ).Tag.ToString();
+            var tag = ((sender as NavigationView)?.SelectedItem as Control)?.Tag?.ToString();
+
+            if (tag is null) return;
+
+            SelectedViewName = tag;
+
             this.FindControl<Frame>("SettingsFrame").Navigate(SelectedViewType());
         }
         catch (NullReferenceException o)
@@ -89,9 +90,6 @@ public partial class SettingsPage : UserControl
         _ => typeof(Settings_General),
     };
 }
-
-#pragma warning restore CS8601 // 引用类型赋值可能为 null。
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
 //
 //      _.-^^---....,,--

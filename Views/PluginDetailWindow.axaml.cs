@@ -16,11 +16,14 @@ public partial class PluginDetailWindow : Window
 
         Resources["ThisWindow"] = this;
 
-        Resolution suggest = Resolution.Suggest(
-                Resolution.Parse("2560x1440"),
-                Resolution.Parse("820x500"),
-                Resolution.Parse($"{Screens.Primary.Bounds.Width}x" +
-                $"{Screens.Primary.Bounds.Height}")).Integerization();
+        var suggest = Resolution.Suggest(
+            Resolution.Parse("2560x1440"),
+            Resolution.Parse("820x500"),
+            Resolution.Parse(
+                $"{Screens.Primary.Bounds.Width}x{Screens.Primary.Bounds.Height}"
+            )
+        ).Integerization();
+
         Width = suggest.Width ?? 820;
         Height = suggest.Height ?? 500;
 
@@ -43,7 +46,9 @@ public partial class PluginDetailWindow : Window
     public PluginDetailWindow SetPluginStruct(PluginStruct ps)
     {
         viewModel.PluginDetail = ps;
+
         DataContext = viewModel;
+
         return this;
     }
 }

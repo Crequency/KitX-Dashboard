@@ -28,7 +28,7 @@ internal class MainWindowViewModel : ViewModelBase
 
     internal DelegateCommand? RefreshGreetingCommand { get; set; }
 
-    internal void TrayIconClicked(object mainWindow)
+    internal void TrayIconClicked(object? mainWindow)
     {
         var win = mainWindow as MainWindow;
 
@@ -44,7 +44,7 @@ internal class MainWindowViewModel : ViewModelBase
         EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
-    internal void Exit(object mainWindow)
+    internal void Exit(object? mainWindow)
     {
         GlobalInfo.Exiting = true;
 
@@ -55,7 +55,7 @@ internal class MainWindowViewModel : ViewModelBase
         win?.Close();
     }
 
-    internal void RefreshGreeting(object mainWindow)
+    internal void RefreshGreeting(object? mainWindow)
     {
         var win = mainWindow as MainWindow;
         win?.UpdateGreetingText();

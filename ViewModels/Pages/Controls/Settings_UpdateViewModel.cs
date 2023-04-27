@@ -25,8 +25,6 @@ using System.Threading.Tasks;
 using Component = KitX_Dashboard.Models.Component;
 using Timer = System.Timers.Timer;
 
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
-
 namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
@@ -167,10 +165,13 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     /// <returns>提示</returns>
     private static string GetResources(string key)
     {
-        if (Application.Current.TryFindResource(key, out object? result))
-            if (result != null) return (string)result;
-            else return string.Empty;
-        else return string.Empty;
+        if (Application.Current is null) return string.Empty;
+
+        _ = Application.Current.TryFindResource(key, out var obj);
+
+        var result = obj as string;
+
+        return result is not null ? result : string.Empty;
     }
 
     /// <summary>
@@ -209,7 +210,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal DelegateCommand? UpdateCommand { get; set; }
 
-    private void CheckUpdate(object _)
+    private void CheckUpdate(object? _)
     {
         try
         {
@@ -451,6 +452,8 @@ ConfigManager.AppConfig.Web.UpdateSource;
 
         foreach (var item in Components)
         {
+            if (item.Name is null) continue;
+
             if (updatedComponents.ContainsKey(item.Name))
             {
                 item.CanUpdate = true;
@@ -560,7 +563,7 @@ ConfigManager.AppConfig.Web.UpdateDownloadPath.Replace("%platform%",
             {
                 string? wd = Path.GetFullPath("./");
 
-                if (wd != null)
+                if (wd is not null)
                 {
                     var checker = ScanComponents(wd);
 
@@ -587,7 +590,7 @@ ConfigManager.AppConfig.Web.UpdateDownloadPath.Replace("%platform%",
                     var latestComponents
                         = await GetLatestComponentsAsync(client);
 
-                    if (latestComponents != null)
+                    if (latestComponents is not null)
                     {
                         var difference =
                         ((
@@ -656,14 +659,12 @@ ConfigManager.AppConfig.Web.UpdateDownloadPath.Replace("%platform%",
         }).Start();
     }
 
-    private void Update(object _)
+    private void Update(object? _)
     {
     }
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
 
 //                         ,  o ' .
 //                        .  -  -  o

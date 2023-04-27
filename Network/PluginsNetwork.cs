@@ -216,7 +216,7 @@ PluginsManager.Plugins.FindIndex(
 PluginsManager.Plugins.FindIndex(
                                     x =>
                                     {
-                                        if (x.InstallPath != null)
+                                        if (x.InstallPath is not null)
                                             return x.InstallPath.Equals(plugin.InstallPath);
                                         else return false;
                                     }

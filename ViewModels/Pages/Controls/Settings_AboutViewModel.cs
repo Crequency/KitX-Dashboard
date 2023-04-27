@@ -5,8 +5,6 @@ using KitX_Dashboard.Services;
 using System.ComponentModel;
 using System.Reflection;
 
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-
 namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
@@ -37,7 +35,7 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// <summary>
     /// 版本号属性
     /// </summary>
-    internal static string VersionText => $"v{Assembly.GetEntryAssembly().GetName().Version}";
+    internal static string VersionText => $"v{Assembly.GetEntryAssembly()?.GetName().Version}";
 
     internal bool easterEggsFounded = false;
 
@@ -130,9 +128,9 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal DelegateCommand? LoadThirdPartLicenseCommand { get; set; }
 
-    private void AppNameButtonClicked(object _) => ++clickCount;
+    private void AppNameButtonClicked(object? _) => ++clickCount;
 
-    private async void LoadThirdPartLicense(object _)
+    private async void LoadThirdPartLicense(object? _)
     {
         string license = await FileHelper.ReadAllAsync(Data.GlobalInfo.ThirdPartLicenseFilePath);
         ThirdPartLicenseString = license;
@@ -140,8 +138,6 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
 //                                     __
 //                              ___  _// \

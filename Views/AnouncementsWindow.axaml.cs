@@ -15,6 +15,8 @@ public partial class AnouncementsWindow : Window
 {
     private readonly AnouncementsWindowViewModel viewModel = new();
 
+    private bool closed = false;
+
     public AnouncementsWindow()
     {
         InitializeComponent();
@@ -25,9 +27,10 @@ public partial class AnouncementsWindow : Window
 
         DataContext = viewModel;
 
-        var nowRes = Resolution.Parse($"" +
+        var nowRes = Resolution.Parse(
             $"{ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width}" +
-            $"x{ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height}");
+            $"x{ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height}"
+        );
 
         // 设置窗体坐标
 
@@ -42,7 +45,11 @@ public partial class AnouncementsWindow : Window
             )
         );
 
-        EventService.OnExiting += Close;
+        EventService.OnExiting += () =>
+        {
+            if (!closed)
+                Close();
+        };
 
 #if DEBUG
         this.AttachDevTools();
@@ -58,11 +65,12 @@ public partial class AnouncementsWindow : Window
             var suggest = Resolution.Suggest(
                 Resolution.Parse("2560x1440"),
                 Resolution.Parse("1280x720"),
-                Resolution.Parse($"{Screens.Primary.Bounds.Width}x" +
-                $"{Screens.Primary.Bounds.Height}")).Integerization();
+                Resolution.Parse(
+                    $"{Screens.Primary.Bounds.Width}x{Screens.Primary.Bounds.Height}"
+                )
+            ).Integerization();
 
-            if (suggest.Width != null
-                && suggest.Height != null)
+            if (suggest.Width is not null && suggest.Height is not null)
             {
                 ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width = (double)suggest.Width;
                 ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height = (double)suggest.Height;
@@ -83,8 +91,12 @@ public partial class AnouncementsWindow : Window
 
     private void SaveMetaData()
     {
-        ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Left = Position.X;
-        ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Top = Position.Y;
+        if (WindowState != WindowState.Minimized)
+        {
+            ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Left = Position.X;
+            ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Top = Position.Y;
+        }
+
         ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width = Width;
         ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height = Height;
     }
@@ -94,6 +106,8 @@ public partial class AnouncementsWindow : Window
         base.OnClosed(e);
 
         SaveMetaData();
+
+        closed = true;
     }
 }
 

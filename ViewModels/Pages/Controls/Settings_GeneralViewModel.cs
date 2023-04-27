@@ -124,7 +124,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal DelegateCommand? OpenDebugToolCommand { get; set; }
 
-    private void ShowAnnouncementsNow(object _)
+    private void ShowAnnouncementsNow(object? _)
     {
         new Thread(async () =>
         {
@@ -139,7 +139,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
         }).Start();
     }
 
-    private async void OpenDebugTool(object _)
+    private async void OpenDebugTool(object? _)
     {
         ++_consolesCount;
 

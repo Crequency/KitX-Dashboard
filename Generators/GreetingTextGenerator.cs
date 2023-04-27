@@ -5,18 +5,16 @@ namespace KitX_Dashboard.Generators;
 
 internal class GreetingTextGenerator
 {
-    public GreetingTextGenerator()
+    private static int PreviousIndex = 0;
+
+    private static readonly Random random = new();
+
+    internal static string GetKey()
     {
+        var key = $"Text_Greeting_%Step%_%Index%";
 
-    }
+        var time = DateTime.Now.Hour;
 
-    internal static int PreviousIndex = 0;
-    internal static Random random = new();
-
-    internal static string? GetKey()
-    {
-        string key = $"Text_Greeting_%Step%_%Index%";
-        int time = DateTime.Now.Hour;
         if (time >= 6 && time < 12)
             key = key.Replace("%Step%", "Morning")
                 .Replace("%Index%", GenerateRandomIndex(Step.Morning).ToString());
@@ -31,6 +29,7 @@ internal class GreetingTextGenerator
                 .Replace("%Index%", GenerateRandomIndex(Step.Evening).ToString());
         else key = key.Replace("%Step%", "Night")
                 .Replace("%Index%", GenerateRandomIndex(Step.Night).ToString());
+
         return key;
     }
 
@@ -41,34 +40,47 @@ internal class GreetingTextGenerator
 
     internal static int GenerateRandomIndex(Step step)
     {
-        int result = PreviousIndex;
+        var result = PreviousIndex;
+
         while (result == PreviousIndex)
         {
             switch (step)
             {
                 case Step.Morning:
-                    result = random.Next(1, ConfigManager.AppConfig.Windows
-                        .MainWindow.GreetingTextCount_Morning + 1);
+                    result = random.Next(
+                        1,
+                        ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_Morning + 1
+                    );
                     break;
                 case Step.Noon:
-                    result = random.Next(1, ConfigManager.AppConfig.Windows
-                        .MainWindow.GreetingTextCount_Noon + 1);
+                    result = random.Next(
+                        1,
+                        ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_Noon + 1
+                    );
                     break;
                 case Step.AfterNoon:
-                    result = random.Next(1, ConfigManager.AppConfig.Windows
-                        .MainWindow.GreetingTextCount_AfterNoon + 1);
+                    result = random.Next(
+                        1,
+                        ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_AfterNoon + 1
+                    );
                     break;
                 case Step.Evening:
-                    result = random.Next(1, ConfigManager.AppConfig.Windows
-                        .MainWindow.GreetingTextCount_Evening + 1);
+                    result = random.Next(
+                        1,
+                        ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_Evening + 1
+                    );
                     break;
                 case Step.Night:
-                    result = random.Next(1, ConfigManager.AppConfig.Windows
-                        .MainWindow.GreetingTextCount_Night + 1);
+                    result = random.Next(
+                        1,
+                        ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_Night + 1
+                    );
                     break;
             }
         }
+
         PreviousIndex = result;
+
         return result;
     }
 }

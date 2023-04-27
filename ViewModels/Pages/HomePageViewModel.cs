@@ -61,13 +61,13 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal DelegateCommand? MoveToTopCommand { get; set; }
 
-    internal void ResetToAuto(object _)
+    internal void ResetToAuto(object? _)
         => NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Auto;
 
-    internal void MoveToLeft(object _)
+    internal void MoveToLeft(object? _)
         => NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Left;
 
-    internal void MoveToTop(object _)
+    internal void MoveToTop(object? _)
         => NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Top;
 
     public new event PropertyChangedEventHandler? PropertyChanged;

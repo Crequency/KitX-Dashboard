@@ -4,7 +4,6 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Common.BasicHelper.IO;
-using Common.BasicHelper.Utils;
 using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Media;
 using KitX_Dashboard.Commands;
@@ -17,10 +16,6 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
-#pragma warning disable CA2011 // 避免无限递归
 
 namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
@@ -99,7 +94,15 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal Color2 ThemeColor
     {
-        get => new((Application.Current.Resources["ThemePrimaryAccent"] as SolidColorBrush).Color);
+        get
+        {
+            var obj = Application.Current?.Resources["ThemePrimaryAccent"];
+
+            if (obj is not SolidColorBrush brush) return new();
+
+            return new(brush.Color);
+        }
+
         set => nowColor = value;
     }
 
@@ -110,11 +113,15 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// <returns>表示方式</returns>
     private static string GetThemeInLanguages(string key)
     {
-        if (Application.Current.TryFindResource($"Text_Settings_Personalise_Theme_{key}",
-            out object? result))
-            if (result != null) return (string)result;
-            else return string.Empty;
-        else return string.Empty;
+        if (Application.Current is null) return string.Empty;
+
+        var namePrefix = "Text_Settings_Personalise_Theme";
+
+        _ = Application.Current.TryFindResource($"{namePrefix}_{key}", out var result);
+
+        var str = result as string;
+
+        return str is not null ? str : string.Empty;
     }
 
     /// <summary>
@@ -156,10 +163,19 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             _currentAppTheme = value;
+
+            if (value is null) return;
+
             ConfigManager.AppConfig.App.Theme = value.ThemeName;
+
             var faTheme = AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>();
+
+            if (faTheme is null) return;
+
             faTheme.RequestedTheme = value.ThemeName == "Follow" ? null : value.ThemeName;
+
             EventService.Invoke(nameof(EventService.ThemeConfigChanged));
+
             SaveChanges();
         }
     }
@@ -171,7 +187,11 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static void LoadLanguage()
     {
+        var location = $"{nameof(Settings_PersonaliseViewModel)}.{nameof(LoadLanguage)}";
+
         var lang = ConfigManager.AppConfig.App.AppLanguage;
+
+        if (Application.Current is null) return;
 
         try
         {
@@ -180,15 +200,18 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
             Application.Current.Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
                     FileHelper.ReadAll($"{GlobalInfo.LanguageFilePath}/{lang}.axaml")
-                ) as ResourceDictionary
+                ) as ResourceDictionary ?? new()
             );
         }
         catch (Exception ex)
         {
-            MessageBoxManager.GetMessageBoxStandardWindow("Error", "No this language file.",
-                icon: MessageBox.Avalonia.Enums.Icon.Error).Show();
+            MessageBoxManager.GetMessageBoxStandardWindow(
+                "Error",
+                "No this language file.",
+                icon: MessageBox.Avalonia.Enums.Icon.Error
+            ).Show();
 
-            Log.Warning(ex, $"Language File {lang}.axaml not found.");
+            Log.Warning(ex, $"In {location}: Language File {lang}.axaml not found.");
         }
 
         EventService.Invoke(nameof(EventService.LanguageChanged));
@@ -207,13 +230,16 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
             try
             {
                 ConfigManager.AppConfig.App.AppLanguage = SurpportLanguages[value].LanguageCode;
+
                 if (languageSelected != -1) LoadLanguage();
+
                 languageSelected = value;
+
                 SaveChanges();
             }
             catch
             {
-                LanguageSelected = 0;
+                languageSelected = 0;
             }
         }
     }
@@ -308,38 +334,42 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal DelegateCommand? MicaToolTipClosedCommand { get; set; }
 
-    private void ColorConfirmed(object _)
+    private void ColorConfirmed(object? _)
     {
         var c = nowColor;
+
         Dispatcher.UIThread.InvokeAsync(() =>
         {
-            Application.Current.Resources["ThemePrimaryAccent"] =
-                new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
+            if (Application.Current is null) return;
+
+            Application.Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(
+                new Color(c.A, c.R, c.G, c.B)
+            );
+
             for (char i = 'A'; i <= 'E'; ++i)
-            {
                 Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B));
-            }
+                    new SolidColorBrush(
+                        new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
+                    );
+
             for (int i = 1; i <= 9; ++i)
-            {
                 Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(new Color((byte)(i * 10 + i), c.R, c.G, c.B));
-            }
+                    new SolidColorBrush(
+                        new Color((byte)(i * 10 + i), c.R, c.G, c.B)
+                    );
         });
+
         ConfigManager.AppConfig.App.ThemeColor = nowColor.ToHexString();
+
         SaveChanges();
     }
 
-    private void MicaOpacityConfirmed(object _) => SaveChanges();
+    private void MicaOpacityConfirmed(object? _) => SaveChanges();
 
-    private void MicaToolTipClosed(object _) => MicaToolTipIsOpen = false;
+    private void MicaToolTipClosed(object? _) => MicaToolTipIsOpen = false;
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CA2011 // 避免无限递归
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
 //                         __________________________
 //                 __..--/".'                        '.

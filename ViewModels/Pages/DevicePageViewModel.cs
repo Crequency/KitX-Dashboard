@@ -53,7 +53,7 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal DelegateCommand? StopDevicesServerCommand { get; set; }
 
-    internal static void RestartDevicvesServer(object _)
+    internal static void RestartDevicvesServer(object? _)
     {
         Program.WebManager?.Restart(
             restartAll: false,
@@ -64,7 +64,7 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
         );
     }
 
-    internal static void StopDevicvesServer(object _)
+    internal static void StopDevicvesServer(object? _)
     {
         Task.Run(async () =>
         {

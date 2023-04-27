@@ -21,11 +21,6 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Timers;
 
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-#pragma warning disable CS8601 // 引用类型赋值可能为 null。
-#pragma warning disable CS8605 // 取消装箱可能为 null 的值。
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
-
 namespace KitX_Dashboard.Views;
 
 public partial class MainWindow : CoreWindow
@@ -37,6 +32,8 @@ public partial class MainWindow : CoreWindow
     /// </summary>
     public MainWindow()
     {
+        var location = $"{nameof(MainWindow)}";
+
         InitializeComponent();
 
         Program.MainWindow = this;
@@ -47,26 +44,28 @@ public partial class MainWindow : CoreWindow
 
         SuggestResolutionAndLocation();
 
-        Resolution nowRes = Resolution.Parse($"{ConfigManager.AppConfig.Windows.MainWindow.Window_Width}" +
-            $"x{ConfigManager.AppConfig.Windows.MainWindow.Window_Height}");
+        var nowRes = Resolution.Parse(
+            $"{ConfigManager.AppConfig.Windows.MainWindow.Window_Width}" +
+            $"x{ConfigManager.AppConfig.Windows.MainWindow.Window_Height}"
+        );
 
         // 设置窗体坐标
         try
         {
             Position = new(
                 WindowAttributesConverter.PositionCameCenter(
-ConfigManager.AppConfig.Windows.MainWindow.Window_Left,
+                    ConfigManager.AppConfig.Windows.MainWindow.Window_Left,
                     true, Screens, nowRes
                 ),
                 WindowAttributesConverter.PositionCameCenter(
-ConfigManager.AppConfig.Windows.MainWindow.Window_Top,
+                    ConfigManager.AppConfig.Windows.MainWindow.Window_Top,
                     false, Screens, nowRes
                 )
             );
         }
         catch (Exception e)
         {
-            Log.Error(e, e.Message);
+            Log.Error(e, $"In {location}: {e.Message}");
         }
 
         try
@@ -84,21 +83,27 @@ ConfigManager.AppConfig.Windows.MainWindow.Window_Top,
         }
         catch (Exception e)
         {
-            Log.Error(e, e.Message);
+            Log.Error(e, $"In {location}: {e.Message}");
+
             ClientSize = new(800, 600);
         }
 
         try
         {
-            Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal),
-                () => WindowState = ConfigManager.AppConfig.Windows.MainWindow.WindowState);
+            Program.TasksManager?.SignalRun(
+                nameof(SignalsNames.MainWindowOpenedSignal),
+                () => WindowState = ConfigManager.AppConfig.Windows.MainWindow.WindowState
+            );
+
             if (ConfigManager.AppConfig.Windows.MainWindow.IsHidden)
-                Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal),
-                    () => Hide());
+                Program.TasksManager?.SignalRun(
+                    nameof(SignalsNames.MainWindowOpenedSignal),
+                    Hide
+                );
         }
         catch (Exception e)
         {
-            Log.Error(e, e.Message);
+            Log.Error(e, $"In {location}: {e.Message}");
         }
 
         InitMainWindow();
@@ -113,16 +118,19 @@ ConfigManager.AppConfig.Windows.MainWindow.Window_Top,
     /// </summary>
     private void SuggestResolutionAndLocation()
     {
-        if (ConfigManager.AppConfig.Windows.MainWindow.Window_Width == 1280
-            && ConfigManager.AppConfig.Windows.MainWindow.Window_Height == 720)
+        if (ConfigManager.AppConfig.Windows.MainWindow.Window_Width == 1280 &&
+            ConfigManager.AppConfig.Windows.MainWindow.Window_Height == 720)
         {
-            Resolution suggest = Resolution.Suggest(
+            var suggest = Resolution.Suggest(
                 Resolution.Parse("2560x1440"),
                 Resolution.Parse("1280x720"),
-                Resolution.Parse($"{Screens.Primary.Bounds.Width}x" +
-                $"{Screens.Primary.Bounds.Height}")).Integerization();
-            if (suggest.Width != null
-                && suggest.Height != null)
+                Resolution.Parse(
+                    $"{Screens.Primary.Bounds.Width}x" +
+                    $"{Screens.Primary.Bounds.Height}"
+                )
+            ).Integerization();
+
+            if (suggest.Width is not null && suggest.Height is not null)
             {
                 ConfigManager.AppConfig.Windows.MainWindow.Window_Width = (double)suggest.Width;
                 ConfigManager.AppConfig.Windows.MainWindow.Window_Height = (double)suggest.Height;
@@ -138,50 +146,44 @@ ConfigManager.AppConfig.Windows.MainWindow.Window_Top,
         //  导航到上次关闭时界面
         MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
 
+        var fluentAvaloniaTheme = AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>();
+
+        if (fluentAvaloniaTheme is null) return;
+
         //  如果主题不设置为 `跟随系统` 则手动变更主题
         if (!ConfigManager.AppConfig.App.Theme.Equals("Follow"))
-            AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>().RequestedTheme =
-ConfigManager.AppConfig.App.Theme;
+            fluentAvaloniaTheme.RequestedTheme = ConfigManager.AppConfig.App.Theme;
 
         //  透明度变更事件, 让透明度变更立即生效
         EventService.MicaOpacityChanged += () =>
         {
-            if (ConfigManager.AppConfig.Windows.MainWindow.EnabledMica)
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && IsWindows11)
-                {
-                    switch (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>().RequestedTheme)
-                    {
-                        case "Light":
-                            var color1 = this.TryFindResource("SolidBackgroundFillColorBase",
-                                out var value1) ? (Color2)(Color)value1 : new Color2(32, 32, 32);
+            if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
 
-                            Background = new ImmutableSolidColorBrush(color1,
-ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
-                            break;
-                        case "Dark":
-                            var color2 = this.TryFindResource("SolidBackgroundFillColorBase",
-                                out var value2) ? (Color2)(Color)value2 : new Color2(243, 243, 243);
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
-                            Background = new ImmutableSolidColorBrush(color2,
-ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
-                            break;
-                    }
-                }
+            if (!IsWindows11) return;
+
+            TryEnableMicaEffect(fluentAvaloniaTheme);
         };
 
         //  每 Interval 更新一次招呼语
         UpdateGreetingText();
+
         EventService.LanguageChanged += () => UpdateGreetingText();
+
         EventService.GreetingTextIntervalUpdated += () => UpdateGreetingText();
-        Timer timer = new()
+
+        var timer = new Timer()
         {
             AutoReset = true,
             Interval = 1000 * 60 * ConfigManager.AppConfig.Windows.MainWindow.GreetingUpdateInterval
         };
+
         timer.Elapsed += (_, _) => UpdateGreetingText();
+
         timer.Start();
 
-        Program.TasksManager.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
+        Program.TasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
     }
 
     /// <summary>
@@ -199,8 +201,13 @@ ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
     {
         try
         {
+            if (Application.Current is null) return;
+
             Application.Current.Resources.MergedDictionaries[0]
-            .TryGetResource(GreetingTextGenerator.GetKey(), out object? text);
+                .TryGetResource(GreetingTextGenerator.GetKey(), out object? text);
+
+            if (text is null) return;
+
             Dispatcher.UIThread.Post(() =>
             {
                 Resources["GreetingText"] = text as string;
@@ -247,12 +254,24 @@ ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
     /// </summary>
     /// <param name="sender">被点击的 NavigationViewItem</param>
     /// <param name="e">路由事件参数</param>
-    private void MainNavigationView_SelectionChanged(object? sender,
+    private void MainNavigationView_SelectionChanged(
+        object? sender,
         NavigationViewSelectionChangedEventArgs e)
     {
         try
         {
-            SelectedPageName = ((sender as NavigationView).SelectedItem as Control).Tag.ToString();
+            if (sender is null) return;
+
+            var navView = sender as NavigationView;
+
+            if (navView?.SelectedItem is not Control control || control.Tag is null) return;
+
+            var pageName = control.Tag.ToString();
+
+            if (pageName is null) return;
+
+            SelectedPageName = pageName;
+
             MainFrame.Navigate(GetPageTypeFromName(SelectedPageName));
         }
         catch (NullReferenceException o)
@@ -284,8 +303,8 @@ ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
                 ConfigManager.AppConfig.Windows.MainWindow.Window_Height = Height;
             }
         }
-        ConfigManager.AppConfig.Windows.MainWindow.
-            Tags["SelectedPage"] = SelectedPageName;
+
+        ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"] = SelectedPageName;
     }
 
     /// <summary>
@@ -315,8 +334,11 @@ ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
         if (!GlobalInfo.Exiting)
         {
             e.Cancel = true;
+
             Hide();
+
             ConfigManager.AppConfig.Windows.MainWindow.IsHidden = true;
+
             SaveChanges();
         }
         else
@@ -333,29 +355,33 @@ ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
     {
         base.OnOpened(e);
 
+
+
         var thm = AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>();
+
+        if (thm is null) return;
+
         thm.RequestedThemeChanged += OnRequestedThemeChanged;
 
-        // 如果是 Windows 系统, 且数据库表示启用 Mica 效果
-        //if ((bool)(Helper.local_db_table.Query(1).ReturnResult as List<object>)[5]
-        if (ConfigManager.AppConfig.Windows.MainWindow.EnabledMica
-            && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            // 如果是 Windows 11 而且没有选择 `高对比度` 主题
-            if (IsWindows11 && thm.RequestedTheme != FluentAvaloniaTheme.HighContrastModeString)
-            {
-                // 尝试启用 Mica 效果
+        if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
 
-                TransparencyBackgroundFallback = Brushes.Transparent;
-                TransparencyLevelHint = WindowTransparencyLevel.Mica;
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
-                TryEnableMicaEffect(thm);
-            }
-        }
+        if (!IsWindows11) return;
+
+        if (thm.RequestedTheme == FluentAvaloniaTheme.HighContrastModeString) return;
+
+
+
+        TransparencyBackgroundFallback = Brushes.Transparent;
+
+        TransparencyLevelHint = WindowTransparencyLevel.Mica;
+
+        TryEnableMicaEffect(thm);
 
         thm.ForceWin32WindowToTheme(this);
 
-        Program.TasksManager.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
+        Program.TasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
     }
 
     /// <summary>
@@ -363,7 +389,8 @@ ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
     /// </summary>
     /// <param name="sender">FluentAvaloniaTheme</param>
     /// <param name="args">主题正在更改请求参数</param>
-    private void OnRequestedThemeChanged(FluentAvaloniaTheme sender,
+    private void OnRequestedThemeChanged(
+        FluentAvaloniaTheme sender,
         RequestedThemeChangedEventArgs args)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -381,33 +408,39 @@ ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
     /// <param name="thm">FluentAvaloniaTheme</param>
     private void TryEnableMicaEffect(FluentAvaloniaTheme thm)
     {
+        _ = this.TryFindResource(
+            "SolidBackgroundFillColorBase",
+            out var value
+        );
+
         if (thm.RequestedTheme == FluentAvaloniaTheme.DarkModeString)
         {
-            var color = this.TryFindResource("SolidBackgroundFillColorBase", out var value)
-                ? (Color2)(Color)value : new Color2(32, 32, 32);
+            var color = value is null
+                ? new Color2(32, 32, 32)
+                : (Color2)(Color)value;
 
             color = color.LightenPercent(-0.8f);
 
-            Background = new ImmutableSolidColorBrush(color,
-ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
+            Background = new ImmutableSolidColorBrush(
+                color,
+                ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity
+            );
         }
         else if (thm.RequestedTheme == FluentAvaloniaTheme.LightModeString)
         {
-            var color = this.TryFindResource("SolidBackgroundFillColorBase", out var value)
-                ? (Color2)(Color)value : new Color2(243, 243, 243);
+            var color = value is null
+                ? new Color2(243, 243, 243)
+                : (Color2)(Color)value;
 
             color = color.LightenPercent(0.5f);
 
-            Background = new ImmutableSolidColorBrush(color,
-ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity);
+            Background = new ImmutableSolidColorBrush(
+                color,
+                ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity
+            );
         }
     }
 }
-
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
-#pragma warning restore CS8605 // 取消装箱可能为 null 的值。
-#pragma warning restore CS8601 // 引用类型赋值可能为 null。
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
 //
 //   ____________________________________                  ______________

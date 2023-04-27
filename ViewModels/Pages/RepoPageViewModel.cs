@@ -13,8 +13,6 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
-
 namespace KitX_Dashboard.ViewModels.Pages;
 
 internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
@@ -110,17 +108,24 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     /// 导入插件
     /// </summary>
     /// <param name="_"></param>
-    internal async void ImportPlugin(object win)
+    internal async void ImportPlugin(object? win)
     {
-        OpenFileDialog ofd = new();
+        if (win is not Window window) return;
+
+        var ofd = new OpenFileDialog()
+        {
+            AllowMultiple = true,
+        };
+
         ofd.Filters?.Add(new()
         {
             Name = "KitX Extensions Packages",
             Extensions = { "kxp" }
         });
-        ofd.AllowMultiple = true;
-        string[]? files = await ofd.ShowAsync(win as Window);
-        if (files != null && files?.Length > 0)
+
+        var files = await ofd.ShowAsync(window);
+
+        if (files is not null && files?.Length > 0)
         {
             new Thread(() =>
             {
@@ -140,7 +145,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     /// 刷新插件
     /// </summary>
     /// <param name="_"></param>
-    internal void RefreshPlugins(object _)
+    internal void RefreshPlugins(object? _)
     {
         //LiteDatabase? pgdb = Program.PluginsDataBase;
 
@@ -174,8 +179,6 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
 
 //
 //            ~                  ~

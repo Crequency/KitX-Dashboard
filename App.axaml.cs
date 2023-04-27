@@ -98,7 +98,7 @@ public partial class App : Application
     {
         Color c = Color.Parse(ConfigManager.AppConfig.App.ThemeColor);
 
-        if (Current != null)
+        if (Current is not null)
         {
             Current.Resources["ThemePrimaryAccent"] =
                 new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));

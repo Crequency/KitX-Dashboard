@@ -122,7 +122,11 @@ public static class Helper
                 rollingInterval: RollingInterval.Hour,
                 fileSizeLimitBytes: ConfigManager.AppConfig.Log.LogFileSingleMaxSize,
                 buffered: true,
-                flushToDiskInterval: new(0, 0, ConfigManager.AppConfig.Log.LogFileFlushInterval),
+                flushToDiskInterval: new(
+                    0,
+                    0,
+                    ConfigManager.AppConfig.Log.LogFileFlushInterval
+                ),
                 restrictedToMinimumLevel: ConfigManager.AppConfig.Log.LogLevel,
                 rollOnFileSizeLimit: true,
                 retainedFileCountLimit: ConfigManager.AppConfig.Log.LogFileMaxCount
