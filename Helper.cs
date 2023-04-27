@@ -325,25 +325,26 @@ public static class Helper
     {
         var location = $"{nameof(Helper)}.{nameof(Exit)}";
 
-        Program.FileWatcherManager?.Clear();
-
-        ConfigManager.SaveConfigs();
-
-        Log.CloseAndFlush();
-
-        Program.WebManager?.Stop();
-        Program.WebManager?.Dispose();
-
-        Program.ActivitiesDataBase?.Commit();
-        Program.ActivitiesDataBase?.Dispose();
-
-        GlobalInfo.Running = false;
-
         new Thread(() =>
         {
             try
             {
+                Program.FileWatcherManager?.Clear();
+
+                ConfigManager.SaveConfigs();
+
+                Log.CloseAndFlush();
+
+                Program.WebManager?.Stop();
+                Program.WebManager?.Dispose();
+
+                Program.ActivitiesDataBase?.Commit();
+                Program.ActivitiesDataBase?.Dispose();
+
+                GlobalInfo.Running = false;
+
                 Thread.Sleep(GlobalInfo.LastBreakAfterExit);
+
                 Environment.Exit(0);
             }
             catch (Exception ex)

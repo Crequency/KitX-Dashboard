@@ -22,7 +22,7 @@ public class WebManager : IDisposable
     /// 开始执行网络相关服务
     /// </summary>
     /// <param name="startAll">是否启动全部</param>
-    /// <param name="startPluginsServices">是否启动插件服务器</param>
+    /// <param name="startPluginsNetwork">是否启动插件服务器</param>
     /// <param name="startDevicesServer">是否启动设备服务器</param>
     /// <param name="startDevicesDiscoveryServer">是否启动设备自发现服务器</param>
     /// <returns>网络管理器本身</returns>
@@ -30,8 +30,8 @@ public class WebManager : IDisposable
     (
         bool startAll = true,
 
-        bool startPluginsServices = false,
-        bool startDevicesServices = false,
+        bool startPluginsNetwork = false,
+        bool startDevicesNetwork = false,
         bool startDevicesDiscoveryServer = false
     )
     {
@@ -44,10 +44,10 @@ public class WebManager : IDisposable
                 if (startAll || startDevicesDiscoveryServer)
                     devicesDiscoveryServer = await new DevicesDiscoveryServer().Start();
 
-                if (startAll || startDevicesServices)
+                if (startAll || startDevicesNetwork)
                     DevicesNetwork.Start();
 
-                if (startAll || startPluginsServices)
+                if (startAll || startPluginsNetwork)
                 {
                     PluginsNetwork.KeepCheckAndRemove();
                     PluginsNetwork.KeepCheckAndRemoveOrDelete();
@@ -58,8 +58,8 @@ public class WebManager : IDisposable
             catch (Exception ex)
             {
                 Log.Error(ex, $"In {location}: " +
-                    $"{nameof(startPluginsServices)}: {startPluginsServices}," +
-                    $"{nameof(startDevicesServices)}: {startDevicesServices}," +
+                    $"{nameof(startPluginsNetwork)}: {startPluginsNetwork}," +
+                    $"{nameof(startDevicesNetwork)}: {startDevicesNetwork}," +
                     $"{nameof(startDevicesDiscoveryServer)}: {startDevicesDiscoveryServer}");
             }
         }, location);

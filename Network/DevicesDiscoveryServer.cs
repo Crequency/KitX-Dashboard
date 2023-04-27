@@ -34,7 +34,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     private static readonly List<int> SupportedNetworkInterfacesIndexes = new();
 
-    private static ServerStatus status = ServerStatus.Unknown;
+    private static bool disposed = false;
 
     private static Action<byte[], int?, string>? onReceive = null;
 
@@ -43,6 +43,8 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     internal static readonly Queue<string> Messages2BroadCast = new();
 
     internal static DeviceInfoStruct DefaultDeviceInfoStruct = NetworkHelper.GetDeviceInfo();
+
+    private static ServerStatus status = ServerStatus.Pending;
 
     internal static ServerStatus Status
     {
@@ -151,7 +153,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         IPEndPoint multicast = new(
             IPAddress.Parse(ConfigManager.AppConfig.Web.UDPBroadcastAddress),
-ConfigManager.AppConfig.Web.UDPPortReceive
+            ConfigManager.AppConfig.Web.UDPPortReceive
         );
         UdpSender?.Client.SetSocketOption(
             SocketOptionLevel.Socket,
@@ -295,28 +297,43 @@ ConfigManager.AppConfig.Web.UDPPortReceive
 
     private static void Init()
     {
+        disposed = false;
+
         DeviceInfoStructUpdatedTimes = 0;
+
         LastTimeToOSVersionUpdated = 0;
+
         CloseDevicesDiscoveryServerRequest = false;
+
         SupportedNetworkInterfacesIndexes.Clear();
+
         Messages2BroadCast.Clear();
+
         DefaultDeviceInfoStruct = NetworkHelper.GetDeviceInfo();
     }
 
     public async Task<DevicesDiscoveryServer> Start()
     {
+        if (Status != ServerStatus.Pending) return this;
+
         Status = ServerStatus.Starting;
 
         Init();
 
-        UdpSender = new(ConfigManager.AppConfig.Web.UDPPortSend, AddressFamily.InterNetwork)
+        UdpSender = new(
+            ConfigManager.AppConfig.Web.UDPPortSend,
+            AddressFamily.InterNetwork
+        )
         {
             EnableBroadcast = true,
             MulticastLoopback = true
         };
 
         UdpReceiver = new(
-            new IPEndPoint(IPAddress.Any, ConfigManager.AppConfig.Web.UDPPortReceive)
+            new IPEndPoint(
+                IPAddress.Any,
+                ConfigManager.AppConfig.Web.UDPPortReceive
+            )
         );
 
         await TasksManager.RunTaskAsync(() =>
@@ -355,6 +372,8 @@ ConfigManager.AppConfig.Web.UDPPortReceive
 
     public async Task<DevicesDiscoveryServer> Stop()
     {
+        if (Status != ServerStatus.Running) return this;
+
         await Task.Run(() =>
         {
             Status = ServerStatus.Stopping;
@@ -372,6 +391,7 @@ ConfigManager.AppConfig.Web.UDPPortReceive
         await Task.Run(async () =>
         {
             await Stop();
+
             await Start();
         });
 
@@ -413,6 +433,12 @@ ConfigManager.AppConfig.Web.UDPPortReceive
 
     public void Dispose()
     {
+        if (disposed) return;
+
+        disposed = true;
+
+        CloseDevicesDiscoveryServerRequest = false;
+
         UdpSender?.Dispose();
         UdpReceiver?.Dispose();
 

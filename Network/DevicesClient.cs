@@ -15,11 +15,11 @@ internal class DevicesClient : IKitXClient<DevicesClient>
 
     private static bool keepReceiving = false;
 
-    private static ClientStatus status = ClientStatus.Unknown;
-
     public static string ServerAddress { get; set; } = string.Empty;
 
     public static int ServerPort { get; set; } = 0;
+
+    private static ClientStatus status = ClientStatus.Pending;
 
     public static ClientStatus Status
     {
@@ -196,6 +196,8 @@ internal class DevicesClient : IKitXClient<DevicesClient>
     {
         var location = $"{nameof(DevicesClient)}.{nameof(Start)}";
 
+        if (Status != ClientStatus.Pending) return this;
+
         await TasksManager.RunTaskAsync(async () =>
         {
             Status = ClientStatus.Pending;
@@ -212,6 +214,8 @@ internal class DevicesClient : IKitXClient<DevicesClient>
     public async Task<DevicesClient> Stop()
     {
         var location = $"{nameof(DevicesClient)}.{nameof(Stop)}";
+
+        if (Status != ClientStatus.Running) return this;
 
         await TasksManager.RunTaskAsync(async () =>
         {

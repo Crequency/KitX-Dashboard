@@ -400,14 +400,16 @@ internal class DevicesNetwork
 
     public static void Stop()
     {
-        devicesServer?.Stop().ContinueWith(server => server.Dispose());
+        devicesServer?.Stop();
 
-        devicesClient?.Stop().ContinueWith(client => client.Dispose());
+        devicesClient?.Stop();
     }
 
     public static void Restart()
     {
+        Stop();
 
+        Start();
     }
 }
 

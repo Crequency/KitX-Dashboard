@@ -260,9 +260,9 @@ internal class DebugCommands
                 "- all\n";
 
         if (args.ContainsKey("plugins-services"))
-            Program.WebManager?.Start(startAll: false, startPluginsServices: true);
+            Program.WebManager?.Start(startAll: false, startPluginsNetwork: true);
         if (args.ContainsKey("devices-services"))
-            Program.WebManager?.Start(startAll: false, startDevicesServices: true);
+            Program.WebManager?.Start(startAll: false, startDevicesNetwork: true);
         if (args.ContainsKey("devices-discovery-server"))
             Program.WebManager?.Start(startAll: false, startDevicesDiscoveryServer: true);
         if (args.ContainsKey("all"))

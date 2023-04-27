@@ -19,11 +19,37 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
     private static bool keepListen = true;
 
+    private static bool disposed = false;
+
     private static readonly Dictionary<string, TcpClient> clients = new();
 
     private static Action<byte[], int?, string>? onReceive = null;
 
-    public static ServerStatus? Status { get; set; } = ServerStatus.Unknown;
+    private static ServerStatus status = ServerStatus.Pending;
+
+    public static ServerStatus Status
+    {
+        get => status;
+        set
+        {
+            status = value;
+        }
+    }
+
+    private static void Init()
+    {
+        disposed = false;
+
+        clients.Clear();
+
+        var port = ConfigManager.AppConfig.Web.UserSpecifiedPluginsServerPort;
+
+        if (port < 0 || port > 65535) port = null;
+
+        listener = new(IPAddress.Any, port ?? 0);
+
+        keepListen = true;
+    }
 
     /// <summary>
     /// 接收客户端
@@ -53,13 +79,15 @@ internal class PluginsServer : IKitXServer<PluginsServer>
         catch (Exception ex)
         {
             Log.Error(ex, $"In {location}: {ex.Message}");
+
+            Status = ServerStatus.Errored;
         }
     }
 
     /// <summary>
     /// 接收消息
     /// </summary>
-    /// <param name="obj">TcpClient</param>
+    /// <param name="client">TcpClient</param>
     private static void ReceiveMessage(TcpClient client)
     {
         var location = $"{nameof(PluginsServer)}.{nameof(ReceiveMessage)}";
@@ -120,6 +148,8 @@ internal class PluginsServer : IKitXServer<PluginsServer>
             {
                 Log.Error(ex, $"In {location}: {ex.Message}");
                 Log.Information($"Connection broke from: {endpoint}");
+
+                Status = ServerStatus.Errored;
             }
             finally
             {
@@ -132,39 +162,37 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
                 stream?.CloseAndDispose();
 
-                client.Dispose();
+                client.CloseAndDispose();
             }
         }).Start();
     }
 
-    private static void Init()
-    {
-        clients.Clear();
-
-        var port = ConfigManager.AppConfig.Web.UserSpecifiedPluginsServerPort;
-
-        if (port < 0 || port > 65535) port = null;
-
-        listener = new(IPAddress.Any, port ?? 0);
-    }
-
     public async Task<PluginsServer> Broadcast(byte[] content)
     {
-        await Task.Run(() => { });
+        await Task.Run(() =>
+        {
+            //TODO: 向所有插件广播内容的方法
+        });
 
         return this;
     }
 
     public async Task<PluginsServer> BroadCast(byte[] content, Func<TcpClient, bool>? pattern)
     {
-        await Task.Run(() => { });
+        await Task.Run(() =>
+        {
+            //TODO: 向符合条件的插件广播内容的方法
+        });
 
         return this;
     }
 
     public async Task<PluginsServer> Send(byte[] content, string target)
     {
-        await Task.Run(() => { });
+        await Task.Run(() =>
+        {
+            //TODO: 向指定插件发送内容的方法
+        });
 
         return this;
     }
@@ -178,8 +206,12 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
     public async Task<PluginsServer> Start()
     {
+        var location = $"{nameof(PluginsServer)}.{nameof(Start)}";
+
         await TasksManager.RunTaskAsync(() =>
         {
+            Status = ServerStatus.Starting;
+
             Init();
 
             if (listener is null) return;
@@ -195,39 +227,63 @@ internal class PluginsServer : IKitXServer<PluginsServer>
             Log.Information($"PluginsServer Port: {port}");
 
             new Thread(AcceptClient).Start();
-        });
+
+            Status = ServerStatus.Running;
+
+        }, location);
 
         return this;
     }
 
     public async Task<PluginsServer> Stop()
     {
+        var location = $"{nameof(PluginsServer)}.{nameof(Stop)}";
+
+        Status = ServerStatus.Stopping;
+
         keepListen = false;
 
-        await Task.Run(() =>
+        await TasksManager.RunTaskAsync(() =>
         {
             foreach (KeyValuePair<string, TcpClient> item in clients)
             {
                 item.Value.Close();
                 item.Value.Dispose();
             }
-        });
+
+            clients.Clear();
+
+            listener?.Stop();
+
+            Status = ServerStatus.Pending;
+
+        }, location, catchException: true);
 
         return this;
     }
 
     public async Task<PluginsServer> Restart()
     {
-        await Task.Run(() => { });
+        var location = $"{nameof(PluginsServer)}.{nameof(Restart)}";
+
+        await TasksManager.RunTaskAsync(async () =>
+        {
+            await Stop();
+
+            await Start();
+
+        }, location);
 
         return this;
     }
 
     public void Dispose()
     {
-        keepListen = false;
+        if (disposed) return;
 
-        listener?.Stop();
+        disposed = true;
+
+        listener = null;
 
         GC.SuppressFinalize(this);
     }

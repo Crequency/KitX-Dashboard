@@ -62,11 +62,23 @@ internal class TasksManager
     public static void RunTask(
         Action action,
         string name = nameof(Action),
-        string prompt = ">>> ")
+        string prompt = ">>> ",
+        bool catchException = false)
     {
         Log.Information($"{prompt}Task `{name}` began.");
 
-        action();
+        if (catchException)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, $"{prompt}Task `{name}` failed: {e.Message}");
+            }
+        }
+        else action();
 
         Log.Information($"{prompt}Task `{name}` done.");
     }
@@ -80,11 +92,23 @@ internal class TasksManager
     public static async Task RunTaskAsync(
         Action action,
         string name = nameof(Action),
-        string prompt = ">>> ")
+        string prompt = ">>> ",
+        bool catchException = false)
     {
         Log.Information($"{prompt}Task `{name}` began.");
 
-        await Task.Run(action);
+        if (catchException)
+        {
+            try
+            {
+                await Task.Run(action);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, $"{prompt}Task `{name}` failed: {e.Message}");
+            }
+        }
+        else await Task.Run(action);
 
         Log.Information($"{prompt}Task `{name}` done.");
     }

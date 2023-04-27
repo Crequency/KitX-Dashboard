@@ -19,11 +19,13 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
     private static bool keepListen = true;
 
+    private static bool disposed = false;
+
     private static readonly Dictionary<string, TcpClient> clients = new();
 
     private static Action<byte[], int?, string>? onReceive = null;
 
-    private static ServerStatus status = ServerStatus.Unknown;
+    private static ServerStatus status = ServerStatus.Pending;
 
     public static ServerStatus Status
     {
@@ -35,6 +37,17 @@ internal class DevicesServer : IKitXServer<DevicesServer>
             if (status == ServerStatus.Errored)
                 DevicesNetwork.Restart();
         }
+    }
+
+    private static void Init()
+    {
+        disposed = false;
+
+        clients.Clear();
+
+        listener = new(IPAddress.Any, 0);
+
+        keepListen = true;
     }
 
     /// <summary>
@@ -65,13 +78,15 @@ internal class DevicesServer : IKitXServer<DevicesServer>
         catch (Exception ex)
         {
             Log.Error(ex, $"In {nameof(location)}: {ex.Message}");
+
+            Status = ServerStatus.Errored;
         }
     }
 
     /// <summary>
     /// 接收客户端消息
     /// </summary>
-    /// <param name="obj">TcpClient</param>
+    /// <param name="client">TcpClient</param>
     private static void ReceiveMessage(TcpClient client)
     {
         var location = $"{nameof(DevicesServer)}.{nameof(ReceiveMessage)}";
@@ -120,25 +135,29 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
                 stream?.CloseAndDispose();
 
-                client.Dispose();
+                client?.CloseAndDispose();
             }
         }).Start();
     }
 
     public async Task<DevicesServer> Broadcast(byte[] content)
     {
-        await Task.Run(() =>
+        var location = $"{nameof(DevicesServer)}.{nameof(Broadcast)}";
+
+        await TasksManager.RunTaskAsync(() =>
         {
             foreach (var client in clients)
                 client.Value.Client.Send(content);
-        });
+        }, location, catchException: true);
 
         return this;
     }
 
     public async Task<DevicesServer> BroadCast(byte[] content, Func<TcpClient, bool>? pattern)
     {
-        await Task.Run(() =>
+        var location = $"{nameof(DevicesServer)}.{nameof(BroadCast)}";
+
+        await TasksManager.RunTaskAsync(() =>
         {
             foreach (var client in clients)
             {
@@ -146,18 +165,20 @@ internal class DevicesServer : IKitXServer<DevicesServer>
                     client.Value.Client.Send(content);
                 else client.Value.Client.Send(content);
             }
-        });
+        }, location, catchException: true);
 
         return this;
     }
 
     public async Task<DevicesServer> Send(byte[] content, string target)
     {
-        await Task.Run(() =>
+        var location = $"{nameof(DevicesServer)}.{nameof(Send)}";
+
+        await TasksManager.RunTaskAsync(() =>
         {
             if (clients.ContainsKey(target))
                 clients[target].Client.Send(content);
-        });
+        }, location, catchException: true);
 
         return this;
     }
@@ -173,15 +194,16 @@ internal class DevicesServer : IKitXServer<DevicesServer>
     {
         var location = $"{nameof(DevicesServer)}.{nameof(Start)}";
 
-        Status = ServerStatus.Pending;
-
-        keepListen = true;
+        if (Status != ServerStatus.Pending) return this;
 
         await TasksManager.RunTaskAsync(() =>
         {
-            clients.Clear();
+            Status = ServerStatus.Starting;
 
-            listener = new(IPAddress.Any, 0);
+            Init();
+
+            if (listener is null) return;
+
             listener.Start();
 
             var port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
@@ -194,11 +216,11 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
             EventService.Invoke(nameof(EventService.DevicesServerPortChanged));
 
-            Status = ServerStatus.Running;
-
             new Thread(AcceptClient).Start();
 
-        }, location);
+            Status = ServerStatus.Running;
+
+        }, location, catchException: true);
 
         return this;
     }
@@ -207,10 +229,12 @@ internal class DevicesServer : IKitXServer<DevicesServer>
     {
         var location = $"{nameof(DevicesServer)}.{nameof(Stop)}";
 
-        Status = ServerStatus.Stopping;
+        if (Status != ServerStatus.Running) return this;
 
         await TasksManager.RunTaskAsync(() =>
         {
+            Status = ServerStatus.Stopping;
+
             listener?.Stop();
 
             keepListen = false;
@@ -221,6 +245,8 @@ internal class DevicesServer : IKitXServer<DevicesServer>
                 item.Value.Dispose();
             }
 
+            clients.Clear();
+
             GlobalInfo.IsMainMachine = false;
             GlobalInfo.DeviceServerPort = -1;
 
@@ -228,7 +254,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
             Status = ServerStatus.Pending;
 
-        }, location);
+        }, location, catchException: true);
 
         return this;
     }
@@ -239,8 +265,10 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
         await TasksManager.RunTaskAsync(async () =>
         {
-            await Start();
             await Stop();
+
+            await Start();
+
         }, location);
 
         return this;
@@ -248,6 +276,10 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
     public void Dispose()
     {
+        if (disposed) return;
+
+        disposed = true;
+
         GC.SuppressFinalize(this);
     }
 }

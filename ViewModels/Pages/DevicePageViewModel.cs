@@ -66,15 +66,15 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal static void StopDevicvesServer(object _)
     {
-        Program.WebManager?.Stop(
-            stopAll: false,
-            stopDevicesServices: true,
-            stopDevicesDiscoveryServer: true,
-            stopPluginsServices: false
-        );
-
         Task.Run(async () =>
         {
+            Program.WebManager?.Stop(
+                stopAll: false,
+                stopDevicesServices: true,
+                stopDevicesDiscoveryServer: true,
+                stopPluginsServices: false
+            );
+
             await Task.Delay(ConfigManager.AppConfig.Web.UDPSendFrequency + 200);
 
             DeviceCards.Clear();
