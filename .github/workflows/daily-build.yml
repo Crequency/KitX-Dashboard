@@ -11,20 +11,16 @@ jobs:
 
     steps:
     
-    # - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+      with:
+        repository: 'Crequency/KitX'
+        ref: 'dev=main'
+        submodules: 'true'
     
-    - name: Get Source Code
+    - name: Init Source Code
       run: |
-        git clone git@github.com:Crequency/KitX.git
-        
-        cd KitX
-        
-        git checkout dev=main
-        
         ./ToolKits/start.sh dashboard
         ./ToolKits/start.sh reference
-        
-        cd ..
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
@@ -52,4 +48,4 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          "../../KitX Publish/*.zip"
+          "KitX Publish/*.zip"
