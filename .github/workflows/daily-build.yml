@@ -48,4 +48,4 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          "KitX Publish/*.zip"
+          KitX Publish/*.zip
