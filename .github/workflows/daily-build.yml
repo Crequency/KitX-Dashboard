@@ -18,9 +18,10 @@ jobs:
         submodules: 'true'
     
     - name: Init Source Code
+      shell: pwsh
       run: |
-        ./ToolKits/start.sh dashboard
-        ./ToolKits/start.sh reference
+        ./ToolKits/start.ps1 dashboard
+        ./ToolKits/start.ps1 reference
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
@@ -28,14 +29,28 @@ jobs:
         dotnet-version: 6.0.x
       
     - name: Publish
+      shell: pwsh
       run: |
         cd "ToolKits"
         cd "KitX.ToolKits.Publisher"
         
+        echo "===== Run command: `dotnet run` ====="
+        
         dotnet run
         
-        $version = (Get-Item -path "..\..\KitX Publish\kitx-win-x64-single\KitX Dashboard.exe").VersionInfo.ProductVersion
+        echo "===== `dotnet run` command done ====="
+        
+        $version = (Get-Item -path "..\..\KitX Publish\kitx-win-x64-single\KitX Dashboard.exe").VersionInfo.FileVersion
         $date = (Get-Date -Format "yyyy.MM.dd")
+        
+        echo "version: $version"
+        echo "date: $date"
+        
+        # echo "version=$version" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        # echo "date=$date" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        
+        echo "version=$version" >> $GITHUB_ENV
+        echo "date=$date" >> $GITHUB_ENV
         
         cd ../../
         
