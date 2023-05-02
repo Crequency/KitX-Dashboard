@@ -1,12 +1,19 @@
 name: daily-build
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     - cron: '0 6 * * *'
 
 jobs:
   build:
-
+    strategy:
+      matrix:
+        os: [win, linux, osx]
+        arch: [x86, x64, arm, arm64]
+        
     runs-on: windows-latest
 
     steps:
@@ -27,6 +34,29 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
+        
+    - name: Filter Publish Profiles
+      shell: pwsh
+      working-directory: "KitX Dashboard"
+      run: |
+        cd "./Properties/PublishProfiles/"
+        
+        echo "===== Origin Publish Profiles ====="
+        
+        ls
+        
+        cd ..
+        mkdir tmp
+        
+        cp PublishProfiles/${{ matrix.os }}-${{ matrix.arch }}*.pubxml tmp/
+        
+        rm PublishProfiles/*
+        
+        cp tmp/* PublishProfiles/
+        
+        echo "===== Filter Publish Profiles ====="
+        
+        ls PublishProfiles
       
     - name: Publish
       shell: pwsh
@@ -40,7 +70,7 @@ jobs:
         
         echo "===== `dotnet run` command done ====="
         
-        $version = (Get-Item -path "..\..\KitX Publish\kitx-win-x64-single\KitX Dashboard.exe").VersionInfo.FileVersion
+        $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX Dashboard.dll").VersionInfo.FileVersion
         $date = (Get-Date -Format "yyyy.MM.dd")
         
         echo "version: $version"
