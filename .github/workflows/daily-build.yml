@@ -10,9 +10,17 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         os: [win, linux, osx]
         arch: [x86, x64, arm, arm64]
+        exclude:
+          - os: osx
+            arch: x86
+          - os: osx
+            arch: arm
+          - os: linux
+            arch: x86
         
     runs-on: windows-latest
 
