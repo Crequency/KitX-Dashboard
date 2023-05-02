@@ -6,7 +6,19 @@ on:
 
 jobs:
   build:
-
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [win, linux, osx]
+        arch: [x86, x64, arm, arm64]
+        exclude:
+          - os: osx
+            arch: x86
+          - os: osx
+            arch: arm
+          - os: linux
+            arch: x86
+        
     runs-on: windows-latest
 
     steps:
@@ -27,6 +39,29 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
+        
+    - name: Filter Publish Profiles
+      shell: pwsh
+      working-directory: "KitX Dashboard"
+      run: |
+        cd "./Properties/PublishProfiles/"
+        
+        echo "===== Origin Publish Profiles ====="
+        
+        ls
+        
+        cd ..
+        mkdir tmp
+        
+        cp PublishProfiles/${{ matrix.os }}-${{ matrix.arch }}*.pubxml tmp/
+        
+        rm PublishProfiles/*
+        
+        cp tmp/* PublishProfiles/
+        
+        echo "===== Filter Publish Profiles ====="
+        
+        ls PublishProfiles
       
     - name: Publish
       shell: pwsh
@@ -40,7 +75,7 @@ jobs:
         
         echo "===== `dotnet run` command done ====="
         
-        $version = (Get-Item -path "..\..\KitX Publish\kitx-win-x64-single\KitX Dashboard.exe").VersionInfo.FileVersion
+        $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX Dashboard.dll").VersionInfo.FileVersion
         $date = (Get-Date -Format "yyyy.MM.dd")
         
         echo "version: $version"
@@ -49,8 +84,8 @@ jobs:
         # echo "version=$version" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
         # echo "date=$date" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
         
-        echo "version=$version" >> $GITHUB_ENV
-        echo "date=$date" >> $GITHUB_ENV
+        echo "version=$version" >> $env:GITHUB_ENV
+        echo "date=$date" >> $env:GITHUB_ENV
         
         cd ../../
         
@@ -58,9 +93,9 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ env.version }}
-        name: Daily Release ${{ env.date }}
+        name: Daily Release KitX v${{ env.version }} ${{ env.date }}
         body: Auto release by Actions.
         draft: false
-        prerelease: false
+        prerelease: true
         files: |
           KitX Publish/*.zip
