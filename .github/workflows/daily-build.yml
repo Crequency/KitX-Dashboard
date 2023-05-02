@@ -1,9 +1,6 @@
 name: daily-build
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: '0 6 * * *'
 
@@ -96,9 +93,9 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ env.version }}
-        name: Daily Release ${{ env.date }}
+        name: Daily Release KitX v${{ env.version }} ${{ env.date }}
         body: Auto release by Actions.
         draft: false
-        prerelease: false
+        prerelease: true
         files: |
           KitX Publish/*.zip
