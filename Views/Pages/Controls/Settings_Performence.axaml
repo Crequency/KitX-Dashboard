@@ -367,7 +367,7 @@
                                       FontFamily="{StaticResource SourceHanSans}"
                                       FontWeight="Bold"
                                       IsTextSearchEnabled="True"
-                                      Items="{Binding SurpportLogLevels}"
+                                      Items="{Binding SupportedLogLevels}"
                                       SelectedItem="{Binding CurrentLogLevel}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
