@@ -81,6 +81,9 @@ public static class Helper
                     case "--disable-config-hot-reload":
                         GlobalInfo.EnabledConfigFileHotReload = false;
                         break;
+                    case "--disable-network-system-on-startup":
+                        GlobalInfo.SkipNetworkSystemOnStartup = true;
+                        break;
                 }
             }
         }
@@ -188,7 +191,10 @@ public static class Helper
             new Thread(async () =>
             {
                 Thread.Sleep(ConfigManager.AppConfig.Web.DelayStartSeconds * 1000);
-                Program.WebManager = await new WebManager().Start();
+                if (GlobalInfo.SkipNetworkSystemOnStartup)
+                    Program.WebManager = new();
+                else
+                    Program.WebManager = await new WebManager().Start();
             }).Start();
         });
 

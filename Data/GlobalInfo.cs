@@ -49,6 +49,8 @@ internal static class GlobalInfo
 
     internal static bool IsMainMachine = false;
 
+    internal static bool SkipNetworkSystemOnStartup = false;
+
     internal static int DeviceServerPort = -1;
 
     internal static DateTime ServerBuildTime = new();
