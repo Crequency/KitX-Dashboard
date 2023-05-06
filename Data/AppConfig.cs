@@ -36,7 +36,7 @@ public class AppConfig
     public Config_Loaders Loaders { get; set; } = new();
 
     /// <summary>
-    /// Config
+    /// AppConfig
     /// </summary>
     public class Config_App
     {
@@ -386,6 +386,7 @@ public class AppConfig
         [JsonInclude]
         public int UpdatingCheckPerThreadFilesCount { get; set; } = 20;
 
+        [JsonInclude]
         public int OperatingSystemVersionUpdateInterval { get; set; } = 60;
     }
 

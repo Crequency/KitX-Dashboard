@@ -2,5 +2,5 @@
 
 internal class FileWatcherNames
 {
-    internal static string? ConfigFileWatcher { get; }
+    internal static string? AppConfigFileWatcher { get; }
 }

@@ -1,6 +1,5 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
-using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
@@ -14,8 +13,6 @@ namespace KitX_Dashboard;
 
 internal class Program
 {
-    internal static AppConfig Config = new();
-
     internal static TasksManager? TasksManager;
 
     internal static WebManager? WebManager;
@@ -25,8 +22,6 @@ internal class Program
     internal static ObservableCollection<PluginCard> PluginCards = new();
 
     internal static ObservableCollection<DeviceCard> DeviceCards = new();
-
-    internal static PluginsList PluginsList = new();
 
     internal static LiteDatabase? ActivitiesDataBase;
 
@@ -46,88 +41,19 @@ internal class Program
     [STAThread]
     public static void Main(string[] args)
     {
-
-        #region 必要的初始化
-
-        EventService.Init();
-
-        #endregion
-
-        #region 处理启动参数
-
         try
         {
-            for (int i = 0; i < args.Length; i++)
-            {
-                switch (args[i])
-                {
-                    case "--import-plugin":
-                        if (i != args.Length - 1)
-                            try
-                            {
-                                Helper.ImportPlugin(args[i + 1]);
-                            }
-                            catch (Exception e)
-                            {
-                                Console.WriteLine(e.Message);
-                            }
-                        else throw new Exception("No arguments for plugin location.");
-                        break;
-                    case "--disable-single-process-check":
-                        GlobalInfo.IsSingleProcessStartMode = false;
-                        break;
-                    case "--disable-config-hot-reload":
-                        GlobalInfo.EnabledConfigFileHotReload = false;
-                        break;
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e.Message);
-            Environment.Exit(ErrorCodes.StartUpArgumentsError);
-        }
+            EventService.Init();
 
-        #endregion
-
-        #region 单进程模式检查
-
-        if (GlobalInfo.IsSingleProcessStartMode)
-            Helper.SingleProcessCheck();
-
-        #endregion
-
-        #region 正常启动流程
-
-        try
-        {
-
-            #region 执行启动时检查
+            Helper.ProcessStartupArguments(args);
 
             Helper.StartUpCheck();
 
-            #endregion
-
-            Config.App.RanTime++;
-
-            #region 进入应用生命周期循环
+            ConfigManager.AppConfig.App.RanTime++;
 
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
-            #endregion
-
-            #region 保存配置信息
-
-            Helper.SaveInfo();
-
-            #endregion
-
-            #region 退出进程
-
             Helper.Exit();
-
-            #endregion
-
         }
         catch (Exception e)
         {
@@ -137,9 +63,6 @@ internal class Program
             Environment.Exit(1);
 #endif
         }
-
-        #endregion
-
     }
 
     /// <summary>
@@ -149,20 +72,28 @@ internal class Program
     /// Avalonia configuration, don't remove; also used by visual designer.
     /// Avalonia 配置项, 请不要删除; 同时也用于可视化设计器
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
-        .UsePlatformDetect().LogToTrace().UseReactiveUI()
-        .With(new Win32PlatformOptions
-        {
-            UseWindowsUIComposition = true,
-            EnableMultitouch = true,
-        })
-        .With(new MacOSPlatformOptions
-        {
-            ShowInDock = true
-        })
-        .With(new X11PlatformOptions
-        {
-            EnableMultiTouch = true
-        });
+        .UsePlatformDetect()
+        .LogToTrace()
+        .UseReactiveUI()
+        .With(
+            new Win32PlatformOptions
+            {
+                UseWindowsUIComposition = true,
+                EnableMultitouch = true,
+            }
+        )
+        .With(
+            new MacOSPlatformOptions
+            {
+                ShowInDock = true
+            }
+        )
+        .With(
+            new X11PlatformOptions
+            {
+                EnableMultiTouch = true,
+            }
+        );
 }
 
 //                                                                                                      

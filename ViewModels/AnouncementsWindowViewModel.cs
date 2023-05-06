@@ -1,15 +1,14 @@
-﻿using FluentAvalonia.UI.Controls;
+﻿using Common.BasicHelper.Utils.Extensions;
+using FluentAvalonia.UI.Controls;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Views;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
 
 namespace KitX_Dashboard.ViewModels;
 
@@ -28,14 +27,14 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal static double Window_Width
     {
-        get => Program.Config.Windows.AnnouncementWindow.Window_Width;
-        set => Program.Config.Windows.AnnouncementWindow.Window_Width = value;
+        get => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width;
+        set => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width = value;
     }
 
     internal static double Window_Height
     {
-        get => Program.Config.Windows.AnnouncementWindow.Window_Height;
-        set => Program.Config.Windows.AnnouncementWindow.Window_Height = value;
+        get => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height;
+        set => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height = value;
     }
 
     private NavigationViewItem? selectedMenuItem;
@@ -46,8 +45,19 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         set
         {
             selectedMenuItem = value;
-            Markdown = Sources[SelectedMenuItem.Content.ToString()];
-            PropertyChanged?.Invoke(this, new(nameof(SelectedMenuItem)));
+
+            if (SelectedMenuItem is null) return;
+
+            var key = SelectedMenuItem.Content.ToString();
+
+            if (key is null) return;
+
+            Markdown = Sources[key];
+
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(SelectedMenuItem))
+            );
         }
     }
 
@@ -99,22 +109,32 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
     /// </summary>
     internal DelegateCommand? ConfirmReceivedAllCommand { get; set; }
 
-    private async void ConfirmReceived(object _)
+    private async void ConfirmReceived(object? _)
     {
-        if (!Readed.Contains(SelectedMenuItem.Content.ToString()))
-            Readed.Add(SelectedMenuItem.Content.ToString());
+        if (SelectedMenuItem is null || Readed is null) return;
 
-        string ConfigFilePath = Path.GetFullPath(GlobalInfo.AnnouncementsJsonPath);
+        var key = SelectedMenuItem.Content.ToString();
 
-        JsonSerializerOptions options = new()
+        if (key is null) return;
+
+        if (!Readed.Contains(key))
+            Readed.Add(key);
+
+        var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
+
+        var options = new JsonSerializerOptions()
         {
             WriteIndented = true,
             IncludeFields = true,
         };
 
-        await File.WriteAllTextAsync(ConfigFilePath, JsonSerializer.Serialize(Readed, options));
+        await File.WriteAllTextAsync(
+            ConfigFilePath,
+            JsonSerializer.Serialize(Readed, options)
+        );
 
-        bool finded = false;
+        var finded = false;
+
         foreach (var item in MenuItems)
         {
             if (finded)
@@ -122,37 +142,44 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
                 SelectedMenuItem = item;
                 break;
             }
+
             if (item == SelectedMenuItem)
                 finded = true;
         }
     }
 
-    private async void ConfirmReceivedAll(object _)
+    private async void ConfirmReceivedAll(object? _)
     {
+        if (Readed is null) return;
+
         foreach (var item in MenuItems)
         {
-            if (!Readed.Contains(item.Content.ToString()))
-                Readed.Add(item.Content.ToString());
+            var key = item.Content.ToString();
+
+            if (key is null) continue;
+
+            if (!Readed.Contains(key))
+                Readed.Add(key);
         }
 
-        string ConfigFilePath = Path.GetFullPath(GlobalInfo.AnnouncementsJsonPath);
+        var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
 
-        JsonSerializerOptions options = new()
+        var options = new JsonSerializerOptions()
         {
             WriteIndented = true,
             IncludeFields = true,
         };
 
-        await File.WriteAllTextAsync(ConfigFilePath, JsonSerializer.Serialize(Readed, options));
+        await File.WriteAllTextAsync(
+            ConfigFilePath,
+            JsonSerializer.Serialize(Readed, options)
+        );
 
-        Window.Close();
+        Window?.Close();
     }
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
 //
 //        .         .      /\      .:  *       .          .              .

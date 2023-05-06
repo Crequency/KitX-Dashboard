@@ -5,6 +5,7 @@ using Avalonia.Media.Imaging;
 using FluentAvalonia.Styling;
 using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;
@@ -32,8 +33,10 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal void InitEvents()
     {
-        EventService.ThemeConfigChanged +=
-            () => PropertyChanged?.Invoke(this, new(nameof(TintColor)));
+        EventService.ThemeConfigChanged += () => PropertyChanged?.Invoke(
+            this,
+            new(nameof(TintColor))
+        );
     }
 
     internal PluginStruct? PluginDetail { get; set; }
@@ -42,11 +45,12 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     {
         get
         {
-            if (PluginDetail != null)
+            if (PluginDetail is not null)
             {
-                string key = Program.Config.App.AppLanguage;
-                bool? exist = PluginDetail?.DisplayName.ContainsKey(key);
-                if (exist != null && (bool)exist)
+                var key = ConfigManager.AppConfig.App.AppLanguage;
+                var exist = PluginDetail?.DisplayName.ContainsKey(key);
+
+                if (exist is not null && (bool)exist)
                     return PluginDetail?.DisplayName[key];
                 else return PluginDetail?.Name;
             }
@@ -68,11 +72,12 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     {
         get
         {
-            if (PluginDetail != null)
+            if (PluginDetail is not null)
             {
-                string key = Program.Config.App.AppLanguage;
-                bool? exist = PluginDetail?.SimpleDescription.ContainsKey(key);
-                if (exist != null && (bool)exist)
+                var key = ConfigManager.AppConfig.App.AppLanguage;
+                var exist = PluginDetail?.SimpleDescription.ContainsKey(key);
+
+                if (exist is not null && (bool)exist)
                     return PluginDetail?.SimpleDescription[key];
                 else return PluginDetail?.SimpleDescription.Values.ToArray()[0];
             }
@@ -84,11 +89,12 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     {
         get
         {
-            if (PluginDetail != null)
+            if (PluginDetail is not null)
             {
-                string key = Program.Config.App.AppLanguage;
-                bool? exist = PluginDetail?.ComplexDescription.ContainsKey(key);
-                if (exist != null && (bool)exist)
+                var key = ConfigManager.AppConfig.App.AppLanguage;
+                var exist = PluginDetail?.ComplexDescription.ContainsKey(key);
+
+                if (exist is not null && (bool)exist)
                     return PluginDetail?.ComplexDescription[key];
                 else return PluginDetail?.ComplexDescription.Values.ToArray()[0];
             }
@@ -100,11 +106,12 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     {
         get
         {
-            if (PluginDetail != null)
+            if (PluginDetail is not null)
             {
-                string key = Program.Config.App.AppLanguage;
-                bool? exist = PluginDetail?.TotalDescriptionInMarkdown.ContainsKey(key);
-                if (exist != null && (bool)exist)
+                var key = ConfigManager.AppConfig.App.AppLanguage;
+                var exist = PluginDetail?.TotalDescriptionInMarkdown.ContainsKey(key);
+
+                if (exist is not null && (bool)exist)
                     return PluginDetail?.TotalDescriptionInMarkdown[key];
                 else return PluginDetail?.TotalDescriptionInMarkdown.Values.ToArray()[0];
             }
@@ -118,7 +125,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     internal string? LastUpdateDate =>
         PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-    internal static Color TintColor => Program.Config.App.Theme switch
+    internal static Color TintColor => ConfigManager.AppConfig.App.Theme switch
     {
         "Light" => Colors.WhiteSmoke,
         "Dark" => Colors.Black,
@@ -126,9 +133,9 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             "Light" => Colors.WhiteSmoke,
             "Dark" => Colors.Black,
-            _ => Color.Parse(Program.Config.App.ThemeColor)
+            _ => Color.Parse(ConfigManager.AppConfig.App.ThemeColor)
         },
-        _ => Color.Parse(Program.Config.App.ThemeColor),
+        _ => Color.Parse(ConfigManager.AppConfig.App.ThemeColor),
     };
 
     private readonly ObservableCollection<string> functions = new();
@@ -141,10 +148,12 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             try
             {
-                if (PluginDetail != null)
+                if (PluginDetail is not null)
                 {
-                    byte[] src = Convert.FromBase64String(PluginDetail.Value.IconInBase64);
+                    var src = Convert.FromBase64String(PluginDetail.Value.IconInBase64);
+
                     using var ms = new MemoryStream(src);
+
                     return new(ms);
                 }
                 else return App.DefaultIcon;
@@ -160,39 +169,56 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal void InitFunctionsAndTags()
     {
-        if (PluginDetail != null && PluginDetail?.Functions != null && PluginDetail?.Tags != null)
+        if (PluginDetail is null) return;
+
+        if (PluginDetail?.Functions is null) return;
+
+        if (PluginDetail?.Tags is null) return;
+
+
+        var langKey = ConfigManager.AppConfig.App.AppLanguage;
+
+        foreach (var func in PluginDetail.Value.Functions)
         {
-            string langKey = Program.Config.App.AppLanguage;
-            foreach (var func in PluginDetail.Value.Functions)
+            var sb = new StringBuilder();
+            sb.Append(func.ReturnValueType);
+            sb.Append(' ');
+
+            if (func.DisplayNames.ContainsKey(langKey))
+                sb.Append(func.DisplayNames[langKey]);
+            else sb.Append(func.Name);
+
+            sb.Append('(');
+
+            if (func.Parameters.Count != func.ParametersType.Count)
+                throw new InvalidDataException("Parameters return type count " +
+                    "didn't match parameters count.");
+
+            var index = 0;
+
+            foreach (var param in func.Parameters)
             {
-                StringBuilder sb = new();
-                sb.Append(func.ReturnValueType);
+                sb.Append(func.ParametersType[index]);
+
+                ++index;
+
                 sb.Append(' ');
-                if (func.DisplayNames.ContainsKey(langKey))
-                    sb.Append(func.DisplayNames[langKey]);
-                else sb.Append(func.Name);
-                sb.Append('(');
-                if (func.Parameters.Count != func.ParametersType.Count)
-                    throw new InvalidDataException("Parameters return type count " +
-                        "didn't match parameters count.");
-                int index = 0;
-                foreach (var param in func.Parameters)
-                {
-                    sb.Append(func.ParametersType[index]);
-                    ++index;
-                    sb.Append(' ');
-                    if (param.Value.ContainsKey(langKey))
-                        sb.Append(param.Value[langKey]);
-                    else sb.Append(param.Key);
-                    if (index != func.Parameters.Count)
-                        sb.Append(", ");
-                }
-                sb.Append(')');
-                Functions.Add(sb.ToString());
+
+                if (param.Value.ContainsKey(langKey))
+                    sb.Append(param.Value[langKey]);
+                else sb.Append(param.Key);
+
+                if (index != func.Parameters.Count)
+                    sb.Append(", ");
             }
-            foreach (var tag in PluginDetail.Value.Tags)
-                Tags.Add($"{{{tag.Key}: {tag.Value}}}");
+
+            sb.Append(')');
+
+            Functions.Add(sb.ToString());
         }
+
+        foreach (var tag in PluginDetail.Value.Tags)
+            Tags.Add($"{{{tag.Key}: {tag.Value}}}");
     }
 
     internal ObservableCollection<string> Functions => functions;
@@ -201,7 +227,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal DelegateCommand? FinishCommand { get; set; }
 
-    internal void Finish(object parent)
+    internal void Finish(object? parent)
     {
         (parent as Window)?.Close();
     }

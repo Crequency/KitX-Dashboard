@@ -8,7 +8,7 @@ internal class StringOverLengthConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value != null && parameter != null)
+        if (value is not null && parameter is not null)
         {
             string str = (string)value;
             int length = int.Parse((string)parameter);

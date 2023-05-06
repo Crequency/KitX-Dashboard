@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using System.ComponentModel;
 
@@ -22,10 +23,10 @@ internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal static bool IsPaneOpen
     {
-        get => Program.Config.Pages.Settings.IsNavigationViewPaneOpened;
+        get => ConfigManager.AppConfig.Pages.Settings.IsNavigationViewPaneOpened;
         set
         {
-            Program.Config.Pages.Settings.IsNavigationViewPaneOpened = value;
+            ConfigManager.AppConfig.Pages.Settings.IsNavigationViewPaneOpened = value;
             EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
         }
     }
@@ -42,10 +43,10 @@ internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
     {
-        get => Program.Config.Pages.Settings.NavigationViewPaneDisplayMode;
+        get => ConfigManager.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode;
         set
         {
-            Program.Config.Pages.Settings.NavigationViewPaneDisplayMode = value;
+            ConfigManager.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode = value;
             PropertyChanged?.Invoke(this,
                 new(nameof(NavigationViewPaneDisplayMode)));
             PropertyChanged?.Invoke(this,
@@ -60,13 +61,13 @@ internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal DelegateCommand? MoveToTopCommand { get; set; }
 
-    internal void ResetToAuto(object _)
+    internal void ResetToAuto(object? _)
         => NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Auto;
 
-    internal void MoveToLeft(object _)
+    internal void MoveToLeft(object? _)
         => NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Left;
 
-    internal void MoveToTop(object _)
+    internal void MoveToTop(object? _)
         => NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Top;
 
     public new event PropertyChangedEventHandler? PropertyChanged;

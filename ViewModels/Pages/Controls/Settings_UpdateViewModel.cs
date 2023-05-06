@@ -6,7 +6,8 @@ using KitX.Web.Rules;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Converters;
 using KitX_Dashboard.Data;
-using KitX_Dashboard.Servers;
+using KitX_Dashboard.Managers;
+using KitX_Dashboard.Network;
 using KitX_Dashboard.Services;
 using MessageBox.Avalonia;
 using MessageBox.Avalonia.Enums;
@@ -23,8 +24,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Component = KitX_Dashboard.Models.Component;
 using Timer = System.Timers.Timer;
-
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
 
 namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
@@ -119,7 +118,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     public static int UpdateChannel
     {
-        get => Program.Config.Web.UpdateChannel switch
+        get => ConfigManager.AppConfig.Web.UpdateChannel switch
         {
             "stable" => 0,
             "beta" => 1,
@@ -128,7 +127,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         };
         set
         {
-            Program.Config.Web.UpdateChannel = value switch
+            ConfigManager.AppConfig.Web.UpdateChannel = value switch
             {
                 0 => "stable",
                 1 => "beta",
@@ -166,10 +165,13 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     /// <returns>提示</returns>
     private static string GetResources(string key)
     {
-        if (Application.Current.TryFindResource(key, out object? result))
-            if (result != null) return (string)result;
-            else return string.Empty;
-        else return string.Empty;
+        if (Application.Current is null) return string.Empty;
+
+        _ = Application.Current.TryFindResource(key, out var obj);
+
+        var result = obj as string;
+
+        return result is not null ? result : string.Empty;
     }
 
     /// <summary>
@@ -208,7 +210,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal DelegateCommand? UpdateCommand { get; set; }
 
-    private void CheckUpdate(object _)
+    private void CheckUpdate(object? _)
     {
         try
         {
@@ -244,17 +246,17 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
         Checker checker = new Checker()
             .SetRootDirectory(wd)
-            .SetPerThreadFilesCount(Program.Config.IO.UpdatingCheckPerThreadFilesCount)
+            .SetPerThreadFilesCount(ConfigManager.AppConfig.IO.UpdatingCheckPerThreadFilesCount)
             .SetTransHash2String(true)
-            .AppendIgnoreFolder("Config")
+            .AppendIgnoreFolder("AppConfig")
             .AppendIgnoreFolder("Core")
             .AppendIgnoreFolder("Data")
             .AppendIgnoreFolder("Languages")
             .AppendIgnoreFolder("Log")
             .AppendIgnoreFolder("Update")
-            .AppendIgnoreFolder(Program.Config.App.LocalPluginsFileFolder)
-            .AppendIgnoreFolder(Program.Config.App.LocalPluginsDataFolder);
-        foreach (var item in Program.Config.App.SurpportLanguages)
+            .AppendIgnoreFolder(ConfigManager.AppConfig.App.LocalPluginsFileFolder)
+            .AppendIgnoreFolder(ConfigManager.AppConfig.App.LocalPluginsDataFolder);
+        foreach (var item in ConfigManager.AppConfig.App.SurpportLanguages)
             _ = checker.AppendIncludeFile($"{ld}/{item.Key}.axaml");
         Tip = GetUpdateTip("Scan");
         checker.Scan();
@@ -308,17 +310,17 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
         client.DefaultRequestHeaders.Accept.Clear();    //  清除请求头部
         string link = "https://" +
-            Program.Config.Web.UpdateServer +
-            Program.Config.Web.UpdatePath.Replace("%platform%",
-                DevicesServer.DefaultDeviceInfoStruct.DeviceOSType switch
+ConfigManager.AppConfig.Web.UpdateServer +
+ConfigManager.AppConfig.Web.UpdatePath.Replace("%platform%",
+                DevicesDiscoveryServer.DefaultDeviceInfoStruct.DeviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",
                     OperatingSystems.MacOS => "mac",
                     _ => ""
                 }) +
-            $"{Program.Config.Web.UpdateChannel}/" +
-            Program.Config.Web.UpdateSource;
+            $"{ConfigManager.AppConfig.Web.UpdateChannel}/" +
+ConfigManager.AppConfig.Web.UpdateSource;
         string json = await client.GetStringAsync(link);
 
         #endregion 获取最新的组件列表
@@ -450,6 +452,8 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
         foreach (var item in Components)
         {
+            if (item.Name is null) continue;
+
             if (updatedComponents.ContainsKey(item.Name))
             {
                 item.CanUpdate = true;
@@ -519,16 +523,16 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
         //TODO: 下载有变更的文件
         string downloadLinkBase = "https://" +
-        Program.Config.Web.UpdateServer +
-        Program.Config.Web.UpdateDownloadPath.Replace("%platform%",
-            DevicesServer.DefaultDeviceInfoStruct.DeviceOSType switch
+ConfigManager.AppConfig.Web.UpdateServer +
+ConfigManager.AppConfig.Web.UpdateDownloadPath.Replace("%platform%",
+            DevicesDiscoveryServer.DefaultDeviceInfoStruct.DeviceOSType switch
             {
                 OperatingSystems.Windows => "win",
                 OperatingSystems.Linux => "linux",
                 OperatingSystems.MacOS => "mac",
                 _ => ""
             }) +
-        $"{Program.Config.Web.UpdateChannel}/";
+        $"{ConfigManager.AppConfig.Web.UpdateChannel}/";
         if (!Directory.Exists(Path.GetFullPath(GlobalInfo.UpdateSavePath)))
             Directory.CreateDirectory(Path.GetFullPath(GlobalInfo.UpdateSavePath));
         foreach (var item in updatedComponents)
@@ -559,7 +563,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
             {
                 string? wd = Path.GetFullPath("./");
 
-                if (wd != null)
+                if (wd is not null)
                 {
                     var checker = ScanComponents(wd);
 
@@ -586,7 +590,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
                     var latestComponents
                         = await GetLatestComponentsAsync(client);
 
-                    if (latestComponents != null)
+                    if (latestComponents is not null)
                     {
                         var difference =
                         ((
@@ -655,14 +659,12 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         }).Start();
     }
 
-    private void Update(object _)
+    private void Update(object? _)
     {
     }
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
 
 //                         ,  o ' .
 //                        .  -  -  o

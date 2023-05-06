@@ -13,8 +13,6 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
-
 namespace KitX_Dashboard.ViewModels.Pages;
 
 internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
@@ -45,7 +43,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     {
         EventService.ConfigSettingsChanged += () =>
         {
-            ImportButtonVisibility = Program.Config.App.DeveloperSetting;
+            ImportButtonVisibility = ConfigManager.AppConfig.App.DeveloperSetting;
         };
     }
 
@@ -86,10 +84,10 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal bool ImportButtonVisibility
     {
-        get => Program.Config.App.DeveloperSetting;
+        get => ConfigManager.AppConfig.App.DeveloperSetting;
         set
         {
-            Program.Config.App.DeveloperSetting = value;
+            ConfigManager.AppConfig.App.DeveloperSetting = value;
             PropertyChanged?.Invoke(this, new(nameof(ImportButtonVisibility)));
         }
     }
@@ -110,17 +108,24 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     /// 导入插件
     /// </summary>
     /// <param name="_"></param>
-    internal async void ImportPlugin(object win)
+    internal async void ImportPlugin(object? win)
     {
-        OpenFileDialog ofd = new();
+        if (win is not Window window) return;
+
+        var ofd = new OpenFileDialog()
+        {
+            AllowMultiple = true,
+        };
+
         ofd.Filters?.Add(new()
         {
             Name = "KitX Extensions Packages",
             Extensions = { "kxp" }
         });
-        ofd.AllowMultiple = true;
-        string[]? files = await ofd.ShowAsync(win as Window);
-        if (files != null && files?.Length > 0)
+
+        var files = await ofd.ShowAsync(window);
+
+        if (files is not null && files?.Length > 0)
         {
             new Thread(() =>
             {
@@ -140,14 +145,14 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     /// 刷新插件
     /// </summary>
     /// <param name="_"></param>
-    internal void RefreshPlugins(object _)
+    internal void RefreshPlugins(object? _)
     {
         //LiteDatabase? pgdb = Program.PluginsDataBase;
 
         PluginBars.Clear();
-        lock (PluginsManager.PluginsListOperationLock)
+        lock (PluginsNetwork.PluginsListOperationLock)
         {
-            foreach (var item in Program.PluginsList.Plugins)
+            foreach (var item in PluginsManager.Plugins)
             {
                 try
                 {
@@ -174,8 +179,6 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
 
 //
 //            ~                  ~

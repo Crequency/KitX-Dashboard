@@ -21,15 +21,20 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
     /// <param name="str">字符串</param>
     /// <param name="key">提示语言文件键值</param>
     /// <returns>字符串或者提示</returns>
-    internal static string CheckString(string str, string key)
+    internal static string CheckString(string? str, string key)
     {
-        if (str.Equals("") || str.Equals(string.Empty) || str == null)
+        if (str is null || str.Equals(string.Empty) || str.Equals(""))
         {
-            if (Application.Current != null
-                && Application.Current.TryFindResource(key, out object? result))
-                if (result != null) return (string)result;
-                else return "null";
-            else return "null";
+            if (Application.Current is null) return "null";
+
+            _ = Application.Current.TryFindResource(key, out var obj);
+
+            var result = obj as string;
+
+            if (result is not null)
+                return result;
+            else
+                return "null";
         }
         else
         {
@@ -44,10 +49,16 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
     /// <returns>提示</returns>
     private static string GetResources(string key)
     {
-        if (Application.Current != null && Application.Current.TryFindResource(key, out object? result))
-            if (result != null) return (string)result;
-            else return string.Empty;
-        else return string.Empty;
+        if (Application.Current is null) return string.Empty;
+
+        _ = Application.Current.TryFindResource(key, out var obj);
+
+        var result = obj as string;
+
+        if (result is not null)
+            return result;
+        else
+            return string.Empty;
     }
 
     internal DeviceInfoStruct DeviceInfo

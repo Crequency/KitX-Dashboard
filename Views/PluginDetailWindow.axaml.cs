@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
-using Common.BasicHelper.UI.Screen;
+using Common.BasicHelper.Graphics.Screen;
 using KitX.Web.Rules;
+using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;
 
 namespace KitX_Dashboard.Views;
@@ -15,11 +16,14 @@ public partial class PluginDetailWindow : Window
 
         Resources["ThisWindow"] = this;
 
-        Resolution suggest = Resolution.Suggest(
-                Resolution.Parse("2560x1440"),
-                Resolution.Parse("820x500"),
-                Resolution.Parse($"{Screens.Primary.Bounds.Width}x" +
-                $"{Screens.Primary.Bounds.Height}")).Integerization();
+        var suggest = Resolution.Suggest(
+            Resolution.Parse("2560x1440"),
+            Resolution.Parse("820x500"),
+            Resolution.Parse(
+                $"{Screens.Primary.Bounds.Width}x{Screens.Primary.Bounds.Height}"
+            )
+        ).Integerization();
+
         Width = suggest.Width ?? 820;
         Height = suggest.Height ?? 500;
 
@@ -35,12 +39,16 @@ public partial class PluginDetailWindow : Window
         };
 
         Opened += (_, _) => viewModel.InitFunctionsAndTags();
+
+        EventService.OnExiting += Close;
     }
 
     public PluginDetailWindow SetPluginStruct(PluginStruct ps)
     {
         viewModel.PluginDetail = ps;
+
         DataContext = viewModel;
+
         return this;
     }
 }

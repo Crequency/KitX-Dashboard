@@ -4,21 +4,18 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Common.BasicHelper.IO;
-using Common.BasicHelper.Util;
 using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Media;
 using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Models;
 using KitX_Dashboard.Services;
 using MessageBox.Avalonia;
 using Serilog;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-#pragma warning disable CS8604 // 引用类型参数可能为 null。
-#pragma warning disable CA2011 // 避免无限递归
 
 namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
@@ -52,14 +49,14 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     {
         EventService.DevelopSettingsChanged += () =>
         {
-            MicaOpacityConfirmButtonVisibility = Program.Config.App.DeveloperSetting;
+            MicaOpacityConfirmButtonVisibility = ConfigManager.AppConfig.App.DeveloperSetting;
         };
         EventService.LanguageChanged += () =>
         {
             foreach (var item in SurpportThemes)
                 item.ThemeDisplayName = GetThemeInLanguages(item.ThemeName);
             _currentAppTheme = SurpportThemes.Find(
-                x => x.ThemeName.Equals(Program.Config.App.Theme));
+                x => x.ThemeName.Equals(ConfigManager.AppConfig.App.Theme));
             PropertyChanged?.Invoke(this, new(nameof(CurrentAppTheme)));
         };
     }
@@ -70,7 +67,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     private void InitData()
     {
         SurpportLanguages.Clear();
-        foreach (var item in Program.Config.App.SurpportLanguages)
+        foreach (var item in ConfigManager.AppConfig.App.SurpportLanguages)
         {
             SurpportLanguages.Add(new SurpportLanguages()
             {
@@ -79,7 +76,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
             });
         }
         LanguageSelected = SurpportLanguages.FindIndex(
-            x => x.LanguageCode.Equals(Program.Config.App.AppLanguage));
+            x => x.LanguageCode.Equals(ConfigManager.AppConfig.App.AppLanguage));
     }
 
     /// <summary>
@@ -97,7 +94,15 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal Color2 ThemeColor
     {
-        get => new((Application.Current.Resources["ThemePrimaryAccent"] as SolidColorBrush).Color);
+        get
+        {
+            var obj = Application.Current?.Resources["ThemePrimaryAccent"];
+
+            if (obj is not SolidColorBrush brush) return new();
+
+            return new(brush.Color);
+        }
+
         set => nowColor = value;
     }
 
@@ -108,11 +113,15 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// <returns>表示方式</returns>
     private static string GetThemeInLanguages(string key)
     {
-        if (Application.Current.TryFindResource($"Text_Settings_Personalise_Theme_{key}",
-            out object? result))
-            if (result != null) return (string)result;
-            else return string.Empty;
-        else return string.Empty;
+        if (Application.Current is null) return string.Empty;
+
+        var namePrefix = "Text_Settings_Personalise_Theme";
+
+        _ = Application.Current.TryFindResource($"{namePrefix}_{key}", out var result);
+
+        var str = result as string;
+
+        return str is not null ? str : string.Empty;
     }
 
     /// <summary>
@@ -143,7 +152,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     };
 
     private SurpportTheme? _currentAppTheme = SurpportThemes.Find(
-        x => x.ThemeName.Equals(Program.Config.App.Theme));
+        x => x.ThemeName.Equals(ConfigManager.AppConfig.App.Theme));
 
     /// <summary>
     /// 当前应用主题属性
@@ -154,10 +163,19 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             _currentAppTheme = value;
-            Program.Config.App.Theme = value.ThemeName;
+
+            if (value is null) return;
+
+            ConfigManager.AppConfig.App.Theme = value.ThemeName;
+
             var faTheme = AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>();
+
+            if (faTheme is null) return;
+
             faTheme.RequestedTheme = value.ThemeName == "Follow" ? null : value.ThemeName;
+
             EventService.Invoke(nameof(EventService.ThemeConfigChanged));
+
             SaveChanges();
         }
     }
@@ -169,21 +187,31 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static void LoadLanguage()
     {
-        string lang = Program.Config.App.AppLanguage;
+        var location = $"{nameof(Settings_PersonaliseViewModel)}.{nameof(LoadLanguage)}";
+
+        var lang = ConfigManager.AppConfig.App.AppLanguage;
+
+        if (Application.Current is null) return;
+
         try
         {
             Application.Current.Resources.MergedDictionaries.Clear();
+
             Application.Current.Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
                     FileHelper.ReadAll($"{GlobalInfo.LanguageFilePath}/{lang}.axaml")
-                ) as ResourceDictionary
+                ) as ResourceDictionary ?? new()
             );
         }
-        catch (Result<bool>)
+        catch (Exception ex)
         {
-            MessageBoxManager.GetMessageBoxStandardWindow("Error", "No this language file.",
-                icon: MessageBox.Avalonia.Enums.Icon.Error).Show();
-            Log.Warning($"Language File {lang}.axaml not found.");
+            MessageBoxManager.GetMessageBoxStandardWindow(
+                "Error",
+                "No this language file.",
+                icon: MessageBox.Avalonia.Enums.Icon.Error
+            ).Show();
+
+            Log.Warning(ex, $"In {location}: Language File {lang}.axaml not found.");
         }
 
         EventService.Invoke(nameof(EventService.LanguageChanged));
@@ -201,14 +229,17 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         {
             try
             {
-                Program.Config.App.AppLanguage = SurpportLanguages[value].LanguageCode;
+                ConfigManager.AppConfig.App.AppLanguage = SurpportLanguages[value].LanguageCode;
+
                 if (languageSelected != -1) LoadLanguage();
+
                 languageSelected = value;
+
                 SaveChanges();
             }
             catch
             {
-                LanguageSelected = 0;
+                languageSelected = 0;
             }
         }
     }
@@ -218,10 +249,10 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static bool MicaAreaExpanded
     {
-        get => Program.Config.Pages.Settings.MicaAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.MicaAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.MicaAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.MicaAreaExpanded = value;
             SaveChanges();
         }
     }
@@ -231,10 +262,10 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static int MicaStatus
     {
-        get => Program.Config.Windows.MainWindow.EnabledMica ? 0 : 1;
+        get => ConfigManager.AppConfig.Windows.MainWindow.EnabledMica ? 0 : 1;
         set
         {
-            Program.Config.Windows.MainWindow.EnabledMica = value != 1;
+            ConfigManager.AppConfig.Windows.MainWindow.EnabledMica = value != 1;
             SaveChanges();
         }
     }
@@ -244,10 +275,10 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static double MicaOpacity
     {
-        get => Program.Config.Windows.MainWindow.MicaOpacity;
+        get => ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity;
         set
         {
-            Program.Config.Windows.MainWindow.MicaOpacity = value;
+            ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity = value;
             EventService.Invoke(nameof(EventService.MicaOpacityChanged));
         }
     }
@@ -257,10 +288,10 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static bool MicaToolTipIsOpen
     {
-        get => Program.Config.Pages.Settings.MicaToolTipIsOpen;
+        get => ConfigManager.AppConfig.Pages.Settings.MicaToolTipIsOpen;
         set
         {
-            Program.Config.Pages.Settings.MicaToolTipIsOpen = value;
+            ConfigManager.AppConfig.Pages.Settings.MicaToolTipIsOpen = value;
             SaveChanges();
         }
     }
@@ -270,7 +301,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal bool MicaOpacityConfirmButtonVisibility
     {
-        get => Program.Config.App.DeveloperSetting;
+        get => ConfigManager.AppConfig.App.DeveloperSetting;
         set => PropertyChanged?.Invoke(this,
             new(nameof(MicaOpacityConfirmButtonVisibility)));
     }
@@ -280,10 +311,10 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal static bool PaletteAreaExpanded
     {
-        get => Program.Config.Pages.Settings.PaletteAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.PaletteAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.PaletteAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.PaletteAreaExpanded = value;
             SaveChanges();
         }
     }
@@ -303,38 +334,42 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     /// </summary>
     internal DelegateCommand? MicaToolTipClosedCommand { get; set; }
 
-    private void ColorConfirmed(object _)
+    private void ColorConfirmed(object? _)
     {
         var c = nowColor;
+
         Dispatcher.UIThread.InvokeAsync(() =>
         {
-            Application.Current.Resources["ThemePrimaryAccent"] =
-                new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
+            if (Application.Current is null) return;
+
+            Application.Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(
+                new Color(c.A, c.R, c.G, c.B)
+            );
+
             for (char i = 'A'; i <= 'E'; ++i)
-            {
                 Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B));
-            }
+                    new SolidColorBrush(
+                        new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
+                    );
+
             for (int i = 1; i <= 9; ++i)
-            {
                 Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(new Color((byte)(i * 10 + i), c.R, c.G, c.B));
-            }
+                    new SolidColorBrush(
+                        new Color((byte)(i * 10 + i), c.R, c.G, c.B)
+                    );
         });
-        Program.Config.App.ThemeColor = nowColor.ToHexString();
+
+        ConfigManager.AppConfig.App.ThemeColor = nowColor.ToHexString();
+
         SaveChanges();
     }
 
-    private void MicaOpacityConfirmed(object _) => SaveChanges();
+    private void MicaOpacityConfirmed(object? _) => SaveChanges();
 
-    private void MicaToolTipClosed(object _) => MicaToolTipIsOpen = false;
+    private void MicaToolTipClosed(object? _) => MicaToolTipIsOpen = false;
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CA2011 // 避免无限递归
-#pragma warning restore CS8604 // 引用类型参数可能为 null。
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
 //                         __________________________
 //                 __..--/".'                        '.

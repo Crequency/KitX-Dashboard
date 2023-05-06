@@ -1,5 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using Common.BasicHelper.Utils.Extensions;
+using System;
 
 namespace KitX_Dashboard.Data;
 
@@ -33,13 +33,13 @@ internal static class GlobalInfo
 
     internal const int LastBreakAfterExit = 2000;
 
-    internal static string ConfigFilePath => Path.GetFullPath(configFilePath);
+    internal static string ConfigFilePath => configFilePath.GetFullPath();
 
-    internal static string PluginsListConfigFilePath => Path.GetFullPath(pluginsListConfigFilePath);
+    internal static string PluginsListConfigFilePath => pluginsListConfigFilePath.GetFullPath();
 
-    internal static string ActivitiesDataBaseFilePath => Path.GetFullPath(activitiesDataBaseFilePath);
+    internal static string ActivitiesDataBaseFilePath => activitiesDataBaseFilePath.GetFullPath();
 
-    internal static string ThirdPartLicenseFilePath => Path.GetFullPath(thirdPartLicenseFilePath);
+    internal static string ThirdPartLicenseFilePath => thirdPartLicenseFilePath.GetFullPath();
 
     internal static int PluginServerPort = -1;
 
@@ -48,6 +48,8 @@ internal static class GlobalInfo
     internal static bool Exiting = false;
 
     internal static bool IsMainMachine = false;
+
+    internal static bool SkipNetworkSystemOnStartup = false;
 
     internal static int DeviceServerPort = -1;
 

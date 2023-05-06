@@ -1,4 +1,5 @@
-﻿using KitX_Dashboard.Data;
+﻿using Common.BasicHelper.Utils.Extensions;
+using KitX_Dashboard.Data;
 using KitX_Dashboard.Services;
 using Serilog;
 using System;
@@ -14,23 +15,29 @@ internal class StatisticsManager
 {
     internal static Dictionary<string, double>? UseStatistics = new();
 
+    internal static void Start()
+    {
+        InitEvents();
+
+        RecoverPreviousStatistics();
+
+        BeginRecord();
+    }
+
     internal static void InitEvents()
     {
         EventService.UseStatisticsChanged += async () =>
         {
             try
             {
-                string dataDir = Path.GetFullPath(GlobalInfo.DataPath);
+                var dataDir = GlobalInfo.DataPath.GetFullPath();
                 if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
-                #region 存储使用时长数据
+                var useFile = "UseCount.json";
+                var usePath = $"{dataDir}/{useFile}".GetFullPath();
+                var json = JsonSerializer.Serialize(UseStatistics);
 
-                string useFile = "UseCount.json";
-                string usePath = Path.GetFullPath($"{dataDir}/{useFile}");
-                string json = JsonSerializer.Serialize(UseStatistics);
                 await File.WriteAllTextAsync(usePath, json);
-
-                #endregion
 
             }
             catch (Exception ex)
@@ -40,36 +47,40 @@ internal class StatisticsManager
         };
     }
 
-    internal static async void RecoverOldStatistics()
+    internal static async void RecoverPreviousStatistics()
     {
-        string dataDir = Path.GetFullPath(GlobalInfo.DataPath);
+        var dataDir = GlobalInfo.DataPath.GetFullPath();
         if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
-
-        #region 恢复使用时长的数据
 
         try
         {
-            string useFile = "UseCount.json";
-            string usePath = Path.GetFullPath($"{dataDir}/{useFile}");
+            var useFile = "UseCount.json";
+            var usePath = $"{dataDir}/{useFile}".GetFullPath();
+
             if (File.Exists(usePath))
             {
-                string useCountJson = await File.ReadAllTextAsync(usePath);
+                var useCountJson = await File.ReadAllTextAsync(usePath);
+
                 UseStatistics = JsonSerializer.Deserialize<Dictionary<string, double>>(useCountJson);
-                if (UseStatistics != null)
+
+                if (UseStatistics is not null)
                 {
-                    DateTime lastDT = DateTime.Parse(UseStatistics.Keys.Last());
+                    var lastDT = DateTime.Parse(UseStatistics.Keys.Last());
                     while (!lastDT.ToString("MM.dd").Equals(DateTime.Now.ToString("MM.dd")))
                     {
                         lastDT = lastDT.AddDays(1);
+
                         UseStatistics.Add(lastDT.ToString("MM.dd"), 0);
                     }
                 }
             }
             else
             {
-                string today = DateTime.Now.ToString("MM.dd");
+                var today = DateTime.Now.ToString("MM.dd");
+
                 UseStatistics?.Add(today, 0);
-                string json = JsonSerializer.Serialize(UseStatistics);
+
+                var json = JsonSerializer.Serialize(UseStatistics);
                 await File.WriteAllTextAsync(usePath, json);
             }
         }
@@ -77,15 +88,13 @@ internal class StatisticsManager
         {
             Log.Warning(e, e.Message);
         }
-
-        #endregion
     }
 
     internal static void BeginRecord()
     {
-        #region 记录使用时长
+        var location = $"{nameof(StatisticsManager)}.{nameof(BeginRecord)}";
 
-        Timer use_timer = new()
+        var use_timer = new Timer()
         {
             Interval = 1000 * 60 * 0.6    //  Update per 0.6 minutes
         };
@@ -93,29 +102,27 @@ internal class StatisticsManager
         {
             try
             {
-                string today = DateTime.Now.ToString("MM.dd");
-                if (UseStatistics != null)
+                var today = DateTime.Now.ToString("MM.dd");
+
+                if (UseStatistics is null) return;
+
+                if (UseStatistics.ContainsKey(today))
                 {
-                    if (UseStatistics.ContainsKey(today))
-                    {
-                        UseStatistics[today] += 0.01;
-                        UseStatistics[today] = Math.Round(UseStatistics[today], 2);
-                    }
-                    else
-                    {
-                        UseStatistics.Add(today, 0.01);
-                    }
-                    EventService.Invoke(nameof(EventService.UseStatisticsChanged));
+                    UseStatistics[today] += 0.01;
+                    UseStatistics[today] = Math.Round(UseStatistics[today], 2);
                 }
+                else
+                {
+                    UseStatistics.Add(today, 0.01);
+                }
+
+                EventService.Invoke(nameof(EventService.UseStatisticsChanged));
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(StatisticsManager)}.{nameof(BeginRecord)}";
                 Log.Error(ex, $"In {location}: {ex.Message}");
             }
         };
         use_timer.Start();
-
-        #endregion
     }
 }

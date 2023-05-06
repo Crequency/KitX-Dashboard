@@ -1,4 +1,6 @@
-﻿using KitX_Dashboard.Servers;
+﻿using Common.BasicHelper.Utils.Extensions;
+using KitX_Dashboard.Managers;
+using KitX_Dashboard.Network;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -40,8 +42,9 @@ internal class DebugCommands
 {
     private static string SaveConfig()
     {
-        Helper.SaveConfig();
-        return "Config saved!";
+        ConfigManager.SaveConfigs();
+
+        return "AppConfig saved!";
     }
 
     public static string? Help(Dictionary<string, string> args)
@@ -67,8 +70,8 @@ internal class DebugCommands
         if (args.ContainsKey("help"))
             return "" +
                 "Save datas to disk.\n" +
-                "\t--type [config] | save KitX Dashboard config file.\n" +
-                "\tconfig | save KitX Dashboard config file.\n";
+                "\t--type [config] | saveAction KitX Dashboard config file.\n" +
+                "\tconfig | saveAction KitX Dashboard config file.\n";
         if (args.ContainsKey("--type"))
             return args["--type"] switch
             {
@@ -100,7 +103,7 @@ internal class DebugCommands
 
             return "Missing value of `--get`.";
         }
-        else if (args.ContainsKey("save"))
+        else if (args.ContainsKey("saveAction"))
         {
             return SaveConfig();
         }
@@ -127,7 +130,7 @@ internal class DebugCommands
                 case "deviceudppack":
                     if (args.ContainsKey("--value"))
                     {
-                        DevicesServer.Messages2BroadCast.Enqueue(args["--value"]);
+                        DevicesDiscoveryServer.Messages2BroadCast.Enqueue(args["--value"]);
                         return "Appended value to broadcast list.";
                     }
                     else return "Missing value of `--value`.";
@@ -135,7 +138,7 @@ internal class DebugCommands
                 case "clientmessage":
                     if (args.ContainsKey("--value"))
                     {
-                        Program.WebManager?.devicesServer?.SendMessage(args["--value"]);
+                        DevicesNetwork.devicesClient?.Send(args["--value"].FromUTF8());
                         return $"Sent msg: {args["--value"]}";
                     }
                     else return "Missing value of `--value`.";
@@ -145,8 +148,10 @@ internal class DebugCommands
                     {
                         if (args.ContainsKey("--to"))
                         {
-                            Program.WebManager?.devicesServer
-                                ?.SendMessage(args["--value"], args["--to"]);
+                            DevicesNetwork.devicesServer?.Send(
+                                args["--value"].FromUTF8(),
+                                args["--to"]
+                            );
                             return $"Sent msg: {args["--value"]}, to: {args["--to"]}";
                         }
                         else return "Missing value of `--to`.";
@@ -156,8 +161,10 @@ internal class DebugCommands
                 case "hostbroadcast":
                     if (args.ContainsKey("--value"))
                     {
-                        Program.WebManager?.devicesServer
-                            ?.BroadCastMessage(args["--value"], null);
+                        DevicesNetwork.devicesServer?.BroadCast(
+                            args["--value"].FromUTF8(),
+                            null
+                        );
                         return $"Broadcast msg: {args["--value"]}";
                     }
                     else return "Missing value of `--value`";
@@ -241,6 +248,48 @@ internal class DebugCommands
             }
         }
         else return "Missing arguments.";
+    }
+
+    public static string? Start(Dictionary<string, string> args)
+    {
+        if (args.ContainsKey("help"))
+            return "" +
+                "- plugins-services\n" +
+                "- devices-services\n" +
+                "- devices-discovery-server\n" +
+                "- all\n";
+
+        if (args.ContainsKey("plugins-services"))
+            Program.WebManager?.Start(startAll: false, startPluginsNetwork: true);
+        if (args.ContainsKey("devices-services"))
+            Program.WebManager?.Start(startAll: false, startDevicesNetwork: true);
+        if (args.ContainsKey("devices-discovery-server"))
+            Program.WebManager?.Start(startAll: false, startDevicesDiscoveryServer: true);
+        if (args.ContainsKey("all"))
+            Program.WebManager?.Start();
+
+        return "Start action requested.";
+    }
+
+    public static string? Stop(Dictionary<string, string> args)
+    {
+        if (args.ContainsKey("help"))
+            return "" +
+                "- plugins-services\n" +
+                "- devices-services\n" +
+                "- devices-discovery-server\n" +
+                "- all";
+
+        if (args.ContainsKey("plugins-services"))
+            Program.WebManager?.Stop(stopAll: false, stopPluginsServices: true);
+        if (args.ContainsKey("devices-services"))
+            Program.WebManager?.Stop(stopAll: false, stopDevicesServices: true);
+        if (args.ContainsKey("devices-discovery-server"))
+            Program.WebManager?.Stop(stopAll: false, stopDevicesDiscoveryServer: true);
+        if (args.ContainsKey("all"))
+            Program.WebManager?.Stop();
+
+        return "Stop action requested.";
     }
 }
 

@@ -2,7 +2,7 @@
 
 namespace KitX_Dashboard.Models;
 
-internal class SurpportLogLevel
+internal class SupportedLogLevel
 {
     internal LogEventLevel LogEventLevel { get; set; }
 

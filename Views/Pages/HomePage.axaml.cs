@@ -1,14 +1,12 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using FluentAvalonia.UI.Controls;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels.Pages;
 using KitX_Dashboard.Views.Controls;
 using Serilog;
 using System;
-
-#pragma warning disable CS8602 // 解引用可能出现空引用。
-#pragma warning disable CS8601 // 引用类型赋值可能为 null。
 
 namespace KitX_Dashboard.Views.Pages;
 
@@ -49,10 +47,10 @@ public partial class HomePage : UserControl
 
     private static string SelectedViewName
     {
-        get => Program.Config.Pages.Home.SelectedViewName;
+        get => ConfigManager.AppConfig.Pages.Home.SelectedViewName;
         set
         {
-            Program.Config.Pages.Home.SelectedViewName = value;
+            ConfigManager.AppConfig.Pages.Home.SelectedViewName = value;
             SaveChanges();
         }
     }
@@ -62,14 +60,20 @@ public partial class HomePage : UserControl
     /// </summary>
     /// <param name="sender">被点击的 NavigationViewItem</param>
     /// <param name="e">路由事件参数</param>
-    private void HomeNavigationView_SelectionChanged(object? sender,
+    private void HomeNavigationView_SelectionChanged(
+        object? sender,
         NavigationViewSelectionChangedEventArgs e)
     {
+        var location = $"{nameof(HomePage)}.{nameof(HomeNavigationView_SelectionChanged)}";
+
         try
         {
-            SelectedViewName = (
-                (sender as NavigationView).SelectedItem as Control
-            ).Tag.ToString();
+            var tag = ((sender as NavigationView)?.SelectedItem as Control)?.Tag?.ToString();
+
+            if (tag is null) return;
+
+            SelectedViewName = tag;
+
             this.FindControl<Frame>("HomeFrame").Navigate(SelectedViewType());
         }
         catch (NullReferenceException o)
@@ -86,9 +90,6 @@ public partial class HomePage : UserControl
         _ => typeof(Home_RecentUse),
     };
 }
-
-#pragma warning restore CS8601 // 引用类型赋值可能为 null。
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
 //
 //                            __ _..._ _ 

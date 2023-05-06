@@ -4,7 +4,7 @@ using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Models;
-using KitX_Dashboard.Servers;
+using KitX_Dashboard.Network;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
 using KitX_Dashboard.Views.Pages.Controls;
@@ -50,10 +50,10 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
     {
         get
         {
-            if (PluginDetail != null)
+            if (PluginDetail is not null)
                 return PluginDetail.PluginDetails.DisplayName
-                    .ContainsKey(Program.Config.App.AppLanguage)
-                    ? PluginDetail.PluginDetails.DisplayName[Program.Config.App.AppLanguage]
+                    .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
+                    ? PluginDetail.PluginDetails.DisplayName[ConfigManager.AppConfig.App.AppLanguage]
                     : PluginDetail.PluginDetails.DisplayName.Values.GetEnumerator().Current;
             return null;
         }
@@ -71,7 +71,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
         {
             try
             {
-                if (PluginDetail != null)
+                if (PluginDetail is not null)
                 {
                     byte[] src = Convert.FromBase64String(PluginDetail.PluginDetails.IconInBase64);
                     using var ms = new MemoryStream(src);
@@ -100,9 +100,9 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
     /// 查看详细信息
     /// </summary>
     /// <param name="_"></param>
-    internal void ViewDetails(object _)
+    internal void ViewDetails(object? _)
     {
-        if (PluginDetail != null && Program.MainWindow != null)
+        if (PluginDetail is not null && Program.MainWindow is not null)
             new PluginDetailWindow()
             {
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
@@ -115,12 +115,12 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
     /// 移除
     /// </summary>
     /// <param name="_"></param>
-    internal void Remove(object _)
+    internal void Remove(object? _)
     {
-        if (PluginDetail != null && PluginBar != null)
+        if (PluginDetail is not null && PluginBar is not null)
         {
             PluginBars?.Remove(PluginBar);
-            PluginsManager.RequireRemovePlugin(PluginDetail);
+            PluginsNetwork.RequireRemovePlugin(PluginDetail);
         }
     }
 
@@ -128,12 +128,12 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
     /// 删除
     /// </summary>
     /// <param name="_"></param>
-    internal void Delete(object _)
+    internal void Delete(object? _)
     {
-        if (PluginDetail != null && PluginBar != null)
+        if (PluginDetail is not null && PluginBar is not null)
         {
             PluginBars?.Remove(PluginBar);
-            PluginsManager.RequireDeletePlugin(PluginDetail);
+            PluginsNetwork.RequireDeletePlugin(PluginDetail);
         }
     }
 
@@ -141,23 +141,25 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
     /// 启动
     /// </summary>
     /// <param name="_"></param>
-    internal void Launch(object _)
+    internal void Launch(object? _)
     {
         new Thread(() =>
         {
             try
             {
-                string? loaderName = PluginDetail?.RequiredLoaderStruct.LoaderName;
+                var loaderName = PluginDetail?.RequiredLoaderStruct.LoaderName;
                 var pd = PluginDetail?.PluginDetails;
                 string pluginPath = $"{PluginDetail?.InstallPath}/{pd?.RootStartupFileName}";
                 string pluginFile = Path.GetFullPath(pluginPath);
-                string connectStr = $"{DevicesServer.DefaultDeviceInfoStruct.IPv4}" +
-                    $":{GlobalInfo.PluginServerPort}";
-                if (PluginDetail != null && PluginDetail.RequiredLoaderStruct.SelfLoad)
+                string connectStr = "" +
+                    $"{DevicesDiscoveryServer.DefaultDeviceInfoStruct.IPv4}" +
+                    $":" +
+                    $"{GlobalInfo.PluginServerPort}";
+                if (PluginDetail is not null && PluginDetail.RequiredLoaderStruct.SelfLoad)
                     Process.Start(pluginFile, $"--connect {connectStr}");
                 else
                 {
-                    string loaderFile = $"{Program.Config.Loaders.InstallPath}/{loaderName}/{loaderName}";
+                    string loaderFile = $"{ConfigManager.AppConfig.Loaders.InstallPath}/{loaderName}/{loaderName}";
                     if (OperatingSystem.IsWindows())
                         loaderFile += ".exe";
                     loaderFile = Path.GetFullPath(loaderFile);

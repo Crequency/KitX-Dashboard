@@ -1,10 +1,9 @@
 ﻿using Common.BasicHelper.IO;
 using KitX_Dashboard.Commands;
+using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using System.ComponentModel;
 using System.Reflection;
-
-#pragma warning disable CS8602 // 解引用可能出现空引用。
 
 namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
@@ -36,7 +35,7 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// <summary>
     /// 版本号属性
     /// </summary>
-    internal static string VersionText => $"v{Assembly.GetEntryAssembly().GetName().Version}";
+    internal static string VersionText => $"v{Assembly.GetEntryAssembly()?.GetName().Version}";
 
     internal bool easterEggsFounded = false;
 
@@ -70,10 +69,10 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     public static bool AboutAreaExpanded
     {
-        get => Program.Config.Pages.Settings.AboutAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.AboutAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.AboutAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.AboutAreaExpanded = value;
             SaveChanges();
         }
     }
@@ -83,10 +82,10 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     public static bool AuthorsAreaExpanded
     {
-        get => Program.Config.Pages.Settings.AuthorsAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.AuthorsAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.AuthorsAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.AuthorsAreaExpanded = value;
             SaveChanges();
         }
     }
@@ -96,10 +95,10 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     public static bool LinksAreaExpanded
     {
-        get => Program.Config.Pages.Settings.LinksAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.LinksAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.LinksAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.LinksAreaExpanded = value;
             SaveChanges();
         }
     }
@@ -109,10 +108,10 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     public static bool ThirdPartyLicensesAreaExpanded
     {
-        get => Program.Config.Pages.Settings.ThirdPartyLicensesAreaExpanded;
+        get => ConfigManager.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded;
         set
         {
-            Program.Config.Pages.Settings.ThirdPartyLicensesAreaExpanded = value;
+            ConfigManager.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded = value;
             SaveChanges();
         }
     }
@@ -129,9 +128,9 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     /// </summary>
     internal DelegateCommand? LoadThirdPartLicenseCommand { get; set; }
 
-    private void AppNameButtonClicked(object _) => ++clickCount;
+    private void AppNameButtonClicked(object? _) => ++clickCount;
 
-    private async void LoadThirdPartLicense(object _)
+    private async void LoadThirdPartLicense(object? _)
     {
         string license = await FileHelper.ReadAllAsync(Data.GlobalInfo.ThirdPartLicenseFilePath);
         ThirdPartLicenseString = license;
@@ -139,8 +138,6 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
 //                                     __
 //                              ___  _// \

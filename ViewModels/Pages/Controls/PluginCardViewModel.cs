@@ -1,6 +1,7 @@
 ﻿using Avalonia.Media.Imaging;
 using KitX.Web.Rules;
 using KitX_Dashboard.Data;
+using KitX_Dashboard.Managers;
 using Serilog;
 using System;
 using System.IO;
@@ -18,15 +19,15 @@ internal class PluginCardViewModel
     }
 
     internal string DisplayName => pluginStruct.DisplayName
-        .ContainsKey(Program.Config.App.AppLanguage)
-        ? pluginStruct.DisplayName[Program.Config.App.AppLanguage]
+        .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
+        ? pluginStruct.DisplayName[ConfigManager.AppConfig.App.AppLanguage]
         : pluginStruct.DisplayName.Values.GetEnumerator().Current;
 
     internal string Version => pluginStruct.Version;
 
     internal string SimpleDescription => pluginStruct.SimpleDescription.ContainsKey(
-        Program.Config.App.AppLanguage)
-        ? pluginStruct.SimpleDescription[Program.Config.App.AppLanguage]
+ConfigManager.AppConfig.App.AppLanguage)
+        ? pluginStruct.SimpleDescription[ConfigManager.AppConfig.App.AppLanguage]
         : string.Empty;
 
     internal string IconInBase64 => pluginStruct.IconInBase64;
