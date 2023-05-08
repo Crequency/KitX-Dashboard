@@ -20,25 +20,3 @@ public partial class Home_Count : UserControl
         AvaloniaXamlLoader.Load(this);
     }
 }
-
-//
-//                        ..ee$$$$$ee..            Ball              
-//                    .e$*""    $    ""*$e.        """"              
-//                  z$"*.       $         $$c                        
-//                z$"   *.      $       .P  ^$c                      
-//               d"      *      $      z"     "b                     
-//              $"        b     $     4%       ^$                    
-//             d%         *     $     P         '$                   
-//            .$          'F    $    J"          $r                  
-//            4L           b    $    $           J$                  
-//            $F$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$                  
-//            4F          4F    $    4r          4P                  
-//            ^$          $     $     b          $%                  
-//             3L        .F     $     'r        JP                   
-//              *c       $      $      3.      z$                    
-//               *b     J"      $       3r    dP                     
-//                ^$c  z%       $        "c z$"                      
-//                  "*$L        $        .d$"                        
-//                     "*$ee..  $  ..ze$P"                           
-//                         ""*******""                         
-//

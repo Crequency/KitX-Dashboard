@@ -135,19 +135,3 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-//
-//      /\
-//      ||_____-----_____-----_____
-//      ||   O                  O  \
-//      ||    O\\    ___    //O    /
-//      ||       \\ /   \//        \
-//      ||         |_O O_|         /
-//      ||          ^ | ^          \
-//      ||        // UUU \\        /
-//      ||    O//            \\O   \
-//      ||   O                  O  /
-//      ||_____-----_____-----_____\
-//      ||
-//      ||.
-//
