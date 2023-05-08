@@ -1,4 +1,5 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
+using KitX_Dashboard.Models;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ namespace KitX_Dashboard.Managers;
 
 internal class TasksManager
 {
-    private readonly Dictionary<string, Queue<Action>> SignalTasks = new();
+    private readonly Dictionary<string, SignalTask> SignalTasks = new();
 
     /// <summary>
     /// 触发信号
@@ -19,9 +20,14 @@ internal class TasksManager
     {
         if (SignalTasks.ContainsKey(signal))
         {
-            var queue = SignalTasks[signal];
+            var signalTask = SignalTasks[signal];
+
+            var queue = signalTask.Actions;
+
             queue.ForEach(x => x.Invoke());
-            SignalTasks.Remove(signal);
+
+            if (!signalTask.Reusable)
+                SignalTasks.Remove(signal);
         }
 
         return this;
@@ -33,11 +39,17 @@ internal class TasksManager
     /// <param name="signal">信号</param>
     /// <param name="action">任务</param>
     /// <returns>任务管理器本身</returns>
-    internal TasksManager SignalRun(string signal, Action action)
+    internal TasksManager SignalRun(string signal, Action action, bool reusable = false)
     {
         if (SignalTasks.ContainsKey(signal))
-            SignalTasks[signal].Enqueue(action);
-        else SignalTasks.Add(signal, new Queue<Action>().Push(action));
+            SignalTasks[signal].Actions.Enqueue(action);
+        else
+            SignalTasks.Add(
+                signal,
+                new SignalTask()
+                    .Reuse(reusable)
+                    .AddAction(action)
+            );
 
         return this;
     }
