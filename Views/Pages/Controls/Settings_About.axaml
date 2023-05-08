@@ -293,14 +293,14 @@
                 </Expander.Header>
                 <DockPanel Margin="5">
                     <DockPanel Margin="5" DockPanel.Dock="Top">
-                        <Button Command="{Binding LoadThirdPartLicense}"
+                        <Button Command="{Binding LoadThirdPartyLicenseCommand}"
                                 Content="{DynamicResource Text_Public_Read}"
                                 DockPanel.Dock="Left"/>
                     </DockPanel>
                     <Border Margin="5,15,5,5"
                             Background="Transparent"
                             CornerRadius="10">
-                        <md:MarkdownScrollViewer Margin="5" Markdown="{Binding ThirdPartLicenseString}">
+                        <md:MarkdownScrollViewer Margin="5" Markdown="{Binding ThirdPartyLicenseString}">
                             <md:MarkdownScrollViewer.Styles>
                                 <Style Selector="ctxt|CTextBlock.Heading1">
                                     <Setter Property="FontSize" Value="36"/>

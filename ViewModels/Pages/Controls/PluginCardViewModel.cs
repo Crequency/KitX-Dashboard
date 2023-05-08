@@ -25,10 +25,10 @@ internal class PluginCardViewModel
 
     internal string Version => pluginStruct.Version;
 
-    internal string SimpleDescription => pluginStruct.SimpleDescription.ContainsKey(
-ConfigManager.AppConfig.App.AppLanguage)
+    internal string SimpleDescription => pluginStruct.SimpleDescription
+        .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
         ? pluginStruct.SimpleDescription[ConfigManager.AppConfig.App.AppLanguage]
-        : string.Empty;
+        : pluginStruct.SimpleDescription.GetEnumerator().Current.Value;
 
     internal string IconInBase64 => pluginStruct.IconInBase64;
 
@@ -36,16 +36,25 @@ ConfigManager.AppConfig.App.AppLanguage)
     {
         get
         {
+            var location = $"{nameof(PluginCardViewModel)}.{nameof(IconDisplay)}.getter";
+
             try
             {
-                byte[] src = Convert.FromBase64String(IconInBase64);
+                var src = Convert.FromBase64String(IconInBase64);
+
                 using var ms = new MemoryStream(src);
+
                 return new(ms);
             }
             catch (Exception e)
             {
-                Log.Warning(e, $"Icon transform error from base64 to byte[] or " +
-                    $"create bitmap from MemoryStream error: {e.Message}");
+                Log.Warning(
+                    e,
+                    $"In {location}: " +
+                        $"Failed to transform icon from base64 to byte[] " +
+                        $"or create bitmap from `MemoryStream`. {e.Message}"
+                );
+
                 return App.DefaultIcon;
             }
         }

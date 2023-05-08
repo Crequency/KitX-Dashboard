@@ -4,21 +4,24 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using FluentAvalonia.Styling;
 using KitX.Web.Rules;
-using KitX_Dashboard.Commands;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
+using ReactiveUI;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 
 namespace KitX_Dashboard.ViewModels;
 
 internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
     public PluginDetailWindowViewModel()
     {
         InitCommands();
@@ -28,7 +31,9 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal void InitCommands()
     {
-        FinishCommand = new(Finish);
+        FinishCommand = ReactiveCommand.Create<object?>(
+            parent => (parent as Window)?.Close()
+        );
     }
 
     internal void InitEvents()
@@ -119,11 +124,11 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         }
     }
 
-    internal string? PublishDate =>
-        PluginDetail?.PublishDate.ToLocalTime().ToString("yyyy.MM.dd");
+    internal string? PublishDate => PluginDetail?.PublishDate
+        .ToLocalTime().ToString("yyyy.MM.dd");
 
-    internal string? LastUpdateDate =>
-        PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
+    internal string? LastUpdateDate => PluginDetail?.LastUpdateDate
+        .ToLocalTime().ToString("yyyy.MM.dd");
 
     internal static Color TintColor => ConfigManager.AppConfig.App.Theme switch
     {
@@ -146,22 +151,27 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     {
         get
         {
+            var location = $"{nameof(PluginDetailWindowViewModel)}.{nameof(IconDisplay)}.getter";
+
             try
             {
-                if (PluginDetail is not null)
-                {
-                    var src = Convert.FromBase64String(PluginDetail.Value.IconInBase64);
+                if (PluginDetail is null) return App.DefaultIcon;
 
-                    using var ms = new MemoryStream(src);
+                var src = Convert.FromBase64String(PluginDetail.Value.IconInBase64);
 
-                    return new(ms);
-                }
-                else return App.DefaultIcon;
+                using var ms = new MemoryStream(src);
+
+                return new(ms);
             }
             catch (Exception e)
             {
-                Log.Warning(e, $"Icon transform error from base64 to byte[] or " +
-                    $"create bitmap from MemoryStream error: {e.Message}");
+                Log.Warning(
+                    e,
+                    $"In {location}: " +
+                        $"Failed to transform icon from base64 to byte[] " +
+                        $"or create bitmap from `MemoryStream`. {e.Message}"
+                );
+
                 return App.DefaultIcon;
             }
         }
@@ -175,12 +185,12 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
         if (PluginDetail?.Tags is null) return;
 
-
         var langKey = ConfigManager.AppConfig.App.AppLanguage;
 
         foreach (var func in PluginDetail.Value.Functions)
         {
             var sb = new StringBuilder();
+
             sb.Append(func.ReturnValueType);
             sb.Append(' ');
 
@@ -191,8 +201,9 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
             sb.Append('(');
 
             if (func.Parameters.Count != func.ParametersType.Count)
-                throw new InvalidDataException("Parameters return type count " +
-                    "didn't match parameters count.");
+                throw new InvalidDataException(
+                    "Parameters return type count didn't match parameters count."
+                );
 
             var index = 0;
 
@@ -225,12 +236,5 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal ObservableCollection<string> Tags => tags;
 
-    internal DelegateCommand? FinishCommand { get; set; }
-
-    internal void Finish(object? parent)
-    {
-        (parent as Window)?.Close();
-    }
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
+    internal ReactiveCommand<object?, Unit>? FinishCommand { get; set; }
 }

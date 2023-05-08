@@ -12,86 +12,107 @@ using KitX_Dashboard.Managers;
 using KitX_Dashboard.Models;
 using KitX_Dashboard.Services;
 using MessageBox.Avalonia;
+using ReactiveUI;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reactive;
+using System.Threading.Tasks;
 
 namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
     internal Settings_PersonaliseViewModel()
     {
         InitCommands();
 
-        InitEvent();
+        InitEvents();
 
         InitData();
     }
 
-    /// <summary>
-    /// 初始化命令
-    /// </summary>
     private void InitCommands()
     {
-        ColorConfirmedCommand = new(ColorConfirmed);
+        ColorConfirmedCommand = ReactiveCommand.Create(async () =>
+        {
+            var c = themeColor;
 
-        MicaOpacityConfirmedCommand = new(MicaOpacityConfirmed);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (Application.Current is null) return;
 
-        MicaToolTipClosedCommand = new(MicaToolTipClosed);
+                Application.Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(
+                    new Color(c.A, c.R, c.G, c.B)
+                );
+
+                for (char i = 'A'; i <= 'E'; ++i)
+                    Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
+                        new SolidColorBrush(
+                            new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
+                        );
+
+                for (int i = 1; i <= 9; ++i)
+                    Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
+                        new SolidColorBrush(
+                            new Color((byte)(i * 10 + i), c.R, c.G, c.B)
+                        );
+            });
+
+            ConfigManager.AppConfig.App.ThemeColor = themeColor.ToHexString();
+
+            SaveAppConfigChanges();
+        });
+
+        MicaOpacityConfirmedCommand = ReactiveCommand.Create(SaveAppConfigChanges);
+
+        MicaToolTipClosedCommand = ReactiveCommand.Create(() => MicaToolTipIsOpen = false);
     }
 
-    /// <summary>
-    /// 初始化事件
-    /// </summary>
-    private void InitEvent()
+    private void InitEvents()
     {
         EventService.DevelopSettingsChanged += () =>
         {
             MicaOpacityConfirmButtonVisibility = ConfigManager.AppConfig.App.DeveloperSetting;
         };
+
         EventService.LanguageChanged += () =>
         {
-            foreach (var item in SurpportThemes)
-                item.ThemeDisplayName = GetThemeInLanguages(item.ThemeName);
-            _currentAppTheme = SurpportThemes.Find(
-                x => x.ThemeName.Equals(ConfigManager.AppConfig.App.Theme));
-            PropertyChanged?.Invoke(this, new(nameof(CurrentAppTheme)));
+            foreach (var item in SupportedThemes)
+                item.ThemeDisplayName = GetThemeDisplayText(item.ThemeName);
+
+            _currentAppTheme = SupportedThemes.Find(
+                x => x.ThemeName.Equals(ConfigManager.AppConfig.App.Theme)
+            );
+
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(CurrentAppTheme))
+            );
         };
     }
 
-    /// <summary>
-    /// 初始化数据
-    /// </summary>
     private void InitData()
     {
-        SurpportLanguages.Clear();
+        SupportedLanguages.Clear();
+
         foreach (var item in ConfigManager.AppConfig.App.SurpportLanguages)
-        {
-            SurpportLanguages.Add(new SurpportLanguages()
+            SupportedLanguages.Add(new SupportedLanguage()
             {
                 LanguageCode = item.Key,
                 LanguageName = item.Value
             });
-        }
-        LanguageSelected = SurpportLanguages.FindIndex(
-            x => x.LanguageCode.Equals(ConfigManager.AppConfig.App.AppLanguage));
+
+        LanguageSelected = SupportedLanguages.FindIndex(
+            x => x.LanguageCode.Equals(ConfigManager.AppConfig.App.AppLanguage)
+        );
     }
 
-    /// <summary>
-    /// 保存变更
-    /// </summary>
-    private static void SaveChanges()
-    {
-        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
-    }
+    private Color2 themeColor = new();
 
-    private Color2 nowColor = new();
-
-    /// <summary>
-    /// 主题色属性
-    /// </summary>
     internal Color2 ThemeColor
     {
         get
@@ -102,62 +123,44 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
             return new(brush.Color);
         }
-
-        set => nowColor = value;
+        set => themeColor = value;
     }
 
-    /// <summary>
-    /// 获取主题不同语言的表示方式
-    /// </summary>
-    /// <param name="key">语言键</param>
-    /// <returns>表示方式</returns>
-    private static string GetThemeInLanguages(string key)
-    {
-        if (Application.Current is null) return string.Empty;
+    private static string GetThemeDisplayText(string key) => FetchStringFromResource(
+        Application.Current,
+        key,
+        prefix: "Text_Settings_Personalise_Theme_"
+    ) ?? string.Empty;
 
-        var namePrefix = "Text_Settings_Personalise_Theme";
-
-        _ = Application.Current.TryFindResource($"{namePrefix}_{key}", out var result);
-
-        var str = result as string;
-
-        return str is not null ? str : string.Empty;
-    }
-
-    /// <summary>
-    /// 可选的应用主题属性
-    /// </summary>
-    internal static List<SurpportTheme> SurpportThemes { get; } = new()
+    internal static List<SupportedTheme> SupportedThemes { get; } = new()
     {
         new()
         {
             ThemeName = FluentAvaloniaTheme.LightModeString,
-            ThemeDisplayName = GetThemeInLanguages(FluentAvaloniaTheme.LightModeString),
+            ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.LightModeString),
         },
         new()
         {
             ThemeName = FluentAvaloniaTheme.DarkModeString,
-            ThemeDisplayName = GetThemeInLanguages(FluentAvaloniaTheme.DarkModeString),
+            ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.DarkModeString),
         },
         new()
         {
             ThemeName = FluentAvaloniaTheme.HighContrastModeString,
-            ThemeDisplayName = GetThemeInLanguages(FluentAvaloniaTheme.HighContrastModeString),
+            ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.HighContrastModeString),
         },
         new()
         {
             ThemeName = "Follow",
-            ThemeDisplayName = GetThemeInLanguages("Follow"),
+            ThemeDisplayName = GetThemeDisplayText("Follow"),
         }
     };
 
-    private SurpportTheme? _currentAppTheme = SurpportThemes.Find(
-        x => x.ThemeName.Equals(ConfigManager.AppConfig.App.Theme));
+    private SupportedTheme? _currentAppTheme = SupportedThemes.Find(
+        x => x.ThemeName.Equals(ConfigManager.AppConfig.App.Theme)
+    );
 
-    /// <summary>
-    /// 当前应用主题属性
-    /// </summary>
-    internal SurpportTheme? CurrentAppTheme
+    internal SupportedTheme? CurrentAppTheme
     {
         get => _currentAppTheme;
         set
@@ -176,15 +179,12 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
             EventService.Invoke(nameof(EventService.ThemeConfigChanged));
 
-            SaveChanges();
+            SaveAppConfigChanges();
         }
     }
 
-    internal List<SurpportLanguages> SurpportLanguages { get; } = new();
+    internal List<SupportedLanguage> SupportedLanguages { get; } = new();
 
-    /// <summary>
-    /// 加载语言
-    /// </summary>
     internal static void LoadLanguage()
     {
         var location = $"{nameof(Settings_PersonaliseViewModel)}.{nameof(LoadLanguage)}";
@@ -219,9 +219,6 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
     internal int languageSelected = -1;
 
-    /// <summary>
-    /// 显示语言属性
-    /// </summary>
     internal int LanguageSelected
     {
         get => languageSelected;
@@ -229,13 +226,13 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         {
             try
             {
-                ConfigManager.AppConfig.App.AppLanguage = SurpportLanguages[value].LanguageCode;
+                ConfigManager.AppConfig.App.AppLanguage = SupportedLanguages[value].LanguageCode;
 
                 if (languageSelected != -1) LoadLanguage();
 
                 languageSelected = value;
 
-                SaveChanges();
+                SaveAppConfigChanges();
             }
             catch
             {
@@ -244,35 +241,26 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         }
     }
 
-    /// <summary>
-    /// Mica 效果设置项相关区域是否展开
-    /// </summary>
     internal static bool MicaAreaExpanded
     {
         get => ConfigManager.AppConfig.Pages.Settings.MicaAreaExpanded;
         set
         {
             ConfigManager.AppConfig.Pages.Settings.MicaAreaExpanded = value;
-            SaveChanges();
+            SaveAppConfigChanges();
         }
     }
 
-    /// <summary>
-    /// Mica 效果是否启用属性
-    /// </summary>
     internal static int MicaStatus
     {
         get => ConfigManager.AppConfig.Windows.MainWindow.EnabledMica ? 0 : 1;
         set
         {
             ConfigManager.AppConfig.Windows.MainWindow.EnabledMica = value != 1;
-            SaveChanges();
+            SaveAppConfigChanges();
         }
     }
 
-    /// <summary>
-    /// Mica 效果透明度属性
-    /// </summary>
     internal static double MicaOpacity
     {
         get => ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity;
@@ -283,122 +271,38 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         }
     }
 
-    /// <summary>
-    /// Mica 主题提示工具是否打开项
-    /// </summary>
     internal static bool MicaToolTipIsOpen
     {
         get => ConfigManager.AppConfig.Pages.Settings.MicaToolTipIsOpen;
         set
         {
             ConfigManager.AppConfig.Pages.Settings.MicaToolTipIsOpen = value;
-            SaveChanges();
+            SaveAppConfigChanges();
         }
     }
 
-    /// <summary>
-    /// Mica 透明度确认按钮可见性
-    /// </summary>
     internal bool MicaOpacityConfirmButtonVisibility
     {
         get => ConfigManager.AppConfig.App.DeveloperSetting;
-        set => PropertyChanged?.Invoke(this,
-            new(nameof(MicaOpacityConfirmButtonVisibility)));
+        set => PropertyChanged?.Invoke(
+            this,
+            new(nameof(MicaOpacityConfirmButtonVisibility))
+        );
     }
 
-    /// <summary>
-    /// 主题色调色盘设置项相关区域是否展开
-    /// </summary>
     internal static bool PaletteAreaExpanded
     {
         get => ConfigManager.AppConfig.Pages.Settings.PaletteAreaExpanded;
         set
         {
             ConfigManager.AppConfig.Pages.Settings.PaletteAreaExpanded = value;
-            SaveChanges();
+            SaveAppConfigChanges();
         }
     }
 
-    /// <summary>
-    /// 确认主题色变更命令
-    /// </summary>
-    internal DelegateCommand? ColorConfirmedCommand { get; set; }
+    internal ReactiveCommand<Unit, Task>? ColorConfirmedCommand { get; set; }
 
-    /// <summary>
-    /// 确认Mica主题透明度变更命令
-    /// </summary>
-    internal DelegateCommand? MicaOpacityConfirmedCommand { get; set; }
+    internal ReactiveCommand<Unit, Unit>? MicaOpacityConfirmedCommand { get; set; }
 
-    /// <summary>
-    /// Mica 提示工具关闭命令
-    /// </summary>
-    internal DelegateCommand? MicaToolTipClosedCommand { get; set; }
-
-    private void ColorConfirmed(object? _)
-    {
-        var c = nowColor;
-
-        Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            if (Application.Current is null) return;
-
-            Application.Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(
-                new Color(c.A, c.R, c.G, c.B)
-            );
-
-            for (char i = 'A'; i <= 'E'; ++i)
-                Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(
-                        new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
-                    );
-
-            for (int i = 1; i <= 9; ++i)
-                Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(
-                        new Color((byte)(i * 10 + i), c.R, c.G, c.B)
-                    );
-        });
-
-        ConfigManager.AppConfig.App.ThemeColor = nowColor.ToHexString();
-
-        SaveChanges();
-    }
-
-    private void MicaOpacityConfirmed(object? _) => SaveChanges();
-
-    private void MicaToolTipClosed(object? _) => MicaToolTipIsOpen = false;
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
+    internal ReactiveCommand<Unit, bool>? MicaToolTipClosedCommand { get; set; }
 }
-
-//                         __________________________
-//                 __..--/".'                        '.
-//         __..--""      | |                          |
-//        /              | |                          |
-//       /               | |    ___________________   |
-//      ;                | |   :__________________/:  |
-//      |                | |   |                 '.|  |
-//      |                | |   |                  ||  |
-//      |                | |   |                  ||  |
-//      |                | |   |                  ||  |
-//      |                | |   |                  ||  |
-//      |                | |   |                  ||  |
-//      |                | |   |                  ||  |
-//      |                | |   |                  ||  |
-//      |                | |   |______......-----"\|  |
-//      |                | |   |_______......-----"   |
-//      |                | |                          |
-//      |                | |                          |
-//      |                | |                  ____----|
-//      |                | |_____.....----|#######|---|
-//      |                | |______.....----""""       |
-//      |                | |                          |
-//      |. ..            | |   ,                      |
-//      |... ....        | |  (c ----- """           .'
-//      |..... ......  |\|_|    ____......------"""|"
-//      |. .... .......| |""""""                   |
-//      '... ..... ....| |                         |
-//        "-._ .....  .| |                         |
-//            "-._.....| |             ___...---"""'
-//                "-._.| | ___...---"""
-//                    """""

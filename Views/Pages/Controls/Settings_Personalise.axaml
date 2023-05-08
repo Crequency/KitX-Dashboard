@@ -36,7 +36,7 @@
                               FontFamily="{StaticResource SourceHanSans}"
                               FontWeight="Bold"
                               IsTextSearchEnabled="True"
-                              Items="{Binding SurpportLanguages}"
+                              Items="{Binding SupportedLanguages}"
                               SelectedIndex="{Binding LanguageSelected}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -70,7 +70,7 @@
                               FontFamily="{StaticResource SourceHanSans}"
                               FontWeight="Bold"
                               IsTextSearchEnabled="True"
-                              Items="{Binding SurpportThemes}"
+                              Items="{Binding SupportedThemes}"
                               SelectedItem="{Binding CurrentAppTheme}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -153,7 +153,7 @@
                             <Button Margin="10,0"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
-                                    Command="{Binding MicaOpacityConfirmed}"
+                                    Command="{Binding MicaOpacityConfirmedCommand}"
                                     Content="{DynamicResource Text_Public_Confirm}"
                                     DockPanel.Dock="Right"
                                     FontFamily="{StaticResource SourceHanSans}"
@@ -210,7 +210,7 @@
                                 Background="{DynamicResource ThemePrimaryAccent}"/>
                         <Button HorizontalAlignment="Right"
                                 VerticalAlignment="Bottom"
-                                Command="{Binding ColorConfirmed}"
+                                Command="{Binding ColorConfirmedCommand}"
                                 Content="{DynamicResource Text_Public_Confirm}"
                                 FontFamily="{StaticResource SourceHanSans}"
                                 FontWeight="Bold"/>

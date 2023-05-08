@@ -6,6 +6,8 @@ namespace KitX_Dashboard.ViewModels.Pages;
 
 internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
     public LibPageViewModel()
     {
         PluginCards.CollectionChanged += (_, _) =>
@@ -23,7 +25,10 @@ internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             pluginsCount = value;
-            PropertyChanged?.Invoke(this, new(nameof(PluginsCount)));
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(PluginsCount))
+            );
         }
     }
 
@@ -35,7 +40,10 @@ internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             noPlugins_tipHeight = value;
-            PropertyChanged?.Invoke(this, new(nameof(NoPlugins_TipHeight)));
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(NoPlugins_TipHeight))
+            );
         }
     }
 
@@ -48,6 +56,4 @@ internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
     /// 搜索框文字
     /// </summary>
     public string? SearchingText { get; set; }
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
 }

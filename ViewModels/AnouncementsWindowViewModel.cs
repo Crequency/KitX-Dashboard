@@ -1,19 +1,23 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
 using FluentAvalonia.UI.Controls;
-using KitX_Dashboard.Commands;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Views;
+using ReactiveUI;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace KitX_Dashboard.ViewModels;
 
 internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
     public AnouncementsWindowViewModel()
     {
         InitCommands();
@@ -21,8 +25,74 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     private void InitCommands()
     {
-        ConfirmReceivedCommand = new(ConfirmReceived);
-        ConfirmReceivedAllCommand = new(ConfirmReceivedAll);
+        ConfirmReceivedCommand = ReactiveCommand.Create(async () =>
+        {
+            if (SelectedMenuItem is null || Readed is null) return;
+
+            var key = SelectedMenuItem.Content.ToString();
+
+            if (key is null) return;
+
+            if (!Readed.Contains(key))
+                Readed.Add(key);
+
+            var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
+
+            var options = new JsonSerializerOptions()
+            {
+                WriteIndented = true,
+                IncludeFields = true,
+            };
+
+            await File.WriteAllTextAsync(
+                ConfigFilePath,
+                JsonSerializer.Serialize(Readed, options)
+            );
+
+            var finded = false;
+
+            foreach (var item in MenuItems)
+            {
+                if (finded)
+                {
+                    SelectedMenuItem = item;
+                    break;
+                }
+
+                if (item == SelectedMenuItem)
+                    finded = true;
+            }
+        });
+
+        ConfirmReceivedAllCommand = ReactiveCommand.Create(async () =>
+        {
+            if (Readed is null) return;
+
+            foreach (var item in MenuItems)
+            {
+                var key = item.Content.ToString();
+
+                if (key is null) continue;
+
+                if (!Readed.Contains(key))
+                    Readed.Add(key);
+            }
+
+            var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
+
+            var options = new JsonSerializerOptions()
+            {
+                WriteIndented = true,
+                IncludeFields = true,
+            };
+
+            await File.WriteAllTextAsync(
+                ConfigFilePath,
+                JsonSerializer.Serialize(Readed, options)
+            );
+
+            Window?.Close();
+        });
     }
 
     internal static double Window_Width
@@ -69,21 +139,26 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         set
         {
             markdown = value;
-            PropertyChanged?.Invoke(this, new(nameof(Markdown)));
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(Markdown))
+            );
         }
     }
 
     internal List<NavigationViewItem> MenuItems { get; set; } = new();
 
-    private Dictionary<string, string> src = new();
+    private Dictionary<string, string> sources = new();
 
     internal Dictionary<string, string> Sources
     {
-        get => src;
+        get => sources;
         set
         {
-            src = value;
+            sources = value;
+
             MenuItems.Clear();
+
             foreach (var item in Sources.Reverse())
             {
                 MenuItems.Add(new()
@@ -91,6 +166,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
                     Content = item.Key
                 });
             }
+
             SelectedMenuItem = MenuItems.First();
         }
     }
@@ -99,84 +175,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal List<string>? Readed { get; set; }
 
-    /// <summary>
-    /// 确认收到命令
-    /// </summary>
-    internal DelegateCommand? ConfirmReceivedCommand { get; set; }
+    internal ReactiveCommand<Unit, Task>? ConfirmReceivedCommand { get; set; }
 
-    /// <summary>
-    /// 确认收到命令
-    /// </summary>
-    internal DelegateCommand? ConfirmReceivedAllCommand { get; set; }
-
-    private async void ConfirmReceived(object? _)
-    {
-        if (SelectedMenuItem is null || Readed is null) return;
-
-        var key = SelectedMenuItem.Content.ToString();
-
-        if (key is null) return;
-
-        if (!Readed.Contains(key))
-            Readed.Add(key);
-
-        var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
-
-        var options = new JsonSerializerOptions()
-        {
-            WriteIndented = true,
-            IncludeFields = true,
-        };
-
-        await File.WriteAllTextAsync(
-            ConfigFilePath,
-            JsonSerializer.Serialize(Readed, options)
-        );
-
-        var finded = false;
-
-        foreach (var item in MenuItems)
-        {
-            if (finded)
-            {
-                SelectedMenuItem = item;
-                break;
-            }
-
-            if (item == SelectedMenuItem)
-                finded = true;
-        }
-    }
-
-    private async void ConfirmReceivedAll(object? _)
-    {
-        if (Readed is null) return;
-
-        foreach (var item in MenuItems)
-        {
-            var key = item.Content.ToString();
-
-            if (key is null) continue;
-
-            if (!Readed.Contains(key))
-                Readed.Add(key);
-        }
-
-        var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
-
-        var options = new JsonSerializerOptions()
-        {
-            WriteIndented = true,
-            IncludeFields = true,
-        };
-
-        await File.WriteAllTextAsync(
-            ConfigFilePath,
-            JsonSerializer.Serialize(Readed, options)
-        );
-
-        Window?.Close();
-    }
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
+    internal ReactiveCommand<Unit, Task>? ConfirmReceivedAllCommand { get; set; }
 }
