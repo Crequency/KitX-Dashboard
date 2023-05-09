@@ -90,13 +90,13 @@ public partial class MainWindow : CoreWindow
 
         try
         {
-            Program.TasksManager?.SignalRun(
+            Program.SignalTasksManager?.SignalRun(
                 nameof(SignalsNames.MainWindowOpenedSignal),
                 () => WindowState = ConfigManager.AppConfig.Windows.MainWindow.WindowState
             );
 
             if (ConfigManager.AppConfig.Windows.MainWindow.IsHidden)
-                Program.TasksManager?.SignalRun(
+                Program.SignalTasksManager?.SignalRun(
                     nameof(SignalsNames.MainWindowOpenedSignal),
                     Hide
                 );
@@ -183,7 +183,7 @@ public partial class MainWindow : CoreWindow
 
         timer.Start();
 
-        Program.TasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
+        Program.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
     }
 
     /// <summary>
@@ -381,7 +381,7 @@ public partial class MainWindow : CoreWindow
 
         thm.ForceWin32WindowToTheme(this);
 
-        Program.TasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
+        Program.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
     }
 
     /// <summary>

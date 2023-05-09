@@ -116,7 +116,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             new(nameof(PluginsServerPort))
         );
 
-        Program.TasksManager?.SignalRun(
+        Program.SignalTasksManager?.SignalRun(
             nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal),
             () =>
             {

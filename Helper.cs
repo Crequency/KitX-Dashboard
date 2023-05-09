@@ -180,13 +180,13 @@ public static class Helper
 
         #region 初始化 TasksManager
 
-        Program.TasksManager = new();
+        Program.SignalTasksManager = new();
 
         #endregion
 
         #region 初始化 WebManager
 
-        Program.TasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
+        Program.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
         {
             new Thread(async () =>
             {

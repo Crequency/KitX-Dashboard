@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
+using Common.BasicHelper.Core.TaskSystem;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.Views;
@@ -13,7 +14,7 @@ namespace KitX_Dashboard;
 
 internal class Program
 {
-    internal static TasksManager? TasksManager;
+    internal static SignalTasksManager? SignalTasksManager;
 
     internal static WebManager? WebManager;
 
