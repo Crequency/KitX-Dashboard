@@ -21,4 +21,11 @@ public class DelegateCommand : ICommand
     }
 
     public DelegateCommand(Action<object?> executeAction) => ExecuteAction = executeAction;
+
+    private DelegateCommand InvokeCanExecuteChange(object? sender, EventArgs e)
+    {
+        CanExecuteChanged?.Invoke(sender, e);
+
+        return this;
+    }
 }
