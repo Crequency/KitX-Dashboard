@@ -71,6 +71,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
                 try
                 {
                     var loaderName = PluginDetail?.RequiredLoaderStruct.LoaderName;
+                    var loaderVersion = PluginDetail?.RequiredLoaderStruct.LoaderVersion;
                     var pd = PluginDetail?.PluginDetails;
 
                     var pluginPath = $"{PluginDetail?.InstallPath}/{pd?.RootStartupFileName}";
@@ -86,11 +87,12 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
                         Process.Start(pluginFile, $"--connect {connectStr}");
                     else
                     {
-                        var loaderFile
-                            = $"{ConfigManager.AppConfig.Loaders.InstallPath}/{loaderName}/{loaderName}";
+                        var loaderFile = $"{ConfigManager.AppConfig.Loaders.InstallPath}/" +
+                            $"{loaderName}/{loaderVersion}/{loaderName}";
 
                         if (OperatingSystem.IsWindows())
                             loaderFile += ".exe";
+
                         loaderFile = loaderFile.GetFullPath();
 
                         Log.Information($"Launch: {pluginFile} through {loaderFile}");
