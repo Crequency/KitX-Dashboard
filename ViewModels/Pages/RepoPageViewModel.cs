@@ -66,6 +66,8 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
                     }
                 }).Start();
             }
+
+            RefreshPluginsCommand?.Execute(new());
         });
 
         RefreshPluginsCommand = ReactiveCommand.Create(() =>
