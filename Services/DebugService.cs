@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace KitX_Dashboard.Services;
@@ -290,6 +291,45 @@ internal class DebugCommands
             Program.WebManager?.Stop();
 
         return "Stop action requested.";
+    }
+
+    public static string? Hash(Dictionary<string, string> args)
+    {
+        if (args.ContainsKey("help"))
+            return "" +
+                "Return hashed value for parameters.\n" +
+                "\t--way [MD5,SHA1,Common.Algorithm] |\n" +
+                "\t\tMD5              | [--value] Use MD5 to hash parameters.\n" +
+                "\t\tSHA1             | [--value] Use SHA1 to hash parameters.\n" +
+                "\t\tCommon.Algorithm | [--value] Use Common.Algorithm to hash parameters.";
+
+        if (args.ContainsKey("--way"))
+        {
+            switch (args["--way"].ToLower())
+            {
+                case "md5":
+                    {
+                        var md5 = MD5.Create();
+                        var result = md5.ComputeHash(args["--value"].FromUTF8()).ToUTF8();
+                        md5.Dispose();
+                        return result;
+                    }
+                case "sha1":
+                    {
+                        var sha1 = SHA1.Create();
+                        var result = sha1.ComputeHash(args["--value"].FromUTF8()).ToUTF8();
+                        sha1.Dispose();
+                        return result;
+                    }
+                case "common.algorithm":
+                    {
+                        return Common.Algorithm.Interop.Hash.FromString2Hex(args["--value"]);
+                    }
+                default:
+                    return "No this way.";
+            }
+        }
+        else return "Missing arguments.";
     }
 }
 
