@@ -23,21 +23,26 @@ internal class ActivityManager
     /// <param name="keySelector">键选择器</param>
     public static void Record(Activity activity, Expression<Func<Activity, int>> keySelector)
     {
-        lock (_activityRecordLock)
+        var location = $"{nameof(ActivityManager)}.{nameof(Record)}";
+
+        TasksManager.RunTask(() =>
         {
-            if (Program.ActivitiesDataBase is LiteDatabase db)
+            lock (_activityRecordLock)
             {
-                var col = db.GetCollection<Activity>(CollectionName);
+                if (Program.ActivitiesDataBase is LiteDatabase db)
+                {
+                    var col = db.GetCollection<Activity>(CollectionName);
 
-                col?.Insert(activity);
+                    col?.Insert(activity);
 
-                col?.EnsureIndex(keySelector);
+                    col?.EnsureIndex(keySelector);
 
-                ConfigManager.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
+                    ConfigManager.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
 
-                db.Commit();
+                    db.Commit();
+                }
             }
-        }
+        }, location, catchException: true);
     }
 
     /// <summary>
@@ -46,17 +51,22 @@ internal class ActivityManager
     /// <param name="activity">活动</param>
     public static void Update(Activity activity)
     {
-        lock (_activityRecordLock)
+        var location = $"{nameof(ActivityManager)}.{nameof(Update)}";
+
+        TasksManager.RunTask(() =>
         {
-            if (Program.ActivitiesDataBase is LiteDatabase db)
+            lock (_activityRecordLock)
             {
-                var col = db.GetCollection<Activity>(CollectionName);
+                if (Program.ActivitiesDataBase is LiteDatabase db)
+                {
+                    var col = db.GetCollection<Activity>(CollectionName);
 
-                col?.Update(activity);
+                    col?.Update(activity);
 
-                db.Commit();
+                    db.Commit();
+                }
             }
-        }
+        }, location, catchException: true);
     }
 
     public static void RecordAppStart()
