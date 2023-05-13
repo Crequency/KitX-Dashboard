@@ -1,5 +1,4 @@
-﻿using Common.Activity;
-using Common.BasicHelper.IO;
+﻿using Common.BasicHelper.IO;
 using Common.BasicHelper.Utils.Extensions;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
@@ -10,47 +9,14 @@ using Serilog;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq.Expressions;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
-using Activity = Common.Activity.Activity;
 
 namespace KitX_Dashboard;
 
 public static class Helper
 {
-    private static readonly object _activityRecordLock = new();
-
-    /// <summary>
-    /// 记录活动
-    /// </summary>
-    /// <param name="activity">活动</param>
-    /// <param name="colName">集合名称</param>
-    /// <param name="action">添加后行动</param>
-    /// <param name="keySelector">键选择器</param>
-    public static void RecordActivity(
-        Activity activity,
-        string colName,
-        Action action,
-        Expression<Func<Activity, int>> keySelector)
-    {
-        lock (_activityRecordLock)
-        {
-            var col = Program.ActivitiesDataBase?.GetCollection<Activity>(colName);
-
-            col?.Insert(activity);
-
-            action();
-
-            col?.Update(activity);
-
-            col?.EnsureIndex(keySelector);
-
-            ConfigManager.AppConfig.Activity.TotalRecorded += 1;
-        }
-    }
-
     /// <summary>
     /// 处理启动参数
     /// </summary>
@@ -244,39 +210,11 @@ public static class Helper
 
             var dbfile = GlobalInfo.ActivitiesDataBaseFilePath.GetFullPath();
 
-            using var db = new LiteDatabase(dbfile);
+            var db = new LiteDatabase(dbfile);
 
             Program.ActivitiesDataBase = db;
 
-            var colName = DateTime.UtcNow.ToString("yyyy_MM").Num2UpperChar();
-
-            var col = db.GetCollection<Activity>(colName);
-
-            var activity = new Activity()
-            {
-                Creator = new() { GlobalInfo.AppFullName },
-                Assign = null,
-                Closer = new() { GlobalInfo.AppFullName },
-                StartTime = new() { DateTime.UtcNow },
-                EndTime = new() { DateTime.UtcNow },
-                IconKind = Material.Icons.MaterialIconKind.Play,
-                Labels = null,
-                Name = nameof(ActivityNames.AppStart),
-                Title = ActivityTitles.AppStart,
-                Tasks = null,
-                Sort = nameof(ActivitySortNames.DashboardEvent),
-                Result = Result.Success,
-                Progress = new()
-                {
-                    Type = Progress.ProgressType.Tasks,
-                    TasksValue = (1, 1)
-                }
-            };
-
-            RecordActivity(activity, colName, () =>
-            {
-                activity.ID = ConfigManager.AppConfig.Activity.TotalRecorded + 1;
-            }, x => x.ID);
+            ActivityManager.RecordAppStart();
         }
         catch (Exception ex)
         {
@@ -356,6 +294,8 @@ public static class Helper
         {
             try
             {
+                ActivityManager.RecordAppExit();
+
                 Program.FileWatcherManager?.Clear();
 
                 ConfigManager.SaveConfigs();

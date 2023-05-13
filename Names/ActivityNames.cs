@@ -3,5 +3,5 @@
 internal class ActivityNames
 {
 
-    internal object? AppStart { get; } = null;
+    internal object? AppLifetime { get; } = null;
 }
