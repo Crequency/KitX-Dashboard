@@ -163,7 +163,7 @@ internal class ConfigManager
                 {
                     File.WriteAllText(
                         GlobalInfo.ConfigFilePath.GetFullPath(),
-                        JsonSerializer.Serialize(ConfigManager.AppConfig, options)
+                        JsonSerializer.Serialize(AppConfig, options)
                     );
                 }
             }
