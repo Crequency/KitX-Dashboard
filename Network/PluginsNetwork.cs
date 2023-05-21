@@ -8,6 +8,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text.Json;
 
@@ -66,7 +67,9 @@ internal class PluginsNetwork
     {
         var location = $"{nameof(PluginsNetwork)}.{nameof(KeepCheckAndRemove)}";
 
-        System.Timers.Timer timer = new()
+        bool timerElapsing = false;
+
+        var timer = new System.Timers.Timer()
         {
             Interval = 10,
             AutoReset = true
@@ -74,54 +77,39 @@ internal class PluginsNetwork
 
         timer.Elapsed += (_, _) =>
         {
+            if (timerElapsing)
+                return;
+            else
+                timerElapsing = true;
+
             try
             {
                 if (pluginsToAdd.Count > 0)
                 {
-                    List<PluginCard> pluginCardsToAdd = new();
-                    int needAddCount = 0, addedCount = 0;
-                    while (pluginsToAdd.Count > 0)
+                    var pluginStruct = pluginsToAdd.Dequeue();
+
+                    Dispatcher.UIThread.Post(() =>
                     {
-                        ++needAddCount;
-
-                        PluginStruct pluginStruct = pluginsToAdd.Dequeue();
-
-                        Dispatcher.UIThread.Post(() =>
+                        var card = new PluginCard(pluginStruct)
                         {
-                            PluginCard card = new(pluginStruct);
-                            pluginCardsToAdd.Add(card);
-                            lock ((object)addedCount)
-                            {
-                                ++addedCount;
-                            }
-                        });
-                    }
-                    while (needAddCount != addedCount) { }
-                    foreach (var item in pluginCardsToAdd)
-                    {
-                        Program.PluginCards.Add(item);
-                    }
+                            IPEndPoint = pluginStruct.Tags["IPEndPoint"]
+                        };
+
+                        Program.PluginCards.Add(card);
+                    });
                 }
 
                 if (pluginsToRemove.Count > 0)
                 {
-                    List<PluginCard> pluginCardsToRemove = new();
-                    while (pluginsToRemove.Count > 0)
-                    {
-                        IPEndPoint endPoint = pluginsToRemove.Dequeue();
-                        foreach (var item in Program.PluginCards)
-                        {
-                            if (item.pluginStruct.Tags["IPEndPoint"].Equals(endPoint.ToString()))
-                            {
-                                pluginCardsToRemove.Add(item);
-                                break;
-                            }
-                        }
-                    }
-                    foreach (var item in pluginCardsToRemove)
-                    {
-                        Program.PluginCards.Remove(item);
-                    }
+                    var endPoint = pluginsToRemove.Dequeue().ToString();
+
+                    var matched = Program.PluginCards.FirstOrDefault(
+                        x => x!.IPEndPoint?.Equals(endPoint) ?? false,
+                        null
+                    );
+
+                    if (matched is not null)
+                        Program.PluginCards.Remove(matched);
                 }
 
                 if (!GlobalInfo.Running)
@@ -133,6 +121,8 @@ internal class PluginsNetwork
             {
                 Log.Error(ex, $"In {location}: {ex.Message}");
             }
+
+            timerElapsing = false;
         };
 
         timer.Start();
