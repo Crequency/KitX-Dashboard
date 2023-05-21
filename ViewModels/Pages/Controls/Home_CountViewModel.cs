@@ -10,7 +10,10 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
 internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
     private double noCount_TipHeight = 200;
+
     private List<Axis> use_xAxes = new()
     {
         new Axis
@@ -18,6 +21,7 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
             Labeler = Labelers.Default
         }
     };
+
     private List<Axis> use_yAxes = new()
     {
         new Axis
@@ -25,6 +29,7 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
             Labeler = (value) => $"{value} h"
         }
     };
+
     private ISeries[] useSeries =
     {
         new LineSeries<double>
@@ -51,6 +56,7 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
     internal void RecoveryUseCount()
     {
         var use = StatisticsManager.UseStatistics;
+
         Use_XAxes = new()
         {
             new Axis
@@ -58,14 +64,15 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
                 Labels = use?.Keys.ToList()
             }
         };
+
         Use_Series = new ISeries[]
         {
             new LineSeries<double>
             {
                 Values = use?.Values.ToArray(),
                 Fill = null,
-                TooltipLabelFormatter = (chartpoint)
-                    => $"{use?.Keys.ToArray()[(int)chartpoint.SecondaryValue]}: " +
+                TooltipLabelFormatter = chartpoint =>
+                    $"{use?.Keys.ToArray()[(int)chartpoint.SecondaryValue]}: " +
                     $"{chartpoint.PrimaryValue} h"
             }
         };
@@ -77,7 +84,10 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             noCount_TipHeight = value;
-            PropertyChanged?.Invoke(this, new(nameof(NoCount_TipHeight)));
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(NoCount_TipHeight))
+            );
         }
     }
 
@@ -87,7 +97,12 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             ConfigManager.AppConfig.Pages.Home.UseAreaExpanded = value;
-            PropertyChanged?.Invoke(this, new(nameof(UseAreaExpanded)));
+
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(UseAreaExpanded))
+            );
+
             EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
         }
     }
@@ -98,7 +113,11 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             useSeries = value;
-            PropertyChanged?.Invoke(this, new(nameof(Use_Series)));
+
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(Use_Series))
+            );
         }
     }
 
@@ -108,7 +127,11 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             use_xAxes = value;
-            PropertyChanged?.Invoke(this, new(nameof(Use_XAxes)));
+
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(Use_XAxes))
+            );
         }
     }
 
@@ -118,56 +141,11 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             use_yAxes = value;
-            PropertyChanged?.Invoke(this, new(nameof(Use_YAxes)));
+
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(Use_YAxes))
+            );
         }
     }
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-//
-//  #
-//  ##
-//  ###
-//   ####
-//    #####
-//    #######
-//     #######
-//     ########
-//     ########
-//     #########
-//     ##########
-//    ############
-//  ##############
-// ################
-//  ################
-//    ##############
-//     ##############                                              ####
-//     ##############                                           #####
-//      ##############                                      #######
-//      ##############                                 ###########
-//      ###############                              #############
-//      ################                           ##############
-//     #################      #                  ################
-//     ##################     ##    #           #################
-//    ####################   ###   ##          #################
-//         ################  ########          #################
-//          ################  #######         ###################
-//            #######################       #####################
-//             #####################       ###################
-//               ############################################
-//                ###########################################
-//                ##########################################
-//                 ########################################
-//                 ########################################
-//                  ######################################
-//                  ######################################
-//                   ##########################      #####
-//                   ###  ###################           ##
-//                   ##    ###############
-//                   #     ##  ##########
-//                             ##    ###
-//                                   ###
-//                                   ##
-//                                   #
-//

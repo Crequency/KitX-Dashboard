@@ -21,22 +21,11 @@ public class DelegateCommand : ICommand
     }
 
     public DelegateCommand(Action<object?> executeAction) => ExecuteAction = executeAction;
-}
 
-//
-//          _._._                       _._._
-//         _|   |_                     _|   |_
-//         | ... |_._._._._._._._._._._| ... |
-//         | ||| |  o NATIONAL BANK o  | ||| |
-//         | """ |  """    """    """  | """ |
-//    ())  |[-|-]| [-|-]  [-|-]  [-|-] |[-|-]|  ())
-//   (())) |     |---------------------|     | (()))
-//  (())())| """ |  """    """    """  | """ |(())())
-//  (()))()|[-|-]|  :::   .-"-.   :::  |[-|-]|(()))()
-//  ()))(()|     | |~|~|  |_|_|  |~|~| |     |()))(()
-//     ||  |_____|_|_|_|__|_|_|__|_|_|_|_____|  ||
-//  ~ ~^^ @@@@@@@@@@@@@@/=======\@@@@@@@@@@@@@@ ^^~ ~
-//       ^~^~                                ~^~^
-// Sher^
-// 
-//
+    private DelegateCommand InvokeCanExecuteChange(object? sender, EventArgs e)
+    {
+        CanExecuteChanged?.Invoke(sender, e);
+
+        return this;
+    }
+}

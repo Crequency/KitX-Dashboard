@@ -1,5 +1,5 @@
 ﻿using Avalonia;
-using Avalonia.Controls;
+using Common.BasicHelper.Utils.Extensions;
 using KitX.Web.Rules;
 using Material.Icons;
 using System.ComponentModel;
@@ -8,58 +8,14 @@ namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
 internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
     public DeviceCardViewModel()
     {
 
     }
 
-    internal DeviceInfoStruct deviceInfo = new();
-
-    /// <summary>
-    /// 检查字符串是否为空, 如果为空则根据 key 返回提示
-    /// </summary>
-    /// <param name="str">字符串</param>
-    /// <param name="key">提示语言文件键值</param>
-    /// <returns>字符串或者提示</returns>
-    internal static string CheckString(string? str, string key)
-    {
-        if (str is null || str.Equals(string.Empty) || str.Equals(""))
-        {
-            if (Application.Current is null) return "null";
-
-            _ = Application.Current.TryFindResource(key, out var obj);
-
-            var result = obj as string;
-
-            if (result is not null)
-                return result;
-            else
-                return "null";
-        }
-        else
-        {
-            return str;
-        }
-    }
-
-    /// <summary>
-    /// 获取不同语言的提示
-    /// </summary>
-    /// <param name="key">值</param>
-    /// <returns>提示</returns>
-    private static string GetResources(string key)
-    {
-        if (Application.Current is null) return string.Empty;
-
-        _ = Application.Current.TryFindResource(key, out var obj);
-
-        var result = obj as string;
-
-        if (result is not null)
-            return result;
-        else
-            return string.Empty;
-    }
+    private DeviceInfoStruct deviceInfo = new();
 
     internal DeviceInfoStruct DeviceInfo
     {
@@ -68,7 +24,12 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
         {
             deviceInfo = value;
             DeviceName = DeviceInfo.DeviceName;
-            DeviceMacAddress = CheckString(DeviceInfo.DeviceMacAddress, "Text_Device_NoMacAddress");
+            DeviceMacAddress = DeviceInfo.DeviceMacAddress.IsNullOrWhiteSpace()
+                ?
+                FetchStringFromResource(Application.Current, "Text_Device_NoMacAddress")
+                :
+                DeviceInfo.DeviceMacAddress
+                ;
             LastOnlineTime = DeviceInfo.SendTime.ToLocalTime().ToString("yyyy.MM.dd HH:mm:ss");
             DeviceVersion = DeviceInfo.DeviceOSVersion;
             DeviceOSKind = DeviceInfo.DeviceOSType switch
@@ -91,19 +52,49 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
             IPv6 = DeviceInfo.IPv6;
             PluginsCount = DeviceInfo.PluginsCount.ToString();
             DeviceControlStatus = DeviceInfo.IsMainDevice
-                ? GetResources("Text_Device_Type_Master")
-                : GetResources("Text_Device_Type_Slave");
+                ? FetchStringFromResource(Application.Current, "Text_Device_Type_Master")
+                : FetchStringFromResource(Application.Current, "Text_Device_Type_Slave");
 
-            PropertyChanged?.Invoke(this, new(nameof(DeviceName)));
-            PropertyChanged?.Invoke(this, new(nameof(DeviceMacAddress)));
-            PropertyChanged?.Invoke(this, new(nameof(LastOnlineTime)));
-            PropertyChanged?.Invoke(this, new(nameof(DeviceVersion)));
-            PropertyChanged?.Invoke(this, new(nameof(DeviceOSKind)));
-            PropertyChanged?.Invoke(this, new(nameof(IPv4)));
-            PropertyChanged?.Invoke(this, new(nameof(IPv6)));
-            PropertyChanged?.Invoke(this, new(nameof(PluginsCount)));
-            PropertyChanged?.Invoke(this, new(nameof(DeviceControlStatus)));
-            PropertyChanged?.Invoke(this, new(nameof(DeviceServerAddress)));
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(DeviceName))
+            );
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(DeviceMacAddress))
+            );
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(LastOnlineTime))
+            );
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(DeviceVersion))
+            );
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(DeviceOSKind))
+            );
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(IPv4))
+            );
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(IPv6))
+            );
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(PluginsCount))
+            );
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(DeviceControlStatus))
+            );
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(DeviceServerAddress))
+            );
         }
     }
 
@@ -131,23 +122,4 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
             ? $"{deviceInfo.IPv4}:{deviceInfo.DeviceServerPort}"
             : null;
     }
-
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
 }
-
-//
-//      /\
-//      ||_____-----_____-----_____
-//      ||   O                  O  \
-//      ||    O\\    ___    //O    /
-//      ||       \\ /   \//        \
-//      ||         |_O O_|         /
-//      ||          ^ | ^          \
-//      ||        // UUU \\        /
-//      ||    O//            \\O   \
-//      ||   O                  O  /
-//      ||_____-----_____-----_____\
-//      ||
-//      ||.
-//

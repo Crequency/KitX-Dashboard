@@ -87,7 +87,7 @@
                     </ComboBox>
 
                     <Button Margin="0,0,10,0"
-                            Command="{Binding ShowAnnouncementsNowCommand}"
+                            Command="{Binding ShowAnnouncementsInstantlyCommand}"
                             Content="{DynamicResource Text_Settings_General_ShowAnnouncementNow}"
                             DockPanel.Dock="Right"
                             FontFamily="{StaticResource SourceHanSans}"

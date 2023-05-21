@@ -1,14 +1,17 @@
 ﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
-using KitX_Dashboard.Commands;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.Services;
+using ReactiveUI;
 using System.ComponentModel;
+using System.Reactive;
 
 namespace KitX_Dashboard.ViewModels.Pages;
 
 internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
     public HomePageViewModel()
     {
         InitCommands();
@@ -16,9 +19,20 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal void InitCommands()
     {
-        ResetToAutoCommand = new(ResetToAuto);
-        MoveToLeftCommand = new(MoveToLeft);
-        MoveToTopCommand = new(MoveToTop);
+        ResetToAutoCommand = ReactiveCommand.Create(() =>
+        {
+            NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Auto;
+        });
+
+        MoveToLeftCommand = ReactiveCommand.Create(() =>
+        {
+            NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+        });
+
+        MoveToTopCommand = ReactiveCommand.Create(() =>
+        {
+            NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Top;
+        });
     }
 
     internal static bool IsPaneOpen
@@ -27,6 +41,7 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             ConfigManager.AppConfig.Pages.Home.IsNavigationViewPaneOpened = value;
+
             EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
         }
     }
@@ -47,64 +62,24 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             ConfigManager.AppConfig.Pages.Home.NavigationViewPaneDisplayMode = value;
-            PropertyChanged?.Invoke(this,
-                new(nameof(NavigationViewPaneDisplayMode)));
-            PropertyChanged?.Invoke(this,
-                new(nameof(FirstItemMargin)));
+
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(NavigationViewPaneDisplayMode))
+            );
+
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(FirstItemMargin))
+            );
+
             EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
         }
     }
 
-    internal DelegateCommand? ResetToAutoCommand { get; set; }
+    internal ReactiveCommand<Unit, Unit>? ResetToAutoCommand { get; set; }
 
-    internal DelegateCommand? MoveToLeftCommand { get; set; }
+    internal ReactiveCommand<Unit, Unit>? MoveToLeftCommand { get; set; }
 
-    internal DelegateCommand? MoveToTopCommand { get; set; }
-
-    internal void ResetToAuto(object? _)
-        => NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Auto;
-
-    internal void MoveToLeft(object? _)
-        => NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Left;
-
-    internal void MoveToTop(object? _)
-        => NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Top;
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
+    internal ReactiveCommand<Unit, Unit>? MoveToTopCommand { get; set; }
 }
-
-//          .eee.
-//         d"   "$b
-//        $ zF $e $$c
-//    ..e$     ....$$b
-//    .   ^$$$$$$$$$$$$
-//                  "$$b
-//                   $$$
-//                z$$$$%
-//             .d$$$$$"
-//           .$$$$$$"
-//          d$$$$$"
-//         $$$$$"
-//        .$$$$" .e$$$$$$$$$e.
-//        4$$b"3$$$$$$$$$$$$$$$$e
-//         $$F  $$$$$$$$$$$$$$$$$$$e
-//         *$$.  $$$$$$$$$$$$$$$$$$$$$c
-//          $$$.  ^$$$$$$$$$$$$$$$$$$$$$$c
-//           *$$c    *$$$$$$$$$$$$$$$$$$$$$$.
-//            ^$$b     ^*$$$$$$$$$$$$$$$$$$$$$$c
-//              *$$c       "*$$$$$$$$$$$$$$$$$$$$$e.
-//                *$$c          ""******"^E""e. "*"
-//                  *$$b.               $$$$e. *b. zP.
-//                    *$$$e            .*$. *$*4$ "%.  ^
-//                    ^$$$$$$c      /"    $c  b. "\  4$@
-//                     $$$$$$$$$c="         ^4'$$c $^4$
-//                     $$$" *$$$$              *$.*c  b
-//                    f*$$    $$$                *  "b*
-//                     4$      *$F                 - $
-//                   J  P       ^$                   "
-//                   "-
-//                  4
-//                  %-
-//                 .
-//        .====*""  -  -"""""""
-//       F            .         ^

@@ -1,58 +1,11 @@
-﻿using Common.BasicHelper.Utils.Extensions;
-using Serilog;
+﻿using Serilog;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace KitX_Dashboard.Managers;
 
 internal class TasksManager
 {
-    private readonly Dictionary<string, Queue<Action>> SignalTasks = new();
-
-    /// <summary>
-    /// 触发信号
-    /// </summary>
-    /// <param name="signal">信号名称</param>
-    /// <returns>任务管理器本身</returns>
-    internal TasksManager RaiseSignal(string signal)
-    {
-        if (SignalTasks.ContainsKey(signal))
-        {
-            var queue = SignalTasks[signal];
-            queue.ForEach(x => x.Invoke());
-            SignalTasks.Remove(signal);
-        }
-
-        return this;
-    }
-
-    /// <summary>
-    /// 信号发生时运行任务
-    /// </summary>
-    /// <param name="signal">信号</param>
-    /// <param name="action">任务</param>
-    /// <returns>任务管理器本身</returns>
-    internal TasksManager SignalRun(string signal, Action action)
-    {
-        if (SignalTasks.ContainsKey(signal))
-            SignalTasks[signal].Enqueue(action);
-        else SignalTasks.Add(signal, new Queue<Action>().Push(action));
-
-        return this;
-    }
-
-    /// <summary>
-    /// 清除所有信号响应任务
-    /// </summary>
-    /// <returns>任务管理器本身</returns>
-    internal TasksManager Clear()
-    {
-        SignalTasks.Clear();
-
-        return this;
-    }
-
     /// <summary>
     /// 执行任务, 并带有更好的日志显示
     /// </summary>

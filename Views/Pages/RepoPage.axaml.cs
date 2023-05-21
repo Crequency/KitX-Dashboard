@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using KitX_Dashboard.Managers;
 using KitX_Dashboard.ViewModels.Pages;
 using Serilog;
@@ -44,6 +45,8 @@ public partial class RepoPage : UserControl
                 try
                 {
                     PluginsManager.ImportPlugin(files, true);
+
+                    Dispatcher.UIThread.Post(() => viewModel.RefreshPluginsCommand?.Execute());
                 }
                 catch (Exception ex)
                 {
@@ -64,26 +67,3 @@ public partial class RepoPage : UserControl
     }
 
 }
-
-//
-// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-// @@@@@@@@@@@@@@@@@@@@@@@'~~~     ~~~`@@@@@@@@@@@@@@@@@@@@@@@@@
-// @@@@@@@@@@@@@@@@@@'                     `@@@@@@@@@@@@@@@@@@@@
-// @@@@@@@@@@@@@@@'                           `@@@@@@@@@@@@@@@@@
-// @@@@@@@@@@@@@'                               `@@@@@@@@@@@@@@@
-// @@@@@@@@@@@'                                   `@@@@@@@@@@@@@
-// @@@@@@@@@@'                                     `@@@@@@@@@@@@
-// @@@@@@@@@'                                       `@@@@@@@@@@@
-// @@@@@@@@@                                         @@@@@@@@@@@
-// @@@@@@@@'                      n,                 `@@@@@@@@@@
-// @@@@@@@@                     _/ | _                @@@@@@@@@@
-// @@@@@@@@                    /'  `'/                @@@@@@@@@@
-// @@@@@@@@a                 &lt;~    .'                a@@@@@@@@@@
-// @@@@@@@@@                 .'    |                 @@@@@@@@@@@
-// @@@@@@@@@a              _/      |                a@@@@@@@@@@@
-// @@@@@@@@@@a           _/      `.`.              a@@@@@@@@@@@@
-// @@@@@@@@@@@a     ____/ '   \__ | |______       a@@@@@@@@@@@@@
-// @@@@@@@@@@@@@a__/___/      /__\ \ \     \___.a@@@@@@@@@@@@@@@
-// @@@@@@@@@@@@@/  (___.'\_______)\_|_|        \@@@@@@@@@@@@@@@@
-// @@@@@@@@@@@@|\________                       ~~~~~\@@@@@@@@@@
-//

@@ -90,13 +90,13 @@ public partial class MainWindow : CoreWindow
 
         try
         {
-            Program.TasksManager?.SignalRun(
+            Program.SignalTasksManager?.SignalRun(
                 nameof(SignalsNames.MainWindowOpenedSignal),
                 () => WindowState = ConfigManager.AppConfig.Windows.MainWindow.WindowState
             );
 
             if (ConfigManager.AppConfig.Windows.MainWindow.IsHidden)
-                Program.TasksManager?.SignalRun(
+                Program.SignalTasksManager?.SignalRun(
                     nameof(SignalsNames.MainWindowOpenedSignal),
                     Hide
                 );
@@ -183,7 +183,7 @@ public partial class MainWindow : CoreWindow
 
         timer.Start();
 
-        Program.TasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
+        Program.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
     }
 
     /// <summary>
@@ -381,7 +381,7 @@ public partial class MainWindow : CoreWindow
 
         thm.ForceWin32WindowToTheme(this);
 
-        Program.TasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
+        Program.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
     }
 
     /// <summary>
@@ -441,28 +441,3 @@ public partial class MainWindow : CoreWindow
         }
     }
 }
-
-//
-//   ____________________________________                  ______________
-//  |------|------|     __   __   __     |     ___________     |           () |
-//  | 64X4 | 64X4 | || |  | |  | |  |    |    |           |    |           ___|
-//  |------|------| || |  | |  | |  |    |____|           |____|         || D |
-//  | 64X4 | 64X4 | || |__| |__| |__|                 ________________  ||| I |
-//  |------|------|  |  ________   ______   ______   | ADV476KN50     | ||| P |
-//  | 64X4 | 64X4 |    |TRIDENT | |______| |______|  | 1-54BV  8940   | ||| S |
-//  |------|------| || |TVGA    | |______| |______|  |________________| |||___|
-//  | 64X4 | 64X4 | || |8800CS  |          ________________                ___|
-//  |------|------| || |11380029|    LOW-&gt;|  /\ SUPER VGA  | _________    |   |
-//  | 64X4 | 64X4 |     --------    BIOS  | \/         (1) ||_________|   | 1 |
-//  |------|------| ||  ______  J  ______ |________________| _________    | 5 |
-//  | 64X4 | 64X4 | || |______| 2 |______| ________________ |_________|   |___|
-//  |------|------| ||  ________   ______ |  /\ SUPER VGA  |               ___|
-//  | 64X4 | 64X4 |    |________| |______|| \/         (2) |   _________  |   |
-//  |------|------| ()              HIGH-&gt;|________________|  |_________| | 9 |
-//  | 64X4 | 64X4 |     ________   _________   _____________   _________  |   |
-//  |______|______|__  |________| |_________| |_____________| |_________| |___|
-//                   |               __    TVGA-1623D                    _ () |
-//                   |LLLLLLLLLLLLLL|  |LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL| |___|
-//                                                                            |
-//                                                                            |
-//

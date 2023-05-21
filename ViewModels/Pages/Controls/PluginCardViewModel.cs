@@ -25,10 +25,10 @@ internal class PluginCardViewModel
 
     internal string Version => pluginStruct.Version;
 
-    internal string SimpleDescription => pluginStruct.SimpleDescription.ContainsKey(
-ConfigManager.AppConfig.App.AppLanguage)
+    internal string SimpleDescription => pluginStruct.SimpleDescription
+        .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
         ? pluginStruct.SimpleDescription[ConfigManager.AppConfig.App.AppLanguage]
-        : string.Empty;
+        : pluginStruct.SimpleDescription.GetEnumerator().Current.Value;
 
     internal string IconInBase64 => pluginStruct.IconInBase64;
 
@@ -36,52 +36,27 @@ ConfigManager.AppConfig.App.AppLanguage)
     {
         get
         {
+            var location = $"{nameof(PluginCardViewModel)}.{nameof(IconDisplay)}.getter";
+
             try
             {
-                byte[] src = Convert.FromBase64String(IconInBase64);
+                var src = Convert.FromBase64String(IconInBase64);
+
                 using var ms = new MemoryStream(src);
+
                 return new(ms);
             }
             catch (Exception e)
             {
-                Log.Warning(e, $"Icon transform error from base64 to byte[] or " +
-                    $"create bitmap from MemoryStream error: {e.Message}");
+                Log.Warning(
+                    e,
+                    $"In {location}: " +
+                        $"Failed to transform icon from base64 to byte[] " +
+                        $"or create bitmap from `MemoryStream`. {e.Message}"
+                );
+
                 return App.DefaultIcon;
             }
         }
     }
 }
-
-//
-//                                /T /I
-//                               / |/ | .-~/
-//                           T\ Y  I  |/  /  _
-//          /T               | \I  |  I  Y.-~/
-//         I l   /I       T\ |  |  l  |  T  /
-//  __  | \l   \l  \I l __l  l   \   `  _. |
-//  \ ~-l  `\   `\  \  \\ ~\  \   `. .-~   |
-//   \   ~-. "-.  `  \  ^._ ^. "-.  /  \   |
-// .--~-._  ~-  `  _  ~-_.-"-." ._ /._ ." ./
-//  &gt;--.  ~-.   ._  ~&gt;-"    "\\   7   7   ]
-// ^.___~"--._    ~-{  .-~ .  `\ Y . /    |
-//  &lt;__ ~"-.  ~       /_/   \   \I  Y   : |
-//    ^-.__           ~(_/   \   &gt;._:   | l______
-//        ^--.,___.-~"  /_/   !  `-.~"--l_ /     ~"-.
-//               (_/ .  ~(   /'     "~"--,Y   -=b-. _)
-//                (_/ .  \  :           / l      c"~o \
-//                 \ /    `.    .     .^   \_.-~"~--.  )
-//                  (_/ .   `  /     /       !       )/
-//                   / / _.   '.   .':      /        '
-//                   ~(_/ .   /    _  `  .-&lt;_
-//                     /_/ . ' .-~" `.  / \  \          ,z=.
-//                     ~( /   '  :   | K   "-.~-.______//
-//                       "-,.    l   I/ \_    __{---&gt;._(==.
-//                        //(     \  &lt;    ~"~"     //
-//                       /' /\     \  \     ,v=.  ((
-//                     .^. / /\     "  }__ //===-  `
-//                    / / ' '  "-.,__ {---(==-
-//                  .^ '       :  T  ~"   ll       -Row
-//                 / .  .  . : | :!        \\
-//                (_/  /   | | j-"          ~^
-//                  ~-&lt;_(_.^-~"
-//

@@ -109,7 +109,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             }
         }
 
-        Program.TasksManager?.RaiseSignal(nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal));
+        Program.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal));
 
         Log.Information($"" +
             $"Find {SupportedNetworkInterfacesIndexes.Count} supported network interfaces.");

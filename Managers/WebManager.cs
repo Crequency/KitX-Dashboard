@@ -1,4 +1,5 @@
-﻿using KitX_Dashboard.Network;
+﻿using Common.BasicHelper.Core.TaskSystem;
+using KitX_Dashboard.Network;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
@@ -166,35 +167,3 @@ public class WebManager : IDisposable
         GC.SuppressFinalize(this);
     }
 }
-
-//                                         .....
-//                                    .e$$$$$$$$$$$$$$e.
-//                                  z$$ ^$$$$$$$$$$$$$$$$$.
-//                                .$$$* J$$$$$$$$$$$$$$$$$$$e
-//                               .$"  .$$$$$$$$$$$$$$$$$$$$$$*-
-//                              .$  $$$$$$$$$$$$$$$$***$$  .ee"
-//                 z**$$        $$r ^**$$$$$$$$$*" .e$$$$$$*"
-//                " -\e$$      4$$$$.         .ze$$$""""
-//               4 z$$$$$      $$$$$$$$$$$$$$$$$$$$"
-//               $$$$$$$$     .$$$$$$$$$$$**$$$$*"
-//             z$$"    $$     $$$$P*""     J$*$$c
-//            $$"      $$F   .$$$          $$ ^$$
-//           $$        *$$c.z$$$          $$   $$
-//          $P          $$$$$$$          4$F   4$
-//         dP            *$$$"           $$    '$r
-//        .$                            J$"     $"
-//        $                             $P     4$
-//        F                            $$      4$
-//                                    4$%      4$
-//                                    $$       4$
-//                                   d$"       $$
-//                                   $P        $$
-//                                  $$         $$
-//                                 4$%         $$
-//                                 $$          $$
-//                                d$           $$
-//                                $F           "3
-//                         r=4e="  ...  ..rf   .  ""%
-//                        $**$*"^""=..^4*=4=^""  ^"""
-
-

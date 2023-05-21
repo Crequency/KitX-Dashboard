@@ -9,6 +9,8 @@ public partial class PluginCard : UserControl
 {
     private readonly PluginCardViewModel viewModel = new();
 
+    internal string? IPEndPoint { get; set; }
+
     public PluginCard()
     {
         InitializeComponent();
@@ -20,40 +22,13 @@ public partial class PluginCard : UserControl
     {
         InitializeComponent();
 
-        pluginStruct = ps;
-
         viewModel.pluginStruct = ps;
 
         DataContext = viewModel;
     }
-
-    public PluginStruct pluginStruct;
 
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
     }
 }
-
-//
-//      ^^      ..                                       ..
-//              []                                       []
-//            .:[]:_          ^^                       ,:[]:.
-//          .: :[]: :-.                             ,-: :[]: :.
-//        .: : :[]: : :`._                       ,.': : :[]: : :.
-//      .: : : :[]: : : : :-._               _,-: : : : :[]: : : :.
-//  _..: : : : :[]: : : : : : :-._________.-: : : : : : :[]: : : : :-._
-//  _:_:_:_:_:_:[]:_:_:_:_:_:_:_:_:_:_:_:_:_:_:_:_:_:_:_:[]:_:_:_:_:_:_
-//  !!!!!!!!!!!![]!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!![]!!!!!!!!!!!!!
-//  ^^^^^^^^^^^^[]^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[]^^^^^^^^^^^^^
-//              []                                       []
-//              []                                       []
-//              []                                       []
-//   ~~^-~^_~^~/  \~^-~^~_~^-~_^~-^~_^~~-^~_~^~-~_~-^~_^/  \~^-~_~^-~~-
-//  ~ _~~- ~^-^~-^~~- ^~_^-^~~_ -~^_ -~_-~~^- _~~_~-^_ ~^-^~~-_^-~ ~^
-//     ~ ^- _~~_-  ~~ _ ~  ^~  - ~~^ _ -  ^~-  ~ _  ~~^  - ~_   - ~^_~
-//       ~-  ^_  ~^ -  ^~ _ - ~^~ _   _~^~-  _ ~~^ - _ ~ - _ ~~^ -
-//  aac  .  ~^ -_ ~^^ -_ ~ _ - _ ~^~-  _~ -_   ~- _ ~^ _ -  ~ ^-
-//              ~^~ - _ ^ - ~~~ _ - _ ~-^ ~ __- ~_ - ~  ~^_-
-//                  ~ ~- ^~ -  ~^ -  ~ ^~ - ~~  ^~ - ~
-//

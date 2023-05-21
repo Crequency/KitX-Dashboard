@@ -31,17 +31,3 @@ internal class OperatingSystem2Enum
         return OperatingSystems.Unknown;
     }
 }
-
-//
-//        .---.        .-----------
-//       /     \  __  /    ------
-//      / /     \(  )/    -----
-//     //////   ' \/ `   ---
-//    //// / // :    : ---
-//   // /   /  /`    '--
-//  //          //..\\
-//         ====UU====UU====
-//             '//||\\`
-//               ''``
-//           Daron Brewood
-//
