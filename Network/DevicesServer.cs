@@ -61,18 +61,15 @@ internal class DevicesServer : IKitXServer<DevicesServer>
         {
             while (keepListen && listener is not null)
             {
-                if (listener.Pending())
-                {
-                    var client = listener.AcceptTcpClient();
+                var client = listener.AcceptTcpClient();
 
-                    if (client.Client.RemoteEndPoint is not IPEndPoint endpoint) continue;
+                if (client.Client.RemoteEndPoint is not IPEndPoint endpoint) continue;
 
-                    clients.Add(endpoint.ToString(), client);
+                clients.Add(endpoint.ToString(), client);
 
-                    Log.Information($"New device connection: {endpoint}");
+                Log.Information($"New device connection: {endpoint}");
 
-                    ReceiveMessage(client);
-                }
+                ReceiveMessage(client);
             }
         }
         catch (Exception ex)
