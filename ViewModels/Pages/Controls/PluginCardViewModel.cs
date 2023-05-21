@@ -1,10 +1,14 @@
-﻿using Avalonia.Media.Imaging;
+﻿using Avalonia.Controls;
+using Avalonia.Media.Imaging;
 using KitX.Web.Rules;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
+using KitX_Dashboard.Views;
+using ReactiveUI;
 using Serilog;
 using System;
 using System.IO;
+using System.Reactive;
 
 namespace KitX_Dashboard.ViewModels.Pages.Controls;
 
@@ -15,20 +19,39 @@ internal class PluginCardViewModel
     public PluginCardViewModel()
     {
         pluginStruct.IconInBase64 = GlobalInfo.KitXIconBase64;
-        Log.Information($"Icon Loaded: {pluginStruct.IconInBase64}");
+
+        InitCommands();
+    }
+
+    private void InitCommands()
+    {
+        ViewDetailsCommand = ReactiveCommand.Create(() =>
+        {
+            if (Program.MainWindow is not null)
+                new PluginDetailWindow()
+                {
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                }
+                .SetPluginStruct(pluginStruct)
+                .Show(Program.MainWindow);
+        });
     }
 
     internal string DisplayName => pluginStruct.DisplayName
         .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
-        ? pluginStruct.DisplayName[ConfigManager.AppConfig.App.AppLanguage]
-        : pluginStruct.DisplayName.Values.GetEnumerator().Current;
+        ?
+        pluginStruct.DisplayName[ConfigManager.AppConfig.App.AppLanguage]
+        :
+        pluginStruct.DisplayName.Values.GetEnumerator().Current;
 
     internal string Version => pluginStruct.Version;
 
     internal string SimpleDescription => pluginStruct.SimpleDescription
         .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
-        ? pluginStruct.SimpleDescription[ConfigManager.AppConfig.App.AppLanguage]
-        : pluginStruct.SimpleDescription.GetEnumerator().Current.Value;
+        ?
+        pluginStruct.SimpleDescription[ConfigManager.AppConfig.App.AppLanguage]
+        :
+        pluginStruct.SimpleDescription.GetEnumerator().Current.Value;
 
     internal string IconInBase64 => pluginStruct.IconInBase64;
 
@@ -59,4 +82,6 @@ internal class PluginCardViewModel
             }
         }
     }
+
+    internal ReactiveCommand<Unit, Unit>? ViewDetailsCommand { get; set; }
 }
