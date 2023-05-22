@@ -1,4 +1,5 @@
 ﻿using Avalonia.Threading;
+using Common.BasicHelper.Utils.Extensions;
 using KitX.Web.Rules;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Models;
@@ -26,23 +27,34 @@ internal class PluginsNetwork
 
         try
         {
-            var pluginStruct = JsonSerializer.Deserialize<PluginStruct>(msg);
+            if (msg.StartsWith("PluginStruct: "))
+            {
+                var json = msg[14..];
 
-            pluginStruct.Tags ??= new();
+                var pluginStruct = JsonSerializer.Deserialize<PluginStruct>(json);
 
-            // 标注实例注册 ID
-            pluginStruct.Tags.Add("Authorized_ID",
-                $"{pluginStruct.PublisherName}" +
-                $"." +
-                $"{pluginStruct.Name}" +
-                $"." +
-                $"{pluginStruct.Version}"
-            );
+                pluginStruct.Tags ??= new();
 
-            // 标注 IPEndPoint
-            pluginStruct.Tags.Add("IPEndPoint", endPoint.ToString());
+                // 标注实例注册 ID
+                pluginStruct.Tags.Add("Authorized_ID",
+                    $"{pluginStruct.PublisherName}" +
+                    $"." +
+                    $"{pluginStruct.Name}" +
+                    $"." +
+                    $"{pluginStruct.Version}"
+                );
 
-            pluginsToAdd.Enqueue(pluginStruct);
+                // 标注 IPEndPoint
+                pluginStruct.Tags.Add("IPEndPoint", endPoint.ToString());
+
+                pluginsToAdd.Enqueue(pluginStruct);
+
+                var workPath = ConfigManager.AppConfig.App.LocalPluginsDataFolder.GetFullPath();
+                var sendtxt = $"WorkPath: {workPath}";
+                var bytes = sendtxt.FromUTF8();
+
+                Program.WebManager?.pluginsServer?.Send(bytes, endPoint.ToString());
+            }
         }
         catch (Exception e)
         {

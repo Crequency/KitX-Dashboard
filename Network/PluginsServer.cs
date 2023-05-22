@@ -116,27 +116,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
                         Log.Information($"From: {endpoint}\tReceive: {msg}");
 
-                        if (msg.StartsWith("PluginStruct: "))
-                        {
-                            PluginsNetwork.Execute(msg[14..], endpoint);
-
-                            var workPath = ConfigManager.AppConfig.App.LocalPluginsDataFolder.GetFullPath();
-                            var sendtxt = $"WorkPath: {workPath}";
-                            var bytes = sendtxt.FromUTF8();
-
-                            stream?.Write(bytes, 0, bytes.Length);
-                        }
-
-                        //发送到其他客户端
-                        //foreach (KeyValuePair<string, TcpClient> kvp in clients)
-                        //{
-                        //    if (kvp.Value != client)
-                        //    {
-                        //        byte[] writeData = Encoding.UTF8.GetBytes(msg);
-                        //        NetworkStream writeStream = kvp.Value.GetStream();
-                        //        writeStream.Write(writeData, 0, writeData.Length);
-                        //    }
-                        //}
+                        PluginsNetwork.Execute(msg, endpoint);
                     }
                     else break; //客户端断开连接 跳出循环
                 }
