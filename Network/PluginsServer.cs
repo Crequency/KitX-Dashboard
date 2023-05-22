@@ -168,7 +168,14 @@ internal class PluginsServer : IKitXServer<PluginsServer>
     {
         await Task.Run(() =>
         {
-            //TODO: 向所有插件广播内容的方法
+            foreach (var client in clients.Values)
+            {
+                var stream = client.GetStream();
+
+                stream.Write(content, 0, content.Length);
+
+                stream.Flush();
+            }
         });
 
         return this;
@@ -178,7 +185,15 @@ internal class PluginsServer : IKitXServer<PluginsServer>
     {
         await Task.Run(() =>
         {
-            //TODO: 向符合条件的插件广播内容的方法
+            foreach (var client in clients.Values)
+                if (pattern?.Invoke(client) ?? false)
+                {
+                    var stream = client.GetStream();
+
+                    stream.Write(content, 0, content.Length);
+
+                    stream.Flush();
+                }
         });
 
         return this;
@@ -188,7 +203,13 @@ internal class PluginsServer : IKitXServer<PluginsServer>
     {
         await Task.Run(() =>
         {
-            //TODO: 向指定插件发送内容的方法
+            var client = clients[target];
+
+            var stream = client.GetStream();
+
+            stream.Write(content, 0, content.Length);
+
+            stream.Flush();
         });
 
         return this;
