@@ -27,7 +27,7 @@
                                FontFamily="{StaticResource SourceHanSans}"
                                FontSize="20"
                                FontWeight="ExtraBold"
-                               Text="{Binding DeviceName, Converter={StaticResource WideString}, ConverterParameter=28}"
+                               Text="{Binding DeviceName, Converter={StaticResource WideString}, ConverterParameter=20}"
                                ToolTip.Tip="{Binding DeviceName}"/>
                     <TextBlock FontFamily="{StaticResource SourceHanSans}"
                                FontSize="14"
