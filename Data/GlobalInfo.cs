@@ -21,17 +21,17 @@ internal static class GlobalInfo
 
     internal const string UpdateSavePath = "./Update/";
 
-    internal const string configFilePath = $"{ConfigPath}config.json";
-
-    internal const string pluginsListConfigFilePath = $"{ConfigPath}plugins.json";
-
-    internal const string activitiesDataBaseFilePath = $"{DataPath}Activities.db";
-
-    internal const string thirdPartLicenseFilePath = $"{AssetsPath}ThirdPartLicense.md";
-
     internal const string IconBase64FileName = "KitX.Base64.txt";
 
     internal const int LastBreakAfterExit = 2000;
+
+    private const string configFilePath = $"{ConfigPath}config.json";
+
+    private const string pluginsListConfigFilePath = $"{ConfigPath}plugins.json";
+
+    private const string activitiesDataBaseFilePath = $"{DataPath}Activities.db";
+
+    private const string thirdPartLicenseFilePath = $"{AssetsPath}ThirdPartLicense.md";
 
     internal static string ConfigFilePath => configFilePath.GetFullPath();
 

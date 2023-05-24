@@ -9,7 +9,9 @@
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationIcon>Assets\KitX-Icon-256x.ico</ApplicationIcon>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    </PropertyGroup>
 
+    <PropertyGroup>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <FileVersion>$(Version)</FileVersion>
         <Version>3.23.04.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2005-06-06"))).TotalDays)</Version>
@@ -18,10 +20,6 @@
     <PropertyGroup Condition="$(IsBuild4WindowsPlatform) == 'True'">
         <DefineConstants>IsBuild4WindowsPlatform</DefineConstants>
     </PropertyGroup>
-
-    <!--<ItemGroup>
-        <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="6.0.0-*" />
-    </ItemGroup>-->
 
     <!--用于将依赖移动到 Libraries 目录, 使根目录更加整洁-->
     <PropertyGroup>
@@ -57,6 +55,9 @@
         <AvaloniaXaml Remove="Languages\ru-ru.axaml" />
         <AvaloniaXaml Remove="Languages\zh-cn.axaml" />
         <AvaloniaXaml Remove="Languages\zh-tw.axaml" />
+    </ItemGroup>
+
+    <ItemGroup>
         <AvaloniaXaml Remove="FakesAssemblies\**" />
         <Compile Remove="FakesAssemblies\**" />
         <EmbeddedResource Remove="FakesAssemblies\**" />
