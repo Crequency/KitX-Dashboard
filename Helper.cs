@@ -172,6 +172,12 @@ public static class Helper
 
         #endregion
 
+        #region 初始化热键系统
+
+        HotKeyManager.RegisterPluginLaunchWindowHotKey();
+
+        #endregion
+
     }
 
     /// <summary>
