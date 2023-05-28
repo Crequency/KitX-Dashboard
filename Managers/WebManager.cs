@@ -1,5 +1,4 @@
-﻿using Common.BasicHelper.Core.TaskSystem;
-using KitX_Dashboard.Network;
+﻿using KitX_Dashboard.Network;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
@@ -9,15 +8,15 @@ namespace KitX_Dashboard.Managers;
 
 public class WebManager : IDisposable
 {
-    public WebManager()
-    {
-        NetworkInterfaceRegistered = new();
-    }
-
     internal PluginsServer? pluginsServer;
     internal DevicesDiscoveryServer? devicesDiscoveryServer;
 
     internal ObservableCollection<string>? NetworkInterfaceRegistered;
+
+    public WebManager()
+    {
+        NetworkInterfaceRegistered = new();
+    }
 
     /// <summary>
     /// 开始执行网络相关服务
