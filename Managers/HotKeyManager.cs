@@ -1,8 +1,7 @@
-﻿using Avalonia.Threading;
-using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Views;
+﻿using Common.BasicHelper.Utils.Extensions;
 using SharpHook;
 using SharpHook.Native;
+using System;
 using System.Collections.Generic;
 
 namespace KitX_Dashboard.Managers;
@@ -11,36 +10,43 @@ internal class HotKeyManager
 {
     private const int keysLimitation = 5;
 
-    private static readonly Queue<KeyCode> keyPressed = new();
+    private readonly Queue<KeyCode>? keyPressed;
 
-    public static void RegisterPluginLaunchWindowHotKey()
+    private readonly Dictionary<string, Action<KeyCode[]>>? hotKeyHandlers;
+
+    public HotKeyManager()
+    {
+        keyPressed = new();
+
+        hotKeyHandlers = new();
+    }
+
+    public HotKeyManager Hook()
     {
         var hook = new TaskPoolGlobalHook();
 
         hook.KeyPressed += (_, args) =>
         {
-            keyPressed.Enqueue(args.Data.KeyCode);
+            keyPressed!.Enqueue(args.Data.KeyCode);
 
-            if (keyPressed.Count > keysLimitation)
+            if (keyPressed!.Count > keysLimitation)
                 _ = keyPressed.Dequeue();
 
             VerifyKeys();
         };
 
         hook.RunAsync();
+
+        return this;
     }
 
-    public static void VerifyKeys()
+    private void VerifyKeys()
     {
-        // Ctrl + Win + C: fot test
-
         var index = 0;
-
-        var count = keyPressed.Count;
 
         var tmpList = new KeyCode[keysLimitation];
 
-        keyPressed.ForEach(x =>
+        keyPressed!.ForEach(x =>
         {
             tmpList[index] = x;
 
@@ -48,15 +54,24 @@ internal class HotKeyManager
 
         }, true);
 
-        if (count >= 3 &&
-            tmpList[count - 3] == KeyCode.VcLeftControl &&
-            tmpList[count - 2] == KeyCode.VcLeftMeta &&
-            tmpList[count - 1] == KeyCode.VcC)
+        foreach (var handler in hotKeyHandlers!.Values)
+            handler.Invoke(tmpList);
+    }
+
+    public HotKeyManager RegisterHotKeyHandler(string name, Action<KeyCode[]> handler)
+    {
+        hotKeyHandlers!.Add(name, handler);
+
+        return this;
+    }
+
+    public HotKeyManager UnregisterHotKeyHandler(string name)
+    {
+        if (hotKeyHandlers!.TryGetValue(name, out _))
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                new PluginsLaunchWindow().Show();
-            });
+            hotKeyHandlers.Remove(name);
         }
+
+        return this;
     }
 }
