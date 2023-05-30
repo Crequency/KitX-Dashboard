@@ -1,8 +1,11 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Threading;
+using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;
 using Serilog;
+using SharpHook.Native;
 using System;
 
 namespace KitX_Dashboard.Views;
@@ -24,6 +27,8 @@ public partial class PluginsLaunchWindow : Window
         DataContext = viewModel;
 
         OnHide(() => pluginsLaunchWindowDisplayed = false);
+
+        EventService.OnExiting += Close;
 
         if (OperatingSystem.IsWindows() == false)
         {
@@ -70,7 +75,7 @@ public partial class PluginsLaunchWindow : Window
                 });
             }
         });
-        }
+    }
 
     public PluginsLaunchWindow OnHide(Action onHideAction)
     {
