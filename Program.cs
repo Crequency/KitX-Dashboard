@@ -32,6 +32,8 @@ internal class Program
 
     internal static MainWindow? MainWindow;
 
+    internal static PluginsLaunchWindow? PluginsLaunchWindow;
+
     /// <summary>
     /// 主函数, 应用程序入口; 展开 summary 查看警告
     /// </summary>
