@@ -11,6 +11,10 @@ public partial class PluginsLaunchWindow : Window
 {
     private readonly PluginsLaunchWindowViewModel viewModel = new();
 
+    private Action? OnHideAction;
+
+    private bool pluginsLaunchWindowDisplayed = false;
+
     public PluginsLaunchWindow()
     {
         var location = $"{nameof(PluginsLaunchWindow)}.ctor";
@@ -18,6 +22,8 @@ public partial class PluginsLaunchWindow : Window
         InitializeComponent();
 
         DataContext = viewModel;
+
+        OnHide(() => pluginsLaunchWindowDisplayed = false);
 
         if (OperatingSystem.IsWindows() == false)
         {
@@ -30,6 +36,47 @@ public partial class PluginsLaunchWindow : Window
                 Log.Warning(ex, $"In {location}: {ex.Message}");
             }
         }
+
+        RegisterGlobalHotKey();
+    }
+
+    private void RegisterGlobalHotKey()
+    {
+        Program.HotKeyManager?.RegisterHotKeyHandler("", codes =>
+        {
+            var count = codes.Length;
+
+            var tmpList = codes;
+
+            if (count >= 3 &&
+            tmpList[count - 3] == KeyCode.VcLeftControl &&
+            tmpList[count - 2] == KeyCode.VcLeftMeta &&
+            tmpList[count - 1] == KeyCode.VcC)
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (pluginsLaunchWindowDisplayed)
+                    {
+                        Activate();
+
+                        Focus();
+                    }
+                    else
+                    {
+                        Show();
+                    }
+
+                    pluginsLaunchWindowDisplayed = true;
+                });
+            }
+        });
+        }
+
+    public PluginsLaunchWindow OnHide(Action onHideAction)
+    {
+        OnHideAction = onHideAction;
+
+        return this;
     }
 
     private void PluginsLaunchWindow_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -38,6 +85,10 @@ public partial class PluginsLaunchWindow : Window
     private void PluginsLaunchWindow_KeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
-            Close();
+        {
+            Hide();
+
+            OnHideAction?.Invoke();
+        }
     }
 }
