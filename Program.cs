@@ -28,6 +28,8 @@ internal class Program
 
     internal static CacheManager? CacheManager;
 
+    internal static HotKeyManager? HotKeyManager;
+
     internal static MainWindow? MainWindow;
 
     /// <summary>

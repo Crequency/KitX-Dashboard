@@ -174,7 +174,7 @@ public static class Helper
 
         #region 初始化热键系统
 
-        HotKeyManager.RegisterPluginLaunchWindowHotKey();
+        Program.HotKeyManager = new HotKeyManager().Hook();
 
         #endregion
 
