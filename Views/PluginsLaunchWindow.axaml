@@ -13,6 +13,7 @@
         Icon="avares://KitX.Assets/KitX-Icon-32x32.png"
         KeyDown="PluginsLaunchWindow_KeyDown"
         PointerPressed="PluginsLaunchWindow_PointerPressed"
+        Topmost="True"
         TransparencyLevelHint="AcrylicBlur"
         WindowStartupLocation="CenterScreen"
         mc:Ignorable="d">
