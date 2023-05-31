@@ -1,8 +1,8 @@
-name: daily-build
+name: auto-build
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 6 * * 2,4,6'
 
 jobs:
   build:
