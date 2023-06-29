@@ -93,7 +93,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ env.version }}
-        name: Weekly Release KitX v${{ env.version }} ${{ env.date }}
+        name: Auto Build for KitX v${{ env.version }} on ${{ env.date }}
         body: Auto release by Actions.
         draft: false
         prerelease: true
