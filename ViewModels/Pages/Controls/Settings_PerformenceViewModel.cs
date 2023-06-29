@@ -232,7 +232,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             if (userPointed is null)
                 return "Auto";
             else
-                return userPointed.ToCustomString(";")[..^1];
+                return userPointed.ToCustomString(";");
         }
         set
         {

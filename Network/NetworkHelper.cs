@@ -28,6 +28,7 @@ internal static class NetworkHelper
     )
     {
         var userPointed = ConfigManager.AppConfig.Web.AcceptedNetworkInterfaces;
+
         if (userPointed is not null)
             if (userPointed.Contains(adapter.Name))
                 return true;
@@ -50,15 +51,21 @@ internal static class NetworkHelper
     }
 
     /// <summary>
-    /// 将 IPv4 的十进制表示按点分制拆分
+    /// 判断 IPv4 地址是否为内部网络地址
     /// </summary>
-    /// <param name="ip">IPv4 的十进制表示</param>
-    /// <returns>拆分</returns>
-    internal static (int, int, int, int) IPv4_2_4Parts(string ip)
+    /// <param name="address">网络地址</param>
+    /// <returns>是否为内部网络地址</returns>
+    internal static bool IsInterNetworkAddressV4(IPAddress address)
     {
-        string[] p = ip.Split('.');
-        int a = int.Parse(p[0]), b = int.Parse(p[1]), c = int.Parse(p[2]), d = int.Parse(p[3]);
-        return (a, b, c, d);
+        var bytes = address.GetAddressBytes();
+
+        return bytes[0] switch
+        {
+            10 => true,
+            172 => bytes[1] <= 31 && bytes[1] >= 16,
+            192 => bytes[1] == 168,
+            _ => false,
+        };
     }
 
     /// <summary>
@@ -67,23 +74,28 @@ internal static class NetworkHelper
     /// <returns>使用点分十进制表示法的本机内网IPv4地址</returns>
     internal static string GetInterNetworkIPv4()
     {
+        var location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv4)}";
+
         try
         {
-            return (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                    where ip.AddressFamily == AddressFamily.InterNetwork
-                        && !ip.ToString().Equals("127.0.0.1")
-                        && (ip.ToString().StartsWith("192.168")                         //  192.168.x.x
-                            || ip.ToString().StartsWith("10")                           //  10.x.x.x
-                            || IPv4_2_4Parts(ip.ToString()).Item1 == 172               //  172.16-31.x.x
-                                && IPv4_2_4Parts(ip.ToString()).Item2 >= 16
-                                && IPv4_2_4Parts(ip.ToString()).Item2 <= 31)
-                        && ip.ToString().StartsWith(ConfigManager.AppConfig.Web.IPFilter)  //  满足自定义规则
-                    select ip).First().ToString();
+            var search =
+                from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
+                where ip.AddressFamily == AddressFamily.InterNetwork
+                    && IsInterNetworkAddressV4(ip)
+                    && !ip.ToString().Equals("127.0.0.1")
+                    && ip.ToString().StartsWith(ConfigManager.AppConfig.Web.IPFilter)
+                select ip;
+
+            Log.Information($"IPv4 addresses: {search.Print(print: false)}");
+
+            var result = search.FirstOrDefault()?.ToString();
+
+            return result ?? string.Empty;
         }
         catch (Exception ex)
         {
-            var location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv4)}";
             Log.Warning(ex, $"In {location}: {ex.Message}");
+
             return string.Empty;
         }
     }
@@ -94,17 +106,26 @@ internal static class NetworkHelper
     /// <returns>IPv6 地址</returns>
     internal static string GetInterNetworkIPv6()
     {
+        var location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv6)}";
+
         try
         {
-            return (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                    where ip.AddressFamily == AddressFamily.InterNetworkV6
-                        && !ip.ToString().Equals("::1")
-                    select ip).First().ToString();
+            var search =
+                from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
+                where ip.AddressFamily == AddressFamily.InterNetworkV6
+                    && !ip.ToString().Equals("::1")
+                select ip;
+
+            Log.Information($"IPv6 addresses: {search.Print(print: false)}");
+
+            var result = search.FirstOrDefault()?.ToString();
+
+            return result ?? string.Empty;
         }
         catch (Exception ex)
         {
-            var location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv6)}";
             Log.Warning(ex, $"In {location}: {ex.Message}");
+
             return string.Empty;
         }
     }
@@ -115,19 +136,26 @@ internal static class NetworkHelper
     /// <returns>MAC 地址</returns>
     internal static string? TryGetDeviceMacAddress()
     {
+        var location = $"{nameof(NetworkHelper)}.{nameof(TryGetDeviceMacAddress)}";
+
         try
         {
-            var mac = NetworkInterface.GetAllNetworkInterfaces()
-                .Where(nic => nic.OperationalStatus == OperationalStatus.Up
-                    && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-                .Select(nic => nic.GetPhysicalAddress().ToString()).FirstOrDefault();
+            var mac =
+                from nic in NetworkInterface.GetAllNetworkInterfaces()
+                where nic.OperationalStatus == OperationalStatus.Up
+                  && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback
+                select nic.GetPhysicalAddress().ToString();
 
-            return mac?.SeparateGroup(2, sb => sb.Append(':'));
+            var result = mac.FirstOrDefault()?.SeparateGroup(
+                2, sb => sb.Append(':')
+            );
+
+            return result;
         }
         catch (Exception ex)
         {
-            var location = $"{nameof(NetworkHelper)}.{nameof(TryGetDeviceMacAddress)}";
             Log.Warning(ex, $"In {location}: {ex.Message}");
+
             return string.Empty;
         }
     }
@@ -138,7 +166,10 @@ internal static class NetworkHelper
     /// <returns>系统版本</returns>
     internal static string? TryGetOSVersionString()
     {
+        var location = $"{nameof(NetworkHelper)}.{nameof(TryGetOSVersionString)}";
+
         var result = Environment.OSVersion.VersionString;
+
         try
         {
             switch (OperatingSystem2Enum.GetOSType())
@@ -176,6 +207,7 @@ internal static class NetworkHelper
                     }
 
                     break;
+
                 case OperatingSystems.MacOS:
                     var command = "sw_vers";
 
@@ -183,18 +215,20 @@ internal static class NetworkHelper
                     var productVersion = command.ExecuteAsCommand("-productVersion");
                     var buildVersion = command.ExecuteAsCommand("-buildVersion");
 
-                    if (productName is not null && productVersion is not null && buildVersion is not null)
-                        result = $"{productName} {productVersion} {buildVersion}"
-                            .Replace("\n", "");
+                    if (productName is null || productVersion is null || buildVersion is null)
+                        break;
+
+                    result = $"{productName} {productVersion} {buildVersion}"
+                        .Replace("\n", "");
 
                     break;
             }
         }
         catch (Exception ex)
         {
-            var location = $"{nameof(NetworkHelper)}.{nameof(TryGetOSVersionString)}";
             Log.Error(ex, $"In {location}: {ex.Message}");
         }
+
         return result;
     }
 

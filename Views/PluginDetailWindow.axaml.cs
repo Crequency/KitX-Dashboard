@@ -1,8 +1,11 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Media;
 using Common.BasicHelper.Graphics.Screen;
 using KitX.Web.Rules;
 using KitX_Dashboard.Services;
 using KitX_Dashboard.ViewModels;
+using Serilog;
+using System;
 
 namespace KitX_Dashboard.Views;
 
@@ -12,6 +15,8 @@ public partial class PluginDetailWindow : Window
 
     public PluginDetailWindow()
     {
+        var location = $"{nameof(PluginDetailWindow)}.ctor";
+
         InitializeComponent();
 
         Resources["ThisWindow"] = this;
@@ -26,6 +31,18 @@ public partial class PluginDetailWindow : Window
 
         Width = suggest.Width ?? 820;
         Height = suggest.Height ?? 500;
+
+        if (OperatingSystem.IsWindows() == false)
+        {
+            try
+            {
+                Background = Resources["ThemePrimaryAccent"] as SolidColorBrush;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, $"In {location}: {ex.Message}");
+            }
+        }
 
         KeyDown += (x, y) =>
         {

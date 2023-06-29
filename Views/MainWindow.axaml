@@ -42,7 +42,7 @@
                       CommandParameter="{DynamicResource MainWindow}"
                       Icon="resm:KitX_Dashboard.Assets.KitX-Icon-256x256.ico"
                       IsVisible="True"
-                      ToolTipText="{DynamicResource Text_MainWindow_Title}">
+                      ToolTipText="{Binding TrayIconText}">
                 <TrayIcon.Menu>
                     <NativeMenu>
                         <NativeMenuItem Command="{Binding TrayIconClickedCommand}"

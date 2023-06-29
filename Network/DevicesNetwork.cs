@@ -18,6 +18,16 @@ internal class DevicesNetwork
 
     internal static DevicesClient? devicesClient = null;
 
+    private static readonly object _receivedDeviceInfoStruct4WatchLock = new();
+
+    internal static List<DeviceInfoStruct>? receivedDeviceInfoStruct4Watch;
+
+    internal static readonly Queue<DeviceInfoStruct> deviceInfoStructs = new();
+
+    private static readonly object AddDeviceCard2ViewLock = new();
+
+    private static bool KeepCheckAndRemoveTaskRunning = false;
+
     private static void InitEvents()
     {
         EventService.OnReceivingDeviceInfoStruct += dis =>
@@ -35,24 +45,17 @@ internal class DevicesNetwork
         };
     }
 
-    private static readonly object _receivedDeviceInfoStruct4WatchLock = new();
-
-    internal static List<DeviceInfoStruct>? receivedDeviceInfoStruct4Watch;
-
-    internal static readonly Queue<DeviceInfoStruct> deviceInfoStructs = new();
-
-    private static readonly object AddDeviceCard2ViewLock = new();
-
-    private static bool KeepCheckAndRemoveTaskRunning = false;
-
     /// <summary>
     /// 判断设备是否应该标记为离线
     /// </summary>
     /// <param name="info">设备广播信息</param>
     /// <returns>是否离线</returns>
     private static bool CheckDeviceIsOffline(DeviceInfoStruct info)
-        => DateTime.UtcNow - info.SendTime.ToUniversalTime()
-           > new TimeSpan(0, 0, ConfigManager.AppConfig.Web.DeviceInfoStructTTLSeconds);
+        => DateTime.UtcNow - info.SendTime.ToUniversalTime() > new TimeSpan(
+            0,
+            0,
+            ConfigManager.AppConfig.Web.DeviceInfoStructTTLSeconds
+        );
 
     /// <summary>
     /// 判断是否是本机卡片
@@ -62,6 +65,7 @@ internal class DevicesNetwork
     private static bool CheckIsCurrentMachine(DeviceInfoStruct info)
     {
         var self = DevicesDiscoveryServer.DefaultDeviceInfoStruct;
+
         return info.DeviceMacAddress.Equals(self.DeviceMacAddress)
             && info.DeviceName.Equals(self.DeviceName);
     }
@@ -71,15 +75,20 @@ internal class DevicesNetwork
     /// </summary>
     private static void UpdateSourceAndAddCards()
     {
-        var need2addDevicesCount = 0;
+        var needToAddDevicesCount = 0;
+
         var thisTurnAdded = new List<int>();
 
         while (deviceInfoStructs.Count > 0)
         {
             var deviceInfoStruct = deviceInfoStructs.Dequeue();
+
             var hashCode = deviceInfoStruct.GetHashCode();
+
             var findThis = thisTurnAdded.Contains(hashCode);
+
             if (findThis) continue;
+
             foreach (var item in Program.DeviceCards)
             {
                 if (item.viewModel.DeviceInfo.DeviceName.Equals(deviceInfoStruct.DeviceName))
@@ -89,25 +98,29 @@ internal class DevicesNetwork
                     break;
                 }
             }
+
             if (!findThis)
             {
                 thisTurnAdded.Add(hashCode);
+
                 lock (AddDeviceCard2ViewLock)
                 {
-                    ++need2addDevicesCount;
+                    ++needToAddDevicesCount;
                 }
+
                 Dispatcher.UIThread.Post(() =>
                 {
                     lock (AddDeviceCard2ViewLock)
                     {
                         Program.DeviceCards.Add(new(deviceInfoStruct));
-                        --need2addDevicesCount;
+
+                        --needToAddDevicesCount;
                     }
                 });
             }
         }
 
-        while (need2addDevicesCount != 0) ;
+        while (needToAddDevicesCount != 0) ;
     }
 
     /// <summary>
@@ -115,11 +128,13 @@ internal class DevicesNetwork
     /// </summary>
     private static void RemoveOfflineCards()
     {
-        List<DeviceCard> DevicesNeed2BeRemoved = new();
+        var devicesNeedToBeRemoved = new List<DeviceCard>();
+
         foreach (var item in Program.DeviceCards)
         {
             var info = item.viewModel.DeviceInfo;
-            if (CheckDeviceIsOffline(info)) DevicesNeed2BeRemoved.Add(item);
+
+            if (CheckDeviceIsOffline(info)) devicesNeedToBeRemoved.Add(item);
         }
 
         var removeDeviceTaskRunning = true;
@@ -128,53 +143,8 @@ internal class DevicesNetwork
         {
             lock (AddDeviceCard2ViewLock)
             {
-                foreach (var item in DevicesNeed2BeRemoved)
+                foreach (var item in devicesNeedToBeRemoved)
                     Program.DeviceCards.Remove(item);
-            }
-            removeDeviceTaskRunning = false;
-        });
-
-        while (removeDeviceTaskRunning) ;
-    }
-
-    /// <summary>
-    /// 移除重复设备卡片
-    /// </summary>
-    private static void RemoveDumplicatedCards()
-    {
-        List<string>
-            MacAddressVisited = new(),
-            IPv4AddressVisited = new(),
-            IPv6AddressVisited = new();
-        List<DeviceCard> DevicesNeed2BeRemoved = new();
-
-        foreach (var item in Program.DeviceCards)
-        {
-            var info = item.viewModel.DeviceInfo;
-            if (
-                MacAddressVisited.Contains(info.DeviceMacAddress) ||
-                IPv4AddressVisited.Contains(info.IPv4) ||
-                IPv6AddressVisited.Contains(info.IPv6)
-               )
-            {
-                DevicesNeed2BeRemoved.Add(item);
-                continue;
-            }
-            MacAddressVisited.Add(info.DeviceMacAddress);
-            IPv4AddressVisited.Add(info.IPv4);
-            IPv6AddressVisited.Add(info.IPv6);
-        }
-
-        var removeDeviceTaskRunning = true;
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            foreach (var item in DevicesNeed2BeRemoved)
-            {
-                lock (AddDeviceCard2ViewLock)
-                {
-                    Program.DeviceCards.Remove(item);
-                }
             }
             removeDeviceTaskRunning = false;
         });
@@ -208,6 +178,7 @@ internal class DevicesNetwork
                         {
                             Log.Warning(e, $"Can't move self 2 first. {e.Message}");
                         }
+
                         moveSelfCardTaskRunning = false;
                     });
 
@@ -224,6 +195,8 @@ internal class DevicesNetwork
     /// </summary>
     private static void KeepCheckAndRemove()
     {
+        var location = $"{nameof(DevicesNetwork)}.{nameof(KeepCheckAndRemove)}";
+
         var timer = new Timer()
         {
             Interval = ConfigManager.AppConfig.Web.DevicesViewRefreshDelay,
@@ -234,18 +207,13 @@ internal class DevicesNetwork
         {
             try
             {
-                var location = $"{nameof(DevicesServer)}.{nameof(KeepCheckAndRemove)}()";
                 if (KeepCheckAndRemoveTaskRunning)
                     Log.Information($"In {location}: Timer elapsed and skip task.");
                 else
                 {
-                    Log.Information($"In {location}: Timer elapsed and run task.");
-
                     KeepCheckAndRemoveTaskRunning = true;
 
                     UpdateSourceAndAddCards();
-
-                    //RemoveDumplicatedCards();
 
                     if (!ConfigManager.AppConfig.Web.DisableRemovingOfflineDeviceCard)
                         RemoveOfflineCards();
@@ -257,7 +225,6 @@ internal class DevicesNetwork
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(DevicesNetwork)}.{nameof(KeepCheckAndRemove)}()";
                 Log.Error(ex, $"In {location}: {ex.Message}");
             }
         };

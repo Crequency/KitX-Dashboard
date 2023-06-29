@@ -1,4 +1,5 @@
-﻿using Common.BasicHelper.IO;
+﻿using Avalonia.Threading;
+using Common.BasicHelper.IO;
 using Common.BasicHelper.Utils.Extensions;
 using KitX_Dashboard.Data;
 using KitX_Dashboard.Managers;
@@ -169,6 +170,24 @@ public static class Helper
         #region 初始化数据记录管理器
 
         StatisticsManager.Start();
+
+        #endregion
+
+        #region 初始化热键系统
+
+        Program.HotKeyManager = new HotKeyManager().Hook();
+
+        #endregion
+
+        #region 初始化持久的窗口
+
+        Program.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                Program.PluginsLaunchWindow = new();
+            });
+        });
 
         #endregion
 
