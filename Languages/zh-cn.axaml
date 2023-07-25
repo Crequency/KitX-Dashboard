@@ -47,6 +47,8 @@
     <x:String x:Key="Text_MainWindow_HomePage_Recent">最近使用</x:String>
     <x:String x:Key="Text_MainWindow_HomePage_Count">统计</x:String>
     <x:String x:Key="Text_MainWindow_HomePage_ActivityLog">活动日志</x:String>
+    <x:String x:Key="Text_MainWindow_FactoryPage_Workshop">车间</x:String>
+    <x:String x:Key="Text_MainWindow_FactoryPage_Pipeline">生产线</x:String>
     <x:String x:Key="Text_MainWindow_Recent_No">没有最近使用记录呢~</x:String>
     <x:String x:Key="Text_MainWindow_Count_No">尚未做出统计</x:String>
     <x:String x:Key="Text_MainWindow_Count_Use">使用时长</x:String>
@@ -96,6 +98,8 @@
     <x:String x:Key="Text_Device_Tip_Detected">个设备已发现</x:String>
     <x:String x:Key="Text_Device_PluginsCount">在线插件数量:</x:String>
     <x:String x:Key="Text_Device_NoMacAddress">未获取到MAC地址</x:String>
+    <x:String x:Key="Text_Workshop_No">工厂中没有车间呢~</x:String>
+    <x:String x:Key="Text_Workshop_Tip_Build">个车间已建立</x:String>
     <x:String x:Key="Text_Settings_General">通用</x:String>
     <x:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">本地插件程序目录</x:String>
     <x:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">本地插件数据目录</x:String>

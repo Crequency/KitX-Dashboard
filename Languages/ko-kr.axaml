@@ -47,6 +47,8 @@
     <x:String x:Key="Text_MainWindow_HomePage_Recent">최근 사용</x:String>
     <x:String x:Key="Text_MainWindow_HomePage_Count">통계</x:String>
     <x:String x:Key="Text_MainWindow_HomePage_ActivityLog">활동 로그</x:String>
+    <x:String x:Key="Text_MainWindow_FactoryPage_Workshop">작업장</x:String>
+    <x:String x:Key="Text_MainWindow_FactoryPage_Pipeline">生产线</x:String>
     <x:String x:Key="Text_MainWindow_Recent_No">최근 사용 기록이 없습니다.~</x:String>
     <x:String x:Key="Text_MainWindow_Count_No">통계가 아직 없음</x:String>
     <x:String x:Key="Text_MainWindow_Count_Use">사용시간</x:String>

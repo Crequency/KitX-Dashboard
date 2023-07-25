@@ -47,6 +47,8 @@
     <x:String x:Key="Text_MainWindow_HomePage_Recent">最近使用された</x:String>
     <x:String x:Key="Text_MainWindow_HomePage_Count">統計学</x:String>
     <x:String x:Key="Text_MainWindow_HomePage_ActivityLog">活動記録</x:String>
+    <x:String x:Key="Text_MainWindow_FactoryPage_Workshop">工房</x:String>
+    <x:String x:Key="Text_MainWindow_FactoryPage_Pipeline">生産ライン</x:String>
     <x:String x:Key="Text_MainWindow_Recent_No">最近の歴史はありません.</x:String>
     <x:String x:Key="Text_MainWindow_Count_No">統計はまだありません</x:String>
     <x:String x:Key="Text_MainWindow_Count_Use">利用時間</x:String>

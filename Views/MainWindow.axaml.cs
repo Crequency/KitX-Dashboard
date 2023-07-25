@@ -233,6 +233,7 @@ public partial class MainWindow : CoreWindow
         "Page_Settings" => typeof(Pages.SettingsPage),
         "Page_Market" => typeof(Pages.MarketPage),
         "Page_Device" => typeof(Pages.DevicePage),
+        "Page_Factory" => typeof(Pages.FactoryPage),
         _ => typeof(Pages.HomePage),
     };
 

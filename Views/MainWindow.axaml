@@ -100,6 +100,16 @@
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem x:Name="Page_Factory"
+                                       Tag="Page_Factory"
+                                       ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Plan}">
+                    <ui:NavigationViewItem.Content>
+                        <StackPanel Classes="Item">
+                            <icon:MaterialIcon VerticalAlignment="Center" Kind="Factory"/>
+                            <TextBlock Classes="Normal" Text="{DynamicResource Text_MainWindow_NavigationView_Plan}"/>
+                        </StackPanel>
+                    </ui:NavigationViewItem.Content>
+                </ui:NavigationViewItem>
                 <ui:NavigationViewItem x:Name="Page_Device"
                                        Tag="Page_Device"
                                        ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Devices}">

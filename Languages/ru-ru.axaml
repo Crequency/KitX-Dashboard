@@ -47,6 +47,8 @@
     <x:String x:Key="Text_MainWindow_HomePage_Recent">Недавно использованный</x:String>
     <x:String x:Key="Text_MainWindow_HomePage_Count">статистика</x:String>
     <x:String x:Key="Text_MainWindow_HomePage_ActivityLog">журнал активности</x:String>
+    <x:String x:Key="Text_MainWindow_FactoryPage_Workshop">мастерская</x:String>
+    <x:String x:Key="Text_MainWindow_FactoryPage_Pipeline">生产线</x:String>
     <x:String x:Key="Text_MainWindow_Recent_No">Нет записей о недавнем использовании~</x:String>
     <x:String x:Key="Text_MainWindow_Count_No">Статистики пока нет</x:String>
     <x:String x:Key="Text_MainWindow_Count_Use">Используйте время</x:String>

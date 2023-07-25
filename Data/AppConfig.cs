@@ -213,6 +213,25 @@ public class AppConfig
         }
 
         /// <summary>
+        /// FactoryPageConfig
+        /// </summary>
+        public class Config_FactoryPage
+        {
+            [JsonInclude]
+            public NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode { get; set; }
+    = NavigationViewPaneDisplayMode.Auto;
+
+            [JsonInclude]
+            public string SelectedViewName { get; set; } = "View_Recent";
+
+            [JsonInclude]
+            public bool IsNavigationViewPaneOpened { get; set; } = true;
+
+            [JsonInclude]
+            public bool UseAreaExpanded { get; set; } = true;
+        }
+
+        /// <summary>
         /// MargetPageConfig
         /// </summary>
         public class Config_MarketPage

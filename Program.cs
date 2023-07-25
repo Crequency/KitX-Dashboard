@@ -24,6 +24,8 @@ internal class Program
 
     internal static ObservableCollection<DeviceCard> DeviceCards = new();
 
+    internal static ObservableCollection<WorkshopCard> WorkshopCards = new();
+
     internal static LiteDatabase? ActivitiesDataBase;
 
     internal static CacheManager? CacheManager;
