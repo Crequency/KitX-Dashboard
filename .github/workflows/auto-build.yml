@@ -1,101 +1,100 @@
 name: auto-build
 
 on:
-  schedule:
-    - cron: '0 6 * * 0'
+    schedule:
+        - cron: "0 6 * * 0"
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [win, linux, osx]
-        arch: [x86, x64, arm, arm64]
-        exclude:
-          - os: osx
-            arch: x86
-          - os: osx
-            arch: arm
-          - os: linux
-            arch: x86
-        
-    runs-on: windows-latest
+    build:
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [win, linux, osx]
+                arch: [x86, x64, arm, arm64]
+                exclude:
+                    - os: osx
+                      arch: x86
+                    - os: osx
+                      arch: arm
+                    - os: linux
+                      arch: x86
 
-    steps:
-    
-    - uses: actions/checkout@v3
-      with:
-        repository: 'Crequency/KitX'
-        ref: 'dev=main'
-        submodules: 'true'
-    
-    - name: Init Source Code
-      shell: pwsh
-      run: |
-        ./ToolKits/start.ps1 dashboard
-        ./ToolKits/start.ps1 reference
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 6.0.x
-        
-    - name: Filter Publish Profiles
-      shell: pwsh
-      working-directory: "KitX Dashboard"
-      run: |
-        cd "./Properties/PublishProfiles/"
-        
-        echo "===== Origin Publish Profiles ====="
-        
-        ls
-        
-        cd ..
-        mkdir tmp
-        
-        cp PublishProfiles/${{ matrix.os }}-${{ matrix.arch }}*.pubxml tmp/
-        
-        rm PublishProfiles/*
-        
-        cp tmp/* PublishProfiles/
-        
-        echo "===== Filter Publish Profiles ====="
-        
-        ls PublishProfiles
-      
-    - name: Publish
-      shell: pwsh
-      run: |
-        cd "ToolKits"
-        cd "KitX.ToolKits.Publisher"
-        
-        echo "===== Run command: `dotnet run` ====="
-        
-        dotnet run
-        
-        echo "===== `dotnet run` command done ====="
-        
-        $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX Dashboard.dll").VersionInfo.FileVersion
-        $date = (Get-Date -Format "yyyy.MM.dd")
-        
-        echo "version: $version"
-        echo "date: $date"
-        
-        # echo "version=$version" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-        # echo "date=$date" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-        
-        echo "version=$version" >> $env:GITHUB_ENV
-        echo "date=$date" >> $env:GITHUB_ENV
-        
-        cd ../../
-        
-    - name: Create Release and Upload Release Asset
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ env.version }}
-        name: Auto Build for KitX v${{ env.version }} on ${{ env.date }}
-        body: Auto release by Actions.
-        draft: false
-        prerelease: true
-        files: |
-          KitX Publish/*.zip
+        runs-on: windows-latest
+
+        steps:
+            - uses: actions/checkout@v3
+              with:
+                  repository: "Crequency/KitX"
+                  ref: "dev=main"
+                  submodules: "true"
+
+            - name: Init Source Code
+              shell: pwsh
+              run: |
+                  ./ToolKits/start.ps1 dashboard
+                  ./ToolKits/start.ps1 reference
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v3
+              with:
+                  dotnet-version: 6.0.x
+
+            - name: Filter Publish Profiles
+              shell: pwsh
+              working-directory: "KitX Clients/KitX Dashboard/KitX Dashboard"
+              run: |
+                  cd "./Properties/PublishProfiles/"
+
+                  echo "===== Origin Publish Profiles ====="
+
+                  ls
+
+                  cd ..
+                  mkdir tmp
+
+                  cp PublishProfiles/${{ matrix.os }}-${{ matrix.arch }}*.pubxml tmp/
+
+                  rm PublishProfiles/*
+
+                  cp tmp/* PublishProfiles/
+
+                  echo "===== Filter Publish Profiles ====="
+
+                  ls PublishProfiles
+
+            - name: Publish
+              shell: pwsh
+              run: |
+                  cd "ToolKits"
+                  cd "KitX.ToolKits.Publisher"
+
+                  echo "===== Run command: `dotnet run` ====="
+
+                  dotnet run
+
+                  echo "===== `dotnet run` command done ====="
+
+                  $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX Dashboard.dll").VersionInfo.FileVersion
+                  $date = (Get-Date -Format "yyyy.MM.dd")
+
+                  echo "version: $version"
+                  echo "date: $date"
+
+                  # echo "version=$version" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+                  # echo "date=$date" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+
+                  echo "version=$version" >> $env:GITHUB_ENV
+                  echo "date=$date" >> $env:GITHUB_ENV
+
+                  cd ../../
+
+            - name: Create Release and Upload Release Asset
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: v${{ env.version }}
+                  name: Auto Build for KitX v${{ env.version }} on ${{ env.date }}
+                  body: Auto release by Actions.
+                  draft: false
+                  prerelease: true
+                  files: |
+                      KitX Publish/*.zip
