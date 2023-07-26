@@ -1,0 +1,74 @@
+﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.DevicePage"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:KitX_Dashboard.Views.Pages.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:icon="using:Material.Icons.Avalonia"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
+             d:DesignHeight="450"
+             d:DesignWidth="800"
+             mc:Ignorable="d">
+    <UserControl.Styles>
+        <Style Selector="TextBlock.Font">
+            <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </UserControl.Styles>
+    <DockPanel>
+        <Grid Height="80" DockPanel.Dock="Top">
+            <AutoCompleteBox Width="400"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             FontFamily="{StaticResource SourceHanSans}"
+                             FontWeight="Bold"
+                             IsTextCompletionEnabled="True"
+                             Text="{Binding SearchingText}"
+                             Watermark="{DynamicResource Text_Public_Search}"/>
+            <StackPanel Margin="25,0,0,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                <TextBlock Classes="Font" Text="{Binding DevicesCount}"/>
+                <TextBlock Margin="5,0,0,0"
+                           Classes="Font"
+                           Text="{DynamicResource Text_Device_Tip_Detected}"/>
+            </StackPanel>
+
+            <StackPanel Margin="0,0,20,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+
+                <Button Command="{Binding RestartDevicesServerCommand}">
+                    <icon:MaterialIcon Width="20"
+                                       Height="20"
+                                       Kind="Refresh"/>
+                </Button>
+                <Button Margin="10,0" Command="{Binding StopDevicesServerCommand}">
+                    <icon:MaterialIcon Width="20"
+                                       Height="20"
+                                       Kind="Stop"/>
+                </Button>
+
+            </StackPanel>
+        </Grid>
+        <DockPanel Margin="10">
+            <Border Height="{Binding NoDevice_TipHeight}" DockPanel.Dock="Top">
+                <TextBlock HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Text="{DynamicResource Text_Device_No}"/>
+            </Border>
+            <ScrollViewer>
+                <ItemsControl Items="{Binding DeviceCards}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </DockPanel>
+</UserControl>

@@ -15,6 +15,7 @@ Make sure you have `dotnet 6` sdk installed on your maching and added to `PATH` 
 Then,
 
 ```shell
+cd 'KitX Dashboard'
 dotnet build
 ```
 
@@ -29,6 +30,8 @@ dotnet run
 ```
 
 this will build and run in current folder.
+
+suggest using `dotnet run --project ../../..` command in `KitX Dashboard/bin/Debug/net6.0` folder.
 
 # Dependencies
 
