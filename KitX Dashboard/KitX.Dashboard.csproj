@@ -109,7 +109,6 @@
     <ItemGroup>
         <ProjectReference Include="..\KitX Dashboard Assets\KitX.Dashboard.Assets.csproj" />
         <ProjectReference Include="..\KitX Dashboard Fonts\KitX.Dashboard.Fonts.csproj" />
-        <ProjectReference Include="..\KitX Dashboard Updater\KitX.Dashboard.Updater.csproj" />
         <ProjectReference Include="..\..\..\KitX Standard\KitX File Formats\KitX.File.Format.KXP\KitX.File.Format.KXP.csproj" />
         <ProjectReference Include="..\..\..\KitX Standard\KitX Rules\KitX.Web.Rules\KitX.Web.Rules.csproj" />
         <ProjectReference Include="..\..\..\Reference\Common.Activity\Common.Activity\Common.Activity.csproj" />
