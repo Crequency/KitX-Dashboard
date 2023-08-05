@@ -1,13 +1,13 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Interfaces.Network;
-using KitX_Dashboard.Managers;
+using KitX.Dashboard.Interfaces.Network;
+using KitX.Dashboard.Managers;
 using Serilog;
 using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Network;
+namespace KitX.Dashboard.Network;
 
 internal class DevicesClient : IKitXClient<DevicesClient>
 {

@@ -1,4 +1,4 @@
-﻿namespace KitX_Dashboard.Managers;
+﻿namespace KitX.Dashboard.Managers;
 
 internal class LoadersManager
 {

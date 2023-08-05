@@ -1,7 +1,7 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.DevicePage"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.DevicePage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="using:KitX_Dashboard.Views.Pages.Controls"
+             xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -61,7 +61,7 @@
                            Text="{DynamicResource Text_Device_No}"/>
             </Border>
             <ScrollViewer>
-                <ItemsControl Items="{Binding DeviceCards}">
+                <ItemsControl ItemsSource="{Binding DeviceCards}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal"/>

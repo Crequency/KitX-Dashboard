@@ -1,9 +1,9 @@
 ﻿using Avalonia.Threading;
 using Common.BasicHelper.IO;
 using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Names;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Names;
 using LiteDB;
 using ReactiveUI;
 using Serilog;
@@ -14,7 +14,7 @@ using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard;
+namespace KitX.Dashboard;
 
 public static class Helper
 {
@@ -71,7 +71,7 @@ public static class Helper
             SingleProcessCheck();
 
         if (GlobalInfo.EnabledConfigFileHotReload)
-            Program.FileWatcherManager = new();
+            Instances.FileWatcherManager = new();
 
         ConfigManager.Init();   //  初始化配置管理器
 
@@ -135,7 +135,7 @@ public static class Helper
 
         #region 初始化缓存管理器
 
-        Program.CacheManager = new();
+        Instances.CacheManager = new();
 
         #endregion
 
@@ -147,21 +147,21 @@ public static class Helper
 
         #region 初始化 TasksManager
 
-        Program.SignalTasksManager = new();
+        Instances.SignalTasksManager = new();
 
         #endregion
 
         #region 初始化 WebManager
 
-        Program.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
+        Instances.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
         {
             new Thread(async () =>
             {
                 Thread.Sleep(ConfigManager.AppConfig.Web.DelayStartSeconds * 1000);
                 if (GlobalInfo.SkipNetworkSystemOnStartup)
-                    Program.WebManager = new();
+                    Instances.WebManager = new();
                 else
-                    Program.WebManager = await new WebManager().Start();
+                    Instances.WebManager = await new WebManager().Start();
             }).Start();
         });
 
@@ -175,17 +175,17 @@ public static class Helper
 
         #region 初始化热键系统
 
-        Program.HotKeyManager = new HotKeyManager().Hook();
+        Instances.HotKeyManager = new HotKeyManager().Hook();
 
         #endregion
 
         #region 初始化持久的窗口
 
-        Program.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
+        Instances.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
         {
             Dispatcher.UIThread.Post(() =>
             {
-                Program.PluginsLaunchWindow = new();
+                Instances.PluginsLaunchWindow = new();
             });
         });
 
@@ -231,7 +231,7 @@ public static class Helper
 
             var db = new LiteDatabase(dbfile);
 
-            Program.ActivitiesDataBase = db;
+            Instances.ActivitiesDataBase = db;
 
             ActivityManager.RecordAppStart();
         }
@@ -315,17 +315,17 @@ public static class Helper
             {
                 ActivityManager.RecordAppExit();
 
-                Program.FileWatcherManager?.Clear();
+                Instances.FileWatcherManager?.Clear();
 
                 ConfigManager.SaveConfigs();
 
                 Log.CloseAndFlush();
 
-                Program.WebManager?.Stop();
-                Program.WebManager?.Dispose();
+                Instances.WebManager?.Stop();
+                Instances.WebManager?.Dispose();
 
-                Program.ActivitiesDataBase?.Commit();
-                Program.ActivitiesDataBase?.Dispose();
+                Instances.ActivitiesDataBase?.Commit();
+                Instances.ActivitiesDataBase?.Dispose();
 
                 GlobalInfo.Running = false;
 

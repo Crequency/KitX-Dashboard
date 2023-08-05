@@ -1,8 +1,8 @@
-﻿using KitX_Dashboard.Views.Pages.Controls;
+﻿using KitX.Dashboard.Views.Pages.Controls;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
-namespace KitX_Dashboard.ViewModels.Pages;
+namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
 {
@@ -50,7 +50,7 @@ internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
     /// <summary>
     /// 插件卡片集合
     /// </summary>
-    public static ObservableCollection<PluginCard> PluginCards { get => Program.PluginCards; }
+    public static ObservableCollection<PluginCard> PluginCards => Instances.PluginCards;
 
     /// <summary>
     /// 搜索框文字

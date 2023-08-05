@@ -1,7 +1,7 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
 using Common.ExternalConsole;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -13,7 +13,7 @@ using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls;
+namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
 {

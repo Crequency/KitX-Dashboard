@@ -2,7 +2,7 @@
 using System;
 using System.Globalization;
 
-namespace KitX_Dashboard.Converters;
+namespace KitX.Dashboard.Converters;
 
 internal class Selection2VisibleConverter : IValueConverter
 {

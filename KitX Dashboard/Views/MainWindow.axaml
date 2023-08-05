@@ -1,4 +1,4 @@
-﻿<Window x:Class="KitX_Dashboard.Views.MainWindow"
+﻿<Window x:Class="KitX.Dashboard.Views.MainWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,15 +6,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="using:FluentAvalonia.UI.Controls"
         xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
-        xmlns:vm="using:KitX_Dashboard.ViewModels"
+        xmlns:vm="using:KitX.Dashboard.ViewModels"
         x:Name="MainWindowInstance"
         Title="{DynamicResource Text_MainWindow_Title}"
         MinWidth="800"
         MinHeight="600"
         d:DesignHeight="450"
         d:DesignWidth="800"
-        FontFamily="{StaticResource SourceHanSans}"
-        FontWeight="Bold"
+        x:DataType="vm:MainWindowViewModel"
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
         mc:Ignorable="d">
 
@@ -48,7 +47,7 @@
                         <NativeMenuItem Command="{Binding TrayIconClickedCommand}"
                                         CommandParameter="{DynamicResource MainWindow}"
                                         Header="{DynamicResource Text_Public_ShowMainWindow}"/>
-                        <NativeMenuItemSeperator/>
+                        <NativeMenuItemSeparator/>
                         <NativeMenuItem Command="{Binding ExitCommand}"
                                         CommandParameter="{DynamicResource MainWindow}"
                                         Header="{DynamicResource Text_Public_Exit}"/>
@@ -152,11 +151,11 @@
                            Text="{DynamicResource GreetingText}"
                            TextWrapping="Wrap">
                     <TextBlock.ContextFlyout>
-                        <ui:MenuFlyout>
+                        <ui:FAMenuFlyout>
                             <ui:MenuFlyoutItem Command="{Binding RefreshGreetingCommand}"
                                                CommandParameter="{DynamicResource MainWindow}"
                                                Text="{DynamicResource Text_Public_Refresh}"/>
-                        </ui:MenuFlyout>
+                        </ui:FAMenuFlyout>
                     </TextBlock.ContextFlyout>
                 </TextBlock>
             </ui:NavigationView.PaneFooter>

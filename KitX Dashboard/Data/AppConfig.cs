@@ -4,7 +4,7 @@ using Serilog.Events;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace KitX_Dashboard.Data;
+namespace KitX.Dashboard.Data;
 
 /// <summary>
 /// 配置结构
@@ -373,7 +373,7 @@ public class AppConfig
 
         [JsonInclude]
         public LogEventLevel LogLevel { get; set; } = LogEventLevel.Warning;
-        
+
 #endif
 
     }

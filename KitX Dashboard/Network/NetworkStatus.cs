@@ -1,4 +1,4 @@
-﻿namespace KitX_Dashboard.Network;
+﻿namespace KitX.Dashboard.Network;
 
 /// <summary>
 /// 服务器状态

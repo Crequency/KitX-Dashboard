@@ -1,11 +1,11 @@
 ﻿using Avalonia;
 using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Models;
-using KitX_Dashboard.Names;
-using KitX_Dashboard.Services;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Models;
+using KitX.Dashboard.Names;
+using KitX.Dashboard.Services;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -18,7 +18,7 @@ using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls;
+namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyChanged
 {
@@ -116,7 +116,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             new(nameof(PluginsServerPort))
         );
 
-        Program.SignalTasksManager?.SignalRun(
+        Instances.SignalTasksManager?.SignalRun(
             nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal),
             () =>
             {
@@ -248,7 +248,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     }
 
     internal static ObservableCollection<string>? AvailableNetworkInterfaces
-        => Program.WebManager?.NetworkInterfaceRegistered;
+        => Instances.WebManager?.NetworkInterfaceRegistered;
 
     internal static ObservableCollection<string>? SelectedNetworkInterfaces { get; }
         = new();

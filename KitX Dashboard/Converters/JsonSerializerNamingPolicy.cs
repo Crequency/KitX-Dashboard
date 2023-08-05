@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace KitX_Dashboard.Converters;
+namespace KitX.Dashboard.Converters;
 
 public class UpdateHashNamePolicy : JsonNamingPolicy
 {

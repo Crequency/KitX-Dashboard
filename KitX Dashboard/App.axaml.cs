@@ -4,25 +4,29 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Common.BasicHelper.IO;
+using Avalonia.Styling;
 using Common.BasicHelper.Utils.Extensions;
-using FluentAvalonia.Styling;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.ViewModels;
-using KitX_Dashboard.Views;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.ViewModels;
+using KitX.Dashboard.Views;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using Serilog;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace KitX_Dashboard;
+namespace KitX.Dashboard;
 
 public partial class App : Application
 {
+    public static readonly Bitmap DefaultIcon = new(
+        $"{GlobalInfo.AssetsPath}{ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
+    );
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -35,7 +39,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// 加载语言
+    /// Load Language
     /// </summary>
     private void LoadLanguage()
     {
@@ -52,7 +56,7 @@ public partial class App : Application
 
             Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
-                    FileHelper.ReadAll(path)
+                    File.ReadAllText(path)
                 ) as ResourceDictionary ?? new()
             );
         }
@@ -66,7 +70,7 @@ public partial class App : Application
             {
                 Resources.MergedDictionaries.Add(
                     AvaloniaRuntimeXamlLoader.Load(
-                        FileHelper.ReadAll(backup_langPath)
+                        File.ReadAllText(backup_langPath)
                     ) as ResourceDictionary ?? new()
                 );
                 ConfigManager.AppConfig.App.AppLanguage = backup_lang;
@@ -75,10 +79,10 @@ public partial class App : Application
             {
                 Log.Warning(e, $"Suspected absence of language files on record.");
             }
-        }
-        finally
-        {
-            Log.Warning($"No surpport language file loaded.");
+            finally
+            {
+                Log.Warning($"No surpport language file loaded.");
+            }
         }
 
         try
@@ -92,7 +96,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// 计算主题色
+    /// Calculate theme color
     /// </summary>
     private static void CalculateThemeColor()
     {
@@ -116,38 +120,29 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// 初始化图表系统
+    /// Init `LiveCharts`
     /// </summary>
     private static void InitLiveCharts()
     {
-        LiveCharts.Configure(config =>
         {
-            config
-                .AddSkiaSharp()
-                .AddDefaultMappers();
+            var usingLightTheme = Current?.ActualThemeVariant == ThemeVariant.Light;
 
-            switch (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme)
-            {
-                case "Light": config.AddLightTheme(); break;
-                case "Dark": config.AddDarkTheme(); break;
-                default: config.AddLightTheme(); break;
-            };
-        });
+            LiveCharts.Configure(
+                config =>
+                    (usingLightTheme ? config.AddLightTheme() : config.AddDarkTheme())
+                    .AddSkiaSharp()
+                    .AddDefaultMappers()
+            );
+        }
 
         EventService.ThemeConfigChanged += () =>
         {
-            switch (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme)
+            var usingLightTheme = Current?.ActualThemeVariant == ThemeVariant.Light;
+
+            LiveCharts.Configure(config =>
             {
-                case "Light":
-                    LiveCharts.Configure(config => config.AddLightTheme());
-                    break;
-                case "Dark":
-                    LiveCharts.Configure(config => config.AddDarkTheme());
-                    break;
-                default:
-                    LiveCharts.Configure(config => config.AddLightTheme());
-                    break;
-            };
+                config = usingLightTheme ? config.AddLightTheme() : config.AddDarkTheme();
+            });
         };
     }
 
@@ -161,23 +156,19 @@ public partial class App : Application
             };
         }
 
-        if (ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
-            new Thread(async () =>
-            {
-                try
-                {
-                    await AnouncementManager.CheckNewAnnouncements();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "In AnouncementManager.CheckNewAccnouncements()");
-                }
-            }).Start();
+        //if (ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
+        //    new Thread(async () =>
+        //    {
+        //        try
+        //        {
+        //            await AnouncementManager.CheckNewAnnouncements();
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Log.Error(ex, "In AnouncementManager.CheckNewAccnouncements()");
+        //        }
+        //    }).Start();
 
         base.OnFrameworkInitializationCompleted();
     }
-
-    public static readonly Bitmap DefaultIcon = new(
-        $"{GlobalInfo.AssetsPath}{ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
-    );
 }

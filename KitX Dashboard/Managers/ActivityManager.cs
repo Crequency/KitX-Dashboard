@@ -1,12 +1,12 @@
 ﻿using Common.Activity;
 using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Names;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Names;
 using LiteDB;
 using System;
 using System.Linq.Expressions;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 internal class ActivityManager
 {
@@ -29,7 +29,7 @@ internal class ActivityManager
         {
             lock (_activityRecordLock)
             {
-                if (Program.ActivitiesDataBase is LiteDatabase db)
+                if (Instances.ActivitiesDataBase is LiteDatabase db)
                 {
                     var col = db.GetCollection<Activity>(CollectionName);
 
@@ -57,7 +57,7 @@ internal class ActivityManager
         {
             lock (_activityRecordLock)
             {
-                if (Program.ActivitiesDataBase is LiteDatabase db)
+                if (Instances.ActivitiesDataBase is LiteDatabase db)
                 {
                     var col = db.GetCollection<Activity>(CollectionName);
 

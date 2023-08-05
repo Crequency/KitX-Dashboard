@@ -2,7 +2,7 @@
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Interfaces.Network;
+namespace KitX.Dashboard.Interfaces.Network;
 
 internal interface IKitXServer<T> : IModuleController<T>
 {

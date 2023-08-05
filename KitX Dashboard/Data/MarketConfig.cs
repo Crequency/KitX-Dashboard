@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace KitX_Dashboard.Data;
+namespace KitX.Dashboard.Data;
 
 /// <summary>
 /// 市场配置文件

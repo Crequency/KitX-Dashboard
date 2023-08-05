@@ -1,9 +1,9 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Interfaces.Network;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Names;
 using KitX.Web.Rules;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Interfaces.Network;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Names;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Network;
+namespace KitX.Dashboard.Network;
 
 /// <summary>
 /// 设备自发现网络服务器
@@ -97,7 +97,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                     foreach (var udpClient in clients)
                         udpClient?.JoinMulticastGroup(multicastAddress, ipAddress);
 
-                    Program.WebManager?.NetworkInterfaceRegistered?.Add(adapter.Name);
+                    Instances.WebManager?.NetworkInterfaceRegistered?.Add(adapter.Name);
 
                     ++multicastGroupJoinedInterfacesCount;
                 }
@@ -109,7 +109,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             }
         }
 
-        Program.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal));
+        Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal));
 
         Log.Information($"" +
             $"Find {SupportedNetworkInterfacesIndexes.Count} supported network interfaces.");
@@ -127,7 +127,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         DefaultDeviceInfoStruct.IPv4 = NetworkHelper.GetInterNetworkIPv4();
         DefaultDeviceInfoStruct.IPv6 = NetworkHelper.GetInterNetworkIPv6();
         DefaultDeviceInfoStruct.PluginServerPort = GlobalInfo.PluginServerPort;
-        DefaultDeviceInfoStruct.PluginsCount = Program.PluginCards.Count;
+        DefaultDeviceInfoStruct.PluginsCount = Instances.PluginCards.Count;
         DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
         DefaultDeviceInfoStruct.DeviceServerPort = GlobalInfo.DeviceServerPort;
         DefaultDeviceInfoStruct.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;

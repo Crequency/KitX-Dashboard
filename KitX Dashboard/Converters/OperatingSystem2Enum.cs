@@ -1,7 +1,7 @@
 ﻿using KitX.Web.Rules;
 using System;
 
-namespace KitX_Dashboard.Converters;
+namespace KitX.Dashboard.Converters;
 
 internal class OperatingSystem2Enum
 {

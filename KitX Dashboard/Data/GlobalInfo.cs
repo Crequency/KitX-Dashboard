@@ -1,7 +1,7 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
 using System;
 
-namespace KitX_Dashboard.Data;
+namespace KitX.Dashboard.Data;
 
 internal static class GlobalInfo
 {

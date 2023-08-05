@@ -1,12 +1,12 @@
-﻿using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
+﻿using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls;
+namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
 {

@@ -1,7 +1,7 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.Controls.Settings_Personalise"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.Settings_Personalise"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:converters="using:KitX_Dashboard.Converters"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -36,7 +36,7 @@
                               FontFamily="{StaticResource SourceHanSans}"
                               FontWeight="Bold"
                               IsTextSearchEnabled="True"
-                              Items="{Binding SupportedLanguages}"
+                              ItemsSource="{Binding SupportedLanguages}"
                               SelectedIndex="{Binding LanguageSelected}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -70,7 +70,7 @@
                               FontFamily="{StaticResource SourceHanSans}"
                               FontWeight="Bold"
                               IsTextSearchEnabled="True"
-                              Items="{Binding SupportedThemes}"
+                              ItemsSource="{Binding SupportedThemes}"
                               SelectedItem="{Binding CurrentAppTheme}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -193,16 +193,16 @@
                 </Expander.Header>
 
                 <DockPanel Margin="10">
-                    <ui:ColorPicker ColorTextType="HexAlpha"
-                                    DockPanel.Dock="Top"
-                                    IsAlphaEnabled="True"
-                                    IsCompact="False"
-                                    IsMoreButtonVisible="True"
-                                    UseColorPalette="False"
-                                    UseColorTriangle="True"
-                                    UseColorWheel="True"
-                                    UseSpectrum="True"
-                                    Color="{Binding ThemeColor}"/>
+                    <ui:FAColorPicker ColorTextType="HexAlpha"
+                                      DockPanel.Dock="Top"
+                                      IsAlphaEnabled="True"
+                                      IsCompact="False"
+                                      IsMoreButtonVisible="True"
+                                      UseColorPalette="False"
+                                      UseColorTriangle="True"
+                                      UseColorWheel="True"
+                                      UseSpectrum="True"
+                                      Color="{Binding ThemeColor}"/>
                     <Grid Margin="0,15,0,0" DockPanel.Dock="Bottom">
                         <Border Width="100"
                                 Height="30"

@@ -1,10 +1,9 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-using KitX_Dashboard.Models;
-using KitX_Dashboard.ViewModels.Pages.Controls;
+using KitX.Dashboard.Models;
+using KitX.Dashboard.ViewModels.Pages.Controls;
 using System.Collections.ObjectModel;
 
-namespace KitX_Dashboard.Views.Pages.Controls;
+namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class PluginBar : UserControl
 {
@@ -26,10 +25,5 @@ public partial class PluginBar : UserControl
         viewModel.PluginBar = this;
 
         DataContext = viewModel;
-    }
-
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
     }
 }

@@ -1,13 +1,12 @@
 ﻿using Common.BasicHelper.IO;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
+using KitX.Dashboard.Managers;
 using ReactiveUI;
 using System.ComponentModel;
 using System.Reactive;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls;
+namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
 {

@@ -1,6 +1,6 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Services;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Timers;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 internal class StatisticsManager
 {

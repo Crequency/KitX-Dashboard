@@ -1,16 +1,16 @@
-﻿<Application x:Class="KitX_Dashboard.App"
+﻿<Application x:Class="KitX.Dashboard.App"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fluent="using:FluentAvalonia.UI.Media"
-             xmlns:local="using:KitX_Dashboard"
+             xmlns:local="using:KitX.Dashboard"
+             xmlns:materialIcons="using:Material.Icons.Avalonia"
              xmlns:sty="using:FluentAvalonia.Styling">
+    <!--  RequestedThemeVariant="Default"  -->
+    <!--  "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options.  -->
+
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-
-    <!--<Application.Styles>
-        <FluentTheme Mode="Light"/>
-    </Application.Styles>-->
 
     <Application.Resources>
         <ResourceDictionary>
@@ -37,6 +37,10 @@
 
     <Application.Styles>
         <sty:FluentAvaloniaTheme/>
-        <StyleInclude Source="avares://Material.Icons.Avalonia/App.xaml"/>
+        <materialIcons:MaterialIconStyles/>
     </Application.Styles>
+
+    <!--<Application.Styles>
+        <FluentTheme/>
+    </Application.Styles>-->
 </Application>

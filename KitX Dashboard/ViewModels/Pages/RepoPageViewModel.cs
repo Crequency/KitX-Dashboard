@@ -1,9 +1,9 @@
 ﻿using Avalonia.Controls;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Models;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.Views.Pages.Controls;
 using KitX.Web.Rules;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Models;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.Views.Pages.Controls;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -14,7 +14,7 @@ using System.Reactive;
 using System.Text.Json;
 using System.Threading;
 
-namespace KitX_Dashboard.ViewModels.Pages;
+namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 {

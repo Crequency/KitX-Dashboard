@@ -1,7 +1,7 @@
 ﻿using Avalonia.Controls;
 using Common.BasicHelper.Graphics.Screen;
 
-namespace KitX_Dashboard.Converters;
+namespace KitX.Dashboard.Converters;
 
 internal class WindowAttributesConverter
 {

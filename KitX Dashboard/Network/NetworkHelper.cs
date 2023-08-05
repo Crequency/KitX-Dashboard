@@ -1,9 +1,9 @@
 ﻿using Common.BasicHelper.Core.Shell;
 using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Converters;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
 using KitX.Web.Rules;
-using KitX_Dashboard.Converters;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
 using Serilog;
 using System;
 using System.IO;
@@ -12,7 +12,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-namespace KitX_Dashboard.Network;
+namespace KitX.Dashboard.Network;
 
 internal static class NetworkHelper
 {
@@ -249,6 +249,6 @@ internal static class NetworkHelper
         PluginServerPort = GlobalInfo.PluginServerPort,
         DeviceServerPort = GlobalInfo.DeviceServerPort,
         DeviceServerBuildTime = new(),
-        PluginsCount = Program.PluginCards.Count,
+        PluginsCount = Instances.PluginCards.Count,
     };
 }

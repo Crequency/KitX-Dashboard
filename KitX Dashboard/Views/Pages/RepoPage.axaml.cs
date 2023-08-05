@@ -1,15 +1,14 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.ViewModels.Pages;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.ViewModels.Pages;
 using Serilog;
 using System;
 using System.Linq;
 using System.Threading;
 
-namespace KitX_Dashboard.Views.Pages;
+namespace KitX.Dashboard.Views.Pages;
 
 public partial class RepoPage : UserControl
 {
@@ -19,17 +18,16 @@ public partial class RepoPage : UserControl
     {
         InitializeComponent();
 
+        InitHandlers();
+
         DataContext = viewModel;
     }
 
-    private void InitializeComponent()
+    private void InitHandlers()
     {
-        AvaloniaXamlLoader.Load(this);
-
         AddHandler(DragDrop.DropEvent, Drop);
 
         AddHandler(DragDrop.DragOverEvent, DragOver);
-
     }
 
     private void Drop(object? sender, DragEventArgs e)

@@ -2,25 +2,25 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
-using Common.BasicHelper.IO;
 using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Media;
-using KitX_Dashboard.Commands;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Models;
-using KitX_Dashboard.Services;
-using MessageBox.Avalonia;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Models;
+using KitX.Dashboard.Services;
+using MsBox.Avalonia;
 using ReactiveUI;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Reactive;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls;
+namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyChanged
 {
@@ -171,11 +171,14 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
             ConfigManager.AppConfig.App.Theme = value.ThemeName;
 
-            var faTheme = AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>();
+            if (Application.Current is null) return;
 
-            if (faTheme is null) return;
-
-            faTheme.RequestedTheme = value.ThemeName == "Follow" ? null : value.ThemeName;
+            Application.Current.RequestedThemeVariant ??= value.ThemeName == "Follow" ? ThemeVariant.Default : value.ThemeName switch
+            {
+                "Light" => ThemeVariant.Light,
+                "Dark" => ThemeVariant.Dark,
+                _ => ThemeVariant.Default,
+            };
 
             EventService.Invoke(nameof(EventService.ThemeConfigChanged));
 
@@ -199,17 +202,17 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
             Application.Current.Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
-                    FileHelper.ReadAll($"{GlobalInfo.LanguageFilePath}/{lang}.axaml")
+                    File.ReadAllText($"{GlobalInfo.LanguageFilePath}/{lang}.axaml")
                 ) as ResourceDictionary ?? new()
             );
         }
         catch (Exception ex)
         {
-            MessageBoxManager.GetMessageBoxStandardWindow(
+            MessageBoxManager.GetMessageBoxStandard(
                 "Error",
                 "No this language file.",
-                icon: MessageBox.Avalonia.Enums.Icon.Error
-            ).Show();
+                icon: MsBox.Avalonia.Enums.Icon.Error
+            ).ShowWindowAsync();
 
             Log.Warning(ex, $"In {location}: Language File {lang}.axaml not found.");
         }

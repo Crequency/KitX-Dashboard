@@ -1,8 +1,7 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-using KitX_Dashboard.ViewModels.Pages.Controls;
+using KitX.Dashboard.ViewModels.Pages.Controls;
 
-namespace KitX_Dashboard.Views.Controls;
+namespace KitX.Dashboard.Views.Controls;
 
 public partial class Home_ActivityLog : UserControl
 {
@@ -13,10 +12,5 @@ public partial class Home_ActivityLog : UserControl
         InitializeComponent();
 
         DataContext = viewModel;
-    }
-
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
     }
 }

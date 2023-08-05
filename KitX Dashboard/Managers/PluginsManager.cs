@@ -1,16 +1,16 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.KXP.Helper;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Models;
+using KitX.Dashboard.Services;
+using KitX.Formats.KXP;
 using KitX.Web.Rules;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Models;
-using KitX_Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 internal class PluginsManager
 {

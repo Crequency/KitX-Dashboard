@@ -1,7 +1,7 @@
-﻿using KitX_Dashboard.Views.Pages.Controls;
+﻿using KitX.Dashboard.Views.Pages.Controls;
 using System.Collections.ObjectModel;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls;
+namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Home_RecentUseViewModel : ViewModelBase
 {

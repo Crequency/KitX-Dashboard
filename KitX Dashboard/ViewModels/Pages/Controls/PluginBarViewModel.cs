@@ -1,13 +1,13 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Models;
-using KitX_Dashboard.Network;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.Views;
-using KitX_Dashboard.Views.Pages.Controls;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Models;
+using KitX.Dashboard.Network;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.Views;
+using KitX.Dashboard.Views.Pages.Controls;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -18,7 +18,7 @@ using System.IO;
 using System.Reactive;
 using System.Threading;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls;
+namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
 {
@@ -34,13 +34,13 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
     {
         ViewDetailsCommand = ReactiveCommand.Create(() =>
         {
-            if (PluginDetail is not null && Program.MainWindow is not null)
+            if (PluginDetail is not null && Instances.MainWindow is not null)
                 new PluginDetailWindow()
                 {
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 }
                 .SetPluginStruct(PluginDetail.PluginDetails)
-                .Show(Program.MainWindow);
+                .Show(Instances.MainWindow);
         });
 
         RemoveCommand = ReactiveCommand.Create(() =>

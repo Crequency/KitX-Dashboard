@@ -1,8 +1,9 @@
-﻿using Common.BasicHelper.Utils.Extensions;
+﻿using Avalonia.Collections;
+using Common.BasicHelper.Utils.Extensions;
 using FluentAvalonia.UI.Controls;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Views;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,7 +13,7 @@ using System.Reactive;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.ViewModels;
+namespace KitX.Dashboard.ViewModels;
 
 internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
@@ -146,7 +147,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         }
     }
 
-    internal List<NavigationViewItem> MenuItems { get; set; } = new();
+    internal AvaloniaList<NavigationViewItem> MenuItems { get; set; } = new();
 
     private Dictionary<string, string> sources = new();
 

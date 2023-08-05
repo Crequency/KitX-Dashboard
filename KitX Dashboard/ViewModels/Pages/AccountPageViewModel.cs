@@ -1,4 +1,4 @@
-﻿namespace KitX_Dashboard.ViewModels.Pages;
+﻿namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class AccountPageViewModel : ViewModelBase
 {

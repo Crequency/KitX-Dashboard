@@ -1,16 +1,16 @@
 ﻿using Common.BasicHelper.IO;
 using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Models;
-using KitX_Dashboard.Names;
-using KitX_Dashboard.Services;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Models;
+using KitX.Dashboard.Names;
+using KitX.Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 internal class ConfigManager
 {
@@ -80,7 +80,7 @@ internal class ConfigManager
 
         var appConfigWatcher = nameof(FileWatcherNames.AppConfigFileWatcher);
 
-        Program.FileWatcherManager?.RegisterWatcher(
+        Instances.FileWatcherManager?.RegisterWatcher(
             appConfigWatcher,
             GlobalInfo.ConfigFilePath.GetFullPath(),
             (x, y) =>

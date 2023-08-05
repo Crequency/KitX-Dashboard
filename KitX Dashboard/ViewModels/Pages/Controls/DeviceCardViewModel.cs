@@ -4,7 +4,7 @@ using KitX.Web.Rules;
 using Material.Icons;
 using System.ComponentModel;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls;
+namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
 {
