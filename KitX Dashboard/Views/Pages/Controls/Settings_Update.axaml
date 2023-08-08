@@ -1,11 +1,11 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.Controls.Settings_Update"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.Settings_Update"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:converters="using:KitX_Dashboard.Converters"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:models="using:KitX_Dashboard.Models"
+             xmlns:models="using:KitX.Dashboard.Models"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              d:DesignHeight="450"
              d:DesignWidth="800"
@@ -111,7 +111,7 @@
                   CornerRadius="5"
                   GridLinesVisibility="All"
                   IsReadOnly="True"
-                  Items="{Binding Components}"
+                  ItemsSource="{Binding Components}"
                   SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Width="90"

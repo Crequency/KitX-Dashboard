@@ -1,12 +1,12 @@
-﻿using KitX_Dashboard.Managers;
-using KitX_Dashboard.Views.Pages.Controls;
+﻿using KitX.Dashboard.Managers;
+using KitX.Dashboard.Views.Pages.Controls;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reactive;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.ViewModels.Pages;
+namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
 {
@@ -24,7 +24,7 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
 
         RestartDevicesServerCommand = ReactiveCommand.Create(() =>
         {
-            Program.WebManager?.Restart(
+            Instances.WebManager?.Restart(
                 restartAll: false,
                 restartDevicesServices: true,
                 restartDevicesDiscoveryServer: true,
@@ -37,7 +37,7 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             Task.Run(async () =>
             {
-                Program.WebManager?.Stop(
+                Instances.WebManager?.Stop(
                     stopAll: false,
                     stopDevicesServices: true,
                     stopDevicesDiscoveryServer: true,
@@ -94,7 +94,7 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    internal static ObservableCollection<DeviceCard> DeviceCards => Program.DeviceCards;
+    internal static ObservableCollection<DeviceCard> DeviceCards => Instances.DeviceCards;
 
     internal ReactiveCommand<Unit, Unit>? RestartDevicesServerCommand { get; set; }
 

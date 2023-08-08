@@ -1,4 +1,4 @@
-﻿namespace KitX_Dashboard.Data;
+﻿namespace KitX.Dashboard.Data;
 
 internal static class ErrorCodes
 {

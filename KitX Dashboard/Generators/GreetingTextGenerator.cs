@@ -1,7 +1,7 @@
-﻿using KitX_Dashboard.Managers;
+﻿using KitX.Dashboard.Managers;
 using System;
 
-namespace KitX_Dashboard.Generators;
+namespace KitX.Dashboard.Generators;
 
 internal class GreetingTextGenerator
 {

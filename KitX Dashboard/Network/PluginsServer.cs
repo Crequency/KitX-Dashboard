@@ -1,8 +1,8 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Interfaces.Network;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Interfaces.Network;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Network;
+namespace KitX.Dashboard.Network;
 
 internal class PluginsServer : IKitXServer<PluginsServer>
 {

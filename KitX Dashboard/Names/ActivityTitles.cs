@@ -1,6 +1,6 @@
-﻿using KitX_Dashboard.Data;
+﻿using KitX.Dashboard.Data;
 
-namespace KitX_Dashboard.Names;
+namespace KitX.Dashboard.Names;
 
 internal class ActivityTitles
 {

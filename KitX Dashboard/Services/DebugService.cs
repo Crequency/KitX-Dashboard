@@ -1,6 +1,6 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Network;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Network;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace KitX_Dashboard.Services;
+namespace KitX.Dashboard.Services;
 
 internal class DebugService
 {
@@ -215,7 +215,7 @@ internal class DebugCommands
                 if (info.Length > 2.0 * 1024 * 1024 * 1024 - 500)
                     return "File larger than 2 GB, unsupported by this way";
 
-                var id = Program.CacheManager?.LoadFileToCache(path);
+                var id = Instances.CacheManager?.LoadFileToCache(path);
 
                 return $"File loaded, ID (MD5): {id?.Result ?? "null"}";
             }
@@ -238,7 +238,7 @@ internal class DebugCommands
                     if (args.ContainsKey("--id"))
                     {
                         var id = args["--id"];
-                        var result = Program.CacheManager?.DisposeFileCache(id);
+                        var result = Instances.CacheManager?.DisposeFileCache(id);
                         if (result is null) return "Unknown error occursed.";
                         if (!(bool)result) return "Dispose failed.";
                         return "Disposed.";
@@ -261,13 +261,13 @@ internal class DebugCommands
                 "- all\n";
 
         if (args.ContainsKey("plugins-services"))
-            Program.WebManager?.Start(startAll: false, startPluginsNetwork: true);
+            Instances.WebManager?.Start(startAll: false, startPluginsNetwork: true);
         if (args.ContainsKey("devices-services"))
-            Program.WebManager?.Start(startAll: false, startDevicesNetwork: true);
+            Instances.WebManager?.Start(startAll: false, startDevicesNetwork: true);
         if (args.ContainsKey("devices-discovery-server"))
-            Program.WebManager?.Start(startAll: false, startDevicesDiscoveryServer: true);
+            Instances.WebManager?.Start(startAll: false, startDevicesDiscoveryServer: true);
         if (args.ContainsKey("all"))
-            Program.WebManager?.Start();
+            Instances.WebManager?.Start();
 
         return "Start action requested.";
     }
@@ -282,13 +282,13 @@ internal class DebugCommands
                 "- all";
 
         if (args.ContainsKey("plugins-services"))
-            Program.WebManager?.Stop(stopAll: false, stopPluginsServices: true);
+            Instances.WebManager?.Stop(stopAll: false, stopPluginsServices: true);
         if (args.ContainsKey("devices-services"))
-            Program.WebManager?.Stop(stopAll: false, stopDevicesServices: true);
+            Instances.WebManager?.Stop(stopAll: false, stopDevicesServices: true);
         if (args.ContainsKey("devices-discovery-server"))
-            Program.WebManager?.Stop(stopAll: false, stopDevicesDiscoveryServer: true);
+            Instances.WebManager?.Stop(stopAll: false, stopDevicesDiscoveryServer: true);
         if (args.ContainsKey("all"))
-            Program.WebManager?.Stop();
+            Instances.WebManager?.Stop();
 
         return "Stop action requested.";
     }

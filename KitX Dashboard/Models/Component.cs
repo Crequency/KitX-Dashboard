@@ -1,4 +1,4 @@
-﻿namespace KitX_Dashboard.Models;
+﻿namespace KitX.Dashboard.Models;
 
 internal class Component
 {

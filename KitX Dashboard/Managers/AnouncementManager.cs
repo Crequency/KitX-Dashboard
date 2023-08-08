@@ -1,8 +1,8 @@
 ﻿using Avalonia.Threading;
 using Common.BasicHelper.IO;
 using Common.BasicHelper.Utils.Extensions;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Views;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Views;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +10,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 internal class AnouncementManager
 {

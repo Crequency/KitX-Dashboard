@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.Controls.PluginCard"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.PluginCard"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -13,7 +13,7 @@
         </Style>
     </UserControl.Styles>
     <Grid Width="160" Height="240">
-        <ui:Button Width="140"
+        <Button Width="140"
                    Height="220"
                    HorizontalAlignment="Right"
                    VerticalAlignment="Bottom"
@@ -38,8 +38,8 @@
                            Text="{Binding SimpleDescription}"
                            TextWrapping="Wrap"/>
             </StackPanel>
-        </ui:Button>
-        <ui:Button x:Name="Imager"
+        </Button>
+        <Button x:Name="Imager"
                    Width="100"
                    Height="100"
                    HorizontalAlignment="Left"
@@ -59,6 +59,6 @@
                        Source="{Binding IconDisplay}"
                        Stretch="UniformToFill"/>
             </Border>
-        </ui:Button>
+        </Button>
     </Grid>
 </UserControl>

@@ -1,7 +1,7 @@
 ﻿using Avalonia.Controls;
-using KitX_Dashboard.ViewModels.Pages.Controls;
+using KitX.Dashboard.ViewModels.Pages.Controls;
 
-namespace KitX_Dashboard.Views.Pages.Controls;
+namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class Settings_Personalise : UserControl
 {

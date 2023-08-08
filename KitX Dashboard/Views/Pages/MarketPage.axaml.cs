@@ -1,8 +1,7 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-using KitX_Dashboard.ViewModels.Pages;
+using KitX.Dashboard.ViewModels.Pages;
 
-namespace KitX_Dashboard.Views.Pages;
+namespace KitX.Dashboard.Views.Pages;
 
 public partial class MarketPage : UserControl
 {
@@ -13,10 +12,5 @@ public partial class MarketPage : UserControl
         InitializeComponent();
 
         DataContext = viewModel;
-    }
-
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
     }
 }

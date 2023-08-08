@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace KitX_Dashboard.Models;
+namespace KitX.Dashboard.Models;
 
 public class Plugin
 {

@@ -1,9 +1,9 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.HomePage"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.HomePage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
-             xmlns:localControls="using:KitX_Dashboard.Views.Controls"
+             xmlns:localControls="using:KitX.Dashboard.Views.Controls"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
@@ -20,11 +20,11 @@
                        PaneDisplayMode="{Binding NavigationViewPaneDisplayMode}"
                        SelectionChanged="HomeNavigationView_SelectionChanged">
         <ui:NavigationView.ContextFlyout>
-            <ui:MenuFlyout>
+            <ui:FAMenuFlyout>
                 <ui:MenuFlyoutItem Command="{Binding ResetToAutoCommand}" Text="{DynamicResource Text_Public_ResetToAuto}"/>
                 <ui:MenuFlyoutItem Command="{Binding MoveToLeftCommand}" Text="{DynamicResource Text_Public_MoveToLeft}"/>
                 <ui:MenuFlyoutItem Command="{Binding MoveToTopCommand}" Text="{DynamicResource Text_Public_MoveToTop}"/>
-            </ui:MenuFlyout>
+            </ui:FAMenuFlyout>
         </ui:NavigationView.ContextFlyout>
 
         <ui:NavigationView.MenuItems>

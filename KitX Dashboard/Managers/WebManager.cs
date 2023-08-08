@@ -1,10 +1,10 @@
-﻿using KitX_Dashboard.Network;
+﻿using KitX.Dashboard.Network;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 public class WebManager : IDisposable
 {

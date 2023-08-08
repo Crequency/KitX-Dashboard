@@ -2,10 +2,10 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using FluentAvalonia.Styling;
+using Avalonia.Styling;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
 using KitX.Web.Rules;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -16,7 +16,7 @@ using System.Linq;
 using System.Reactive;
 using System.Text;
 
-namespace KitX_Dashboard.ViewModels;
+namespace KitX.Dashboard.ViewModels;
 
 internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
@@ -134,12 +134,8 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     {
         "Light" => Colors.WhiteSmoke,
         "Dark" => Colors.Black,
-        "Follow" => AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>()?.RequestedTheme switch
-        {
-            "Light" => Colors.WhiteSmoke,
-            "Dark" => Colors.Black,
-            _ => Color.Parse(ConfigManager.AppConfig.App.ThemeColor)
-        },
+        "Follow" =>
+            Application.Current?.ActualThemeVariant == ThemeVariant.Light ? Colors.WhiteSmoke : Colors.Black,
         _ => Color.Parse(ConfigManager.AppConfig.App.ThemeColor),
     };
 

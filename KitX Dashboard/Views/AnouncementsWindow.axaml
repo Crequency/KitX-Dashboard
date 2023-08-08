@@ -1,4 +1,4 @@
-﻿<Window x:Class="KitX_Dashboard.Views.AnouncementsWindow"
+﻿<Window x:Class="KitX.Dashboard.Views.AnouncementsWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
@@ -17,13 +17,13 @@
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
         mc:Ignorable="d">
     <Grid>
-        <ui:NavigationView IsBackButtonVisible="False"
+        <ui:NavigationView x:Name="AnouncementsNavigationView"
+                           IsBackButtonVisible="False"
                            IsBackEnabled="False"
                            IsPaneOpen="True"
                            IsPaneToggleButtonVisible="False"
                            IsPaneVisible="True"
                            IsSettingsVisible="False"
-                           MenuItems="{Binding MenuItems}"
                            PaneDisplayMode="Left"
                            SelectedItem="{Binding SelectedMenuItem}">
             <md:MarkdownScrollViewer Markdown="{Binding Markdown}">

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Interfaces;
+namespace KitX.Dashboard.Interfaces;
 
 internal interface IModuleController<T> : IDisposable
 {
