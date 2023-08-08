@@ -22,16 +22,25 @@ class Program
     {
         try
         {
+            // If dump file exists, delete it.
+            if (File.Exists("./dump.log".GetFullPath()))
+                File.Delete("./dump.log".GetFullPath());
+
+            // Init event service
             EventService.Init();
 
+            // Process startup arguments
             Helper.ProcessStartupArguments(args);
 
-            Helper.StartUpCheck();
+            // Run framework
+            Helper.RunFramework();
 
             ConfigManager.AppConfig.App.RanTime++;
 
+            // Run Avalonia
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
+            // Make sure all threads exit
             Helper.Exit();
         }
         catch (Exception e)

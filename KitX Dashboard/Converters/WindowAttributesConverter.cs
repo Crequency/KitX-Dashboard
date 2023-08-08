@@ -16,8 +16,8 @@ internal class WindowAttributesConverter
         if (win.Width is null || win.Height is null) return 0;
 
         return isLeft
-            ? (input == -1 ? (screens.Primary.WorkingArea.Width - (int)win.Width) / 2 : input)
-            : (input == -1 ? (screens.Primary.WorkingArea.Height - (int)win.Height) / 2 : input)
+            ? (input == -1 ? (screens.Primary?.WorkingArea.Width ?? 2560 - (int)win.Width) / 2 : input)
+            : (input == -1 ? (screens.Primary?.WorkingArea.Height ?? 1440 - (int)win.Height) / 2 : input)
             ;
     }
 }

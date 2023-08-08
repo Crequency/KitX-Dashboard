@@ -276,7 +276,7 @@ public class AppConfig
     public class Config_Web
     {
         [JsonInclude]
-        public int DelayStartSeconds { get; set; } = 3;
+        public double DelayStartSeconds { get; set; } = 0.5;
 
         [JsonInclude]
         public string APIServer { get; set; } = "api.catrol.cn";

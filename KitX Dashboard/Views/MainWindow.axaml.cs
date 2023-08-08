@@ -16,7 +16,6 @@ using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using Serilog;
 using System;
-using System.Runtime.InteropServices;
 using System.Timers;
 
 namespace KitX.Dashboard.Views;
@@ -112,6 +111,8 @@ public partial class MainWindow : Window
     /// </summary>
     private void SuggestResolutionAndLocation()
     {
+        if (Screens.Primary is null) return;
+
         if (ConfigManager.AppConfig.Windows.MainWindow.Window_Width == 1280 &&
             ConfigManager.AppConfig.Windows.MainWindow.Window_Height == 720)
         {
@@ -151,11 +152,11 @@ public partial class MainWindow : Window
         //  透明度变更事件, 让透明度变更立即生效
         EventService.MicaOpacityChanged += () =>
         {
-            if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
+            //if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
 
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            //if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
-            TryEnableMicaEffect();
+            //TryEnableMicaEffect();
         };
 
         //  每 Interval 更新一次招呼语
@@ -348,15 +349,15 @@ public partial class MainWindow : Window
     {
         base.OnOpened(e);
 
-        if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
+        //if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
 
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+        //if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
-        TransparencyBackgroundFallback = Brushes.Transparent;
+        //TransparencyBackgroundFallback = Brushes.Transparent;
 
         //TransparencyLevelHint = WindowTransparencyLevel.Mica;
 
-        TryEnableMicaEffect();
+        //TryEnableMicaEffect();
 
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
     }

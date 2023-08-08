@@ -63,9 +63,9 @@ public static class Helper
     }
 
     /// <summary>
-    /// 启动时检查
+    /// Run framework
     /// </summary>
-    public static void StartUpCheck()
+    public static void RunFramework()
     {
         if (GlobalInfo.IsSingleProcessStartMode)
             SingleProcessCheck();
@@ -73,9 +73,9 @@ public static class Helper
         if (GlobalInfo.EnabledConfigFileHotReload)
             Instances.FileWatcherManager = new();
 
-        ConfigManager.Init();   //  初始化配置管理器
+        ConfigManager.Init();
 
-        LoadResource();         //  加载资源
+        LoadResource();
 
         #region 初始化日志系统
 
@@ -157,7 +157,10 @@ public static class Helper
         {
             new Thread(async () =>
             {
-                Thread.Sleep(ConfigManager.AppConfig.Web.DelayStartSeconds * 1000);
+                Thread.Sleep(
+                    Convert.ToInt32(ConfigManager.AppConfig.Web.DelayStartSeconds * 1000)
+                );
+
                 if (GlobalInfo.SkipNetworkSystemOnStartup)
                     Instances.WebManager = new();
                 else

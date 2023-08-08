@@ -170,7 +170,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             };
     }
 
-    internal static int DelayedWebStartSeconds
+    internal static double DelayedWebStartSeconds
     {
         get => ConfigManager.AppConfig.Web.DelayStartSeconds;
         set

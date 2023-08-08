@@ -5,8 +5,6 @@
              xmlns:local="using:KitX.Dashboard"
              xmlns:materialIcons="using:Material.Icons.Avalonia"
              xmlns:sty="using:FluentAvalonia.Styling">
-    <!--  RequestedThemeVariant="Default"  -->
-    <!--  "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options.  -->
 
     <Application.DataTemplates>
         <local:ViewLocator/>
@@ -14,6 +12,8 @@
 
     <Application.Resources>
         <ResourceDictionary>
+            <x:String x:Key="TrayIconText">KitX</x:String>
+
             <SolidColorBrush x:Key="ThemePrimaryAccent" Color="#FF3873D9"/>
             <SolidColorBrush x:Key="ThemePrimaryAccentTransparentAA" Color="#AA3873D9"/>
             <SolidColorBrush x:Key="ThemePrimaryAccentTransparentBB" Color="#BB3873D9"/>
@@ -40,7 +40,20 @@
         <materialIcons:MaterialIconStyles/>
     </Application.Styles>
 
-    <!--<Application.Styles>
-        <FluentTheme/>
-    </Application.Styles>-->
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon Command="{Binding TrayIconClickedCommand}"
+                      Icon="resm:KitX.Dashboard.Assets.KitX-Icon-256x256.ico"
+                      IsVisible="True"
+                      ToolTipText="{DynamicResource TrayIconText}">
+                <TrayIcon.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Command="{Binding TrayIconClickedCommand}" Header="{DynamicResource Text_Public_ShowMainWindow}"/>
+                        <NativeMenuItemSeparator/>
+                        <NativeMenuItem Command="{Binding ExitCommand}" Header="{DynamicResource Text_Public_Exit}"/>
+                    </NativeMenu>
+                </TrayIcon.Menu>
+            </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
 </Application>

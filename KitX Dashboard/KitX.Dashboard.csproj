@@ -59,14 +59,10 @@
         <None Update="Assets\**\*.*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <AvaloniaResource Include="Assets\**" />
         <EmbeddedResource Include="Assets\**\*.ico">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </EmbeddedResource>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Models\" />
-        <AvaloniaResource Include="Assets\**" />
     </ItemGroup>
 
     <ItemGroup>

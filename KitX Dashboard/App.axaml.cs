@@ -27,6 +27,11 @@ public partial class App : Application
         $"{GlobalInfo.AssetsPath}{ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
     );
 
+    private AppViewModel? viewModel;
+
+    /// <summary>
+    /// Override `Initialize` function
+    /// </summary>
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -36,6 +41,11 @@ public partial class App : Application
         CalculateThemeColor();
 
         InitLiveCharts();
+
+        // Must construct after `LoadLanguage()` function.
+        viewModel = new();
+
+        DataContext = viewModel;
     }
 
     /// <summary>
@@ -146,8 +156,13 @@ public partial class App : Application
         };
     }
 
+    /// <summary>
+    /// Override `OnFrameworkInitializationCompleted` function
+    /// </summary>
     public override void OnFrameworkInitializationCompleted()
     {
+        var location = $"{nameof(App)}.{nameof(OnFrameworkInitializationCompleted)}";
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow
@@ -156,18 +171,18 @@ public partial class App : Application
             };
         }
 
-        //if (ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
-        //    new Thread(async () =>
-        //    {
-        //        try
-        //        {
-        //            await AnouncementManager.CheckNewAnnouncements();
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Log.Error(ex, "In AnouncementManager.CheckNewAccnouncements()");
-        //        }
-        //    }).Start();
+        if (ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
+            new Thread(async () =>
+            {
+                try
+                {
+                    await AnouncementManager.CheckNewAnnouncements();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"In {location}: {ex.Message}");
+                }
+            }).Start();
 
         base.OnFrameworkInitializationCompleted();
     }
