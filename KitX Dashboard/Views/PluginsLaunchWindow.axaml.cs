@@ -2,13 +2,13 @@
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.ViewModels;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.ViewModels;
 using Serilog;
 using SharpHook.Native;
 using System;
 
-namespace KitX_Dashboard.Views;
+namespace KitX.Dashboard.Views;
 
 public partial class PluginsLaunchWindow : Window
 {
@@ -47,7 +47,7 @@ public partial class PluginsLaunchWindow : Window
 
     private void RegisterGlobalHotKey()
     {
-        Program.HotKeyManager?.RegisterHotKeyHandler("", codes =>
+        Instances.HotKeyManager?.RegisterHotKeyHandler("", codes =>
         {
             var count = codes.Length;
 

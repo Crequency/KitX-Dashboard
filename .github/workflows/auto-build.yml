@@ -37,7 +37,10 @@ jobs:
             - name: Setup .NET
               uses: actions/setup-dotnet@v3
               with:
-                  dotnet-version: 6.0.x
+                  dotnet-version: |
+                      6.0.x
+                      7.0.x
+                  include-prerelease: false
 
             - name: Filter Publish Profiles
               shell: pwsh
@@ -74,7 +77,7 @@ jobs:
 
                   echo "===== `dotnet run` command done ====="
 
-                  $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX Dashboard.dll").VersionInfo.FileVersion
+                  $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX.Dashboard.dll").VersionInfo.FileVersion
                   $date = (Get-Date -Format "yyyy.MM.dd")
 
                   echo "version: $version"

@@ -1,12 +1,12 @@
 ﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
 using ReactiveUI;
 using System.ComponentModel;
 using System.Reactive;
 
-namespace KitX_Dashboard.ViewModels.Pages;
+namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
 {

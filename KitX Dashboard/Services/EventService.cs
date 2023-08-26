@@ -1,6 +1,6 @@
 ﻿using KitX.Web.Rules;
 
-namespace KitX_Dashboard.Services;
+namespace KitX.Dashboard.Services;
 
 internal static class EventService
 {

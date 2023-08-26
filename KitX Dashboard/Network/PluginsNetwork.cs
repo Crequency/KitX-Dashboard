@@ -1,10 +1,10 @@
 ﻿using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Models;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.Views.Pages.Controls;
 using KitX.Web.Rules;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Models;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Text.Json;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 internal class PluginsNetwork
 {
@@ -53,7 +53,7 @@ internal class PluginsNetwork
                 var sendtxt = $"WorkPath: {workPath}";
                 var bytes = sendtxt.FromUTF8();
 
-                Program.WebManager?.pluginsServer?.Send(bytes, endPoint.ToString());
+                Instances.WebManager?.pluginsServer?.Send(bytes, endPoint.ToString());
             }
         }
         catch (Exception e)
@@ -107,7 +107,7 @@ internal class PluginsNetwork
                             IPEndPoint = pluginStruct.Tags["IPEndPoint"]
                         };
 
-                        Program.PluginCards.Add(card);
+                        Instances.PluginCards.Add(card);
                     });
                 }
 
@@ -115,13 +115,13 @@ internal class PluginsNetwork
                 {
                     var endPoint = pluginsToRemove.Dequeue().ToString();
 
-                    var matched = Program.PluginCards.FirstOrDefault(
+                    var matched = Instances.PluginCards.FirstOrDefault(
                         x => x!.IPEndPoint?.Equals(endPoint) ?? false,
                         null
                     );
 
                     if (matched is not null)
-                        Program.PluginCards.Remove(matched);
+                        Instances.PluginCards.Remove(matched);
                 }
 
                 if (!GlobalInfo.Running)

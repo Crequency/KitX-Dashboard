@@ -1,18 +1,18 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.Views;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.ComponentModel;
 using System.Reactive;
 using System.Reflection;
 using System.Text;
 
-namespace KitX_Dashboard.ViewModels;
+namespace KitX.Dashboard.ViewModels;
 
-internal class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
+internal class MainWindowViewModel : ViewModelBase
 {
     public new event PropertyChangedEventHandler? PropertyChanged;
 
@@ -23,7 +23,7 @@ internal class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         InitEvents();
     }
 
-    internal void InitCommands()
+    private void InitCommands()
     {
         TrayIconClickedCommand = ReactiveCommand.Create<object?>(mainWindow =>
         {
@@ -62,7 +62,7 @@ internal class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void InitEvents()
     {
-        Program.DeviceCards.CollectionChanged += (_, _) =>
+        Instances.DeviceCards.CollectionChanged += (_, _) =>
         {
             PropertyChanged?.Invoke(this, new(nameof(TrayIconText)));
         };
@@ -83,12 +83,12 @@ internal class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             sb.AppendLine();
 
             sb.AppendLine(
-                $"{Program.DeviceCards.Count} " +
+                $"{Instances.DeviceCards.Count} " +
                 $"{FetchStringFromResource(Application.Current, "Text_Device_Tip_Detected")}"
             );
 
             sb.AppendLine(
-                $"{Program.PluginCards.Count} " +
+                $"{Instances.PluginCards.Count} " +
                 $"{FetchStringFromResource(Application.Current, "Text_Lib_Tip_Connected")}"
             );
 

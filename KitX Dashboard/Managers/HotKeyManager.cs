@@ -4,7 +4,7 @@ using SharpHook.Native;
 using System;
 using System.Collections.Generic;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 internal class HotKeyManager
 {

@@ -1,29 +1,26 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Common.BasicHelper.Graphics.Screen;
-using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Controls;
 using FluentAvalonia.UI.Media;
-using KitX_Dashboard.Converters;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Generators;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Names;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.ViewModels;
+using KitX.Dashboard.Converters;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Generators;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Names;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.ViewModels;
 using Serilog;
 using System;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
 using System.Timers;
 
-namespace KitX_Dashboard.Views;
+namespace KitX.Dashboard.Views;
 
-public partial class MainWindow : CoreWindow
+public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel viewModel = new();
 
@@ -36,7 +33,7 @@ public partial class MainWindow : CoreWindow
 
         InitializeComponent();
 
-        Program.MainWindow = this;
+        Instances.MainWindow = this;
 
         Resources["MainWindow"] = this;
 
@@ -90,13 +87,13 @@ public partial class MainWindow : CoreWindow
 
         try
         {
-            Program.SignalTasksManager?.SignalRun(
+            Instances.SignalTasksManager?.SignalRun(
                 nameof(SignalsNames.MainWindowOpenedSignal),
                 () => WindowState = ConfigManager.AppConfig.Windows.MainWindow.WindowState
             );
 
             if (ConfigManager.AppConfig.Windows.MainWindow.IsHidden)
-                Program.SignalTasksManager?.SignalRun(
+                Instances.SignalTasksManager?.SignalRun(
                     nameof(SignalsNames.MainWindowOpenedSignal),
                     Hide
                 );
@@ -107,10 +104,6 @@ public partial class MainWindow : CoreWindow
         }
 
         InitMainWindow();
-
-#if DEBUG
-        this.AttachDevTools();
-#endif
     }
 
     /// <summary>
@@ -118,6 +111,8 @@ public partial class MainWindow : CoreWindow
     /// </summary>
     private void SuggestResolutionAndLocation()
     {
+        if (Screens.Primary is null) return;
+
         if (ConfigManager.AppConfig.Windows.MainWindow.Window_Width == 1280 &&
             ConfigManager.AppConfig.Windows.MainWindow.Window_Height == 720)
         {
@@ -146,24 +141,22 @@ public partial class MainWindow : CoreWindow
         //  导航到上次关闭时界面
         MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
 
-        var fluentAvaloniaTheme = AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>();
-
-        if (fluentAvaloniaTheme is null) return;
-
-        //  如果主题不设置为 `跟随系统` 则手动变更主题
-        if (!ConfigManager.AppConfig.App.Theme.Equals("Follow"))
-            fluentAvaloniaTheme.RequestedTheme = ConfigManager.AppConfig.App.Theme;
+        RequestedThemeVariant = ConfigManager.AppConfig.App.Theme switch
+        {
+            "Light" => ThemeVariant.Light,
+            "Dark" => ThemeVariant.Dark,
+            "Follow" => ThemeVariant.Default,
+            _ => ThemeVariant.Default
+        };
 
         //  透明度变更事件, 让透明度变更立即生效
         EventService.MicaOpacityChanged += () =>
         {
-            if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
+            //if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
 
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            //if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
-            if (!IsWindows11) return;
-
-            TryEnableMicaEffect(fluentAvaloniaTheme);
+            //TryEnableMicaEffect();
         };
 
         //  每 Interval 更新一次招呼语
@@ -183,7 +176,7 @@ public partial class MainWindow : CoreWindow
 
         timer.Start();
 
-        Program.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
+        Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
     }
 
     /// <summary>
@@ -203,8 +196,9 @@ public partial class MainWindow : CoreWindow
         {
             if (Application.Current is null) return;
 
-            Application.Current.Resources.MergedDictionaries[0]
-                .TryGetResource(GreetingTextGenerator.GetKey(), out object? text);
+            Application.Current.Resources.MergedDictionaries[0].TryGetResource(
+                GreetingTextGenerator.GetKey(), ActualThemeVariant, out object? text
+            );
 
             if (text is null) return;
 
@@ -311,21 +305,21 @@ public partial class MainWindow : CoreWindow
     /// 窗口状态改变事件
     /// </summary>
     /// <param name="state">窗口状态</param>
-    protected override void HandleWindowStateChanged(WindowState state)
-    {
-        ConfigManager.AppConfig.Windows.MainWindow.WindowState = state;
-        ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
+    //protected override void HandleWindowStateChanged(WindowState state)
+    //{
+    //    ConfigManager.AppConfig.Windows.MainWindow.WindowState = state;
+    //    ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
 
-        SaveChanges();
+    //    SaveChanges();
 
-        base.HandleWindowStateChanged(state);
-    }
+    //    base.HandleWindowStateChanged(state);
+    //}
 
     /// <summary>
     /// 正在关闭窗口时事件
     /// </summary>
     /// <param name="e">关闭事件参数</param>
-    protected override void OnClosing(CancelEventArgs e)
+    protected override void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);
 
@@ -355,33 +349,17 @@ public partial class MainWindow : CoreWindow
     {
         base.OnOpened(e);
 
+        //if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
 
+        //if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
-        var thm = AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>();
+        //TransparencyBackgroundFallback = Brushes.Transparent;
 
-        if (thm is null) return;
+        //TransparencyLevelHint = WindowTransparencyLevel.Mica;
 
-        thm.RequestedThemeChanged += OnRequestedThemeChanged;
+        //TryEnableMicaEffect();
 
-        if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
-
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
-
-        if (!IsWindows11) return;
-
-        if (thm.RequestedTheme == FluentAvaloniaTheme.HighContrastModeString) return;
-
-
-
-        TransparencyBackgroundFallback = Brushes.Transparent;
-
-        TransparencyLevelHint = WindowTransparencyLevel.Mica;
-
-        TryEnableMicaEffect(thm);
-
-        thm.ForceWin32WindowToTheme(this);
-
-        Program.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
+        Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
     }
 
     /// <summary>
@@ -389,31 +367,30 @@ public partial class MainWindow : CoreWindow
     /// </summary>
     /// <param name="sender">FluentAvaloniaTheme</param>
     /// <param name="args">主题正在更改请求参数</param>
-    private void OnRequestedThemeChanged(
-        FluentAvaloniaTheme sender,
-        RequestedThemeChangedEventArgs args)
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            if (IsWindows11 && args.NewTheme != FluentAvaloniaTheme.HighContrastModeString)
-                TryEnableMicaEffect(sender);
-            else if (args.NewTheme == FluentAvaloniaTheme.HighContrastModeString)
-                SetValue(BackgroundProperty, AvaloniaProperty.UnsetValue);
-        }
-    }
+    //private void OnRequestedThemeChanged(
+    //    FluentAvaloniaTheme sender,
+    //    RequestedThemeChangedEventArgs args)
+    //{
+    //    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    //    {
+    //        if (IsWindows11 && args.NewTheme != FluentAvaloniaTheme.HighContrastModeString)
+    //            TryEnableMicaEffect(sender);
+    //        else if (args.NewTheme == FluentAvaloniaTheme.HighContrastModeString)
+    //            SetValue(BackgroundProperty, AvaloniaProperty.UnsetValue);
+    //    }
+    //}
 
     /// <summary>
     /// 尝试启用云母特效
     /// </summary>
-    /// <param name="thm">FluentAvaloniaTheme</param>
-    private void TryEnableMicaEffect(FluentAvaloniaTheme thm)
+    private void TryEnableMicaEffect()
     {
         _ = this.TryFindResource(
             "SolidBackgroundFillColorBase",
             out var value
         );
 
-        if (thm.RequestedTheme == FluentAvaloniaTheme.DarkModeString)
+        if (RequestedThemeVariant == ThemeVariant.Dark)
         {
             var color = value is null
                 ? new Color2(32, 32, 32)
@@ -426,7 +403,7 @@ public partial class MainWindow : CoreWindow
                 ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity
             );
         }
-        else if (thm.RequestedTheme == FluentAvaloniaTheme.LightModeString)
+        else if (RequestedThemeVariant == ThemeVariant.Light)
         {
             var color = value is null
                 ? new Color2(243, 243, 243)

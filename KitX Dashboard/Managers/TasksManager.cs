@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 internal class TasksManager
 {

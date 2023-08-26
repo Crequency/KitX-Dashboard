@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Input;
 
-namespace KitX_Dashboard.Commands;
+namespace KitX.Dashboard.Commands;
 
 public class DelegateCommand : ICommand
 {

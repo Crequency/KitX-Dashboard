@@ -1,4 +1,4 @@
-﻿namespace KitX_Dashboard.Names;
+﻿namespace KitX.Dashboard.Names;
 
 internal class SignalsNames
 {

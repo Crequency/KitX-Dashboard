@@ -3,14 +3,14 @@ using Avalonia.Metadata;
 using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
 using Common.Update.Checker;
+using KitX.Dashboard.Converters;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Network;
+using KitX.Dashboard.Services;
 using KitX.Web.Rules;
-using KitX_Dashboard.Converters;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Network;
-using KitX_Dashboard.Services;
-using MessageBox.Avalonia;
-using MessageBox.Avalonia.Enums;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -24,10 +24,10 @@ using System.Reactive;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Component = KitX_Dashboard.Models.Component;
+using Component = KitX.Dashboard.Models.Component;
 using Timer = System.Timers.Timer;
 
-namespace KitX_Dashboard.ViewModels.Pages.Controls;
+namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 {
@@ -499,12 +499,12 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
                 {
                     Dispatcher.UIThread.Post(async () =>
                     {
-                        await MessageBoxManager.GetMessageBoxStandardWindow(
+                        await MessageBoxManager.GetMessageBoxStandard(
                             "Error",
                             "Can't get working directory!",
                             ButtonEnum.Ok,
                             Icon.Warning
-                        ).Show();
+                        ).ShowAsync();
                     });
 
                     IsCheckingOrUpdating = false;
@@ -586,12 +586,12 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
                 Dispatcher.UIThread.Post(async () =>
                 {
-                    await MessageBoxManager.GetMessageBoxStandardWindow(
+                    await MessageBoxManager.GetMessageBoxStandard(
                         GetUpdateTip("Failed"),
                         e.Message,
                         ButtonEnum.Ok,
                         Icon.Error
-                    ).Show();
+                    ).ShowAsync();
                 });
 
                 Log.Error(e, $"In {location}: {e.Message}");

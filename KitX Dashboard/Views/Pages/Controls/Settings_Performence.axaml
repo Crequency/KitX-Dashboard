@@ -1,7 +1,7 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.Controls.Settings_Performence"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.Settings_Performence"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:converters="using:KitX_Dashboard.Converters"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -204,7 +204,7 @@
                         </Expander.Header>
 
                         <ListBox Margin="5"
-                                 Items="{Binding AvailableNetworkInterfaces}"
+                                 ItemsSource="{Binding AvailableNetworkInterfaces}"
                                  SelectedItems="{Binding SelectedNetworkInterfaces}"
                                  SelectionMode="Multiple,Toggle">
                             <ListBox.ItemTemplate>
@@ -260,9 +260,9 @@
                                 IsIconVisible="False"
                                 IsOpen="True">
                         <ui:InfoBar.ContextFlyout>
-                            <ui:MenuFlyout>
+                            <ui:FAMenuFlyout>
                                 <ui:MenuFlyoutItem Command="{Binding RefreshLogsUsageCommand}" Text="{DynamicResource Text_Public_Refresh}"/>
-                            </ui:MenuFlyout>
+                            </ui:FAMenuFlyout>
                         </ui:InfoBar.ContextFlyout>
                         <DockPanel Margin="0,10,10,10">
                             <StackPanel Classes="TitleBar">
@@ -367,7 +367,7 @@
                                       FontFamily="{StaticResource SourceHanSans}"
                                       FontWeight="Bold"
                                       IsTextSearchEnabled="True"
-                                      Items="{Binding SupportedLogLevels}"
+                                      ItemsSource="{Binding SupportedLogLevels}"
                                       SelectedItem="{Binding CurrentLogLevel}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>

@@ -1,9 +1,9 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.LibPage"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.LibPage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
-             xmlns:local="using:KitX_Dashboard.Views.Pages.Controls"
+             xmlns:local="using:KitX.Dashboard.Views.Pages.Controls"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
@@ -58,7 +58,7 @@
             </Border>
             <ScrollViewer>
                 <WrapPanel Orientation="Horizontal">
-                    <ItemsControl Items="{Binding PluginCards}">
+                    <ItemsControl ItemsSource="{Binding PluginCards}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel/>

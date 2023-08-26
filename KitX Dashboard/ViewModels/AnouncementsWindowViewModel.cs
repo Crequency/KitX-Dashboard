@@ -1,8 +1,9 @@
-﻿using Common.BasicHelper.Utils.Extensions;
+﻿using Avalonia.Collections;
+using Common.BasicHelper.Utils.Extensions;
 using FluentAvalonia.UI.Controls;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Views;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,7 +13,7 @@ using System.Reactive;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.ViewModels;
+namespace KitX.Dashboard.ViewModels;
 
 internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
@@ -51,16 +52,21 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
             var finded = false;
 
-            foreach (var item in MenuItems)
-            {
-                if (finded)
-                {
-                    SelectedMenuItem = item;
-                    break;
-                }
+            var navView = Window?.AnouncementsNavigationView;
 
-                if (item == SelectedMenuItem)
-                    finded = true;
+            if (navView is not null)
+            {
+                foreach (NavigationViewItem item in navView.MenuItems.Cast<NavigationViewItem>())
+                {
+                    if (finded)
+                    {
+                        SelectedMenuItem = item;
+                        break;
+                    }
+
+                    if (item == SelectedMenuItem)
+                        finded = true;
+                }
             }
         });
 
@@ -68,30 +74,35 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             if (Readed is null) return;
 
-            foreach (var item in MenuItems)
+            var navView = Window?.AnouncementsNavigationView;
+
+            if (navView is not null)
             {
-                var key = item.Content.ToString();
+                foreach (NavigationViewItem item in navView.MenuItems.Cast<NavigationViewItem>())
+                {
+                    var key = item.Content?.ToString();
 
-                if (key is null) continue;
+                    if (key is null) continue;
 
-                if (!Readed.Contains(key))
-                    Readed.Add(key);
+                    if (!Readed.Contains(key))
+                        Readed.Add(key);
+                }
+
+                var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
+
+                var options = new JsonSerializerOptions()
+                {
+                    WriteIndented = true,
+                    IncludeFields = true,
+                };
+
+                await File.WriteAllTextAsync(
+                    ConfigFilePath,
+                    JsonSerializer.Serialize(Readed, options)
+                );
+
+                Window?.Close();
             }
-
-            var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
-
-            var options = new JsonSerializerOptions()
-            {
-                WriteIndented = true,
-                IncludeFields = true,
-            };
-
-            await File.WriteAllTextAsync(
-                ConfigFilePath,
-                JsonSerializer.Serialize(Readed, options)
-            );
-
-            Window?.Close();
         });
     }
 
@@ -118,7 +129,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
             if (SelectedMenuItem is null) return;
 
-            var key = SelectedMenuItem.Content.ToString();
+            var key = SelectedMenuItem.Content?.ToString();
 
             if (key is null) return;
 
@@ -146,8 +157,6 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         }
     }
 
-    internal List<NavigationViewItem> MenuItems { get; set; } = new();
-
     private Dictionary<string, string> sources = new();
 
     internal Dictionary<string, string> Sources
@@ -157,17 +166,20 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             sources = value;
 
-            MenuItems.Clear();
+            var navView = Window?.AnouncementsNavigationView;
+
+            navView?.MenuItems?.Clear();
 
             foreach (var item in Sources.Reverse())
             {
-                MenuItems.Add(new()
+                navView?.MenuItems?.Add(new NavigationViewItem()
                 {
                     Content = item.Key
                 });
             }
 
-            SelectedMenuItem = MenuItems.First();
+            if (navView is not null)
+                SelectedMenuItem = navView.MenuItems.First() as NavigationViewItem;
         }
     }
 

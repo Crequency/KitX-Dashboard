@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.Controls.Settings_About"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.Settings_About"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
@@ -241,20 +241,20 @@
                                         Grid.Column="0"
                                         Background="White"
                                         Opacity="0.01"
-                                        PointerEnter="WQY_LeftEnter"
-                                        PointerLeave="WQY_Leave"/>
+                                        PointerEntered="WQY_LeftEnter"
+                                        PointerExited="WQY_Leave"/>
                                 <Border Grid.Row="1"
                                         Grid.Column="1"
                                         Background="White"
                                         Opacity="0.01"
-                                        PointerEnter="WQY_CenterEnter"
-                                        PointerLeave="WQY_Leave"/>
+                                        PointerEntered="WQY_CenterEnter"
+                                        PointerExited="WQY_Leave"/>
                                 <Border Grid.Row="1"
                                         Grid.Column="2"
                                         Background="White"
                                         Opacity="0.01"
-                                        PointerEnter="WQY_RightEnter"
-                                        PointerLeave="WQY_Leave"/>
+                                        PointerEntered="WQY_RightEnter"
+                                        PointerExited="WQY_Leave"/>
                             </Grid>
 
                         </Grid>

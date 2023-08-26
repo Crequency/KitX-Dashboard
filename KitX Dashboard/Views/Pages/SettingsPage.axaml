@@ -1,14 +1,14 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.SettingsPage"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.SettingsPage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="using:KitX_Dashboard.Views.Pages.Controls"
-             xmlns:converters="using:KitX_Dashboard.Converters"
+             xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
-             xmlns:vm="using:KitX_Dashboard.ViewModels.Pages"
+             xmlns:vm="using:KitX.Dashboard.ViewModels.Pages"
              d:DesignHeight="450"
              d:DesignWidth="800"
              mc:Ignorable="d">
@@ -27,11 +27,11 @@
                        SelectionChanged="SettingsNavigationView_SelectionChanged">
 
         <ui:NavigationView.ContextFlyout>
-            <ui:MenuFlyout>
+            <ui:FAMenuFlyout>
                 <ui:MenuFlyoutItem Command="{Binding ResetToAutoCommand}" Text="{DynamicResource Text_Public_ResetToAuto}"/>
                 <ui:MenuFlyoutItem Command="{Binding MoveToLeftCommand}" Text="{DynamicResource Text_Public_MoveToLeft}"/>
                 <ui:MenuFlyoutItem Command="{Binding MoveToTopCommand}" Text="{DynamicResource Text_Public_MoveToTop}"/>
-            </ui:MenuFlyout>
+            </ui:FAMenuFlyout>
         </ui:NavigationView.ContextFlyout>
 
         <ui:NavigationView.MenuItems>

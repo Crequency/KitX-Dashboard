@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KitX_Dashboard.Managers;
+namespace KitX.Dashboard.Managers;
 
 internal class CacheManager
 {

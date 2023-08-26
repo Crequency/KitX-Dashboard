@@ -1,102 +1,87 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
-using Common.BasicHelper.Core.TaskSystem;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.Views;
-using KitX_Dashboard.Views.Pages.Controls;
-using LiteDB;
+using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
 using System;
-using System.Collections.ObjectModel;
 using System.IO;
 
-namespace KitX_Dashboard;
+namespace KitX.Dashboard;
 
-internal class Program
+class Program
 {
-    internal static SignalTasksManager? SignalTasksManager;
-
-    internal static WebManager? WebManager;
-
-    internal static FileWatcherManager? FileWatcherManager;
-
-    internal static ObservableCollection<PluginCard> PluginCards = new();
-
-    internal static ObservableCollection<DeviceCard> DeviceCards = new();
-
-    internal static LiteDatabase? ActivitiesDataBase;
-
-    internal static CacheManager? CacheManager;
-
-    internal static HotKeyManager? HotKeyManager;
-
-    internal static MainWindow? MainWindow;
-
-    internal static PluginsLaunchWindow? PluginsLaunchWindow;
-
     /// <summary>
-    /// 主函数, 应用程序入口; 展开 summary 查看警告
+    /// Main entry for program
     /// </summary>
-    /// <param name="args">程序启动参数</param>
+    /// <param name="args"></param>
     /// Initialization code. Don't use any Avalonia, third-party APIs or any
     /// SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     /// yet and stuff might break.
-    /// 初始化代码. 请不要在 AppMain 被调用之前使用任何 Avalonia, 第三方的 API 或者 同步上下文相关的代码:
-    /// 相关的代码还没有被初始化, 而且环境可能会被破坏
     [STAThread]
     public static void Main(string[] args)
     {
         try
         {
+            // If dump file exists, delete it.
+            if (File.Exists("./dump.log".GetFullPath()))
+                File.Delete("./dump.log".GetFullPath());
+
+            // Init event service
             EventService.Init();
 
+            // Process startup arguments
             Helper.ProcessStartupArguments(args);
 
-            Helper.StartUpCheck();
+            // Run framework
+            Helper.RunFramework();
 
             ConfigManager.AppConfig.App.RanTime++;
 
+            // Run Avalonia
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
+            // Make sure all threads exit
             Helper.Exit();
         }
         catch (Exception e)
         {
-            File.WriteAllText(Path.GetFullPath("./dump.log"), e.Message);
+            // Any unhandled exception will be catched here!
+            File.AppendAllText(
+                "./dump.log".GetFullPath(),
+                $"""
+                [{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {e.Message}
+                {e.StackTrace}
+                """
+            );
 
 #if !DEBUG
             Environment.Exit(1);
 #endif
+
         }
     }
 
     /// <summary>
-    /// 构建 Avalonia 应用; 展开 summary 查看警告
+    /// Build Avalonia app
     /// </summary>
-    /// <returns>应用构造器</returns>
-    /// Avalonia configuration, don't remove; also used by visual designer.
-    /// Avalonia 配置项, 请不要删除; 同时也用于可视化设计器
-    public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
-        .UsePlatformDetect()
-        .LogToTrace()
-        .UseReactiveUI()
-        .With(
-            new Win32PlatformOptions
-            {
-                UseWindowsUIComposition = true,
-                EnableMultitouch = true,
-            }
-        )
-        .With(
-            new MacOSPlatformOptions
-            {
-                ShowInDock = true
-            }
-        )
-        .With(
-            new X11PlatformOptions
-            {
-                EnableMultiTouch = true,
-            }
-        );
+    /// <returns>Avalonia AppBuilder</returns>
+    /// Do not remove this, it also used by visual designer.
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .WithInterFont()
+            .LogToTrace()
+            .UseReactiveUI()
+            .With(
+                new MacOSPlatformOptions
+                {
+                    ShowInDock = true,
+                }
+            )
+            .With(
+                new X11PlatformOptions
+                {
+                    EnableMultiTouch = true,
+                }
+            );
 }

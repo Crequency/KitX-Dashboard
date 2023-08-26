@@ -1,13 +1,13 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Media;
 using Common.BasicHelper.Graphics.Screen;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.ViewModels;
 using KitX.Web.Rules;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.ViewModels;
 using Serilog;
 using System;
 
-namespace KitX_Dashboard.Views;
+namespace KitX.Dashboard.Views;
 
 public partial class PluginDetailWindow : Window
 {

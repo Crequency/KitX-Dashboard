@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="KitX_Dashboard.Views.Pages.Controls.PluginBar"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.PluginBar"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -21,28 +21,28 @@
                     FontFamily="{StaticResource SourceHanSans}"
                     FontWeight="Bold"/>
 
-            <ui:Button Margin="0,0,20,0"
-                       Content="..."
-                       DockPanel.Dock="Right"
-                       FontFamily="{StaticResource SourceHanSans}">
-                <ui:Button.Flyout>
-                    <ui:MenuFlyout Placement="Bottom">
+            <Button Margin="0,0,20,0"
+                    Content="..."
+                    DockPanel.Dock="Right"
+                    FontFamily="{StaticResource SourceHanSans}">
+                <Button.Flyout>
+                    <ui:FAMenuFlyout Placement="Bottom">
                         <ui:MenuFlyoutItem Command="{Binding ViewDetailsCommand}"
                                            FontFamily="{StaticResource SourceHanSans}"
-                                           Icon="Copy"
+                                           IconSource="Copy"
                                            Text="{DynamicResource Text_PluginBar_Details}"/>
                         <ui:MenuFlyoutItem Command="{Binding RemoveCommand}"
                                            FontFamily="{StaticResource SourceHanSans}"
-                                           Icon="Remove"
+                                           IconSource="Remove"
                                            Text="{DynamicResource Text_PluginBar_Remove}"/>
                         <ui:MenuFlyoutSeparator/>
                         <ui:MenuFlyoutItem Command="{Binding DeleteCommand}"
                                            FontFamily="{StaticResource SourceHanSans}"
-                                           Icon="Delete"
+                                           IconSource="Delete"
                                            Text="{DynamicResource Text_PluginBar_RemoveAndDelete}"/>
-                    </ui:MenuFlyout>
-                </ui:Button.Flyout>
-            </ui:Button>
+                    </ui:FAMenuFlyout>
+                </Button.Flyout>
+            </Button>
 
             <Grid VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>

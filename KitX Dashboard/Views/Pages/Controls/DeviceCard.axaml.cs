@@ -1,9 +1,8 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
+using KitX.Dashboard.ViewModels.Pages.Controls;
 using KitX.Web.Rules;
-using KitX_Dashboard.ViewModels.Pages.Controls;
 
-namespace KitX_Dashboard.Views.Pages.Controls;
+namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class DeviceCard : UserControl
 {
@@ -23,10 +22,5 @@ public partial class DeviceCard : UserControl
         viewModel.DeviceInfo = deviceInfo;
 
         DataContext = viewModel;
-    }
-
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
     }
 }

@@ -1,14 +1,13 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using FluentAvalonia.UI.Controls;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.ViewModels.Pages;
-using KitX_Dashboard.Views.Pages.Controls;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.ViewModels.Pages;
+using KitX.Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
 
-namespace KitX_Dashboard.Views.Pages;
+namespace KitX.Dashboard.Views.Pages;
 
 public partial class SettingsPage : UserControl
 {
@@ -21,11 +20,6 @@ public partial class SettingsPage : UserControl
         DataContext = viewModel;
 
         InitSettingsPage();
-    }
-
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
     }
 
     /// <summary>

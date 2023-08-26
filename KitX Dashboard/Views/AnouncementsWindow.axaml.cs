@@ -1,15 +1,13 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using Common.BasicHelper.Graphics.Screen;
-using KitX_Dashboard.Converters;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.ViewModels;
+using KitX.Dashboard.Converters;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.ViewModels;
 using System.Collections.Generic;
-using System.ComponentModel;
 
-namespace KitX_Dashboard.Views;
+namespace KitX.Dashboard.Views;
 
 public partial class AnouncementsWindow : Window
 {
@@ -84,11 +82,6 @@ public partial class AnouncementsWindow : Window
         viewModel.Readed = readed;
     }
 
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
-    }
-
     private void SaveMetaData()
     {
         if (WindowState != WindowState.Minimized)
@@ -101,7 +94,7 @@ public partial class AnouncementsWindow : Window
         ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height = Height;
     }
 
-    protected override void OnClosing(CancelEventArgs e)
+    protected override void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosed(e);
 

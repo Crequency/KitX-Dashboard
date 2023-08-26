@@ -1,16 +1,16 @@
 ﻿using Avalonia.Threading;
+using KitX.Dashboard.Data;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.Views.Pages.Controls;
 using KitX.Web.Rules;
-using KitX_Dashboard.Data;
-using KitX_Dashboard.Managers;
-using KitX_Dashboard.Services;
-using KitX_Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using Timer = System.Timers.Timer;
 
-namespace KitX_Dashboard.Network;
+namespace KitX.Dashboard.Network;
 
 internal class DevicesNetwork
 {
@@ -89,7 +89,7 @@ internal class DevicesNetwork
 
             if (findThis) continue;
 
-            foreach (var item in Program.DeviceCards)
+            foreach (var item in Instances.DeviceCards)
             {
                 if (item.viewModel.DeviceInfo.DeviceName.Equals(deviceInfoStruct.DeviceName))
                 {
@@ -112,7 +112,7 @@ internal class DevicesNetwork
                 {
                     lock (AddDeviceCard2ViewLock)
                     {
-                        Program.DeviceCards.Add(new(deviceInfoStruct));
+                        Instances.DeviceCards.Add(new(deviceInfoStruct));
 
                         --needToAddDevicesCount;
                     }
@@ -130,7 +130,7 @@ internal class DevicesNetwork
     {
         var devicesNeedToBeRemoved = new List<DeviceCard>();
 
-        foreach (var item in Program.DeviceCards)
+        foreach (var item in Instances.DeviceCards)
         {
             var info = item.viewModel.DeviceInfo;
 
@@ -144,7 +144,7 @@ internal class DevicesNetwork
             lock (AddDeviceCard2ViewLock)
             {
                 foreach (var item in devicesNeedToBeRemoved)
-                    Program.DeviceCards.Remove(item);
+                    Instances.DeviceCards.Remove(item);
             }
             removeDeviceTaskRunning = false;
         });
@@ -160,7 +160,7 @@ internal class DevicesNetwork
         var index = 0;
         var moveSelfCardTaskRunning = true;
 
-        foreach (var item in Program.DeviceCards)
+        foreach (var item in Instances.DeviceCards)
         {
             var info = item.viewModel.DeviceInfo;
 
@@ -172,7 +172,7 @@ internal class DevicesNetwork
                     {
                         try
                         {
-                            Program.DeviceCards.Move(index, 0);
+                            Instances.DeviceCards.Move(index, 0);
                         }
                         catch (Exception e)
                         {

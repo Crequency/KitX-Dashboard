@@ -1,4 +1,4 @@
-﻿<Window x:Class="KitX_Dashboard.Views.PluginDetailWindow"
+﻿<Window x:Class="KitX.Dashboard.Views.PluginDetailWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
@@ -183,10 +183,10 @@
                             </Panel>
                         </TabItem>
                         <TabItem FontSize="16" Header="{DynamicResource Text_Plugin_Functions}">
-                            <ListBox Margin="0,10,0,0" Items="{Binding Functions}"/>
+                            <ListBox Margin="0,10,0,0" ItemsSource="{Binding Functions}"/>
                         </TabItem>
                         <TabItem FontSize="16" Header="{DynamicResource Text_Plugin_Tags}">
-                            <ListBox Margin="0,10,0,0" Items="{Binding Tags}"/>
+                            <ListBox Margin="0,10,0,0" ItemsSource="{Binding Tags}"/>
                         </TabItem>
                     </TabControl>
 
