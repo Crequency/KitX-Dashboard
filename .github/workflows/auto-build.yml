@@ -74,7 +74,7 @@ jobs:
 
                   echo "===== `dotnet run` command done ====="
 
-                  $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX Dashboard.dll").VersionInfo.FileVersion
+                  $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX.Dashboard.dll").VersionInfo.FileVersion
                   $date = (Get-Date -Format "yyyy.MM.dd")
 
                   echo "version: $version"
