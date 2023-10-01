@@ -133,10 +133,9 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
         {
             if (PluginDetail is null) return null;
 
-            return PluginDetail.PluginDetails.DisplayName
-                .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
-                ? PluginDetail.PluginDetails.DisplayName[ConfigManager.AppConfig.App.AppLanguage]
-                : PluginDetail.PluginDetails.DisplayName.Values.GetEnumerator().Current;
+            return PluginDetail.PluginDetails.DisplayName.TryGetValue(
+                ConfigManager.AppConfig.App.AppLanguage, out var lang
+            ) ? lang : PluginDetail.PluginDetails.DisplayName.Values.GetEnumerator().Current;
         }
     }
 

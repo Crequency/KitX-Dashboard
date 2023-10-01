@@ -190,8 +190,8 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
             sb.Append(func.ReturnValueType);
             sb.Append(' ');
 
-            if (func.DisplayNames.ContainsKey(langKey))
-                sb.Append(func.DisplayNames[langKey]);
+            if (func.DisplayNames.TryGetValue(langKey, out var name))
+                sb.Append(name);
             else sb.Append(func.Name);
 
             sb.Append('(');
@@ -211,8 +211,8 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
                 sb.Append(' ');
 
-                if (param.Value.ContainsKey(langKey))
-                    sb.Append(param.Value[langKey]);
+                if (param.Value.TryGetValue(langKey, out var paramName))
+                    sb.Append(paramName);
                 else sb.Append(param.Key);
 
                 if (index != func.Parameters.Count)

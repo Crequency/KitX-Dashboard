@@ -29,9 +29,9 @@ internal class DebugService
         if (name is null) return null;
         var foo = typeof(DebugCommands).GetMethod(name);
         if (foo is null) return null;
-        if (args.ContainsKey("--times"))
+        if (args.TryGetValue("--times", out var timesString))
         {
-            if (int.TryParse(args["--times"], out int times))
+            if (int.TryParse(timesString, out var times))
                 for (var i = 0; i < times - 1; ++i)
                     _ = foo?.Invoke(null, new Dictionary<string, string>[] { args });
         }
@@ -61,25 +61,25 @@ internal class DebugCommands
 
     public static string? Version(Dictionary<string, string> args)
     {
-        if (args.ContainsKey("help"))
+        if (args.TryGetValue("help", out _))
             return "Print version of KitX Dashboard.";
         return Assembly.GetEntryAssembly()?.GetName()?.Version?.ToString();
     }
 
     public static string? Save(Dictionary<string, string> args)
     {
-        if (args.ContainsKey("help"))
+        if (args.TryGetValue("help", out _))
             return "" +
                 "Save datas to disk.\n" +
                 "\t--type [config] | saveAction KitX Dashboard config file.\n" +
                 "\tconfig | saveAction KitX Dashboard config file.\n";
-        if (args.ContainsKey("--type"))
-            return args["--type"] switch
+        if (args.TryGetValue("--type", out var type))
+            return type switch
             {
                 "config" => SaveConfig(),
                 _ => "Missing value of `--type`.",
             };
-        else if (args.ContainsKey("config"))
+        else if (args.TryGetValue("config", out _))
         {
             return SaveConfig();
         }
@@ -88,23 +88,22 @@ internal class DebugCommands
 
     public static string? Config(Dictionary<string, string> args)
     {
-        if (args.ContainsKey("help"))
+        if (args.TryGetValue("help", out _))
         {
             return "" +
                 "Edit KitX Dashboard app config.\n" +
                 "\t--set developing...\n" +
                 "\t--get developing...\n";
         }
-        if (args.ContainsKey("--set"))
+        if (args.TryGetValue("--set", out _))
         {
             return "Missing value of `--set`.";
         }
-        else if (args.ContainsKey("--get"))
+        else if (args.TryGetValue("--get", out _))
         {
-
             return "Missing value of `--get`.";
         }
-        else if (args.ContainsKey("saveAction"))
+        else if (args.TryGetValue("saveAction", out _))
         {
             return SaveConfig();
         }
@@ -113,7 +112,7 @@ internal class DebugCommands
 
     public static string? Send(Dictionary<string, string> args)
     {
-        if (args.ContainsKey("help"))
+        if (args.TryGetValue("help", out _))
         {
             return "" +
                 "Send data in network.\n" +
@@ -123,50 +122,50 @@ internal class DebugCommands
                 "\t\tHostMessage   | [--value] [--to] Send message to clients as master device.\n" +
                 "\t\tHostBroadcast | [--value] Broadcast a message to every clients.";
         }
-        if (args.ContainsKey("--type"))
+        if (args.TryGetValue("--type", out var type))
         {
-            switch (args["--type"].ToLower())
+            switch (type.ToLower())
             {
                 //  DeviceUdpPack
                 case "deviceudppack":
-                    if (args.ContainsKey("--value"))
+                    if (args.TryGetValue("--value", out var udpPackValue))
                     {
-                        DevicesDiscoveryServer.Messages2BroadCast.Enqueue(args["--value"]);
+                        DevicesDiscoveryServer.Messages2BroadCast.Enqueue(udpPackValue);
                         return "Appended value to broadcast list.";
                     }
                     else return "Missing value of `--value`.";
                 //  ClientMessage
                 case "clientmessage":
-                    if (args.ContainsKey("--value"))
+                    if (args.TryGetValue("--value", out var clientMessageValue))
                     {
-                        DevicesNetwork.devicesClient?.Send(args["--value"].FromUTF8());
-                        return $"Sent msg: {args["--value"]}";
+                        DevicesNetwork.devicesClient?.Send(clientMessageValue.FromUTF8());
+                        return $"Sent msg: {clientMessageValue}";
                     }
                     else return "Missing value of `--value`.";
                 //  HostMessage
                 case "hostmessage":
-                    if (args.ContainsKey("--value"))
+                    if (args.TryGetValue("--value", out var hostMessageValue))
                     {
-                        if (args.ContainsKey("--to"))
+                        if (args.TryGetValue("--to", out var hostMessageTo))
                         {
                             DevicesNetwork.devicesServer?.Send(
-                                args["--value"].FromUTF8(),
-                                args["--to"]
+                                hostMessageValue.FromUTF8(),
+                                hostMessageTo
                             );
-                            return $"Sent msg: {args["--value"]}, to: {args["--to"]}";
+                            return $"Sent msg: {hostMessageValue}, to: {hostMessageTo}";
                         }
                         else return "Missing value of `--to`.";
                     }
                     else return "Missing value of `--value`.";
                 //  HostBroadcast
                 case "hostbroadcast":
-                    if (args.ContainsKey("--value"))
+                    if (args.TryGetValue("--value", out var broadcastValue))
                     {
                         DevicesNetwork.devicesServer?.BroadCast(
-                            args["--value"].FromUTF8(),
+                            broadcastValue.FromUTF8(),
                             null
                         );
-                        return $"Broadcast msg: {args["--value"]}";
+                        return $"Broadcast msg: {broadcastValue}";
                     }
                     else return "Missing value of `--value`";
                 default:
@@ -180,15 +179,15 @@ internal class DebugCommands
     {
         try
         {
-            if (args.ContainsKey("help"))
+            if (args.TryGetValue("help", out _))
             {
                 return "" +
                     "Load file to CacheManager.\n" +
                     "\t--file | with path of file, if contain space, quote it.";
             }
-            if (args.ContainsKey("--file"))
+            if (args.TryGetValue("--file", out var file))
             {
-                var path = args["--file"];
+                var path = file;
 
                 if (path.StartsWith('"') && path.EndsWith('"'))
                     path = path[1..^1];
@@ -199,9 +198,9 @@ internal class DebugCommands
 
                 if (!File.Exists(path)) return "File not found.";
 
-                if (args.ContainsKey("--way"))
+                if (args.TryGetValue("--way", out var way))
                 {
-                    switch (args["--way"])
+                    switch (way)
                     {
                         case "complete": break;
                         case "fragment":
@@ -230,14 +229,14 @@ internal class DebugCommands
     public static string? Dispose(Dictionary<string, string> args)
     {
 
-        if (args.ContainsKey("--type"))
+        if (args.TryGetValue("--type", out var type))
         {
-            switch (args["--type"])
+            switch (type)
             {
                 case "file":
-                    if (args.ContainsKey("--id"))
+                    if (args.TryGetValue("--id", out var fileId))
                     {
-                        var id = args["--id"];
+                        var id = fileId;
                         var result = Instances.CacheManager?.DisposeFileCache(id);
                         if (result is null) return "Unknown error occursed.";
                         if (!(bool)result) return "Dispose failed.";
@@ -253,20 +252,20 @@ internal class DebugCommands
 
     public static string? Start(Dictionary<string, string> args)
     {
-        if (args.ContainsKey("help"))
+        if (args.TryGetValue("help", out _))
             return "" +
                 "- plugins-services\n" +
                 "- devices-services\n" +
                 "- devices-discovery-server\n" +
                 "- all\n";
 
-        if (args.ContainsKey("plugins-services"))
+        if (args.TryGetValue("plugins-services", out _))
             Instances.WebManager?.Start(startAll: false, startPluginsNetwork: true);
-        if (args.ContainsKey("devices-services"))
+        if (args.TryGetValue("devices-services", out _))
             Instances.WebManager?.Start(startAll: false, startDevicesNetwork: true);
-        if (args.ContainsKey("devices-discovery-server"))
+        if (args.TryGetValue("devices-discovery-server", out _))
             Instances.WebManager?.Start(startAll: false, startDevicesDiscoveryServer: true);
-        if (args.ContainsKey("all"))
+        if (args.TryGetValue("all", out _))
             Instances.WebManager?.Start();
 
         return "Start action requested.";
@@ -274,20 +273,20 @@ internal class DebugCommands
 
     public static string? Stop(Dictionary<string, string> args)
     {
-        if (args.ContainsKey("help"))
+        if (args.TryGetValue("help", out _))
             return "" +
                 "- plugins-services\n" +
                 "- devices-services\n" +
                 "- devices-discovery-server\n" +
                 "- all";
 
-        if (args.ContainsKey("plugins-services"))
+        if (args.TryGetValue("plugins-services", out _))
             Instances.WebManager?.Stop(stopAll: false, stopPluginsServices: true);
-        if (args.ContainsKey("devices-services"))
+        if (args.TryGetValue("devices-services", out _))
             Instances.WebManager?.Stop(stopAll: false, stopDevicesServices: true);
-        if (args.ContainsKey("devices-discovery-server"))
+        if (args.TryGetValue("devices-discovery-server", out _))
             Instances.WebManager?.Stop(stopAll: false, stopDevicesDiscoveryServer: true);
-        if (args.ContainsKey("all"))
+        if (args.TryGetValue("all", out _))
             Instances.WebManager?.Stop();
 
         return "Stop action requested.";
@@ -295,7 +294,7 @@ internal class DebugCommands
 
     public static string? Hash(Dictionary<string, string> args)
     {
-        if (args.ContainsKey("help"))
+        if (args.TryGetValue("help", out _))
             return "" +
                 "Return hashed value for parameters.\n" +
                 "\t--way [MD5,SHA1,Common.Algorithm] |\n" +
@@ -303,22 +302,18 @@ internal class DebugCommands
                 "\t\tSHA1             | [--value] Use SHA1 to hash parameters.\n" +
                 "\t\tCommon.Algorithm | [--value] Use Common.Algorithm to hash parameters.";
 
-        if (args.ContainsKey("--way"))
+        if (args.TryGetValue("--way", out var way))
         {
-            switch (args["--way"].ToLower())
+            switch (way.ToLower())
             {
                 case "md5":
                     {
-                        var md5 = MD5.Create();
-                        var result = md5.ComputeHash(args["--value"].FromUTF8()).ToUTF8();
-                        md5.Dispose();
+                        var result = MD5.HashData(args["--value"].FromUTF8()).ToUTF8();
                         return result;
                     }
                 case "sha1":
                     {
-                        var sha1 = SHA1.Create();
-                        var result = sha1.ComputeHash(args["--value"].FromUTF8()).ToUTF8();
-                        sha1.Dispose();
+                        var result = SHA1.HashData(args["--value"].FromUTF8()).ToUTF8();
                         return result;
                     }
                 case "common.algorithm":
@@ -373,9 +368,9 @@ internal static class DebugServiceTool
         }
         foreach (var item in args)
         {
-            if (quoteMap.ContainsKey(item.Value))
+            if (quoteMap.TryGetValue(item.Value, out var value))
             {
-                args[item.Key] = quoteMap[item.Value];
+                args[item.Key] = value;
             }
         }
         return args;
@@ -421,7 +416,7 @@ internal static class DebugServiceTool
     /// <param name="key">键</param>
     /// <returns>值</returns>
     internal static string? Value(this Dictionary<string, string> src, string key)
-        => src.ContainsKey(key) ? src[key] : null;
+        => src.TryGetValue(key, out var value) ? value : null;
 
     /// <summary>
     /// 将命令转为可能的函数名称

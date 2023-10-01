@@ -173,8 +173,8 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
         await TasksManager.RunTaskAsync(() =>
         {
-            if (clients.ContainsKey(target))
-                clients[target].Client.Send(content);
+            if (clients.TryGetValue(target, out var client))
+                client.Client.Send(content);
         }, location, catchException: true);
 
         return this;

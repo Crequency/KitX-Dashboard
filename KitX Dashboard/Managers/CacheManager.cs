@@ -24,13 +24,11 @@ internal class CacheManager
     /// <returns>MD5 值</returns>
     private static async Task<string?> GetMD5(byte[] bytes, bool trans = false)
     {
-        var md5 = MD5.Create();
-
         byte[]? result = null;
 
         await Task.Run(() =>
         {
-            result = md5.ComputeHash(bytes);
+            result = MD5.HashData(bytes);
         });
 
         if (result is null)
@@ -40,8 +38,6 @@ internal class CacheManager
 
         if (trans) foreach (var bt in result) sb.Append(bt.ToString("x2"));
         else sb.Append(Encoding.UTF8.GetString(result));
-
-        md5.Dispose();
 
         return sb.ToString();
     }
@@ -116,10 +112,8 @@ internal class CacheManager
     {
         if (FilesCache is null) return null;
 
-        if (FilesCache.ContainsKey(id))
+        if (FilesCache.Remove(id))
         {
-            FilesCache.Remove(id);
-
             GC.Collect();
 
             return true;
