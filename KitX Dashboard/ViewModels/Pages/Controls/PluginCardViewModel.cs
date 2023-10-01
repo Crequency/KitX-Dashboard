@@ -37,21 +37,15 @@ internal class PluginCardViewModel
         });
     }
 
-    internal string DisplayName => pluginStruct.DisplayName
-        .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
-        ?
-        pluginStruct.DisplayName[ConfigManager.AppConfig.App.AppLanguage]
-        :
-        pluginStruct.DisplayName.Values.GetEnumerator().Current;
+    internal string DisplayName => pluginStruct.DisplayName.TryGetValue(
+        ConfigManager.AppConfig.App.AppLanguage, out var lang
+    ) ? lang : pluginStruct.DisplayName.Values.GetEnumerator().Current;
 
     internal string Version => pluginStruct.Version;
 
-    internal string SimpleDescription => pluginStruct.SimpleDescription
-        .ContainsKey(ConfigManager.AppConfig.App.AppLanguage)
-        ?
-        pluginStruct.SimpleDescription[ConfigManager.AppConfig.App.AppLanguage]
-        :
-        pluginStruct.SimpleDescription.GetEnumerator().Current.Value;
+    internal string SimpleDescription => pluginStruct.SimpleDescription.TryGetValue(
+        ConfigManager.AppConfig.App.AppLanguage, out var lang
+    ) ? lang : pluginStruct.SimpleDescription.GetEnumerator().Current.Value;
 
     internal string IconInBase64 => pluginStruct.IconInBase64;
 

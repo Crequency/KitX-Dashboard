@@ -40,9 +40,9 @@ internal class FileWatcherManager
     /// <param name="name">监控名称</param>
     public FileWatcherManager UnregisterWatcher(string name)
     {
-        if (Watchers.ContainsKey(name))
+        if (Watchers.TryGetValue(name, out var watcher))
         {
-            Watchers[name].Dispose();
+            watcher?.Dispose();
             Watchers.Remove(name);
         }
 
@@ -56,8 +56,8 @@ internal class FileWatcherManager
     /// <param name="count">要增加的次数</param>
     public FileWatcherManager IncreaseExceptCount(string name, int count = 1)
     {
-        if (Watchers.ContainsKey(name))
-            Watchers[name].IncreaseExceptCount(count);
+        if (Watchers.TryGetValue(name, out var watcher))
+            watcher?.IncreaseExceptCount(count);
 
         return this;
     }
@@ -69,8 +69,8 @@ internal class FileWatcherManager
     /// <param name="count">要减少的例外次数</param>
     public FileWatcherManager DecreaseExceptCount(string name, int count = 1)
     {
-        if (Watchers.ContainsKey(name))
-            Watchers[name].DecreaseExceptCount(count);
+        if (Watchers.TryGetValue(name, out var watcher))
+            watcher?.DecreaseExceptCount(count);
 
         return this;
     }

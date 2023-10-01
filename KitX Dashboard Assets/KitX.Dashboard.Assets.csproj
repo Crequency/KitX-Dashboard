@@ -39,7 +39,7 @@
         <AvaloniaResource Include="KitX-Icon-64x64.png" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.0.2" />
-        <PackageReference Include="Avalonia.Desktop" Version="11.0.2" />
+        <PackageReference Include="Avalonia" Version="11.0.4" />
+        <PackageReference Include="Avalonia.Desktop" Version="11.0.4" />
     </ItemGroup>
 </Project>

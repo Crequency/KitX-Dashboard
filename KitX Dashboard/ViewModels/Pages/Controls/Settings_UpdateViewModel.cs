@@ -321,10 +321,8 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
         foreach (var component in latestComponents)
         {
-            if (result.ContainsKey(component.Key))
+            if (result.TryGetValue(component.Key, out var current))
             {
-                var current = result[component.Key];
-
                 if (!current.Item1.ToUpper().Equals(component.Value.Item1.ToUpper()) ||
                     !current.Item2.ToUpper().Equals(component.Value.Item2.ToUpper()))
                     updatedComponents.Add(component.Key, component.Value.Item3);
