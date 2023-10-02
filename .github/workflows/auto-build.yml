@@ -32,8 +32,7 @@ jobs:
             - name: Init Source Code
               shell: pwsh
               run: |
-                  ./ToolKits/start.ps1 dashboard
-                  ./ToolKits/start.ps1 reference
+                  ./ToolKits/start.ps1 all
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v3
