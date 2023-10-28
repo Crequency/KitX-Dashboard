@@ -42,6 +42,10 @@ jobs:
                       7.0.x
                   include-prerelease: false
 
+            - uses: actions/setup-python@v4
+              with:
+                  python-version: "3.11"
+
             - name: Filter Publish Profiles
               shell: pwsh
               working-directory: "KitX Clients/KitX Dashboard/KitX Dashboard"
@@ -91,8 +95,15 @@ jobs:
 
                   cd ../../
 
+            - name: Check New Commit
+              working-directory: "KitX Clients/KitX Dashboard/KitX Dashboard"
+              run: |
+                  latest_commit_date=$(git show --pretty=format:"%cd" --date=iso | head -1)
+                  py ../../ToolKits/Actions/check_new_commit.py "$latest_commit_date" 7
+
             - name: Create Release and Upload Release Asset
               uses: softprops/action-gh-release@v1
+              if: env.HAS_NEW_COMMIT == 'true'
               with:
                   tag_name: v${{ env.version }}
                   name: Auto Build for KitX v${{ env.version }} on ${{ env.date }}
