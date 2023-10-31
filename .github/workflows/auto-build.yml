@@ -96,9 +96,10 @@ jobs:
                   cd ../../
 
             - name: Check New Commit
+              shell: pwsh
               working-directory: "KitX Clients/KitX Dashboard/KitX Dashboard"
               run: |
-                  latest_commit_date=$(git show --pretty=format:"%cd" --date=iso | head -1)
+                  $latest_commit_date=((git show --pretty=format:"%cd" --date=iso) -split '\n')[0]
                   py ../../ToolKits/Actions/check_new_commit.py "$latest_commit_date" 7
 
             - name: Create Release and Upload Release Asset
