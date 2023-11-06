@@ -1,114 +1,114 @@
 name: auto-build
 
 on:
-    schedule:
-        - cron: "0 6 * * 0"
-    workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
 
 jobs:
-    build:
-        strategy:
-            fail-fast: false
-            matrix:
-                os: [win, linux, osx]
-                arch: [x86, x64, arm, arm64]
-                exclude:
-                    - os: osx
-                      arch: x86
-                    - os: osx
-                      arch: arm
-                    - os: linux
-                      arch: x86
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [win, linux, osx]
+        arch: [x86, x64, arm, arm64]
+        exclude:
+          - os: osx
+            arch: x86
+          - os: osx
+            arch: arm
+          - os: linux
+            arch: x86
 
-        runs-on: windows-latest
+    runs-on: windows-latest
 
-        steps:
-            - uses: actions/checkout@v3
-              with:
-                  repository: "Crequency/KitX"
-                  ref: "dev=main"
-                  submodules: "true"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: "Crequency/KitX"
+          ref: "dev=main"
+          submodules: "true"
 
-            - name: Init Source Code
-              shell: pwsh
-              run: |
-                  ./ToolKits/start.ps1 all
+      - name: Init Source Code
+        shell: pwsh
+        run: |
+          ./ToolKits/start.ps1 all
 
-            - name: Setup .NET
-              uses: actions/setup-dotnet@v3
-              with:
-                  dotnet-version: |
-                      6.0.x
-                      7.0.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: |
+            6.0.x
+            7.0.x
 
-            - uses: actions/setup-python@v4
-              with:
-                  python-version: "3.11"
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-            - name: Filter Publish Profiles
-              shell: pwsh
-              working-directory: "KitX Clients/KitX Dashboard/KitX Dashboard"
-              run: |
-                  cd "./Properties/PublishProfiles/"
+      - name: Filter Publish Profiles
+        shell: pwsh
+        working-directory: "KitX Clients/KitX Dashboard/KitX Dashboard"
+        run: |
+          cd "./Properties/PublishProfiles/"
 
-                  echo "===== Origin Publish Profiles ====="
+          echo "===== Origin Publish Profiles ====="
 
-                  ls
+          ls
 
-                  cd ..
-                  mkdir tmp
+          cd ..
+          mkdir tmp
 
-                  cp PublishProfiles/${{ matrix.os }}-${{ matrix.arch }}*.pubxml tmp/
+          cp PublishProfiles/${{ matrix.os }}-${{ matrix.arch }}*.pubxml tmp/
 
-                  rm PublishProfiles/*
+          rm PublishProfiles/*
 
-                  cp tmp/* PublishProfiles/
+          cp tmp/* PublishProfiles/
 
-                  echo "===== Filter Publish Profiles ====="
+          echo "===== Filter Publish Profiles ====="
 
-                  ls PublishProfiles
+          ls PublishProfiles
 
-            - name: Publish
-              shell: pwsh
-              run: |
-                  cd "ToolKits"
-                  cd "KitX.ToolKits.Publisher"
+      - name: Publish
+        shell: pwsh
+        run: |
+          cd "ToolKits"
+          cd "KitX.ToolKits.Publisher"
 
-                  echo "===== Run command: `dotnet run` ====="
+          echo "===== Run command: `dotnet run` ====="
 
-                  dotnet run
+          dotnet run
 
-                  echo "===== `dotnet run` command done ====="
+          echo "===== `dotnet run` command done ====="
 
-                  $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX.Dashboard.dll").VersionInfo.FileVersion
-                  $date = (Get-Date -Format "yyyy.MM.dd")
+          $version = (Get-Item -path "..\..\KitX Publish\kitx-${{ matrix.os }}-${{ matrix.arch }}-single\KitX.Dashboard.dll").VersionInfo.FileVersion
+          $date = (Get-Date -Format "yyyy.MM.dd")
 
-                  echo "version: $version"
-                  echo "date: $date"
+          echo "version: $version"
+          echo "date: $date"
 
-                  # echo "version=$version" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-                  # echo "date=$date" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          # echo "version=$version" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          # echo "date=$date" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
-                  echo "version=$version" >> $env:GITHUB_ENV
-                  echo "date=$date" >> $env:GITHUB_ENV
+          echo "version=$version" >> $env:GITHUB_ENV
+          echo "date=$date" >> $env:GITHUB_ENV
 
-                  cd ../../
+          cd ../../
 
-            - name: Check New Commit
-              shell: pwsh
-              working-directory: "KitX Clients/KitX Dashboard/KitX Dashboard"
-              run: |
-                  $latest_commit_date=((git show --pretty=format:"%cd" --date=iso) -split '\n')[0]
-                  py ../../ToolKits/Actions/check_new_commit.py "$latest_commit_date" 7
+      - name: Check New Commit
+        shell: pwsh
+        working-directory: "KitX Clients/KitX Dashboard"
+        run: |
+          $latest_commit_date=((git show --pretty=format:"%cd" --date=iso) -split '\n')[0]
+          py ../../ToolKits/Actions/check_new_commit.py "$latest_commit_date" 7
 
-            - name: Create Release and Upload Release Asset
-              uses: softprops/action-gh-release@v1
-              if: env.HAS_NEW_COMMIT == 'true'
-              with:
-                  tag_name: v${{ env.version }}
-                  name: Auto Build for KitX v${{ env.version }} on ${{ env.date }}
-                  body: Auto release by Actions.
-                  draft: false
-                  prerelease: true
-                  files: |
-                      KitX Publish/*.zip
+      - name: Create Release and Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        if: env.HAS_NEW_COMMIT == 'true'
+        with:
+          tag_name: v${{ env.version }}
+          name: Auto Build for KitX v${{ env.version }} on ${{ env.date }}
+          body: Auto release by Actions.
+          draft: false
+          prerelease: true
+          files: |
+            KitX Publish/*.zip
