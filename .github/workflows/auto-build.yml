@@ -40,7 +40,6 @@ jobs:
                   dotnet-version: |
                       6.0.x
                       7.0.x
-                  include-prerelease: false
 
             - uses: actions/setup-python@v4
               with:
