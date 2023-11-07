@@ -100,6 +100,7 @@ jobs:
         run: |
           $latest_commit_date=((git show --pretty=format:"%cd" --date=iso) -split '\n')[0]
           py ../../ToolKits/Actions/check_new_commit.py "$latest_commit_date" 7
+          ./set_env.ps1
 
       - name: Create Release and Upload Release Asset
         uses: softprops/action-gh-release@v1
