@@ -1,4 +1,6 @@
 ﻿using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -16,13 +18,13 @@ public class Plugin
     /// 该插件的详细信息
     /// </summary>
     [JsonIgnore]
-    public PluginStruct PluginDetails { get; set; }
+    public PluginInfo PluginDetails { get; set; }
 
     /// <summary>
     /// 需要的加载器的详细信息
     /// </summary>
     [JsonIgnore]
-    public LoaderStruct RequiredLoaderStruct { get; set; }
+    public LoaderInfo RequiredLoaderInfo { get; set; }
 
     /// <summary>
     /// 已安装此插件的网络设备

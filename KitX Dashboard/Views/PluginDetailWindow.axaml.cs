@@ -4,6 +4,8 @@ using Common.BasicHelper.Graphics.Screen;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 using Serilog;
 using System;
 
@@ -60,7 +62,7 @@ public partial class PluginDetailWindow : Window
         EventService.OnExiting += Close;
     }
 
-    public PluginDetailWindow SetPluginStruct(PluginStruct ps)
+    public PluginDetailWindow SetPluginInfo(PluginInfo ps)
     {
         viewModel.PluginDetail = ps;
 

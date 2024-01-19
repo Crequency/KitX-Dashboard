@@ -2,8 +2,10 @@
 using KitX.Dashboard.Data;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
-using KitX.Formats.KXP;
 using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
+using KitX.Formats.KXP;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -33,10 +35,10 @@ internal class PluginsManager
             {
                 var decoder = new Decoder(item);
 
-                var rst = decoder.GetLoaderAndPluginStruct();
+                var rst = decoder.GetLoaderAndPluginInfo();
 
-                var loaderStruct = JsonSerializer.Deserialize<LoaderStruct>(rst.Item1);
-                var pluginStruct = JsonSerializer.Deserialize<PluginStruct>(rst.Item2);
+                var loaderStruct = JsonSerializer.Deserialize<LoaderInfo>(rst.Item1);
+                var pluginStruct = JsonSerializer.Deserialize<PluginInfo>(rst.Item2);
 
                 var config = inGraphic ?
                     ConfigManager.AppConfig :

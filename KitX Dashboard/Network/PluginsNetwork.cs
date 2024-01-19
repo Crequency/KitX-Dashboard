@@ -5,6 +5,8 @@ using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views.Pages.Controls;
 using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -27,11 +29,11 @@ internal class PluginsNetwork
 
         try
         {
-            if (msg.StartsWith("PluginStruct: "))
+            if (msg.StartsWith("PluginInfo: "))
             {
                 var json = msg[14..];
 
-                var pluginStruct = JsonSerializer.Deserialize<PluginStruct>(json);
+                var pluginStruct = JsonSerializer.Deserialize<PluginInfo>(json);
 
                 pluginStruct.Tags ??= new();
 
@@ -64,7 +66,7 @@ internal class PluginsNetwork
 
     internal static readonly Queue<IPEndPoint> pluginsToRemove = new();
 
-    internal static readonly Queue<PluginStruct> pluginsToAdd = new();
+    internal static readonly Queue<PluginInfo> pluginsToAdd = new();
 
     internal static readonly Queue<Plugin> pluginsToRemoveFromDB = new();
 

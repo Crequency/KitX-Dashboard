@@ -6,6 +6,8 @@ using Avalonia.Styling;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -44,7 +46,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         );
     }
 
-    internal PluginStruct? PluginDetail { get; set; }
+    internal PluginInfo? PluginDetail { get; set; }
 
     internal string? DisplayName
     {
@@ -196,27 +198,22 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
             sb.Append('(');
 
-            if (func.Parameters.Count != func.ParametersType.Count)
-                throw new InvalidDataException(
-                    "Parameters return type count didn't match parameters count."
-                );
-
             var index = 0;
 
             foreach (var param in func.Parameters)
             {
-                sb.Append(func.ParametersType[index]);
-
-                ++index;
+                sb.Append(param.Type);
 
                 sb.Append(' ');
 
-                if (param.Value.TryGetValue(langKey, out var paramName))
+                if (param.DisplayNames.TryGetValue(langKey, out var paramName))
                     sb.Append(paramName);
-                else sb.Append(param.Key);
+                else sb.Append(param.Name);
 
-                if (index != func.Parameters.Count)
+                if (index != func.Parameters.Count - 1)
                     sb.Append(", ");
+
+                ++index;
             }
 
             sb.Append(')');

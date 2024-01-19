@@ -4,6 +4,8 @@ using KitX.Dashboard.Converters;
 using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
 using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 using Serilog;
 using System;
 using System.IO;
@@ -16,11 +18,6 @@ namespace KitX.Dashboard.Network;
 
 internal static class NetworkHelper
 {
-    /// <summary>
-    /// 检查网络适配器是否符合要求
-    /// </summary>
-    /// <param name="adapter">网络适配器</param>
-    /// <returns>是否符合要求</returns>
     internal static bool CheckNetworkInterface
     (
         NetworkInterface adapter,
@@ -50,11 +47,6 @@ internal static class NetworkHelper
         return true;
     }
 
-    /// <summary>
-    /// 判断 IPv4 地址是否为内部网络地址
-    /// </summary>
-    /// <param name="address">网络地址</param>
-    /// <returns>是否为内部网络地址</returns>
     internal static bool IsInterNetworkAddressV4(IPAddress address)
     {
         var bytes = address.GetAddressBytes();
@@ -68,10 +60,6 @@ internal static class NetworkHelper
         };
     }
 
-    /// <summary>
-    /// 获取本机内网 IPv4 地址
-    /// </summary>
-    /// <returns>使用点分十进制表示法的本机内网IPv4地址</returns>
     internal static string GetInterNetworkIPv4()
     {
         var location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv4)}";
@@ -100,10 +88,6 @@ internal static class NetworkHelper
         }
     }
 
-    /// <summary>
-    /// 获取本机内网 IPv6 地址
-    /// </summary>
-    /// <returns>IPv6 地址</returns>
     internal static string GetInterNetworkIPv6()
     {
         var location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv6)}";
@@ -130,10 +114,6 @@ internal static class NetworkHelper
         }
     }
 
-    /// <summary>
-    /// 尝试获取设备 MAC 地址
-    /// </summary>
-    /// <returns>MAC 地址</returns>
     internal static string? TryGetDeviceMacAddress()
     {
         var location = $"{nameof(NetworkHelper)}.{nameof(TryGetDeviceMacAddress)}";
@@ -160,10 +140,6 @@ internal static class NetworkHelper
         }
     }
 
-    /// <summary>
-    /// 尝试获取系统版本
-    /// </summary>
-    /// <returns>系统版本</returns>
     internal static string? TryGetOSVersionString()
     {
         var location = $"{nameof(NetworkHelper)}.{nameof(TryGetOSVersionString)}";
@@ -232,22 +208,21 @@ internal static class NetworkHelper
         return result;
     }
 
-    /// <summary>
-    /// 获取设备信息
-    /// </summary>
-    /// <returns>设备信息结构体</returns>
-    internal static DeviceInfoStruct GetDeviceInfo() => new()
+    internal static DeviceInfo GetDeviceInfo() => new()
     {
-        DeviceName = Environment.MachineName,
-        DeviceMacAddress = TryGetDeviceMacAddress(),
+        Device = new()
+        {
+            DeviceName = Environment.MachineName,
+            MacAddress = TryGetDeviceMacAddress(),
+            IPv4 = GetInterNetworkIPv4(),
+            IPv6 = GetInterNetworkIPv6(),
+        },
         IsMainDevice = GlobalInfo.IsMainMachine,
         SendTime = DateTime.UtcNow,
         DeviceOSType = OperatingSystem2Enum.GetOSType(),
         DeviceOSVersion = TryGetOSVersionString(),
-        IPv4 = GetInterNetworkIPv4(),
-        IPv6 = GetInterNetworkIPv6(),
         PluginServerPort = GlobalInfo.PluginServerPort,
-        DeviceServerPort = GlobalInfo.DeviceServerPort,
+        DevicesServerPort = GlobalInfo.DevicesServerPort,
         DeviceServerBuildTime = new(),
         PluginsCount = Instances.PluginCards.Count,
     };

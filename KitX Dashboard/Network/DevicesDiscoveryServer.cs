@@ -4,6 +4,8 @@ using KitX.Dashboard.Interfaces.Network;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
 using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -28,7 +30,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     private static System.Timers.Timer? UdpSendTimer = null;
 
-    private static int DeviceInfoStructUpdatedTimes = 0;
+    private static int DeviceInfoUpdatedTimes = 0;
 
     private static int LastTimeToOSVersionUpdated = 0;
 
@@ -42,7 +44,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     internal static readonly Queue<string> Messages2BroadCast = new();
 
-    internal static DeviceInfoStruct DefaultDeviceInfoStruct = NetworkHelper.GetDeviceInfo();
+    internal static DeviceInfo DefaultDeviceInfo = NetworkHelper.GetDeviceInfo();
 
     private static ServerStatus status = ServerStatus.Pending;
 
@@ -55,9 +57,6 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         }
     }
 
-    /// <summary>
-    /// 寻找受支持的网络适配器并把 UDP 客户端加入组播
-    /// </summary>
     private static void FindSupportNetworkInterfaces(List<UdpClient> clients, IPAddress multicastAddress)
     {
         var multicastGroupJoinedInterfacesCount = 0;
@@ -117,36 +116,30 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             $"Joined {multicastGroupJoinedInterfacesCount} multicast groups.");
     }
 
-    /// <summary>
-    /// 更新默认设备信息结构
-    /// </summary>
-    private static void UpdateDefaultDeviceInfoStruct()
+    private static void UpdateDefaultDeviceInfo()
     {
-        DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
-        DefaultDeviceInfoStruct.SendTime = DateTime.UtcNow;
-        DefaultDeviceInfoStruct.IPv4 = NetworkHelper.GetInterNetworkIPv4();
-        DefaultDeviceInfoStruct.IPv6 = NetworkHelper.GetInterNetworkIPv6();
-        DefaultDeviceInfoStruct.PluginServerPort = GlobalInfo.PluginServerPort;
-        DefaultDeviceInfoStruct.PluginsCount = Instances.PluginCards.Count;
-        DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
-        DefaultDeviceInfoStruct.DeviceServerPort = GlobalInfo.DeviceServerPort;
-        DefaultDeviceInfoStruct.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;
+        DefaultDeviceInfo.IsMainDevice = GlobalInfo.IsMainMachine;
+        DefaultDeviceInfo.SendTime = DateTime.UtcNow;
+        DefaultDeviceInfo.Device.IPv4 = NetworkHelper.GetInterNetworkIPv4();
+        DefaultDeviceInfo.Device.IPv6 = NetworkHelper.GetInterNetworkIPv6();
+        DefaultDeviceInfo.PluginServerPort = GlobalInfo.PluginServerPort;
+        DefaultDeviceInfo.PluginsCount = Instances.PluginCards.Count;
+        DefaultDeviceInfo.IsMainDevice = GlobalInfo.IsMainMachine;
+        DefaultDeviceInfo.DevicesServerPort = GlobalInfo.DevicesServerPort;
+        DefaultDeviceInfo.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;
 
         if (LastTimeToOSVersionUpdated > ConfigManager.AppConfig.IO.OperatingSystemVersionUpdateInterval)
         {
             LastTimeToOSVersionUpdated = 0;
-            DefaultDeviceInfoStruct.DeviceOSVersion = NetworkHelper.TryGetOSVersionString();
+            DefaultDeviceInfo.DeviceOSVersion = NetworkHelper.TryGetOSVersionString();
         }
 
-        ++DeviceInfoStructUpdatedTimes;
+        ++DeviceInfoUpdatedTimes;
         ++LastTimeToOSVersionUpdated;
 
-        if (DeviceInfoStructUpdatedTimes < 0) DeviceInfoStructUpdatedTimes = 0;
+        if (DeviceInfoUpdatedTimes < 0) DeviceInfoUpdatedTimes = 0;
     }
 
-    /// <summary>
-    /// 多设备广播发送方法
-    /// </summary>
     private void MultiDevicesBroadCastSend()
     {
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastSend)}";
@@ -181,12 +174,12 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                 erroredInterfacesIndexes.Clear();
             }
 
-            UpdateDefaultDeviceInfoStruct();
+            UpdateDefaultDeviceInfo();
 
             if (closingRequest)
-                DefaultDeviceInfoStruct.SendTime -= TimeSpan.FromSeconds(20);
+                DefaultDeviceInfo.SendTime -= TimeSpan.FromSeconds(20);
 
-            var sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
+            var sendText = JsonSerializer.Serialize(DefaultDeviceInfo);
             var sendBytes = sendText.FromUTF8();
 
             foreach (var item in SupportedNetworkInterfacesIndexes)
@@ -274,7 +267,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                     try
                     {
                         DevicesNetwork.Update(
-                            JsonSerializer.Deserialize<DeviceInfoStruct>(result)
+                            JsonSerializer.Deserialize<DeviceInfo>(result)
                         );
                     }
                     catch (Exception ex)
@@ -299,7 +292,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     {
         disposed = false;
 
-        DeviceInfoStructUpdatedTimes = 0;
+        DeviceInfoUpdatedTimes = 0;
 
         LastTimeToOSVersionUpdated = 0;
 
@@ -309,7 +302,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         Messages2BroadCast.Clear();
 
-        DefaultDeviceInfoStruct = NetworkHelper.GetDeviceInfo();
+        DefaultDeviceInfo = NetworkHelper.GetDeviceInfo();
     }
 
     public async Task<DevicesDiscoveryServer> Start()

@@ -29,9 +29,6 @@ public partial class App : Application
 
     private AppViewModel? viewModel;
 
-    /// <summary>
-    /// Override `Initialize` function
-    /// </summary>
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -48,9 +45,6 @@ public partial class App : Application
         DataContext = viewModel;
     }
 
-    /// <summary>
-    /// Load Language
-    /// </summary>
     private void LoadLanguage()
     {
         var lang = ConfigManager.AppConfig.App.AppLanguage;
@@ -105,9 +99,6 @@ public partial class App : Application
         }
     }
 
-    /// <summary>
-    /// Calculate theme color
-    /// </summary>
     private static void CalculateThemeColor()
     {
         Color c = Color.Parse(ConfigManager.AppConfig.App.ThemeColor);
@@ -129,9 +120,6 @@ public partial class App : Application
         }
     }
 
-    /// <summary>
-    /// Init `LiveCharts`
-    /// </summary>
     private static void InitLiveCharts()
     {
         {
@@ -156,9 +144,6 @@ public partial class App : Application
         };
     }
 
-    /// <summary>
-    /// Override `OnFrameworkInitializationCompleted` function
-    /// </summary>
     public override void OnFrameworkInitializationCompleted()
     {
         var location = $"{nameof(App)}.{nameof(OnFrameworkInitializationCompleted)}";

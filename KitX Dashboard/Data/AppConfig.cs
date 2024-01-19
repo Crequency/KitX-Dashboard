@@ -312,7 +312,7 @@ public class AppConfig
         public int SocketBufferSize { get; set; } = 1024 * 100;
 
         [JsonInclude]
-        public int DeviceInfoStructTTLSeconds { get; set; } = 7;
+        public int DeviceInfoTTLSeconds { get; set; } = 7;
 
         [JsonInclude]
         public bool DisableRemovingOfflineDeviceCard { get; set; } = false;

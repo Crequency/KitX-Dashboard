@@ -4,6 +4,8 @@ using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Views;
 using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -14,7 +16,7 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class PluginCardViewModel
 {
-    internal PluginStruct pluginStruct = new();
+    internal PluginInfo pluginStruct = new();
 
     public PluginCardViewModel()
     {
@@ -32,7 +34,7 @@ internal class PluginCardViewModel
                 {
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 }
-                .SetPluginStruct(pluginStruct)
+                .SetPluginInfo(pluginStruct)
                 .Show(Instances.MainWindow);
         });
     }

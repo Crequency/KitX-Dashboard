@@ -9,6 +9,8 @@ using KitX.Dashboard.Managers;
 using KitX.Dashboard.Network;
 using KitX.Dashboard.Services;
 using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
@@ -234,7 +236,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
             ConfigManager.AppConfig.Web.UpdateServer +
             ConfigManager.AppConfig.Web.UpdatePath.Replace(
                 "%platform%",
-                DevicesDiscoveryServer.DefaultDeviceInfoStruct.DeviceOSType switch
+                DevicesDiscoveryServer.DefaultDeviceInfo.DeviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",
@@ -439,7 +441,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
             ConfigManager.AppConfig.Web.UpdateServer +
             ConfigManager.AppConfig.Web.UpdateDownloadPath.Replace(
                 "%platform%",
-                DevicesDiscoveryServer.DefaultDeviceInfoStruct.DeviceOSType switch
+                DevicesDiscoveryServer.DefaultDeviceInfo.DeviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",

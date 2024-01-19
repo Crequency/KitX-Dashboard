@@ -39,7 +39,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
                 {
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 }
-                .SetPluginStruct(PluginDetail.PluginDetails)
+                .SetPluginInfo(PluginDetail.PluginDetails)
                 .Show(Instances.MainWindow);
         });
 
@@ -70,20 +70,20 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
             {
                 try
                 {
-                    var loaderName = PluginDetail?.RequiredLoaderStruct.LoaderName;
-                    var loaderVersion = PluginDetail?.RequiredLoaderStruct.LoaderVersion;
+                    var loaderName = PluginDetail?.RequiredLoaderInfo.LoaderName;
+                    var loaderVersion = PluginDetail?.RequiredLoaderInfo.LoaderVersion;
                     var pd = PluginDetail?.PluginDetails;
 
                     var pluginPath = $"{PluginDetail?.InstallPath}/{pd?.RootStartupFileName}";
                     var pluginFile = pluginPath.GetFullPath();
                     var connectStr = "" +
-                        $"{DevicesDiscoveryServer.DefaultDeviceInfoStruct.IPv4}" +
+                        $"{DevicesDiscoveryServer.DefaultDeviceInfo.Device.IPv4}" +
                         $":" +
                         $"{GlobalInfo.PluginServerPort}";
 
                     if (PluginDetail is null) return;
 
-                    if (PluginDetail.RequiredLoaderStruct.SelfLoad)
+                    if (PluginDetail.RequiredLoaderInfo.SelfLoad)
                         Process.Start(pluginFile, $"--connect {connectStr}");
                     else
                     {

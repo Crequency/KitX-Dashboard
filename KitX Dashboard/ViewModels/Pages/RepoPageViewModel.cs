@@ -4,6 +4,8 @@ using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views.Pages.Controls;
 using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -83,14 +85,14 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
                         var plugin = new Plugin()
                         {
                             InstallPath = item.InstallPath,
-                            PluginDetails = JsonSerializer.Deserialize<PluginStruct>(
+                            PluginDetails = JsonSerializer.Deserialize<PluginInfo>(
                                 File.ReadAllText(
-                                    Path.GetFullPath($"{item.InstallPath}/PluginStruct.json")
+                                    Path.GetFullPath($"{item.InstallPath}/PluginInfo.json")
                                 )
                             ),
-                            RequiredLoaderStruct = JsonSerializer.Deserialize<LoaderStruct>(
+                            RequiredLoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
                                 File.ReadAllText(
-                                    Path.GetFullPath($"{item.InstallPath}/LoaderStruct.json")
+                                    Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json")
                                 )
                             ),
                             InstalledDevices = new()

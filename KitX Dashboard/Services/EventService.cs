@@ -1,4 +1,6 @@
 ﻿using KitX.Web.Rules;
+using KitX.Web.Rules.Plugin;
+using KitX.Web.Rules.Device;
 
 namespace KitX.Dashboard.Services;
 
@@ -29,7 +31,7 @@ internal static class EventService
 
     internal delegate void DevicesServerPortChangedHandler();
 
-    internal delegate void OnReceivingDeviceInfoStructHandler(DeviceInfoStruct dis);
+    internal delegate void OnReceivingDeviceInfoHandler(DeviceInfo dis);
 
     internal delegate void OnConfigHotReloadedHandler();
 
@@ -59,7 +61,7 @@ internal static class EventService
 
     internal static event DevicesServerPortChangedHandler? DevicesServerPortChanged;
 
-    internal static event OnReceivingDeviceInfoStructHandler? OnReceivingDeviceInfoStruct;
+    internal static event OnReceivingDeviceInfoHandler? OnReceivingDeviceInfo;
 
     internal static event OnConfigHotReloadedHandler? OnConfigHotReloaded;
 
@@ -80,7 +82,7 @@ internal static class EventService
         UseStatisticsChanged += () => { };
         OnExiting += () => { };
         DevicesServerPortChanged += () => { };
-        OnReceivingDeviceInfoStruct += dis => { };
+        OnReceivingDeviceInfo += dis => { };
         OnConfigHotReloaded += () => { };
         PluginsServerPortChanged += () => { };
     }
@@ -144,8 +146,8 @@ internal static class EventService
     {
         switch (eventName)
         {
-            case nameof(OnReceivingDeviceInfoStruct):
-                OnReceivingDeviceInfoStruct?.Invoke((DeviceInfoStruct)arg);
+            case nameof(OnReceivingDeviceInfo):
+                OnReceivingDeviceInfo?.Invoke((DeviceInfo)arg);
                 break;
         }
     }

@@ -211,7 +211,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         }
     }
 
-    internal static int DevicesServerPort => GlobalInfo.DeviceServerPort;
+    internal static int DevicesServerPort => GlobalInfo.DevicesServerPort;
 
     internal static string LocalIPFilter
     {

@@ -205,7 +205,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
             var port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
 
-            GlobalInfo.DeviceServerPort = port; // 全局端口号标明
+            GlobalInfo.DevicesServerPort = port; // 全局端口号标明
             GlobalInfo.ServerBuildTime = DateTime.UtcNow;
             GlobalInfo.IsMainMachine = true;
 
@@ -245,7 +245,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
             clients.Clear();
 
             GlobalInfo.IsMainMachine = false;
-            GlobalInfo.DeviceServerPort = -1;
+            GlobalInfo.DevicesServerPort = -1;
 
             EventService.Invoke(nameof(EventService.DevicesServerPortChanged));
 
