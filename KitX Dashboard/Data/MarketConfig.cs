@@ -3,9 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace KitX.Dashboard.Data;
 
-/// <summary>
-/// 市场配置文件
-/// </summary>
+
+
+
 public class MarketConfig
 {
     [JsonInclude]

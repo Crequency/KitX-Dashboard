@@ -19,9 +19,9 @@ using System.Threading.Tasks;
 
 namespace KitX.Dashboard.Network;
 
-/// <summary>
-/// 设备自发现网络服务器
-/// </summary>
+
+
+
 internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 {
     private static UdpClient? UdpSender = null;
@@ -233,9 +233,9 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         UdpSendTimer.Start();
     }
 
-    /// <summary>
-    /// 多设备广播接收方法
-    /// </summary>
+
+
+
     private void MultiDevicesBroadCastReceive()
     {
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastReceive)}";
@@ -412,11 +412,11 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         return this;
     }
 
-    /// <summary>
-    /// 设定当接收到数据时的处理代码
-    /// </summary>
-    /// <param name="action">处理代码, 参数一为接收到的数据 (byte[]), 参数二是数据发送者, ip:port</param>
-    /// <returns>设备自发现网络服务器本身</returns>
+
+
+
+
+
     public DevicesDiscoveryServer OnReceive(Action<byte[], int?, string> action)
     {
         onReceive = action;

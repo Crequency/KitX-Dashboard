@@ -14,10 +14,10 @@ namespace KitX.Dashboard.Managers;
 
 internal class AnouncementManager
 {
-    /// <summary>
-    /// 异步检查新公告
-    /// </summary>
-    /// <returns>异步任务</returns>
+
+
+
+
     public static async Task CheckNewAnnouncements()
     {
         var client = new HttpClient();

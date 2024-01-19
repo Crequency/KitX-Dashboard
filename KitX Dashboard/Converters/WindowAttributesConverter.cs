@@ -5,12 +5,12 @@ namespace KitX.Dashboard.Converters;
 
 internal class WindowAttributesConverter
 {
-    /// <summary>
-    /// 坐标回正
-    /// </summary>
-    /// <param name="input">传入的坐标</param>
-    /// <param name="isLeft">是否是距左距离</param>
-    /// <returns>回正的坐标</returns>
+
+
+
+
+
+
     internal static int PositionCameCenter(int input, bool isLeft, Screens screens, Resolution win)
     {
         if (win.Width is null || win.Height is null) return 0;

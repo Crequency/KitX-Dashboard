@@ -16,12 +16,12 @@ internal class CacheManager
         ReceivingFilesCache = new();
     }
 
-    /// <summary>
-    /// 异步获取 MD5 值
-    /// </summary>
-    /// <param name="bytes">要计算的数据</param>
-    /// <param name="trans">是否转换格式</param>
-    /// <returns>MD5 值</returns>
+
+
+
+
+
+
     private static async Task<string?> GetMD5(byte[] bytes, bool trans = false)
     {
         byte[]? result = null;
@@ -42,12 +42,12 @@ internal class CacheManager
         return sb.ToString();
     }
 
-    /// <summary>
-    /// 异步加载本地文件到缓存
-    /// </summary>
-    /// <param name="fileLocation">文件路径</param>
-    /// <param name="token">取消口令</param>
-    /// <returns>缓存文件编号 (MD5), 如果 Hash 值已存在, 则替换原内容</returns>
+
+
+
+
+
+
     public async Task<string?> LoadFileToCache(string fileLocation, CancellationToken token = default)
     {
         var fullPath = Path.GetFullPath(fileLocation);
@@ -68,12 +68,12 @@ internal class CacheManager
         return id;
     }
 
-    /// <summary>
-    /// 异步接收文件到缓存
-    /// </summary>
-    /// <param name="bin">文件字节数组</param>
-    /// <param name="token">取消口令</param>
-    /// <returns>缓存文件编号 (MD5), 如果 Hash 值已存在, 则替换原内容</returns>
+
+
+
+
+
+
     public async Task<string?> ReceiveFileToCache(byte[] bin, CancellationToken token = default)
     {
         var id = await GetMD5(bin, true);
@@ -90,11 +90,11 @@ internal class CacheManager
         return id;
     }
 
-    /// <summary>
-    /// 从接收到的文件缓存中获取文件
-    /// </summary>
-    /// <param name="id">缓存 ID</param>
-    /// <returns>文件字节数组</returns>
+
+
+
+
+
     public byte[]? GetReceivedFileFromCache(string id)
     {
         if (ReceivingFilesCache is null) return null;
@@ -104,10 +104,10 @@ internal class CacheManager
         else return null;
     }
 
-    /// <summary>
-    /// 清除文件缓存
-    /// </summary>
-    /// <param name="id">指定 ID 清除</param>
+
+
+
+
     public bool? DisposeFileCache(string id)
     {
         if (FilesCache is null) return null;

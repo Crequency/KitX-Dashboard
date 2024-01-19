@@ -18,14 +18,14 @@ public class WebManager : IDisposable
         NetworkInterfaceRegistered = new();
     }
 
-    /// <summary>
-    /// 开始执行网络相关服务
-    /// </summary>
-    /// <param name="startAll">是否启动全部</param>
-    /// <param name="startPluginsNetwork">是否启动插件服务器</param>
-    /// <param name="startDevicesServer">是否启动设备服务器</param>
-    /// <param name="startDevicesDiscoveryServer">是否启动设备自发现服务器</param>
-    /// <returns>网络管理器本身</returns>
+
+
+
+
+
+
+
+
     public async Task<WebManager> Start
     (
         bool startAll = true,
@@ -67,12 +67,12 @@ public class WebManager : IDisposable
         return this;
     }
 
-    /// <summary>
-    /// 停止执行网络相关服务
-    /// </summary>
-    /// <param name="stopPluginsServices">是否停止插件服务器</param>
-    /// <param name="stopDevicesServices">是否停止设备服务器</param>
-    /// <returns>网络管理器本身</returns>
+
+
+
+
+
+
     public WebManager Stop
     (
         bool stopAll = true,
@@ -116,13 +116,13 @@ public class WebManager : IDisposable
         return this;
     }
 
-    /// <summary>
-    /// 重启网络相关服务
-    /// </summary>
-    /// <param name="restartPluginsServices">是否重启插件服务器</param>
-    /// <param name="restartDevicesServices">是否重启设备服务器</param>
-    /// <param name="actionBeforeStarting">重新启动前要执行的操作</param>
-    /// <returns>网络管理器本身</returns>
+
+
+
+
+
+
+
     public WebManager Restart
     (
         bool restartAll = true,
@@ -158,9 +158,9 @@ public class WebManager : IDisposable
         return this;
     }
 
-    /// <summary>
-    /// 释放资源
-    /// </summary>
+
+
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);

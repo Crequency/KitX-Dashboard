@@ -22,18 +22,18 @@ public partial class HomePage : UserControl
         InitHomePage();
     }
 
-    /// <summary>
-    /// 初始化主页
-    /// </summary>
+
+
+
     private void InitHomePage()
     {
         this.FindControl<NavigationView>("HomeNavigationView").SelectedItem
             = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
 
-    /// <summary>
-    /// 保存对配置文件的修改
-    /// </summary>
+
+
+
     private static void SaveChanges()
     {
         EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
@@ -49,11 +49,11 @@ public partial class HomePage : UserControl
         }
     }
 
-    /// <summary>
-    /// 前台页面切换事件
-    /// </summary>
-    /// <param name="sender">被点击的 NavigationViewItem</param>
-    /// <param name="e">路由事件参数</param>
+
+
+
+
+
     private void HomeNavigationView_SelectionChanged(
         object? sender,
         NavigationViewSelectionChangedEventArgs e)

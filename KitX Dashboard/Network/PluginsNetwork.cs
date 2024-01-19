@@ -19,10 +19,10 @@ namespace KitX.Dashboard.Managers;
 
 internal class PluginsNetwork
 {
-    /// <summary>
-    /// 执行 Socket 消息
-    /// </summary>
-    /// <param name="msg">消息</param>
+
+
+
+
     internal static void Execute(string msg, IPEndPoint endPoint)
     {
         var location = $"{nameof(PluginsNetwork)}.{nameof(Execute)}";
@@ -74,9 +74,9 @@ internal class PluginsNetwork
 
     internal static readonly object PluginsListOperationLock = new();
 
-    /// <summary>
-    /// 持续检查并移除
-    /// </summary>
+
+
+
     internal static void KeepCheckAndRemove()
     {
         var location = $"{nameof(PluginsNetwork)}.{nameof(KeepCheckAndRemove)}";
@@ -142,30 +142,30 @@ internal class PluginsNetwork
         timer.Start();
     }
 
-    /// <summary>
-    /// 断开了连接
-    /// </summary>
-    /// <param name="id">插件 id</param>
+
+
+
+
     internal static void Disconnect(IPEndPoint endPoint)
     {
         pluginsToRemove.Enqueue(endPoint);
     }
 
-    /// <summary>
-    /// 请求移除插件
-    /// </summary>
-    /// <param name="plugin">插件的安装信息</param>
+
+
+
+
     internal static void RequireRemovePlugin(Plugin plugin) => pluginsToRemoveFromDB.Enqueue(plugin);
 
-    /// <summary>
-    /// 请求删除插件
-    /// </summary>
-    /// <param name="plugin">插件的安装信息</param>
+
+
+
+
     internal static void RequireDeletePlugin(Plugin plugin) => pluginsToDelete.Enqueue(plugin);
 
-    /// <summary>
-    /// 持续检查移除和删除队列
-    /// </summary>
+
+
+
     internal static void KeepCheckAndRemoveOrDelete()
     {
         var location = $"{nameof(PluginsNetwork)}.{nameof(KeepCheckAndRemoveOrDelete)}";

@@ -51,9 +51,9 @@ internal class PluginsServer : IKitXServer<PluginsServer>
         keepListen = true;
     }
 
-    /// <summary>
-    /// 接收客户端
-    /// </summary>
+
+
+
     private static void AcceptClient()
     {
         var location = $"{nameof(PluginsServer)}.{nameof(AcceptClient)}";
@@ -81,10 +81,10 @@ internal class PluginsServer : IKitXServer<PluginsServer>
         }
     }
 
-    /// <summary>
-    /// 接收消息
-    /// </summary>
-    /// <param name="client">TcpClient</param>
+
+
+
+
     private static void ReceiveMessage(TcpClient client)
     {
         var location = $"{nameof(PluginsServer)}.{nameof(ReceiveMessage)}";

@@ -50,9 +50,9 @@ internal class DevicesServer : IKitXServer<DevicesServer>
         keepListen = true;
     }
 
-    /// <summary>
-    /// 接收客户端
-    /// </summary>
+
+
+
     private static void AcceptClient()
     {
         var location = $"{nameof(DevicesServer)}.{nameof(AcceptClient)}";
@@ -80,10 +80,10 @@ internal class DevicesServer : IKitXServer<DevicesServer>
         }
     }
 
-    /// <summary>
-    /// 接收客户端消息
-    /// </summary>
-    /// <param name="client">TcpClient</param>
+
+
+
+
     private static void ReceiveMessage(TcpClient client)
     {
         var location = $"{nameof(DevicesServer)}.{nameof(ReceiveMessage)}";

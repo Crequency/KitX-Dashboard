@@ -6,12 +6,12 @@ namespace KitX.Dashboard.Managers;
 
 internal class TasksManager
 {
-    /// <summary>
-    /// 执行任务, 并带有更好的日志显示
-    /// </summary>
-    /// <param name="action">要执行的动作</param>
-    /// <param name="name">日志显示名称</param>
-    /// <param name="prompt">日志提示</param>
+
+
+
+
+
+
     public static void RunTask(
         Action action,
         string name = nameof(Action),
@@ -36,12 +36,12 @@ internal class TasksManager
         Log.Information($"{prompt}Task `{name}` done.");
     }
 
-    /// <summary>
-    /// 异步执行任务, 并带有更好的日志显示
-    /// </summary>
-    /// <param name="action">要执行的动作</param>
-    /// <param name="name">任务名称</param>
-    /// <param name="prompt">日志提示</param>
+
+
+
+
+
+
     public static async Task RunTaskAsync(
         Action action,
         string name = nameof(Action),

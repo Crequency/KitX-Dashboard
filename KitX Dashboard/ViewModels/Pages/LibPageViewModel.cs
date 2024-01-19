@@ -47,13 +47,13 @@ internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    /// <summary>
-    /// 插件卡片集合
-    /// </summary>
+
+
+
     public static ObservableCollection<PluginCard> PluginCards => Instances.PluginCards;
 
-    /// <summary>
-    /// 搜索框文字
-    /// </summary>
+
+
+
     public string? SearchingText { get; set; }
 }

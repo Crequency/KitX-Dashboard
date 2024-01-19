@@ -24,9 +24,9 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel viewModel = new();
 
-    /// <summary>
-    /// 主窗体的构造函数
-    /// </summary>
+
+
+
     public MainWindow()
     {
         var location = $"{nameof(MainWindow)}";
@@ -106,9 +106,9 @@ public partial class MainWindow : Window
         InitMainWindow();
     }
 
-    /// <summary>
-    /// 建议分辨率和位置
-    /// </summary>
+
+
+
     private void SuggestResolutionAndLocation()
     {
         if (Screens.Primary is null) return;
@@ -133,9 +133,9 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// 初始化主窗体
-    /// </summary>
+
+
+
     private void InitMainWindow()
     {
         //  导航到上次关闭时界面
@@ -179,17 +179,17 @@ public partial class MainWindow : Window
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
     }
 
-    /// <summary>
-    /// 保存对配置文件的修改
-    /// </summary>
+
+
+
     private static void SaveChanges()
     {
         EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
-    /// <summary>
-    /// 更新招呼语
-    /// </summary>
+
+
+
     internal void UpdateGreetingText()
     {
         try
@@ -213,11 +213,11 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// 通过名称获取页面类型
-    /// </summary>
-    /// <param name="name">页面名称</param>
-    /// <returns>页面类型</returns>
+
+
+
+
+
     private static Type GetPageTypeFromName(string name) => name switch
     {
         "Page_Home" => typeof(Pages.HomePage),
@@ -230,9 +230,9 @@ public partial class MainWindow : Window
         _ => typeof(Pages.HomePage),
     };
 
-    /// <summary>
-    /// 已选择的页面名称
-    /// </summary>
+
+
+
     private static string SelectedPageName
     {
         get => ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"];
@@ -243,11 +243,11 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// 前台页面切换事件
-    /// </summary>
-    /// <param name="sender">被点击的 NavigationViewItem</param>
-    /// <param name="e">路由事件参数</param>
+
+
+
+
+
     private void MainNavigationView_SelectionChanged(
         object? sender,
         NavigationViewSelectionChangedEventArgs e)
@@ -274,9 +274,9 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// 储存元数据
-    /// </summary>
+
+
+
     private void SaveMetaData()
     {
         if (WindowState != WindowState.Maximized)
@@ -301,10 +301,10 @@ public partial class MainWindow : Window
         ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"] = SelectedPageName;
     }
 
-    /// <summary>
-    /// 窗口状态改变事件
-    /// </summary>
-    /// <param name="state">窗口状态</param>
+
+
+
+
     //protected override void HandleWindowStateChanged(WindowState state)
     //{
     //    ConfigManager.AppConfig.Windows.MainWindow.WindowState = state;
@@ -315,10 +315,10 @@ public partial class MainWindow : Window
     //    base.HandleWindowStateChanged(state);
     //}
 
-    /// <summary>
-    /// 正在关闭窗口时事件
-    /// </summary>
-    /// <param name="e">关闭事件参数</param>
+
+
+
+
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);
@@ -341,10 +341,10 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// 窗体正在启动事件
-    /// </summary>
-    /// <param name="e">窗体启动参数</param>
+
+
+
+
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
@@ -362,11 +362,11 @@ public partial class MainWindow : Window
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
     }
 
-    /// <summary>
-    /// 主题正在更改请求事件
-    /// </summary>
-    /// <param name="sender">FluentAvaloniaTheme</param>
-    /// <param name="args">主题正在更改请求参数</param>
+
+
+
+
+
     //private void OnRequestedThemeChanged(
     //    FluentAvaloniaTheme sender,
     //    RequestedThemeChangedEventArgs args)
@@ -380,9 +380,9 @@ public partial class MainWindow : Window
     //    }
     //}
 
-    /// <summary>
-    /// 尝试启用云母特效
-    /// </summary>
+
+
+
     private void TryEnableMicaEffect()
     {
         _ = this.TryFindResource(

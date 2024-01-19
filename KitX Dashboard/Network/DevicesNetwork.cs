@@ -47,11 +47,11 @@ internal class DevicesNetwork
         };
     }
 
-    /// <summary>
-    /// 判断设备是否应该标记为离线
-    /// </summary>
-    /// <param name="info">设备广播信息</param>
-    /// <returns>是否离线</returns>
+
+
+
+
+
     private static bool CheckDeviceIsOffline(DeviceInfo info)
         => DateTime.UtcNow - info.SendTime.ToUniversalTime() > new TimeSpan(
             0,
@@ -117,9 +117,9 @@ internal class DevicesNetwork
         while (needToAddDevicesCount != 0) ;
     }
 
-    /// <summary>
-    /// 移除离线设备
-    /// </summary>
+
+
+
     private static void RemoveOfflineCards()
     {
         var devicesNeedToBeRemoved = new List<DeviceCard>();
@@ -146,9 +146,9 @@ internal class DevicesNetwork
         while (removeDeviceTaskRunning) ;
     }
 
-    /// <summary>
-    /// 移动本机设备卡片到第一个
-    /// </summary>
+
+
+
     private static void MoveSelfCard2First()
     {
         var index = 0;
@@ -184,9 +184,9 @@ internal class DevicesNetwork
         }
     }
 
-    /// <summary>
-    /// 持续检查并移除
-    /// </summary>
+
+
+
     private static void KeepCheckAndRemove()
     {
         var location = $"{nameof(DevicesNetwork)}.{nameof(KeepCheckAndRemove)}";
@@ -231,10 +231,10 @@ internal class DevicesNetwork
         };
     }
 
-    /// <summary>
-    /// 更新收到的UDP包
-    /// </summary>
-    /// <param name="deviceInfo">设备信息结构</param>
+
+
+
+
     internal static void Update(DeviceInfo deviceInfo)
     {
         deviceInfoStructs.Enqueue(deviceInfo);
@@ -250,9 +250,9 @@ internal class DevicesNetwork
         EventService.Invoke(nameof(EventService.OnReceivingDeviceInfo), deviceInfo);
     }
 
-    /// <summary>
-    /// 观察主控
-    /// </summary>
+
+
+
     internal static void Watch4MainDevice()
     {
         var location = $"{nameof(DevicesNetwork)}.{nameof(Watch4MainDevice)}";
@@ -318,9 +318,9 @@ internal class DevicesNetwork
         }).Start();
     }
 
-    /// <summary>
-    /// 观察结束
-    /// </summary>
+
+
+
     internal static async void WatchingOver(bool foundMainDevice, string serverAddress, int serverPort)
     {
         var location = $"{nameof(DevicesNetwork)}.{nameof(WatchingOver)}";

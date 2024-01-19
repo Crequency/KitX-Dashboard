@@ -66,9 +66,9 @@ internal static class EventService
     internal static event OnConfigHotReloadedHandler? OnConfigHotReloaded;
 
 
-    /// <summary>
-    /// 必要的初始化
-    /// </summary>
+
+
+
     internal static void Init()
     {
         LanguageChanged += () => { };
@@ -87,10 +87,10 @@ internal static class EventService
         PluginsServerPortChanged += () => { };
     }
 
-    /// <summary>
-    /// 执行全局事件
-    /// </summary>
-    /// <param name="eventName">事件名称</param>
+
+
+
+
     internal static void Invoke(string eventName)
     {
         switch (eventName)
@@ -137,11 +137,11 @@ internal static class EventService
         }
     }
 
-    /// <summary>
-    /// 执行全局事件
-    /// </summary>
-    /// <param name="eventName">事件名称</param>
-    /// <param name="arg">事件参数</param>
+
+
+
+
+
     internal static void Invoke(string eventName, object arg)
     {
         switch (eventName)

@@ -18,10 +18,6 @@ namespace KitX.Dashboard;
 
 public static class Helper
 {
-    /// <summary>
-    /// 处理启动参数
-    /// </summary>
-    /// <param name="args">参数列表</param>
     public static void ProcessStartupArguments(string[] args)
     {
         try
@@ -62,9 +58,6 @@ public static class Helper
         }
     }
 
-    /// <summary>
-    /// Run framework
-    /// </summary>
     public static void RunFramework()
     {
         if (GlobalInfo.IsSingleProcessStartMode)
@@ -196,9 +189,6 @@ public static class Helper
 
     }
 
-    /// <summary>
-    /// 初始化环境
-    /// </summary>
     private static void InitEnvironment()
     {
         var location = $"{nameof(Helper)}.{nameof(InitEnvironment)}";
@@ -217,9 +207,9 @@ public static class Helper
             }).Start();
     }
 
-    /// <summary>
-    /// 初始化数据库
-    /// </summary>
+
+
+
     private static void InitDataBase()
     {
         var location = $"{nameof(Helper)}.{nameof(InitDataBase)}";
@@ -244,9 +234,9 @@ public static class Helper
         }
     }
 
-    /// <summary>
-    /// 检查当前是否是单进程状态
-    /// </summary>
+
+
+
     private static void SingleProcessCheck()
     {
         var nowProcesses = Process.GetProcesses();
@@ -261,9 +251,9 @@ public static class Helper
         }
     }
 
-    /// <summary>
-    /// 读取资源
-    /// </summary>
+
+
+
     private static async void LoadResource()
     {
         var location = $"{nameof(Helper)}.{nameof(LoadResource)}";
@@ -280,10 +270,10 @@ public static class Helper
         }
     }
 
-    /// <summary>
-    /// 导入插件
-    /// </summary>
-    /// <param name="kxpPath">.kxp Path</param>
+
+
+
+
     private static void ImportPlugin(string kxpPath)
     {
         try
@@ -305,9 +295,9 @@ public static class Helper
         }
     }
 
-    /// <summary>
-    /// 退出
-    /// </summary>
+
+
+
     public static void Exit()
     {
         var location = $"{nameof(Helper)}.{nameof(Exit)}";

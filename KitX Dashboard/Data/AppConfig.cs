@@ -6,9 +6,9 @@ using System.Text.Json.Serialization;
 
 namespace KitX.Dashboard.Data;
 
-/// <summary>
-/// 配置结构
-/// </summary>
+
+
+
 public class AppConfig
 {
     [JsonInclude]
@@ -35,9 +35,9 @@ public class AppConfig
     [JsonInclude]
     public Config_Loaders Loaders { get; set; } = new();
 
-    /// <summary>
-    /// AppConfig
-    /// </summary>
+
+
+
     public class Config_App
     {
         [JsonInclude]
@@ -83,9 +83,9 @@ public class AppConfig
         public ulong RanTime { get; set; } = 0;
     }
 
-    /// <summary>
-    /// WindowsConfig
-    /// </summary>
+
+
+
     public class Config_Windows
     {
 
@@ -95,9 +95,9 @@ public class AppConfig
         [JsonInclude]
         public Config_AnnouncementWindow AnnouncementWindow { get; set; } = new();
 
-        /// <summary>
-        /// MainWindowConfig
-        /// </summary>
+
+
+
         public class Config_MainWindow
         {
             [JsonInclude]
@@ -149,9 +149,9 @@ public class AppConfig
             public int GreetingUpdateInterval { get; set; } = 10;
         }
 
-        /// <summary>
-        /// AnnouncementWindowConfig
-        /// </summary>
+
+
+
         public class Config_AnnouncementWindow
         {
             [JsonInclude]
@@ -168,9 +168,9 @@ public class AppConfig
         }
     }
 
-    /// <summary>
-    /// ViewsConfig
-    /// </summary>
+
+
+
     public class Config_Pages
     {
         [JsonInclude]
@@ -185,9 +185,9 @@ public class AppConfig
         [JsonInclude]
         public Config_SettingsPage Settings { get; set; } = new();
 
-        /// <summary>
-        /// HomePageConfig
-        /// </summary>
+
+
+
         public class Config_HomePage
         {
             [JsonInclude]
@@ -204,25 +204,25 @@ public class AppConfig
             public bool UseAreaExpanded { get; set; } = true;
         }
 
-        /// <summary>
-        /// DevicePageConfig
-        /// </summary>
+
+
+
         public class Config_DevicePage
         {
 
         }
 
-        /// <summary>
-        /// MargetPageConfig
-        /// </summary>
+
+
+
         public class Config_MarketPage
         {
 
         }
 
-        /// <summary>
-        /// SettingsPageConfig
-        /// </summary>
+
+
+
         public class Config_SettingsPage
         {
             [JsonInclude]
@@ -270,9 +270,9 @@ public class AppConfig
         }
     }
 
-    /// <summary>
-    /// WebConfig
-    /// </summary>
+
+
+
     public class Config_Web
     {
         [JsonInclude]
@@ -320,18 +320,18 @@ public class AppConfig
         [JsonInclude]
         public string UpdateServer { get; set; } = "api.catrol.cn";
 
-        /// <summary>
-        /// %platform%  -   Windows, Linux, MacOS (win, linux, mac)
-        /// </summary>
+
+
+
         [JsonInclude]
         public string UpdatePath { get; set; } = "/apps/kitx/%platform%/";
 
         [JsonInclude]
         public string UpdateDownloadPath { get; set; } = "/apps/kitx/update/%platform%/";
 
-        /// <summary>
-        /// %channel%   -   Stable, Beta, Alpha (stable, beta, alpha)
-        /// </summary>
+
+
+
         [JsonInclude]
         public string UpdateChannel { get; set; } = "stable";
 
@@ -342,9 +342,9 @@ public class AppConfig
         public int DebugServicesServerPort { get; set; } = 7777;
     }
 
-    /// <summary>
-    /// LogConfig
-    /// </summary>
+
+
+
     public class Config_Log
     {
 
@@ -378,9 +378,9 @@ public class AppConfig
 
     }
 
-    /// <summary>
-    /// IOConfig
-    /// </summary>
+
+
+
     public class Config_IO
     {
         [JsonInclude]
@@ -390,18 +390,18 @@ public class AppConfig
         public int OperatingSystemVersionUpdateInterval { get; set; } = 60;
     }
 
-    /// <summary>
-    /// ActivityConfig
-    /// </summary>
+
+
+
     public class Config_Activity
     {
         [JsonInclude]
         public int TotalRecorded { get; set; } = 0;
     }
 
-    /// <summary>
-    /// LoadersConfig
-    /// </summary>
+
+
+
     public class Config_Loaders
     {
         [JsonInclude]

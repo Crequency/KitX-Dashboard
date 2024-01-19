@@ -22,28 +22,28 @@ public partial class SettingsPage : UserControl
         InitSettingsPage();
     }
 
-    /// <summary>
-    /// 初始化设置页面
-    /// </summary>
+
+
+
     private void InitSettingsPage()
     {
         this.FindControl<NavigationView>("SettingsNavigationView").SelectedItem
             = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
 
-    /// <summary>
-    /// 保存对配置文件的修改
-    /// </summary>
+
+
+
     private static void SaveChanges()
     {
         EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
-    /// <summary>
-    /// 前台页面切换事件
-    /// </summary>
-    /// <param name="sender">被点击的 NavigationViewItem</param>
-    /// <param name="e">路由事件参数</param>
+
+
+
+
+
     private void SettingsNavigationView_SelectionChanged(
         object? sender,
         NavigationViewSelectionChangedEventArgs e)

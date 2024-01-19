@@ -16,11 +16,11 @@ internal class ActivityManager
 
     private static Activity? _appActivity;
 
-    /// <summary>
-    /// 记录活动
-    /// </summary>
-    /// <param name="activity">活动</param>
-    /// <param name="keySelector">键选择器</param>
+
+
+
+
+
     public static void Record(Activity activity, Expression<Func<Activity, int>> keySelector)
     {
         var location = $"{nameof(ActivityManager)}.{nameof(Record)}";
@@ -45,10 +45,10 @@ internal class ActivityManager
         }, location, catchException: true);
     }
 
-    /// <summary>
-    /// 更新活动
-    /// </summary>
-    /// <param name="activity">活动</param>
+
+
+
+
     public static void Update(Activity activity)
     {
         var location = $"{nameof(ActivityManager)}.{nameof(Update)}";

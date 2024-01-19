@@ -10,13 +10,13 @@ namespace KitX.Dashboard;
 
 class Program
 {
-    /// <summary>
-    /// Main entry for program
-    /// </summary>
-    /// <param name="args"></param>
-    /// Initialization code. Don't use any Avalonia, third-party APIs or any
-    /// SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    /// yet and stuff might break.
+
+
+
+
+
+
+
     [STAThread]
     public static void Main(string[] args)
     {
@@ -61,11 +61,11 @@ class Program
         }
     }
 
-    /// <summary>
-    /// Build Avalonia app
-    /// </summary>
-    /// <returns>Avalonia AppBuilder</returns>
-    /// Do not remove this, it also used by visual designer.
+
+
+
+
+
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
