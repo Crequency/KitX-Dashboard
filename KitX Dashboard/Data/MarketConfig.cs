@@ -3,9 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace KitX.Dashboard.Data;
 
-
-
-
 public class MarketConfig
 {
     [JsonInclude]

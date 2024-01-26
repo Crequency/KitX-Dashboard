@@ -6,12 +6,6 @@ namespace KitX.Dashboard.Managers;
 
 internal class TasksManager
 {
-
-
-
-
-
-
     public static void RunTask(
         Action action,
         string name = nameof(Action),
@@ -35,12 +29,6 @@ internal class TasksManager
 
         Log.Information($"{prompt}Task `{name}` done.");
     }
-
-
-
-
-
-
 
     public static async Task RunTaskAsync(
         Action action,

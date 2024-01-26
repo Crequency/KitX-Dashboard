@@ -19,10 +19,6 @@ namespace KitX.Dashboard.Managers;
 
 internal class PluginsNetwork
 {
-
-
-
-
     internal static void Execute(string msg, IPEndPoint endPoint)
     {
         var location = $"{nameof(PluginsNetwork)}.{nameof(Execute)}";
@@ -73,9 +69,6 @@ internal class PluginsNetwork
     internal static readonly Queue<Plugin> pluginsToDelete = new();
 
     internal static readonly object PluginsListOperationLock = new();
-
-
-
 
     internal static void KeepCheckAndRemove()
     {
@@ -142,29 +135,14 @@ internal class PluginsNetwork
         timer.Start();
     }
 
-
-
-
-
     internal static void Disconnect(IPEndPoint endPoint)
     {
         pluginsToRemove.Enqueue(endPoint);
     }
 
-
-
-
-
     internal static void RequireRemovePlugin(Plugin plugin) => pluginsToRemoveFromDB.Enqueue(plugin);
 
-
-
-
-
     internal static void RequireDeletePlugin(Plugin plugin) => pluginsToDelete.Enqueue(plugin);
-
-
-
 
     internal static void KeepCheckAndRemoveOrDelete()
     {

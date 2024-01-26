@@ -18,14 +18,6 @@ public class WebManager : IDisposable
         NetworkInterfaceRegistered = new();
     }
 
-
-
-
-
-
-
-
-
     public async Task<WebManager> Start
     (
         bool startAll = true,
@@ -66,12 +58,6 @@ public class WebManager : IDisposable
 
         return this;
     }
-
-
-
-
-
-
 
     public WebManager Stop
     (
@@ -116,13 +102,6 @@ public class WebManager : IDisposable
         return this;
     }
 
-
-
-
-
-
-
-
     public WebManager Restart
     (
         bool restartAll = true,
@@ -157,9 +136,6 @@ public class WebManager : IDisposable
 
         return this;
     }
-
-
-
 
     public void Dispose()
     {

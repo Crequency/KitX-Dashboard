@@ -51,9 +51,6 @@ internal class PluginsServer : IKitXServer<PluginsServer>
         keepListen = true;
     }
 
-
-
-
     private static void AcceptClient()
     {
         var location = $"{nameof(PluginsServer)}.{nameof(AcceptClient)}";
@@ -80,10 +77,6 @@ internal class PluginsServer : IKitXServer<PluginsServer>
             Status = ServerStatus.Errored;
         }
     }
-
-
-
-
 
     private static void ReceiveMessage(TcpClient client)
     {

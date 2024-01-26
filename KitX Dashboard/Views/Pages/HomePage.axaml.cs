@@ -22,17 +22,11 @@ public partial class HomePage : UserControl
         InitHomePage();
     }
 
-
-
-
     private void InitHomePage()
     {
         this.FindControl<NavigationView>("HomeNavigationView").SelectedItem
             = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
-
-
-
 
     private static void SaveChanges()
     {
@@ -48,11 +42,6 @@ public partial class HomePage : UserControl
             SaveChanges();
         }
     }
-
-
-
-
-
 
     private void HomeNavigationView_SelectionChanged(
         object? sender,

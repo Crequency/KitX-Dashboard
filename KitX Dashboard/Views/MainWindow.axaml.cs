@@ -24,9 +24,6 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel viewModel = new();
 
-
-
-
     public MainWindow()
     {
         var location = $"{nameof(MainWindow)}";
@@ -106,9 +103,6 @@ public partial class MainWindow : Window
         InitMainWindow();
     }
 
-
-
-
     private void SuggestResolutionAndLocation()
     {
         if (Screens.Primary is null) return;
@@ -132,9 +126,6 @@ public partial class MainWindow : Window
             }
         }
     }
-
-
-
 
     private void InitMainWindow()
     {
@@ -179,16 +170,10 @@ public partial class MainWindow : Window
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
     }
 
-
-
-
     private static void SaveChanges()
     {
         EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
-
-
-
 
     internal void UpdateGreetingText()
     {
@@ -213,11 +198,6 @@ public partial class MainWindow : Window
         }
     }
 
-
-
-
-
-
     private static Type GetPageTypeFromName(string name) => name switch
     {
         "Page_Home" => typeof(Pages.HomePage),
@@ -230,9 +210,6 @@ public partial class MainWindow : Window
         _ => typeof(Pages.HomePage),
     };
 
-
-
-
     private static string SelectedPageName
     {
         get => ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"];
@@ -242,11 +219,6 @@ public partial class MainWindow : Window
             SaveChanges();
         }
     }
-
-
-
-
-
 
     private void MainNavigationView_SelectionChanged(
         object? sender,
@@ -274,9 +246,6 @@ public partial class MainWindow : Window
         }
     }
 
-
-
-
     private void SaveMetaData()
     {
         if (WindowState != WindowState.Maximized)
@@ -301,10 +270,6 @@ public partial class MainWindow : Window
         ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"] = SelectedPageName;
     }
 
-
-
-
-
     //protected override void HandleWindowStateChanged(WindowState state)
     //{
     //    ConfigManager.AppConfig.Windows.MainWindow.WindowState = state;
@@ -314,10 +279,6 @@ public partial class MainWindow : Window
 
     //    base.HandleWindowStateChanged(state);
     //}
-
-
-
-
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
@@ -341,10 +302,6 @@ public partial class MainWindow : Window
         }
     }
 
-
-
-
-
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
@@ -362,11 +319,6 @@ public partial class MainWindow : Window
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
     }
 
-
-
-
-
-
     //private void OnRequestedThemeChanged(
     //    FluentAvaloniaTheme sender,
     //    RequestedThemeChangedEventArgs args)
@@ -379,9 +331,6 @@ public partial class MainWindow : Window
     //            SetValue(BackgroundProperty, AvaloniaProperty.UnsetValue);
     //    }
     //}
-
-
-
 
     private void TryEnableMicaEffect()
     {

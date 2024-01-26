@@ -65,10 +65,6 @@ internal static class EventService
 
     internal static event OnConfigHotReloadedHandler? OnConfigHotReloaded;
 
-
-
-
-
     internal static void Init()
     {
         LanguageChanged += () => { };
@@ -86,10 +82,6 @@ internal static class EventService
         OnConfigHotReloaded += () => { };
         PluginsServerPortChanged += () => { };
     }
-
-
-
-
 
     internal static void Invoke(string eventName)
     {
@@ -136,11 +128,6 @@ internal static class EventService
                 break;
         }
     }
-
-
-
-
-
 
     internal static void Invoke(string eventName, object arg)
     {

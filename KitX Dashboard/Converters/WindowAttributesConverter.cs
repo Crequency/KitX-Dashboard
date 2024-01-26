@@ -5,12 +5,6 @@ namespace KitX.Dashboard.Converters;
 
 internal class WindowAttributesConverter
 {
-
-
-
-
-
-
     internal static int PositionCameCenter(int input, bool isLeft, Screens screens, Resolution win)
     {
         if (win.Width is null || win.Height is null) return 0;

@@ -22,27 +22,16 @@ public partial class SettingsPage : UserControl
         InitSettingsPage();
     }
 
-
-
-
     private void InitSettingsPage()
     {
         this.FindControl<NavigationView>("SettingsNavigationView").SelectedItem
             = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
 
-
-
-
     private static void SaveChanges()
     {
         EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
-
-
-
-
-
 
     private void SettingsNavigationView_SelectionChanged(
         object? sender,

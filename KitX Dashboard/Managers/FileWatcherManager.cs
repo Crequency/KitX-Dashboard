@@ -9,13 +9,6 @@ internal class FileWatcherManager
 {
     private readonly Dictionary<string, FileWatcher> Watchers = new();
 
-
-
-
-
-
-
-
     public FileWatcherManager RegisterWatcher(
         string name,
         string filePath,
@@ -34,10 +27,6 @@ internal class FileWatcherManager
         return this;
     }
 
-
-
-
-
     public FileWatcherManager UnregisterWatcher(string name)
     {
         if (Watchers.TryGetValue(name, out var watcher))
@@ -49,11 +38,6 @@ internal class FileWatcherManager
         return this;
     }
 
-
-
-
-
-
     public FileWatcherManager IncreaseExceptCount(string name, int count = 1)
     {
         if (Watchers.TryGetValue(name, out var watcher))
@@ -62,11 +46,6 @@ internal class FileWatcherManager
         return this;
     }
 
-
-
-
-
-
     public FileWatcherManager DecreaseExceptCount(string name, int count = 1)
     {
         if (Watchers.TryGetValue(name, out var watcher))
@@ -74,9 +53,6 @@ internal class FileWatcherManager
 
         return this;
     }
-
-
-
 
     public FileWatcherManager Clear()
     {
@@ -122,15 +98,7 @@ internal class FileWatcher : IDisposable
         watcher.EnableRaisingEvents = true;
     }
 
-
-
-
-
     public void IncreaseExceptCount(int count) => ExceptCounts += count;
-
-
-
-
 
     public void DecreaseExceptCount(int count) => ExceptCounts -= count;
 

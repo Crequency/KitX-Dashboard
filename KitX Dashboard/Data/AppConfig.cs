@@ -6,9 +6,6 @@ using System.Text.Json.Serialization;
 
 namespace KitX.Dashboard.Data;
 
-
-
-
 public class AppConfig
 {
     [JsonInclude]
@@ -34,9 +31,6 @@ public class AppConfig
 
     [JsonInclude]
     public Config_Loaders Loaders { get; set; } = new();
-
-
-
 
     public class Config_App
     {
@@ -83,9 +77,6 @@ public class AppConfig
         public ulong RanTime { get; set; } = 0;
     }
 
-
-
-
     public class Config_Windows
     {
 
@@ -94,9 +85,6 @@ public class AppConfig
 
         [JsonInclude]
         public Config_AnnouncementWindow AnnouncementWindow { get; set; } = new();
-
-
-
 
         public class Config_MainWindow
         {
@@ -149,9 +137,6 @@ public class AppConfig
             public int GreetingUpdateInterval { get; set; } = 10;
         }
 
-
-
-
         public class Config_AnnouncementWindow
         {
             [JsonInclude]
@@ -168,9 +153,6 @@ public class AppConfig
         }
     }
 
-
-
-
     public class Config_Pages
     {
         [JsonInclude]
@@ -184,9 +166,6 @@ public class AppConfig
 
         [JsonInclude]
         public Config_SettingsPage Settings { get; set; } = new();
-
-
-
 
         public class Config_HomePage
         {
@@ -204,24 +183,15 @@ public class AppConfig
             public bool UseAreaExpanded { get; set; } = true;
         }
 
-
-
-
         public class Config_DevicePage
         {
 
         }
 
-
-
-
         public class Config_MarketPage
         {
 
         }
-
-
-
 
         public class Config_SettingsPage
         {
@@ -270,9 +240,6 @@ public class AppConfig
         }
     }
 
-
-
-
     public class Config_Web
     {
         [JsonInclude]
@@ -320,18 +287,15 @@ public class AppConfig
         [JsonInclude]
         public string UpdateServer { get; set; } = "api.catrol.cn";
 
-
-
-
         [JsonInclude]
         public string UpdatePath { get; set; } = "/apps/kitx/%platform%/";
 
         [JsonInclude]
         public string UpdateDownloadPath { get; set; } = "/apps/kitx/update/%platform%/";
 
-
-
-
+        /// <summary>
+        /// %channel%   -   Stable, Beta, Alpha (stable, beta, alpha)
+        /// </summary>
         [JsonInclude]
         public string UpdateChannel { get; set; } = "stable";
 
@@ -341,9 +305,6 @@ public class AppConfig
         [JsonInclude]
         public int DebugServicesServerPort { get; set; } = 7777;
     }
-
-
-
 
     public class Config_Log
     {
@@ -378,9 +339,6 @@ public class AppConfig
 
     }
 
-
-
-
     public class Config_IO
     {
         [JsonInclude]
@@ -390,17 +348,11 @@ public class AppConfig
         public int OperatingSystemVersionUpdateInterval { get; set; } = 60;
     }
 
-
-
-
     public class Config_Activity
     {
         [JsonInclude]
         public int TotalRecorded { get; set; } = 0;
     }
-
-
-
 
     public class Config_Loaders
     {

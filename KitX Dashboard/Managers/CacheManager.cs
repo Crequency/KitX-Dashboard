@@ -16,12 +16,6 @@ internal class CacheManager
         ReceivingFilesCache = new();
     }
 
-
-
-
-
-
-
     private static async Task<string?> GetMD5(byte[] bytes, bool trans = false)
     {
         byte[]? result = null;
@@ -41,12 +35,6 @@ internal class CacheManager
 
         return sb.ToString();
     }
-
-
-
-
-
-
 
     public async Task<string?> LoadFileToCache(string fileLocation, CancellationToken token = default)
     {
@@ -68,12 +56,6 @@ internal class CacheManager
         return id;
     }
 
-
-
-
-
-
-
     public async Task<string?> ReceiveFileToCache(byte[] bin, CancellationToken token = default)
     {
         var id = await GetMD5(bin, true);
@@ -90,11 +72,6 @@ internal class CacheManager
         return id;
     }
 
-
-
-
-
-
     public byte[]? GetReceivedFileFromCache(string id)
     {
         if (ReceivingFilesCache is null) return null;
@@ -103,10 +80,6 @@ internal class CacheManager
             return bin;
         else return null;
     }
-
-
-
-
 
     public bool? DisposeFileCache(string id)
     {

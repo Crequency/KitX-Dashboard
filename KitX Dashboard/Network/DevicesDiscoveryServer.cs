@@ -19,9 +19,6 @@ using System.Threading.Tasks;
 
 namespace KitX.Dashboard.Network;
 
-
-
-
 internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 {
     private static UdpClient? UdpSender = null;
@@ -233,9 +230,6 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         UdpSendTimer.Start();
     }
 
-
-
-
     private void MultiDevicesBroadCastReceive()
     {
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastReceive)}";
@@ -411,11 +405,6 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         return this;
     }
-
-
-
-
-
 
     public DevicesDiscoveryServer OnReceive(Action<byte[], int?, string> action)
     {

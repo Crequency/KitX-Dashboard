@@ -207,9 +207,6 @@ public static class Helper
             }).Start();
     }
 
-
-
-
     private static void InitDataBase()
     {
         var location = $"{nameof(Helper)}.{nameof(InitDataBase)}";
@@ -234,9 +231,6 @@ public static class Helper
         }
     }
 
-
-
-
     private static void SingleProcessCheck()
     {
         var nowProcesses = Process.GetProcesses();
@@ -250,9 +244,6 @@ public static class Helper
             if (count >= 2) Environment.Exit(ErrorCodes.AlraedyStartedOneProcess);
         }
     }
-
-
-
 
     private static async void LoadResource()
     {
@@ -269,10 +260,6 @@ public static class Helper
             Log.Error(ex, $"In {location}: {ex.Message}");
         }
     }
-
-
-
-
 
     private static void ImportPlugin(string kxpPath)
     {
@@ -294,9 +281,6 @@ public static class Helper
             Log.Error(ex, "In Helper.ImportPlugin()");
         }
     }
-
-
-
 
     public static void Exit()
     {

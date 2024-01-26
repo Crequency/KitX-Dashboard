@@ -47,13 +47,7 @@ internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-
-
-
     public static ObservableCollection<PluginCard> PluginCards => Instances.PluginCards;
-
-
-
 
     public string? SearchingText { get; set; }
 }

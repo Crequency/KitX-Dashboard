@@ -47,11 +47,6 @@ internal class DevicesNetwork
         };
     }
 
-
-
-
-
-
     private static bool CheckDeviceIsOffline(DeviceInfo info)
         => DateTime.UtcNow - info.SendTime.ToUniversalTime() > new TimeSpan(
             0,
@@ -117,9 +112,6 @@ internal class DevicesNetwork
         while (needToAddDevicesCount != 0) ;
     }
 
-
-
-
     private static void RemoveOfflineCards()
     {
         var devicesNeedToBeRemoved = new List<DeviceCard>();
@@ -145,9 +137,6 @@ internal class DevicesNetwork
 
         while (removeDeviceTaskRunning) ;
     }
-
-
-
 
     private static void MoveSelfCard2First()
     {
@@ -183,9 +172,6 @@ internal class DevicesNetwork
             ++index;
         }
     }
-
-
-
 
     private static void KeepCheckAndRemove()
     {
@@ -231,10 +217,6 @@ internal class DevicesNetwork
         };
     }
 
-
-
-
-
     internal static void Update(DeviceInfo deviceInfo)
     {
         deviceInfoStructs.Enqueue(deviceInfo);
@@ -249,9 +231,6 @@ internal class DevicesNetwork
 
         EventService.Invoke(nameof(EventService.OnReceivingDeviceInfo), deviceInfo);
     }
-
-
-
 
     internal static void Watch4MainDevice()
     {
@@ -317,9 +296,6 @@ internal class DevicesNetwork
             }
         }).Start();
     }
-
-
-
 
     internal static async void WatchingOver(bool foundMainDevice, string serverAddress, int serverPort)
     {

@@ -50,9 +50,6 @@ internal class DevicesServer : IKitXServer<DevicesServer>
         keepListen = true;
     }
 
-
-
-
     private static void AcceptClient()
     {
         var location = $"{nameof(DevicesServer)}.{nameof(AcceptClient)}";
@@ -79,10 +76,6 @@ internal class DevicesServer : IKitXServer<DevicesServer>
             Status = ServerStatus.Errored;
         }
     }
-
-
-
-
 
     private static void ReceiveMessage(TcpClient client)
     {

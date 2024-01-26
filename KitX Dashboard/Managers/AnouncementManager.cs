@@ -14,10 +14,6 @@ namespace KitX.Dashboard.Managers;
 
 internal class AnouncementManager
 {
-
-
-
-
     public static async Task CheckNewAnnouncements()
     {
         var client = new HttpClient();

@@ -16,11 +16,6 @@ internal class ActivityManager
 
     private static Activity? _appActivity;
 
-
-
-
-
-
     public static void Record(Activity activity, Expression<Func<Activity, int>> keySelector)
     {
         var location = $"{nameof(ActivityManager)}.{nameof(Record)}";
@@ -44,10 +39,6 @@ internal class ActivityManager
             }
         }, location, catchException: true);
     }
-
-
-
-
 
     public static void Update(Activity activity)
     {

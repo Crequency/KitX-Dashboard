@@ -14,11 +14,6 @@ namespace KitX.Dashboard.Services;
 
 internal class DebugService
 {
-
-
-
-
-
     internal static string? ExecuteCommand(string cmd)
     {
         var header = cmd.GetCommandHeader();
@@ -330,11 +325,6 @@ internal class DebugCommands
 
 internal static class DebugServiceTool
 {
-
-
-
-
-
     internal static string? GetCommandHeader(this string cmd)
     {
         var command = cmd.Trim();
@@ -342,11 +332,6 @@ internal static class DebugServiceTool
         var header = command.Split(' ')[0];
         return header;
     }
-
-
-
-
-
 
     internal static Dictionary<string, string>? GetCommandArgs(this string cmd)
     {
@@ -376,11 +361,6 @@ internal static class DebugServiceTool
         return args;
     }
 
-
-
-
-
-
     internal static (string, Dictionary<string, string>) ReplaceQuotes(this string text)
     {
         //  记录被替换的引号内容的键与内容
@@ -409,19 +389,8 @@ internal static class DebugServiceTool
         return (text, rst);
     }
 
-
-
-
-
-
-
     internal static string? Value(this Dictionary<string, string> src, string key)
         => src.TryGetValue(key, out var value) ? value : null;
-
-
-
-
-
 
     internal static string ToFunctionName(this string cmd)
         => $"{cmd[0].ToString().ToUpper()}{cmd[1..].ToLower()}";
