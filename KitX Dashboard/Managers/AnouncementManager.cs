@@ -42,7 +42,7 @@ internal class AnouncementManager
             readed = JsonSerializer.Deserialize<List<string>>(
                 await FileHelper.ReadAllAsync(confPath)
             );
-        else readed = new();
+        else readed = [];
 
         //  未阅读列表
         var unreads = new List<DateTime>();

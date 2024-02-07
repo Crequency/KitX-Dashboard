@@ -21,7 +21,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
     private static bool disposed = false;
 
-    private static readonly Dictionary<string, TcpClient> clients = new();
+    private static readonly Dictionary<string, TcpClient> clients = [];
 
     private static Action<byte[], int?, string>? onReceive = null;
 

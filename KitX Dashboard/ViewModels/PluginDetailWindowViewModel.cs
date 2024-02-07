@@ -5,9 +5,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
-using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+using KitX.Shared.Plugin;
 using ReactiveUI;
 using Serilog;
 using System;
@@ -141,9 +139,9 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         _ => Color.Parse(ConfigManager.AppConfig.App.ThemeColor),
     };
 
-    private readonly ObservableCollection<string> functions = new();
+    private readonly ObservableCollection<string> functions = [];
 
-    private readonly ObservableCollection<string> tags = new();
+    private readonly ObservableCollection<string> tags = [];
 
     internal Bitmap IconDisplay
     {

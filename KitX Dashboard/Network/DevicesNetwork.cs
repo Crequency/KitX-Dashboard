@@ -3,9 +3,7 @@ using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views.Pages.Controls;
-using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+using KitX.Shared.Device;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -238,7 +236,7 @@ internal class DevicesNetwork
 
         new Thread(() =>
         {
-            receivedDeviceInfo4Watch = new();
+            receivedDeviceInfo4Watch = [];
 
             var checkedTime = 0;
             var hadMainDevice = false;

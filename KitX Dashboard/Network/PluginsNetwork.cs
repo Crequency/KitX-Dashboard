@@ -4,9 +4,7 @@ using KitX.Dashboard.Data;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views.Pages.Controls;
-using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+using KitX.Shared.Plugin;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -31,7 +29,7 @@ internal class PluginsNetwork
 
                 var pluginStruct = JsonSerializer.Deserialize<PluginInfo>(json);
 
-                pluginStruct.Tags ??= new();
+                pluginStruct.Tags ??= [];
 
                 // 标注实例注册 ID
                 pluginStruct.Tags.Add("Authorized_ID",

@@ -1,6 +1,6 @@
-﻿using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+﻿using KitX.Shared.Device;
+using KitX.Shared.Loader;
+using KitX.Shared.Plugin;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 

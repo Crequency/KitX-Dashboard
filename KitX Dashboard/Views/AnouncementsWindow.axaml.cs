@@ -57,6 +57,8 @@ public partial class AnouncementsWindow : Window
 
     private void SuggestResolutionAndLocation()
     {
+        if (Screens.Primary is null) return;
+
         if (ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width == 1280
             && ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height == 720)
         {

@@ -3,9 +3,7 @@ using KitX.Dashboard.Data;
 using KitX.Dashboard.Interfaces.Network;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
-using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+using KitX.Shared.Device;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -31,7 +29,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     private static int LastTimeToOSVersionUpdated = 0;
 
-    private static readonly List<int> SupportedNetworkInterfacesIndexes = new();
+    private static readonly List<int> SupportedNetworkInterfacesIndexes = [];
 
     private static bool disposed = false;
 
@@ -117,8 +115,9 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     {
         DefaultDeviceInfo.IsMainDevice = GlobalInfo.IsMainMachine;
         DefaultDeviceInfo.SendTime = DateTime.UtcNow;
-        DefaultDeviceInfo.Device.IPv4 = NetworkHelper.GetInterNetworkIPv4();
-        DefaultDeviceInfo.Device.IPv6 = NetworkHelper.GetInterNetworkIPv6();
+        DefaultDeviceInfo.Device
+            .ResetIPv4(NetworkHelper.GetInterNetworkIPv4())
+            .ResetIPv6(NetworkHelper.GetInterNetworkIPv6());
         DefaultDeviceInfo.PluginServerPort = GlobalInfo.PluginServerPort;
         DefaultDeviceInfo.PluginsCount = Instances.PluginCards.Count;
         DefaultDeviceInfo.IsMainDevice = GlobalInfo.IsMainMachine;
@@ -128,7 +127,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         if (LastTimeToOSVersionUpdated > ConfigManager.AppConfig.IO.OperatingSystemVersionUpdateInterval)
         {
             LastTimeToOSVersionUpdated = 0;
-            DefaultDeviceInfo.DeviceOSVersion = NetworkHelper.TryGetOSVersionString();
+            DefaultDeviceInfo.DeviceOSVersion = NetworkHelper.TryGetOSVersionString() ?? "";
         }
 
         ++DeviceInfoUpdatedTimes;
@@ -328,10 +327,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             try
             {
                 FindSupportNetworkInterfaces(
-                    new()
-                    {
-                        UdpSender, UdpReceiver
-                    },
+                    [UdpSender, UdpReceiver],
                     IPAddress.Parse(ConfigManager.AppConfig.Web.UDPBroadcastAddress)
                 ); // 寻找所有支持的网络适配器
             }

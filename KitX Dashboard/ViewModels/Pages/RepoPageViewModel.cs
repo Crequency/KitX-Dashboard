@@ -2,16 +2,17 @@
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Views.Pages;
 using KitX.Dashboard.Views.Pages.Controls;
-using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+using KitX.Shared.Loader;
+using KitX.Shared.Plugin;
 using ReactiveUI;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Text.Json;
 using System.Threading;
@@ -20,6 +21,8 @@ namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    private RepoPage? CurrentPage { get; set; }
+
     public new event PropertyChangedEventHandler? PropertyChanged;
 
     public RepoPageViewModel()
@@ -41,18 +44,15 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             if (win is not Window window) return;
 
-            var ofd = new OpenFileDialog()
+            var topLevel = TopLevel.GetTopLevel(CurrentPage!);
+
+            if (topLevel is null) return;
+
+            var files = (await topLevel.StorageProvider.OpenFilePickerAsync(new()
             {
+                Title = "Open KitX Extensions Package File",
                 AllowMultiple = true,
-            };
-
-            ofd.Filters?.Add(new()
-            {
-                Name = "KitX Extensions Packages",
-                Extensions = { "kxp" }
-            });
-
-            var files = await ofd.ShowAsync(window);
+            })).Select(x => x.Path.LocalPath).ToList().ToArray();
 
             if (files is not null && files?.Length > 0)
             {
@@ -95,7 +95,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
                                     Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json")
                                 )
                             ),
-                            InstalledDevices = new()
+                            InstalledDevices = []
                         };
 
                         PluginBars.Add(new(plugin, ref pluginBars));
@@ -107,6 +107,12 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
                 }
             }
         });
+    }
+
+    internal RepoPageViewModel SetControl(RepoPage control)
+    {
+        CurrentPage = control;
+        return this;
     }
 
     private void InitEvents()
@@ -171,7 +177,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private ObservableCollection<PluginBar> pluginBars = new();
+    private ObservableCollection<PluginBar> pluginBars = [];
 
     internal ObservableCollection<PluginBar> PluginBars
     {

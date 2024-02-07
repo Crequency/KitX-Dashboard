@@ -1,6 +1,4 @@
-﻿using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+﻿using KitX.Shared.Device;
 
 namespace KitX.Dashboard.Services;
 

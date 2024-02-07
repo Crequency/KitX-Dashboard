@@ -16,12 +16,21 @@ public partial class Settings_About : UserControl
         DataContext = viewModel;
     }
 
-    private readonly List<Key> keyqueue = new();
+    private readonly List<Key> keyqueue = [];
 
-    private readonly List<Key> rightkey = new()
-    {
-        Key.W, Key.W, Key.S, Key.S, Key.A, Key.D, Key.A, Key.D, Key.B, Key.A
-    };
+    private readonly List<Key> rightkey =
+    [
+        Key.W,
+        Key.W,
+        Key.S,
+        Key.S,
+        Key.A,
+        Key.D,
+        Key.A,
+        Key.D,
+        Key.B,
+        Key.A
+    ];
 
     private void AppNameButtonKeyDown(object sender, KeyEventArgs e)
     {
@@ -52,6 +61,8 @@ public partial class Settings_About : UserControl
     {
         var Btn_WQY = this.FindControl<Button>("Btn_WQY");
 
+        if (Btn_WQY is null) return;
+
         Btn_WQY.Width = 120;
         Btn_WQY.Margin = new(180, 30, 0, 30);
     }
@@ -65,6 +76,8 @@ public partial class Settings_About : UserControl
     {
         var Btn_WQY = this.FindControl<Button>("Btn_WQY");
 
+        if (Btn_WQY is null) return;
+
         Btn_WQY.Width = 120;
         Btn_WQY.Margin = new(0, 30, 180, 30);
     }
@@ -72,6 +85,8 @@ public partial class Settings_About : UserControl
     private void WQY_Leave(object sender, PointerEventArgs e)
     {
         var Btn_WQY = this.FindControl<Button>("Btn_WQY");
+
+        if (Btn_WQY is null) return;
 
         Btn_WQY.Width = 200;
         Btn_WQY.Margin = new(50, 30);

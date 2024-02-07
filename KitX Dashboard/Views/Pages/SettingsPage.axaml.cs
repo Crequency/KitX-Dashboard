@@ -24,8 +24,10 @@ public partial class SettingsPage : UserControl
 
     private void InitSettingsPage()
     {
-        this.FindControl<NavigationView>("SettingsNavigationView").SelectedItem
-            = this.FindControl<NavigationViewItem>(SelectedViewName);
+        var nav = this.FindControl<NavigationView>("SettingsNavigationView");
+
+        if (nav is not null)
+            nav.SelectedItem = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
 
     private static void SaveChanges()
@@ -45,7 +47,7 @@ public partial class SettingsPage : UserControl
 
             SelectedViewName = tag;
 
-            this.FindControl<Frame>("SettingsFrame").Navigate(SelectedViewType());
+            this.FindControl<Frame>("SettingsFrame")?.Navigate(SelectedViewType());
         }
         catch (NullReferenceException o)
         {

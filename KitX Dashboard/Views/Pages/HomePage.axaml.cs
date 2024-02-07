@@ -24,8 +24,10 @@ public partial class HomePage : UserControl
 
     private void InitHomePage()
     {
-        this.FindControl<NavigationView>("HomeNavigationView").SelectedItem
-            = this.FindControl<NavigationViewItem>(SelectedViewName);
+        var nav = this.FindControl<NavigationView>("HomeNavigationView");
+
+        if (nav is not null)
+            nav.SelectedItem = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
 
     private static void SaveChanges()
@@ -57,7 +59,7 @@ public partial class HomePage : UserControl
 
             SelectedViewName = tag;
 
-            this.FindControl<Frame>("HomeFrame").Navigate(SelectedViewType());
+            this.FindControl<Frame>("HomeFrame")?.Navigate(SelectedViewType());
         }
         catch (NullReferenceException o)
         {

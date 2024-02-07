@@ -3,9 +3,7 @@ using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Converters;
 using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
-using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+using KitX.Shared.Device;
 using Serilog;
 using System;
 using System.IO;
@@ -213,14 +211,14 @@ internal static class NetworkHelper
         Device = new()
         {
             DeviceName = Environment.MachineName,
-            MacAddress = TryGetDeviceMacAddress(),
+            MacAddress = TryGetDeviceMacAddress() ?? "",
             IPv4 = GetInterNetworkIPv4(),
             IPv6 = GetInterNetworkIPv6(),
         },
         IsMainDevice = GlobalInfo.IsMainMachine,
         SendTime = DateTime.UtcNow,
         DeviceOSType = OperatingSystem2Enum.GetOSType(),
-        DeviceOSVersion = TryGetOSVersionString(),
+        DeviceOSVersion = TryGetOSVersionString() ?? "",
         PluginServerPort = GlobalInfo.PluginServerPort,
         DevicesServerPort = GlobalInfo.DevicesServerPort,
         DeviceServerBuildTime = new(),

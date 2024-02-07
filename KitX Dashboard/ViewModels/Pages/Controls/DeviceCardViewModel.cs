@@ -1,8 +1,6 @@
 ﻿using Avalonia;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+using KitX.Shared.Device;
 using Material.Icons;
 using System.ComponentModel;
 

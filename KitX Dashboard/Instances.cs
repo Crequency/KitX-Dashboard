@@ -13,9 +13,9 @@ internal class Instances
 
     internal static FileWatcherManager? FileWatcherManager;
 
-    internal static ObservableCollection<PluginCard> PluginCards = new();
+    internal static ObservableCollection<PluginCard> PluginCards = [];
 
-    internal static ObservableCollection<DeviceCard> DeviceCards = new();
+    internal static ObservableCollection<DeviceCard> DeviceCards = [];
 
     internal static LiteDatabase? ActivitiesDataBase;
 

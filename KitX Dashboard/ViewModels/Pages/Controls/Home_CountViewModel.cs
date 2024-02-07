@@ -14,30 +14,30 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
 
     private double noCount_TipHeight = 200;
 
-    private List<Axis> use_xAxes = new()
-    {
+    private List<Axis> use_xAxes =
+    [
         new Axis
         {
             Labeler = Labelers.Default
         }
-    };
+    ];
 
-    private List<Axis> use_yAxes = new()
-    {
+    private List<Axis> use_yAxes =
+    [
         new Axis
         {
             Labeler = (value) => $"{value} h"
         }
-    };
+    ];
 
     private ISeries[] useSeries =
-    {
+    [
         new LineSeries<double>
         {
             Values = new double[] { 2, 1, 3, 5, 3, 4, 6 },
             Fill = null
         }
-    };
+    ];
 
     public Home_CountViewModel()
     {
@@ -57,25 +57,23 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
     {
         var use = StatisticsManager.UseStatistics;
 
-        Use_XAxes = new()
-        {
+        Use_XAxes =
+        [
             new Axis
             {
                 Labels = use?.Keys.ToList()
             }
-        };
+        ];
 
-        Use_Series = new ISeries[]
-        {
+        Use_Series =
+        [
             new LineSeries<double>
             {
                 Values = use?.Values.ToArray(),
                 Fill = null,
-                TooltipLabelFormatter = chartpoint =>
-                    $"{use?.Keys.ToArray()[(int)chartpoint.SecondaryValue]}: " +
-                    $"{chartpoint.PrimaryValue} h"
+                XToolTipLabelFormatter = x => $"{use?.Keys.ToArray()[(int)x.Coordinate.SecondaryValue]}: {x.Coordinate.PrimaryValue} h"
             }
-        };
+        ];
     }
 
     internal double NoCount_TipHeight

@@ -184,12 +184,12 @@ internal class ConfigManager
             {
                 PluginsManager.Plugins = JsonSerializer.Deserialize<List<Plugin>>(
                     await FileHelper.ReadAllAsync(GlobalInfo.PluginsListConfigFilePath)
-                ) ?? new();
+                ) ?? [];
             }
             catch (Exception ex)
             {
                 Log.Error(ex, $"In {location}: {ex.Message}");
-                PluginsManager.Plugins = new();
+                PluginsManager.Plugins = [];
             }
         }, location);
     }

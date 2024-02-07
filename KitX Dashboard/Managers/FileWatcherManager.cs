@@ -7,7 +7,7 @@ namespace KitX.Dashboard.Managers;
 
 internal class FileWatcherManager
 {
-    private readonly Dictionary<string, FileWatcher> Watchers = new();
+    private readonly Dictionary<string, FileWatcher> Watchers = [];
 
     public FileWatcherManager RegisterWatcher(
         string name,

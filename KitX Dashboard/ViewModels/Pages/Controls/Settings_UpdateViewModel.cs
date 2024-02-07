@@ -8,9 +8,7 @@ using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Network;
 using KitX.Dashboard.Services;
-using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
+using KitX.Shared.Device;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
@@ -81,7 +79,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal static int ComponentsCount { get => Components.Count; }
 
-    internal static ObservableCollection<Component> Components { get; } = new();
+    internal static ObservableCollection<Component> Components { get; } = [];
 
     private string? tip = string.Empty;
 
@@ -225,6 +223,13 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         _calculateFinished = true;
     }
 
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        WriteIndented = true,
+        IncludeFields = true,
+        PropertyNamingPolicy = new UpdateHashNamePolicy(),
+    };
+
     private static async Task<Dictionary<string, (string, string, long)>?> GetLatestComponentsAsync
     (
         HttpClient client
@@ -249,17 +254,10 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
         var json = await client.GetStringAsync(link);
 
-        var option = new JsonSerializerOptions()
-        {
-            WriteIndented = true,
-            IncludeFields = true,
-            PropertyNamingPolicy = new UpdateHashNamePolicy(),
-        };
-
         var latestComponents = JsonSerializer
             .Deserialize<Dictionary<string, (string, string, long)>>(
                 json,
-                option
+                JsonSerializerOptions
             );
 
         return latestComponents;

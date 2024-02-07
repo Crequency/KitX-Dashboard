@@ -2,10 +2,9 @@
 using KitX.Dashboard.Data;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
-using KitX.Web.Rules;
-using KitX.Web.Rules.Plugin;
-using KitX.Web.Rules.Device;
-using KitX.Formats.KXP;
+using KitX.FileFormats.ExtensionsPackage;
+using KitX.Shared.Loader;
+using KitX.Shared.Plugin;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -17,7 +16,7 @@ namespace KitX.Dashboard.Managers;
 internal class PluginsManager
 {
 
-    internal static List<Plugin> Plugins = new();
+    internal static List<Plugin> Plugins = [];
 
     internal static void ImportPlugin(string[] kxpfiles, bool inGraphic = false)
     {

@@ -18,7 +18,7 @@ internal class HotKeyManager
     {
         keyPressed = new();
 
-        hotKeyHandlers = new();
+        hotKeyHandlers = [];
     }
 
     public HotKeyManager Hook()

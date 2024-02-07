@@ -15,7 +15,7 @@ public class WebManager : IDisposable
 
     public WebManager()
     {
-        NetworkInterfaceRegistered = new();
+        NetworkInterfaceRegistered = [];
     }
 
     public async Task<WebManager> Start

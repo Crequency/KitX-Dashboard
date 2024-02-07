@@ -132,8 +132,8 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         prefix: "Text_Settings_Personalise_Theme_"
     ) ?? string.Empty;
 
-    internal static List<SupportedTheme> SupportedThemes { get; } = new()
-    {
+    internal static List<SupportedTheme> SupportedThemes { get; } =
+    [
         new()
         {
             ThemeName = FluentAvaloniaTheme.LightModeString,
@@ -154,7 +154,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
             ThemeName = "Follow",
             ThemeDisplayName = GetThemeDisplayText("Follow"),
         }
-    };
+    ];
 
     private SupportedTheme? _currentAppTheme = SupportedThemes.Find(
         x => x.ThemeName.Equals(ConfigManager.AppConfig.App.Theme)
@@ -186,7 +186,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         }
     }
 
-    internal List<SupportedLanguage> SupportedLanguages { get; } = new();
+    internal List<SupportedLanguage> SupportedLanguages { get; } = [];
 
     internal static void LoadLanguage()
     {
@@ -203,7 +203,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
             Application.Current.Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
                     File.ReadAllText($"{GlobalInfo.LanguageFilePath}/{lang}.axaml")
-                ) as ResourceDictionary ?? new()
+                ) as ResourceDictionary ?? []
             );
         }
         catch (Exception ex)

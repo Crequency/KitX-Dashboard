@@ -61,7 +61,7 @@ public partial class App : Application
             Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
                     File.ReadAllText(path)
-                ) as ResourceDictionary ?? new()
+                ) as ResourceDictionary ?? []
             );
         }
         catch (Exception ex)
@@ -75,7 +75,7 @@ public partial class App : Application
                 Resources.MergedDictionaries.Add(
                     AvaloniaRuntimeXamlLoader.Load(
                         File.ReadAllText(backup_langPath)
-                    ) as ResourceDictionary ?? new()
+                    ) as ResourceDictionary ?? []
                 );
                 ConfigManager.AppConfig.App.AppLanguage = backup_lang;
             }

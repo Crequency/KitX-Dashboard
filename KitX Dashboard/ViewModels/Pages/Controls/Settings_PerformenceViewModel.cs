@@ -242,16 +242,14 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             {
                 var userInput = value.Split(';');
 
-                ConfigManager.AppConfig.Web.AcceptedNetworkInterfaces = userInput.ToList();
+                ConfigManager.AppConfig.Web.AcceptedNetworkInterfaces = [.. userInput];
             }
         }
     }
 
-    internal static ObservableCollection<string>? AvailableNetworkInterfaces
-        => Instances.WebManager?.NetworkInterfaceRegistered;
+    internal static ObservableCollection<string>? AvailableNetworkInterfaces => Instances.WebManager?.NetworkInterfaceRegistered;
 
-    internal static ObservableCollection<string>? SelectedNetworkInterfaces { get; }
-        = new();
+    internal static ObservableCollection<string>? SelectedNetworkInterfaces { get; } = [];
 
     internal static int DevicesListRefreshDelay
     {
@@ -366,8 +364,8 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         prefix: "Text_Log_"
     ) ?? string.Empty;
 
-    internal static List<SupportedLogLevel> SupportedLogLevels { get; } = new()
-    {
+    internal static List<SupportedLogLevel> SupportedLogLevels { get; } =
+    [
         new()
         {
             LogEventLevel = Serilog.Events.LogEventLevel.Verbose,
@@ -404,7 +402,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             LogLevelName = "Fatal",
             LogLevelDisplayName = GetLogLevelDisplayText("Fatal")
         },
-    };
+    ];
 
     private SupportedLogLevel? _currentLogLevel = SupportedLogLevels.Find(
         x => x.LogEventLevel == ConfigManager.AppConfig.Log.LogLevel

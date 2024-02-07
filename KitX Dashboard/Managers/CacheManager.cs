@@ -12,8 +12,8 @@ internal class CacheManager
 {
     internal CacheManager()
     {
-        FilesCache = new();
-        ReceivingFilesCache = new();
+        FilesCache = [];
+        ReceivingFilesCache = [];
     }
 
     private static async Task<string?> GetMD5(byte[] bytes, bool trans = false)
@@ -64,8 +64,7 @@ internal class CacheManager
 
         if (ReceivingFilesCache is null || id is null) return null;
 
-        if (!ReceivingFilesCache.ContainsKey(id))
-            ReceivingFilesCache.Add(id, bin);
+        _ = ReceivingFilesCache.TryAdd(id, bin);
 
         GC.Collect();
 

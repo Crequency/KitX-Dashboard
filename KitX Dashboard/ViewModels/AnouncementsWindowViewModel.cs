@@ -1,5 +1,4 @@
-﻿using Avalonia.Collections;
-using Common.BasicHelper.Utils.Extensions;
+﻿using Common.BasicHelper.Utils.Extensions;
 using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
@@ -24,13 +23,19 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         InitCommands();
     }
 
+    public static JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        WriteIndented = true,
+        IncludeFields = true,
+    };
+
     private void InitCommands()
     {
         ConfirmReceivedCommand = ReactiveCommand.Create(async () =>
         {
             if (SelectedMenuItem is null || Readed is null) return;
 
-            var key = SelectedMenuItem.Content.ToString();
+            var key = SelectedMenuItem.Content!.ToString();
 
             if (key is null) return;
 
@@ -39,15 +44,9 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
             var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
 
-            var options = new JsonSerializerOptions()
-            {
-                WriteIndented = true,
-                IncludeFields = true,
-            };
-
             await File.WriteAllTextAsync(
                 ConfigFilePath,
-                JsonSerializer.Serialize(Readed, options)
+                JsonSerializer.Serialize(Readed, JsonSerializerOptions)
             );
 
             var finded = false;
@@ -157,7 +156,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         }
     }
 
-    private Dictionary<string, string> sources = new();
+    private Dictionary<string, string> sources = [];
 
     internal Dictionary<string, string> Sources
     {

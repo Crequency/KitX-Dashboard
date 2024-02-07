@@ -6,7 +6,8 @@ var tip_copyright = () =>
         KitX Repair Tool (C) Crequency
         Environment: {Environment.Version}
         OS Version: {Environment.OSVersion}
-        """);
+        """
+    );
 };
 
 var log_exception = (Exception e) =>
@@ -15,13 +16,18 @@ var log_exception = (Exception e) =>
     Console.WriteLine(e.StackTrace);
 };
 
-T? ask<T>(string tip = "Input: ", Func<string?, T>? parse = null)
+static T? ask<T>(string tip = "Input: ", Func<string?, T>? parse = null)
 {
     Console.Write(tip);
-    string? input = Console.ReadLine();
+
+    var input = Console.ReadLine();
+
     if (input is null) return default(T);
-    if (parse is not null) return parse(input);
-    else throw new Exception(input);
+
+    if (parse is not null)
+        return parse(input);
+    else
+        throw new Exception(input);
 };
 
 var menu = () =>
@@ -29,11 +35,16 @@ var menu = () =>
     Console.WriteLine(
         """
         1. (root) Linux wayland repair (add `LC_ALL=C` to environment variables)
-        """);
-    return ask("Your select: ", x => int.TryParse(x, out int y) ? y : -1);
+        """
+    );
+
+    return ask("You selected: ", x => int.TryParse(x, out int y) ? y : -1);
 };
 
+
+
 tip_copyright();
+
 switch (menu())
 {
     case 1:
@@ -44,7 +55,12 @@ switch (menu())
         }
         try
         {
-            File.AppendAllLines("/etc/environment", new string[] { "LC_ALL=C" });
+            await File.AppendAllLinesAsync(
+                "/etc/environment",
+                [
+                    "LC_ALL=C"
+                ]
+            );
         }
         catch (Exception e)
         {
