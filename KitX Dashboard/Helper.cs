@@ -10,6 +10,7 @@ using Serilog;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
@@ -238,7 +239,7 @@ public static class Helper
 
         foreach (var item in nowProcesses)
         {
-            if (item.ProcessName.Replace(".exe", "").Equals("KitX Dashboard"))
+            if (item.ProcessName.StartsWith("KitX.Dashboard"))
                 ++count;
 
             if (count >= 2) Environment.Exit(ErrorCodes.AlraedyStartedOneProcess);
