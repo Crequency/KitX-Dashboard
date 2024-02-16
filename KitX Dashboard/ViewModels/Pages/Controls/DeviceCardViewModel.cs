@@ -48,7 +48,7 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
                 OperatingSystems.IoT => MaterialIconKind.Chip,
                 _ => MaterialIconKind.QuestionMarkCircle,
             };
-            IPv4 = $"{DeviceInfo.Device.IPv4}:{DeviceInfo.PluginServerPort}";
+            IPv4 = $"{DeviceInfo.Device.IPv4}:{DeviceInfo.PluginsServerPort}";
             IPv6 = DeviceInfo.Device.IPv6;
             PluginsCount = DeviceInfo.PluginsCount.ToString();
             DeviceControlStatus = DeviceInfo.IsMainDevice

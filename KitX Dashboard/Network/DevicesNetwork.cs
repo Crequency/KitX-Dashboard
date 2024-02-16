@@ -32,7 +32,7 @@ internal class DevicesNetwork
     {
         EventService.OnReceivingDeviceInfo += dis =>
         {
-            if (dis.IsMainDevice && dis.DeviceServerBuildTime < ConstantTable.ServerBuildTime)
+            if (dis.IsMainDevice && dis.DevicesServerBuildTime < ConstantTable.ServerBuildTime)
             {
                 Stop();
 
@@ -40,7 +40,7 @@ internal class DevicesNetwork
 
                 Log.Information($"In DevicesService: Watched earlier built server. " +
                     $"DeviceServerAddress: {dis.Device.IPv4}:{dis.DevicesServerPort} " +
-                    $"DeviceServerBuildTime: {dis.DeviceServerBuildTime}");
+                    $"DeviceServerBuildTime: {dis.DevicesServerBuildTime}");
             }
         };
     }
@@ -256,7 +256,7 @@ internal class DevicesNetwork
                         {
                             if (item.IsMainDevice)
                             {
-                                if (item.DeviceServerBuildTime.ToUniversalTime() < earliestBuiltServerTime)
+                                if (item.DevicesServerBuildTime.ToUniversalTime() < earliestBuiltServerTime)
                                 {
                                     serverPort = item.DevicesServerPort;
                                     serverAddress = item.Device.IPv4;

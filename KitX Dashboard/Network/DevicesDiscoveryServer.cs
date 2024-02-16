@@ -118,11 +118,11 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         DefaultDeviceInfo.Device
             .ResetIPv4(NetworkHelper.GetInterNetworkIPv4())
             .ResetIPv6(NetworkHelper.GetInterNetworkIPv6());
-        DefaultDeviceInfo.PluginServerPort = ConstantTable.PluginServerPort;
+        DefaultDeviceInfo.PluginsServerPort = ConstantTable.PluginServerPort;
         DefaultDeviceInfo.PluginsCount = ViewInstances.PluginCards.Count;
         DefaultDeviceInfo.IsMainDevice = ConstantTable.IsMainMachine;
         DefaultDeviceInfo.DevicesServerPort = ConstantTable.DevicesServerPort;
-        DefaultDeviceInfo.DeviceServerBuildTime = ConstantTable.ServerBuildTime;
+        DefaultDeviceInfo.DevicesServerBuildTime = ConstantTable.ServerBuildTime;
 
         if (LastTimeToOSVersionUpdated > Instances.ConfigManager.AppConfig.IO.OperatingSystemVersionUpdateInterval)
         {
