@@ -1,15 +1,14 @@
 ﻿using Avalonia.Controls;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels.Pages;
-using KitX.Dashboard.Views.Controls;
+using KitX.Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
 
 namespace KitX.Dashboard.Views.Pages;
 
-public partial class HomePage : UserControl
+public partial class HomePage : UserControl, IView
 {
     private readonly HomePageViewModel viewModel = new();
 
@@ -30,18 +29,14 @@ public partial class HomePage : UserControl
             nav.SelectedItem = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
 
-    private static void SaveChanges()
-    {
-        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
-    }
-
     private static string SelectedViewName
     {
-        get => ConfigManager.AppConfig.Pages.Home.SelectedViewName;
+        get => Instances.ConfigManager.AppConfig.Pages.Home.SelectedViewName;
         set
         {
-            ConfigManager.AppConfig.Pages.Home.SelectedViewName = value;
-            SaveChanges();
+            Instances.ConfigManager.AppConfig.Pages.Home.SelectedViewName = value;
+
+            IView.SaveAppConfigChanges();
         }
     }
 

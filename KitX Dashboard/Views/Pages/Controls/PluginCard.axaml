@@ -14,39 +14,35 @@
     </UserControl.Styles>
     <Grid Width="160" Height="240">
         <Button Width="140"
-                   Height="220"
-                   HorizontalAlignment="Right"
-                   VerticalAlignment="Bottom"
-                   HorizontalContentAlignment="Center"
-                   VerticalContentAlignment="Bottom"
-                   Command="{Binding ViewDetailsCommand}">
+                Height="220"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Bottom"
+                Command="{Binding ViewDetailsCommand}">
             <StackPanel Width="120"
                         Height="130"
                         Orientation="Vertical">
-                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                           FontSize="20"
+                <TextBlock FontSize="20"
                            FontWeight="ExtraBold"
                            Text="{Binding DisplayName}"
                            ToolTip.Tip="{Binding DisplayName}"/>
-                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                           FontSize="14"
+                <TextBlock FontSize="14"
                            FontWeight="Light"
                            Text="{Binding Version}"/>
-                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                           FontSize="16"
-                           FontWeight="Bold"
+                <TextBlock FontSize="16"
                            Text="{Binding SimpleDescription}"
                            TextWrapping="Wrap"/>
             </StackPanel>
         </Button>
         <Button x:Name="Imager"
-                   Width="100"
-                   Height="100"
-                   HorizontalAlignment="Left"
-                   VerticalAlignment="Top"
-                   HorizontalContentAlignment="Center"
-                   VerticalContentAlignment="Center"
-                   CornerRadius="10">
+                Width="100"
+                Height="100"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
+                CornerRadius="10">
             <Border Width="90"
                     Height="90"
                     ClipToBounds="True"

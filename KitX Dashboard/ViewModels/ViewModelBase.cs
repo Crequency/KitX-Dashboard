@@ -5,7 +5,7 @@ using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 
-public class ViewModelBase : ReactiveObject
+public abstract class ViewModelBase : ReactiveObject
 {
     protected static string? FetchStringFromResource(
         Application? app,
@@ -27,6 +27,10 @@ public class ViewModelBase : ReactiveObject
     }
 
     protected static void SaveAppConfigChanges() => EventService.Invoke(
-        nameof(EventService.ConfigSettingsChanged)
+        nameof(EventService.AppConfigChanged)
     );
+
+    public abstract void InitCommands();
+
+    public abstract void InitEvents();
 }

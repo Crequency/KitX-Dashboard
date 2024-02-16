@@ -122,4 +122,8 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
             ? $"{deviceInfo.Device.IPv4}:{deviceInfo.DevicesServerPort}"
             : null;
     }
+
+    public override void InitCommands() => throw new System.NotImplementedException();
+
+    public override void InitEvents() => throw new System.NotImplementedException();
 }

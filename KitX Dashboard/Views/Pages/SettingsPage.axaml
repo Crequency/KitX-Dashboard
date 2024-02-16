@@ -46,8 +46,6 @@
                         <icon:MaterialIcon VerticalAlignment="Center" Kind="Globe"/>
                         <TextBlock Margin="15,0,0,0"
                                    VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
                                    Text="{DynamicResource Text_Settings_General}"/>
                     </StackPanel>
                 </ui:NavigationViewItem.Content>
@@ -62,8 +60,6 @@
                         <icon:MaterialIcon VerticalAlignment="Center" Kind="Palette"/>
                         <TextBlock Margin="15,0,0,0"
                                    VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
                                    Text="{DynamicResource Text_Settings_Personalise}"/>
                     </StackPanel>
                 </ui:NavigationViewItem.Content>
@@ -78,8 +74,6 @@
                         <icon:MaterialIcon VerticalAlignment="Center" Kind="Speedometer"/>
                         <TextBlock Margin="15,0,0,0"
                                    VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
                                    Text="{DynamicResource Text_Settings_Performence}"/>
                     </StackPanel>
                 </ui:NavigationViewItem.Content>
@@ -94,8 +88,6 @@
                         <icon:MaterialIcon VerticalAlignment="Center" Kind="Update"/>
                         <TextBlock Margin="15,0,0,0"
                                    VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
                                    Text="{DynamicResource Text_Settings_Update}"/>
                     </StackPanel>
                 </ui:NavigationViewItem.Content>
@@ -110,8 +102,6 @@
                         <icon:MaterialIcon VerticalAlignment="Center" Kind="InfoCircle"/>
                         <TextBlock Margin="15,0,0,0"
                                    VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
                                    Text="{DynamicResource Text_Settings_About}"/>
                     </StackPanel>
                 </ui:NavigationViewItem.Content>

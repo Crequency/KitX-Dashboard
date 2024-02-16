@@ -1,7 +1,7 @@
 ﻿using Avalonia.Threading;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
 using KitX.Shared.Device;
 using Serilog;
@@ -32,7 +32,7 @@ internal class DevicesNetwork
     {
         EventService.OnReceivingDeviceInfo += dis =>
         {
-            if (dis.IsMainDevice && dis.DeviceServerBuildTime < GlobalInfo.ServerBuildTime)
+            if (dis.IsMainDevice && dis.DeviceServerBuildTime < ConstantTable.ServerBuildTime)
             {
                 Stop();
 
@@ -49,7 +49,7 @@ internal class DevicesNetwork
         => DateTime.UtcNow - info.SendTime.ToUniversalTime() > new TimeSpan(
             0,
             0,
-            ConfigManager.AppConfig.Web.DeviceInfoTTLSeconds
+            Instances.ConfigManager.AppConfig.Web.DeviceInfoTTLSeconds
         );
 
     private static bool CheckIsCurrentMachine(DeviceInfo info)
@@ -76,7 +76,7 @@ internal class DevicesNetwork
 
             if (findThis) continue;
 
-            foreach (var item in Instances.DeviceCards)
+            foreach (var item in ViewInstances.DeviceCards)
             {
                 if (item.viewModel.DeviceInfo.Device.DeviceName.Equals(deviceInfoStruct.Device.DeviceName))
                 {
@@ -99,7 +99,7 @@ internal class DevicesNetwork
                 {
                     lock (AddDeviceCard2ViewLock)
                     {
-                        Instances.DeviceCards.Add(new(deviceInfoStruct));
+                        ViewInstances.DeviceCards.Add(new(deviceInfoStruct));
 
                         --needToAddDevicesCount;
                     }
@@ -114,7 +114,7 @@ internal class DevicesNetwork
     {
         var devicesNeedToBeRemoved = new List<DeviceCard>();
 
-        foreach (var item in Instances.DeviceCards)
+        foreach (var item in ViewInstances.DeviceCards)
         {
             var info = item.viewModel.DeviceInfo;
 
@@ -128,7 +128,7 @@ internal class DevicesNetwork
             lock (AddDeviceCard2ViewLock)
             {
                 foreach (var item in devicesNeedToBeRemoved)
-                    Instances.DeviceCards.Remove(item);
+                    ViewInstances.DeviceCards.Remove(item);
             }
             removeDeviceTaskRunning = false;
         });
@@ -141,7 +141,7 @@ internal class DevicesNetwork
         var index = 0;
         var moveSelfCardTaskRunning = true;
 
-        foreach (var item in Instances.DeviceCards)
+        foreach (var item in ViewInstances.DeviceCards)
         {
             var info = item.viewModel.DeviceInfo;
 
@@ -153,7 +153,7 @@ internal class DevicesNetwork
                     {
                         try
                         {
-                            Instances.DeviceCards.Move(index, 0);
+                            ViewInstances.DeviceCards.Move(index, 0);
                         }
                         catch (Exception e)
                         {
@@ -177,7 +177,7 @@ internal class DevicesNetwork
 
         var timer = new Timer()
         {
-            Interval = ConfigManager.AppConfig.Web.DevicesViewRefreshDelay,
+            Interval = Instances.ConfigManager.AppConfig.Web.DevicesViewRefreshDelay,
             AutoReset = true
         };
 
@@ -193,7 +193,7 @@ internal class DevicesNetwork
 
                     UpdateSourceAndAddCards();
 
-                    if (!ConfigManager.AppConfig.Web.DisableRemovingOfflineDeviceCard)
+                    if (!Instances.ConfigManager.AppConfig.Web.DisableRemovingOfflineDeviceCard)
                         RemoveOfflineCards();
 
                     MoveSelfCard2First();
@@ -209,9 +209,9 @@ internal class DevicesNetwork
 
         timer.Start();
 
-        EventService.ConfigSettingsChanged += () =>
+        EventService.AppConfigChanged += () =>
         {
-            timer.Interval = ConfigManager.AppConfig.Web.DevicesViewRefreshDelay;
+            timer.Interval = Instances.ConfigManager.AppConfig.Web.DevicesViewRefreshDelay;
         };
     }
 

@@ -32,12 +32,17 @@
 
             <FontFamily x:Key="SarasaMonoCL">avares://KitX.Dashboard.Fonts/sarasa-mono-cl-regular.ttf#Sarasa Mono CL</FontFamily>
             <FontFamily x:Key="SourceHanSans">avares://KitX.Dashboard.Fonts/SourceHanSans-VF.ttf#Source Han Sans VF</FontFamily>
+
+            <ResourceDictionary.MergedDictionaries>
+
+            </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 
     <Application.Styles>
         <sty:FluentAvaloniaTheme/>
         <materialIcons:MaterialIconStyles/>
+        <StyleInclude Source="/Styles/FontsStyles.axaml"/>
     </Application.Styles>
 
     <TrayIcon.Icons>

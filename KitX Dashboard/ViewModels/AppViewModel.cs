@@ -1,8 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.ComponentModel;
 using System.Reactive;
@@ -24,11 +23,11 @@ internal class AppViewModel : ViewModelBase
         UpdateTrayIconText();
     }
 
-    private void InitCommands()
+    public override void InitCommands()
     {
         TrayIconClickedCommand = ReactiveCommand.Create(() =>
         {
-            var win = Instances.MainWindow;
+            var win = ViewInstances.MainWindow;
 
             if (win?.WindowState == WindowState.Minimized)
                 win.WindowState = WindowState.Normal;
@@ -37,30 +36,28 @@ internal class AppViewModel : ViewModelBase
 
             win?.Activate();
 
-            ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
+            Instances.ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
 
-            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
+            SaveAppConfigChanges();
         });
 
         ExitCommand = ReactiveCommand.Create(() =>
         {
-            GlobalInfo.Exiting = true;
+            ConstantTable.Exiting = true;
 
             EventService.Invoke(nameof(EventService.OnExiting));
 
-            var win = Instances.MainWindow;
+            var win = ViewInstances.MainWindow;
 
             win?.Close();
         });
     }
 
-    private static void InitEvents()
+    public override void InitEvents()
     {
-        Instances.DeviceCards.CollectionChanged +=
-            (_, _) => UpdateTrayIconText();
+        ViewInstances.DeviceCards.CollectionChanged += (_, _) => UpdateTrayIconText();
 
-        Instances.PluginCards.CollectionChanged +=
-            (_, _) => UpdateTrayIconText();
+        ViewInstances.PluginCards.CollectionChanged += (_, _) => UpdateTrayIconText();
     }
 
     private static void UpdateTrayIconText()
@@ -84,12 +81,12 @@ internal class AppViewModel : ViewModelBase
             sb.AppendLine();
 
             sb.AppendLine(
-                $"{Instances.DeviceCards.Count} " +
+                $"{ViewInstances.DeviceCards.Count} " +
                 $"{FetchStringFromResource(Application.Current, "Text_Device_Tip_Detected")}"
             );
 
             sb.AppendLine(
-                $"{Instances.PluginCards.Count} " +
+                $"{ViewInstances.PluginCards.Count} " +
                 $"{FetchStringFromResource(Application.Current, "Text_Lib_Tip_Connected")}"
             );
 

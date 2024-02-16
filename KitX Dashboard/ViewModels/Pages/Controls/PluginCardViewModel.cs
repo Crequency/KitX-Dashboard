@@ -1,7 +1,5 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Media.Imaging;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Views;
 using KitX.Shared.Plugin;
 using ReactiveUI;
@@ -12,39 +10,41 @@ using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class PluginCardViewModel
+internal class PluginCardViewModel : ViewModelBase
 {
     internal PluginInfo pluginStruct = new();
 
     public PluginCardViewModel()
     {
-        pluginStruct.IconInBase64 = GlobalInfo.KitXIconBase64;
+        pluginStruct.IconInBase64 = ConstantTable.KitXIconBase64;
 
         InitCommands();
     }
 
-    private void InitCommands()
+    public override void InitCommands()
     {
         ViewDetailsCommand = ReactiveCommand.Create(() =>
         {
-            if (Instances.MainWindow is not null)
+            if (ViewInstances.MainWindow is not null)
                 new PluginDetailWindow()
                 {
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 }
                 .SetPluginInfo(pluginStruct)
-                .Show(Instances.MainWindow);
+                .Show(ViewInstances.MainWindow);
         });
     }
 
+    public override void InitEvents() => throw new NotImplementedException();
+
     internal string DisplayName => pluginStruct.DisplayName.TryGetValue(
-        ConfigManager.AppConfig.App.AppLanguage, out var lang
+        Instances.ConfigManager.AppConfig.App.AppLanguage, out var lang
     ) ? lang : pluginStruct.DisplayName.Values.GetEnumerator().Current;
 
     internal string Version => pluginStruct.Version;
 
     internal string SimpleDescription => pluginStruct.SimpleDescription.TryGetValue(
-        ConfigManager.AppConfig.App.AppLanguage, out var lang
+        Instances.ConfigManager.AppConfig.App.AppLanguage, out var lang
     ) ? lang : pluginStruct.SimpleDescription.GetEnumerator().Current.Value;
 
     internal string IconInBase64 => pluginStruct.IconInBase64;

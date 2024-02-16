@@ -1,8 +1,8 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Interfaces.Network;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
+using KitX.Dashboard.Views;
 using KitX.Shared.Device;
 using Serilog;
 using System;
@@ -113,18 +113,18 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     private static void UpdateDefaultDeviceInfo()
     {
-        DefaultDeviceInfo.IsMainDevice = GlobalInfo.IsMainMachine;
+        DefaultDeviceInfo.IsMainDevice = ConstantTable.IsMainMachine;
         DefaultDeviceInfo.SendTime = DateTime.UtcNow;
         DefaultDeviceInfo.Device
             .ResetIPv4(NetworkHelper.GetInterNetworkIPv4())
             .ResetIPv6(NetworkHelper.GetInterNetworkIPv6());
-        DefaultDeviceInfo.PluginServerPort = GlobalInfo.PluginServerPort;
-        DefaultDeviceInfo.PluginsCount = Instances.PluginCards.Count;
-        DefaultDeviceInfo.IsMainDevice = GlobalInfo.IsMainMachine;
-        DefaultDeviceInfo.DevicesServerPort = GlobalInfo.DevicesServerPort;
-        DefaultDeviceInfo.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;
+        DefaultDeviceInfo.PluginServerPort = ConstantTable.PluginServerPort;
+        DefaultDeviceInfo.PluginsCount = ViewInstances.PluginCards.Count;
+        DefaultDeviceInfo.IsMainDevice = ConstantTable.IsMainMachine;
+        DefaultDeviceInfo.DevicesServerPort = ConstantTable.DevicesServerPort;
+        DefaultDeviceInfo.DeviceServerBuildTime = ConstantTable.ServerBuildTime;
 
-        if (LastTimeToOSVersionUpdated > ConfigManager.AppConfig.IO.OperatingSystemVersionUpdateInterval)
+        if (LastTimeToOSVersionUpdated > Instances.ConfigManager.AppConfig.IO.OperatingSystemVersionUpdateInterval)
         {
             LastTimeToOSVersionUpdated = 0;
             DefaultDeviceInfo.DeviceOSVersion = NetworkHelper.TryGetOSVersionString() ?? "";
@@ -141,8 +141,8 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastSend)}";
 
         IPEndPoint multicast = new(
-            IPAddress.Parse(ConfigManager.AppConfig.Web.UDPBroadcastAddress),
-            ConfigManager.AppConfig.Web.UDPPortReceive
+            IPAddress.Parse(Instances.ConfigManager.AppConfig.Web.UdpBroadcastAddress),
+            Instances.ConfigManager.AppConfig.Web.UdpPortReceive
         );
         UdpSender?.Client.SetSocketOption(
             SocketOptionLevel.Socket,
@@ -155,7 +155,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         UdpSendTimer = new()
         {
-            Interval = ConfigManager.AppConfig.Web.UDPSendFrequency,
+            Interval = Instances.ConfigManager.AppConfig.Web.UdpSendFrequency,
             AutoReset = true
         };
         UdpSendTimer.Elapsed += (_, _) =>
@@ -180,7 +180,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
             foreach (var item in SupportedNetworkInterfacesIndexes)
             {
-                if (!GlobalInfo.Running) break;
+                if (!ConstantTable.Running) break;
 
                 //  如果错误网络适配器中存在当前项的记录, 跳过
                 if (erroredInterfacesIndexes.Contains(item)) continue;
@@ -244,7 +244,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         {
             try
             {
-                while (GlobalInfo.Running && !CloseDevicesDiscoveryServerRequest)
+                while (ConstantTable.Running && !CloseDevicesDiscoveryServerRequest)
                 {
                     var bytes = UdpReceiver?.Receive(ref multicast);
                     var client = $"{multicast.Address}:{multicast.Port}";
@@ -307,7 +307,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         Init();
 
         UdpSender = new(
-            ConfigManager.AppConfig.Web.UDPPortSend,
+            Instances.ConfigManager.AppConfig.Web.UdpPortSend,
             AddressFamily.InterNetwork
         )
         {
@@ -318,7 +318,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         UdpReceiver = new(
             new IPEndPoint(
                 IPAddress.Any,
-                ConfigManager.AppConfig.Web.UDPPortReceive
+                Instances.ConfigManager.AppConfig.Web.UdpPortReceive
             )
         );
 
@@ -328,7 +328,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             {
                 FindSupportNetworkInterfaces(
                     [UdpSender, UdpReceiver],
-                    IPAddress.Parse(ConfigManager.AppConfig.Web.UDPBroadcastAddress)
+                    IPAddress.Parse(Instances.ConfigManager.AppConfig.Web.UdpBroadcastAddress)
                 ); // 寻找所有支持的网络适配器
             }
             catch (Exception ex)

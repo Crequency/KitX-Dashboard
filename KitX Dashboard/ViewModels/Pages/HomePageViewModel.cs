@@ -17,7 +17,7 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
         InitCommands();
     }
 
-    internal void InitCommands()
+    public override void InitCommands()
     {
         ResetToAutoCommand = ReactiveCommand.Create(() =>
         {
@@ -35,14 +35,16 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
         });
     }
 
+    public override void InitEvents() => throw new System.NotImplementedException();
+
     internal static bool IsPaneOpen
     {
-        get => ConfigManager.AppConfig.Pages.Home.IsNavigationViewPaneOpened;
+        get => Instances.ConfigManager.AppConfig.Pages.Home.IsNavigationViewPaneOpened;
         set
         {
-            ConfigManager.AppConfig.Pages.Home.IsNavigationViewPaneOpened = value;
+            Instances.ConfigManager.AppConfig.Pages.Home.IsNavigationViewPaneOpened = value;
 
-            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
+            SaveAppConfigChanges();
         }
     }
 
@@ -58,10 +60,10 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
     {
-        get => ConfigManager.AppConfig.Pages.Home.NavigationViewPaneDisplayMode;
+        get => Instances.ConfigManager.AppConfig.Pages.Home.NavigationViewPaneDisplayMode;
         set
         {
-            ConfigManager.AppConfig.Pages.Home.NavigationViewPaneDisplayMode = value;
+            Instances.ConfigManager.AppConfig.Pages.Home.NavigationViewPaneDisplayMode = value;
 
             PropertyChanged?.Invoke(
                 this,
@@ -73,7 +75,7 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
                 new(nameof(FirstItemMargin))
             );
 
-            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
+            SaveAppConfigChanges();
         }
     }
 

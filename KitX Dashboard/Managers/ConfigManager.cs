@@ -1,218 +1,156 @@
-﻿using Common.BasicHelper.IO;
-using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Models;
+﻿using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Services;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
 
 namespace KitX.Dashboard.Managers;
 
-internal class ConfigManager
+public class ConfigManager
 {
-    private static readonly object _appConfigWriteLock = new();
-
-    private static readonly object _pluginsListConfigWriteLock = new();
-
-    internal static AppConfig AppConfig = new();
-
-    internal static void Init()
+    internal class ConfigManagerInfo
     {
-        InitConfigs();
+        private string? _location;
+
+        internal string? Location
+        {
+            get => _location;
+            set
+            {
+                ArgumentNullException.ThrowIfNull(value, nameof(Location));
+
+                _location = Path.GetFullPath(value);
+
+                if (!Directory.Exists(_location))
+                    Directory.CreateDirectory(_location);
+            }
+        }
+    }
+
+    private readonly Dictionary<string, ConfigBase> _configs;
+
+    internal ConfigManagerInfo? Infos;
+
+    public ConfigManager()
+    {
+        Infos = new();
+
+        _configs = [];
 
         InitEvents();
-
-        InitFileWatcher();
     }
 
-    internal static void InitConfigs()
-    {
-        var location = $"{nameof(ConfigManager)}.{nameof(InitConfigs)}";
-
-        TasksManager.RunTask(() =>
-        {
-            try
-            {
-                var configDir = GlobalInfo.ConfigPath.GetFullPath();
-                var configFilePath = GlobalInfo.ConfigFilePath.GetFullPath();
-                var pluginsListConfigFilePath = GlobalInfo.PluginsListConfigFilePath.GetFullPath();
-
-                if (!Directory.Exists(configDir))
-                    _ = Directory.CreateDirectory(configDir);
-
-                if (!File.Exists(configFilePath))
-                    SaveAppConfig();
-                else
-                    LoadAppConfig();
-
-                if (!File.Exists(pluginsListConfigFilePath))
-                    SavePluginsListConfig();
-                else
-                    LoadPluginsListConfig();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"In {location}: {ex.Message}");
-            }
-        }, location);
-    }
-
-    internal static void InitEvents()
+    private void InitEvents()
     {
         var location = $"{nameof(ConfigManager)}.{nameof(InitEvents)}";
 
         TasksManager.RunTask(() =>
         {
-            EventService.ConfigSettingsChanged += () => SaveAppConfig();
 
-            EventService.PluginsListChanged += () => SavePluginsListConfig();
+            EventService.AppConfigChanged += () => AppConfig.Save(AppConfig.ConfigFileLocation!);
+
+            EventService.PluginsConfigChanged += () => PluginsConfig.Save(PluginsConfig.ConfigFileLocation!);
 
         }, location);
     }
 
-    internal static void InitFileWatcher()
+    public ConfigManager SetLocation(string location)
     {
-        var location = $"{nameof(ConfigManager)}.{nameof(InitFileWatcher)}";
+        if (Infos is not null)
+            Infos.Location = location;
 
-        var appConfigWatcher = nameof(FileWatcherNames.AppConfigFileWatcher);
+        return this;
+    }
 
-        Instances.FileWatcherManager?.RegisterWatcher(
-            appConfigWatcher,
-            GlobalInfo.ConfigFilePath.GetFullPath(),
-            (x, y) =>
+    private void RegisterFileWatcher<T>(T config) where T : ConfigBase, new()
+    {
+        var name = "ConfigFileWatcher".Append(typeof(T).Name);
+
+        var path = config.ConfigFileLocation!;
+
+        Instances.FileWatcherManager!.RegisterWatcher(
+            name,
+            path,
+            (_, y) =>
             {
-                Log.Information($"{appConfigWatcher}: {y.Name}, {y.ChangeType}");
+                var location = $"{nameof(ConfigManager)}.{nameof(RegisterFileWatcher)}";
+
+                Log.Information($"FileChanged: {name} | {y.Name}, {y.ChangeType}");
 
                 try
                 {
-                    lock (_appConfigWriteLock)
-                    {
-                        AppConfig = JsonSerializer.Deserialize<AppConfig>(
-                            File.ReadAllText(GlobalInfo.ConfigFilePath)
-                        ) ?? new();
-
-                        EventService.Invoke(nameof(EventService.OnConfigHotReloaded));
-                    }
+                    _configs[typeof(T).Name] = path.Load<T>();
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    Log.Error(ex, $"In {location}: {ex.Message}");
+                    Log.Error(e, $"In {location}: {e.Message}");
                 }
             }
         );
     }
 
-    internal static void SaveConfigs()
+    public ConfigManager LoadConfigFile<T>() where T : ConfigBase, new()
     {
-        var location = $"{nameof(ConfigManager)}.{nameof(SaveConfigs)}";
+        var name = typeof(T).Name;
 
-        TasksManager.RunTask(() =>
-        {
-            try
+        ArgumentNullException.ThrowIfNull(name, nameof(name));
+
+        var path = $"{Infos?.Location}{name}.json".GetFullPath();
+
+        var config = path.Load<T>().SetConfigFileLocation(path).Save(path);
+
+        _configs.Add(name, config);
+
+        if (ConstantTable.EnabledConfigFileHotReload)
+            AppFramework.AfterInitailization(() =>
             {
-                SaveAppConfig();
-                SavePluginsListConfig();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"In {location}: {ex.Message}");
-            }
-        }, location);
-    }
-
-    internal static async void LoadAppConfig()
-    {
-        var location = $"{nameof(ConfigManager)}.{nameof(LoadAppConfig)}";
-
-        await TasksManager.RunTaskAsync(async () =>
-        {
-            try
-            {
-                AppConfig = JsonSerializer.Deserialize<AppConfig>(
-                    await FileHelper.ReadAllAsync(GlobalInfo.ConfigFilePath)
-                ) ?? new();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"In {location}: {ex.Message}");
-
-                AppConfig = new AppConfig();
-            }
-        }, location);
-    }
-
-    internal static void SaveAppConfig()
-    {
-        var location = $"{nameof(ConfigManager)}.{nameof(SaveAppConfig)}";
-
-        var options = new JsonSerializerOptions()
-        {
-            WriteIndented = true,
-            IncludeFields = true,
-        };
-
-        TasksManager.RunTask(() =>
-        {
-            try
-            {
-                lock (_appConfigWriteLock)
-                {
-                    File.WriteAllText(
-                        GlobalInfo.ConfigFilePath.GetFullPath(),
-                        JsonSerializer.Serialize(AppConfig, options)
-                    );
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, $"In {location}: {ex.Message}");
-            }
-        }, location);
-    }
-
-    internal static async void LoadPluginsListConfig()
-    {
-        var location = $"{nameof(ConfigManager)}.{nameof(LoadPluginsListConfig)}";
-
-        await TasksManager.RunTaskAsync(async () =>
-        {
-            try
-            {
-                PluginsManager.Plugins = JsonSerializer.Deserialize<List<Plugin>>(
-                    await FileHelper.ReadAllAsync(GlobalInfo.PluginsListConfigFilePath)
-                ) ?? [];
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"In {location}: {ex.Message}");
-                PluginsManager.Plugins = [];
-            }
-        }, location);
-    }
-
-    internal static void SavePluginsListConfig()
-    {
-        var location = $"{nameof(ConfigManager)}.{nameof(SavePluginsListConfig)}";
-
-        var options = new JsonSerializerOptions()
-        {
-            WriteIndented = true,
-            IncludeFields = true,
-        };
-
-        TasksManager.RunTask(() =>
-        {
-            lock (_pluginsListConfigWriteLock)
-            {
-                File.WriteAllText(
-                    GlobalInfo.PluginsListConfigFilePath.GetFullPath(),
-                    JsonSerializer.Serialize(PluginsManager.Plugins, options)
+                Instances.SignalTasksManager!.SignalRun(
+                    nameof(SignalsNames.FileWatcherManagerInitializedSignal),
+                    () => RegisterFileWatcher(config)
                 );
-            }
-        }, location);
+            });
+
+        return this;
     }
+
+    public ConfigManager Load()
+    {
+        var location = $"{nameof(ConfigManager)}.{nameof(Load)}";
+
+        TasksManager.RunTask(() =>
+        {
+            LoadConfigFile<AppConfig>();
+            LoadConfigFile<PluginsConfig>();
+            LoadConfigFile<MarketConfig>();
+        }, location, catchException: false);
+
+        return this;
+    }
+
+    public ConfigManager SaveAll()
+    {
+        var location = $"{nameof(ConfigManager)}.{nameof(SaveAll)}";
+
+        TasksManager.RunTask(() =>
+        {
+            foreach (var config in _configs.Values)
+                config.Save(config.ConfigFileLocation ?? throw new InvalidOperationException(
+                    $"Saving config requires `{nameof(ConfigBase.ConfigFileLocation)}` property not null."
+                ));
+
+        }, location, catchException: true);
+
+        return this;
+    }
+
+    private T GetConfig<T>(string name) where T : ConfigBase => _configs[name] as T ?? throw new Exception($"Can not find config: {name}");
+
+    public AppConfig AppConfig => GetConfig<AppConfig>(nameof(AppConfig));
+
+    public PluginsConfig PluginsConfig => GetConfig<PluginsConfig>(nameof(PluginsConfig));
+
+    public MarketConfig MarketConfig => GetConfig<MarketConfig>(nameof(MarketConfig));
 }

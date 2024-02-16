@@ -1,5 +1,4 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Interfaces.Network;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
@@ -42,7 +41,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
         clients.Clear();
 
-        var port = ConfigManager.AppConfig.Web.UserSpecifiedPluginsServerPort;
+        var port = Instances.ConfigManager.AppConfig.Web.UserSpecifiedPluginsServerPort;
 
         if (port < 0 || port > 65535) port = null;
 
@@ -97,7 +96,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
                 while (keepListen)
                 {
-                    var buffer = new byte[ConfigManager.AppConfig.Web.SocketBufferSize];
+                    var buffer = new byte[Instances.ConfigManager.AppConfig.Web.SocketBufferSize];
 
                     var length = stream is null ? 0 : await stream.ReadAsync(buffer);
 
@@ -211,7 +210,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
             var port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
 
-            GlobalInfo.PluginServerPort = port; // 全局端口号标明
+            ConstantTable.PluginServerPort = port; // 全局端口号标明
 
             EventService.Invoke(nameof(EventService.PluginsServerPortChanged));
 

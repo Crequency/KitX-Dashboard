@@ -10,9 +10,12 @@ internal class TasksManager
         Action action,
         string name = nameof(Action),
         string prompt = ">>> ",
-        bool catchException = false)
+        bool catchException = false,
+        bool logIt = true
+    )
     {
-        Log.Information($"{prompt}Task `{name}` began.");
+        if (logIt)
+            Log.Information($"{prompt}Task `{name}` began.");
 
         if (catchException)
         {
@@ -22,21 +25,26 @@ internal class TasksManager
             }
             catch (Exception e)
             {
-                Log.Error(e, $"{prompt}Task `{name}` failed: {e.Message}");
+                if (logIt)
+                    Log.Error(e, $"{prompt}Task `{name}` failed: {e.Message}");
             }
         }
         else action();
 
-        Log.Information($"{prompt}Task `{name}` done.");
+        if (logIt)
+            Log.Information($"{prompt}Task `{name}` done.");
     }
 
     public static async Task RunTaskAsync(
         Action action,
         string name = nameof(Action),
         string prompt = ">>> ",
-        bool catchException = false)
+        bool catchException = false,
+        bool logIt = true
+    )
     {
-        Log.Information($"{prompt}Task `{name}` began.");
+        if (logIt)
+            Log.Information($"{prompt}Task `{name}` began.");
 
         if (catchException)
         {
@@ -46,11 +54,13 @@ internal class TasksManager
             }
             catch (Exception e)
             {
-                Log.Error(e, $"{prompt}Task `{name}` failed: {e.Message}");
+                if (logIt)
+                    Log.Error(e, $"{prompt}Task `{name}` failed: {e.Message}");
             }
         }
         else await Task.Run(action);
 
-        Log.Information($"{prompt}Task `{name}` done.");
+        if (logIt)
+            Log.Information($"{prompt}Task `{name}` done.");
     }
 }

@@ -1,4 +1,5 @@
 ﻿using KitX.Dashboard.Managers;
+using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
 using ReactiveUI;
 using System.Collections.ObjectModel;
@@ -19,7 +20,7 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
         InitEvents();
     }
 
-    private void InitCommands()
+    public override void InitCommands()
     {
 
         RestartDevicesServerCommand = ReactiveCommand.Create(() =>
@@ -44,14 +45,14 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
                     stopPluginsServices: false
                 );
 
-                await Task.Delay(ConfigManager.AppConfig.Web.UDPSendFrequency + 200);
+                await Task.Delay(Instances.ConfigManager.AppConfig.Web.UdpSendFrequency + 200);
 
                 DeviceCards.Clear();
             });
         });
     }
 
-    private void InitEvents()
+    public override void InitEvents()
     {
         DeviceCards.CollectionChanged += (_, _) =>
         {
@@ -94,7 +95,7 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    internal static ObservableCollection<DeviceCard> DeviceCards => Instances.DeviceCards;
+    internal static ObservableCollection<DeviceCard> DeviceCards => ViewInstances.DeviceCards;
 
     internal ReactiveCommand<Unit, Unit>? RestartDevicesServerCommand { get; set; }
 

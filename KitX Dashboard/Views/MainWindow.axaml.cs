@@ -1,18 +1,15 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Media;
-using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Common.BasicHelper.Graphics.Screen;
 using FluentAvalonia.UI.Controls;
-using FluentAvalonia.UI.Media;
+using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Converters;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Generators;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Utils;
 using KitX.Dashboard.ViewModels;
 using Serilog;
 using System;
@@ -20,9 +17,11 @@ using System.Timers;
 
 namespace KitX.Dashboard.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, IView
 {
     private readonly MainWindowViewModel viewModel = new();
+
+    private readonly AppConfig appConfig = Instances.ConfigManager.AppConfig;
 
     public MainWindow()
     {
@@ -30,66 +29,32 @@ public partial class MainWindow : Window
 
         InitializeComponent();
 
-        Instances.MainWindow = this;
+        ViewInstances.MainWindow = this;
 
         Resources["MainWindow"] = this;
 
         DataContext = viewModel;
 
-        SuggestResolutionAndLocation();
+        var config = appConfig.Windows.MainWindow;
 
-        var nowRes = Resolution.Parse(
-            $"{ConfigManager.AppConfig.Windows.MainWindow.Window_Width}" +
-            $"x{ConfigManager.AppConfig.Windows.MainWindow.Window_Height}"
-        );
+        var screen = Screens.ScreenFromWindow(this);
 
-        // 设置窗体坐标
-        try
-        {
-            Position = new(
-                WindowAttributesConverter.PositionCameCenter(
-                    ConfigManager.AppConfig.Windows.MainWindow.Window_Left,
-                    true, Screens, nowRes
-                ),
-                WindowAttributesConverter.PositionCameCenter(
-                    ConfigManager.AppConfig.Windows.MainWindow.Window_Top,
-                    false, Screens, nowRes
-                )
-            );
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, $"In {location}: {e.Message}");
-        }
+        var nowRes = config.Size.SuggestResolution(screen);
 
-        try
-        {
-            if (OperatingSystem.IsWindows())
-            {
-                Width = ConfigManager.AppConfig.Windows.MainWindow.Window_Width;
-                Height = ConfigManager.AppConfig.Windows.MainWindow.Window_Height + 30;
-            }
-            else
-            {
-                Width = ConfigManager.AppConfig.Windows.MainWindow.Window_Width;
-                Height = ConfigManager.AppConfig.Windows.MainWindow.Window_Height;
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, $"In {location}: {e.Message}");
+        var centerPos = config.Location.BringToCenter(screen, nowRes);
 
-            ClientSize = new(800, 600);
-        }
+        ClientSize = new(nowRes.Width!.Value, nowRes.Height!.Value);
+
+        Position = new((int)centerPos.Left, (int)centerPos.Top);
 
         try
         {
             Instances.SignalTasksManager?.SignalRun(
                 nameof(SignalsNames.MainWindowOpenedSignal),
-                () => WindowState = ConfigManager.AppConfig.Windows.MainWindow.WindowState
+                () => WindowState = config.WindowState
             );
 
-            if (ConfigManager.AppConfig.Windows.MainWindow.IsHidden)
+            if (config.IsHidden)
                 Instances.SignalTasksManager?.SignalRun(
                     nameof(SignalsNames.MainWindowOpenedSignal),
                     Hide
@@ -100,39 +65,26 @@ public partial class MainWindow : Window
             Log.Error(e, $"In {location}: {e.Message}");
         }
 
-        InitMainWindow();
-    }
-
-    private void SuggestResolutionAndLocation()
-    {
-        if (Screens.Primary is null) return;
-
-        if (ConfigManager.AppConfig.Windows.MainWindow.Window_Width == 1280 &&
-            ConfigManager.AppConfig.Windows.MainWindow.Window_Height == 720)
+        ClientSizeProperty.Changed.Subscribe(size =>
         {
-            var suggest = Resolution.Suggest(
-                Resolution.Parse("2560x1440"),
-                Resolution.Parse("1280x720"),
-                Resolution.Parse(
-                    $"{Screens.Primary.Bounds.Width}x" +
-                    $"{Screens.Primary.Bounds.Height}"
-                )
-            ).Integerization();
+            if (WindowState != WindowState.Maximized)
+                config.Size = new Resolution(ClientSize.Width, ClientSize.Height);
+        });
 
-            if (suggest.Width is not null && suggest.Height is not null)
-            {
-                ConfigManager.AppConfig.Windows.MainWindow.Window_Width = (double)suggest.Width;
-                ConfigManager.AppConfig.Windows.MainWindow.Window_Height = (double)suggest.Height;
-            }
-        }
+        PositionChanged += (_, args) =>
+        {
+            if (WindowState == WindowState.Normal)
+                config.Location = new(left: Position.X, top: Position.Y);
+        };
+
+        InitMainWindow();
     }
 
     private void InitMainWindow()
     {
-        //  导航到上次关闭时界面
         MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
 
-        RequestedThemeVariant = ConfigManager.AppConfig.App.Theme switch
+        RequestedThemeVariant = appConfig.App.Theme switch
         {
             "Light" => ThemeVariant.Light,
             "Dark" => ThemeVariant.Dark,
@@ -140,17 +92,6 @@ public partial class MainWindow : Window
             _ => ThemeVariant.Default
         };
 
-        //  透明度变更事件, 让透明度变更立即生效
-        EventService.MicaOpacityChanged += () =>
-        {
-            //if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
-
-            //if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
-
-            //TryEnableMicaEffect();
-        };
-
-        //  每 Interval 更新一次招呼语
         UpdateGreetingText();
 
         EventService.LanguageChanged += () => UpdateGreetingText();
@@ -160,7 +101,7 @@ public partial class MainWindow : Window
         var timer = new Timer()
         {
             AutoReset = true,
-            Interval = 1000 * 60 * ConfigManager.AppConfig.Windows.MainWindow.GreetingUpdateInterval
+            Interval = 1000 * 60 * appConfig.Windows.MainWindow.GreetingUpdateInterval
         };
 
         timer.Elapsed += (_, _) => UpdateGreetingText();
@@ -170,26 +111,24 @@ public partial class MainWindow : Window
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
     }
 
-    private static void SaveChanges()
-    {
-        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
-    }
-
     internal void UpdateGreetingText()
     {
         try
         {
             if (Application.Current is null) return;
 
-            Application.Current.Resources.MergedDictionaries[0].TryGetResource(
-                GreetingTextGenerator.GetKey(), ActualThemeVariant, out object? text
-            );
-
-            if (text is null) return;
-
-            Dispatcher.UIThread.Post(() =>
+            Dispatcher.UIThread.Invoke(() =>
             {
-                Resources["GreetingText"] = text as string;
+                Application.Current.Resources.MergedDictionaries[0].TryGetResource(
+                    GreetingTextGenerator.GetKey(), ActualThemeVariant, out object? text
+                );
+
+                if (text is null) return;
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    Resources["GreetingText"] = text as string;
+                });
             });
         }
         catch (ArgumentOutOfRangeException e)
@@ -210,13 +149,14 @@ public partial class MainWindow : Window
         _ => typeof(Pages.HomePage),
     };
 
-    private static string SelectedPageName
+    private string SelectedPageName
     {
-        get => ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"];
+        get => appConfig.Windows.MainWindow.Tags["SelectedPage"];
         set
         {
-            ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"] = value;
-            SaveChanges();
+            appConfig.Windows.MainWindow.Tags["SelectedPage"] = value;
+
+            IView.SaveAppConfigChanges();
         }
     }
 
@@ -246,55 +186,21 @@ public partial class MainWindow : Window
         }
     }
 
-    private void SaveMetaData()
-    {
-        if (WindowState != WindowState.Maximized)
-        {
-            if (WindowState != WindowState.Minimized)
-            {
-                ConfigManager.AppConfig.Windows.MainWindow.Window_Left = Position.X;
-                ConfigManager.AppConfig.Windows.MainWindow.Window_Top = Position.Y;
-            }
-            if (OperatingSystem.IsWindows())
-            {
-                ConfigManager.AppConfig.Windows.MainWindow.Window_Width = Width;
-                ConfigManager.AppConfig.Windows.MainWindow.Window_Height = Height - 30;
-            }
-            else
-            {
-                ConfigManager.AppConfig.Windows.MainWindow.Window_Width = Width;
-                ConfigManager.AppConfig.Windows.MainWindow.Window_Height = Height;
-            }
-        }
-
-        ConfigManager.AppConfig.Windows.MainWindow.Tags["SelectedPage"] = SelectedPageName;
-    }
-
-    //protected override void HandleWindowStateChanged(WindowState state)
-    //{
-    //    ConfigManager.AppConfig.Windows.MainWindow.WindowState = state;
-    //    ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
-
-    //    SaveChanges();
-
-    //    base.HandleWindowStateChanged(state);
-    //}
-
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);
 
-        SaveMetaData();
+        IView.SaveAppConfigChanges();
 
-        if (!GlobalInfo.Exiting)
+        if (!ConstantTable.Exiting)
         {
             e.Cancel = true;
 
             Hide();
 
-            ConfigManager.AppConfig.Windows.MainWindow.IsHidden = true;
+            appConfig.Windows.MainWindow.IsHidden = true;
 
-            SaveChanges();
+            IView.SaveAppConfigChanges();
         }
         else
         {
@@ -306,64 +212,6 @@ public partial class MainWindow : Window
     {
         base.OnOpened(e);
 
-        //if (!ConfigManager.AppConfig.Windows.MainWindow.EnabledMica) return;
-
-        //if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
-
-        //TransparencyBackgroundFallback = Brushes.Transparent;
-
-        //TransparencyLevelHint = WindowTransparencyLevel.Mica;
-
-        //TryEnableMicaEffect();
-
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
-    }
-
-    //private void OnRequestedThemeChanged(
-    //    FluentAvaloniaTheme sender,
-    //    RequestedThemeChangedEventArgs args)
-    //{
-    //    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-    //    {
-    //        if (IsWindows11 && args.NewTheme != FluentAvaloniaTheme.HighContrastModeString)
-    //            TryEnableMicaEffect(sender);
-    //        else if (args.NewTheme == FluentAvaloniaTheme.HighContrastModeString)
-    //            SetValue(BackgroundProperty, AvaloniaProperty.UnsetValue);
-    //    }
-    //}
-
-    private void TryEnableMicaEffect()
-    {
-        _ = this.TryFindResource(
-            "SolidBackgroundFillColorBase",
-            out var value
-        );
-
-        if (RequestedThemeVariant == ThemeVariant.Dark)
-        {
-            var color = value is null
-                ? new Color2(32, 32, 32)
-                : (Color2)(Color)value;
-
-            color = color.LightenPercent(-0.8f);
-
-            Background = new ImmutableSolidColorBrush(
-                color,
-                ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity
-            );
-        }
-        else if (RequestedThemeVariant == ThemeVariant.Light)
-        {
-            var color = value is null
-                ? new Color2(243, 243, 243)
-                : (Color2)(Color)value;
-
-            color = color.LightenPercent(0.5f);
-
-            Background = new ImmutableSolidColorBrush(
-                color,
-                ConfigManager.AppConfig.Windows.MainWindow.MicaOpacity
-            );
-        }
     }
 }

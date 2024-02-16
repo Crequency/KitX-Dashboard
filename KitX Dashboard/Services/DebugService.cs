@@ -38,7 +38,7 @@ internal class DebugCommands
 {
     private static string SaveConfig()
     {
-        ConfigManager.SaveConfigs();
+        Instances.ConfigManager.SaveAll();
 
         return "AppConfig saved!";
     }
@@ -294,8 +294,7 @@ internal class DebugCommands
                 "Return hashed value for parameters.\n" +
                 "\t--way [MD5,SHA1,Common.Algorithm] |\n" +
                 "\t\tMD5              | [--value] Use MD5 to hash parameters.\n" +
-                "\t\tSHA1             | [--value] Use SHA1 to hash parameters.\n" +
-                "\t\tCommon.Algorithm | [--value] Use Common.Algorithm to hash parameters.";
+                "\t\tSHA1             | [--value] Use SHA1 to hash parameters.";
 
         if (args.TryGetValue("--way", out var way))
         {
@@ -310,10 +309,6 @@ internal class DebugCommands
                     {
                         var result = SHA1.HashData(args["--value"].FromUTF8()).ToUTF8();
                         return result;
-                    }
-                case "common.algorithm":
-                    {
-                        return Common.Algorithm.Interop.Hash.FromString2Hex(args["--value"]);
                     }
                 default:
                     return "No this way.";

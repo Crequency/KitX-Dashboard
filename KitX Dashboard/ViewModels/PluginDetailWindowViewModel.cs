@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Shared.Plugin;
 using ReactiveUI;
@@ -29,14 +28,14 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         InitEvents();
     }
 
-    internal void InitCommands()
+    public override void InitCommands()
     {
         FinishCommand = ReactiveCommand.Create<object?>(
             parent => (parent as Window)?.Close()
         );
     }
 
-    internal void InitEvents()
+    public override void InitEvents()
     {
         EventService.ThemeConfigChanged += () => PropertyChanged?.Invoke(
             this,
@@ -52,7 +51,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             if (PluginDetail is not null)
             {
-                var key = ConfigManager.AppConfig.App.AppLanguage;
+                var key = Instances.ConfigManager.AppConfig.App.AppLanguage;
                 var exist = PluginDetail?.DisplayName.ContainsKey(key);
 
                 if (exist is not null && (bool)exist)
@@ -79,7 +78,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             if (PluginDetail is not null)
             {
-                var key = ConfigManager.AppConfig.App.AppLanguage;
+                var key = Instances.ConfigManager.AppConfig.App.AppLanguage;
                 var exist = PluginDetail?.SimpleDescription.ContainsKey(key);
 
                 if (exist is not null && (bool)exist)
@@ -96,7 +95,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             if (PluginDetail is not null)
             {
-                var key = ConfigManager.AppConfig.App.AppLanguage;
+                var key = Instances.ConfigManager.AppConfig.App.AppLanguage;
                 var exist = PluginDetail?.ComplexDescription.ContainsKey(key);
 
                 if (exist is not null && (bool)exist)
@@ -113,7 +112,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
         {
             if (PluginDetail is not null)
             {
-                var key = ConfigManager.AppConfig.App.AppLanguage;
+                var key = Instances.ConfigManager.AppConfig.App.AppLanguage;
                 var exist = PluginDetail?.TotalDescriptionInMarkdown.ContainsKey(key);
 
                 if (exist is not null && (bool)exist)
@@ -130,13 +129,13 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
     internal string? LastUpdateDate => PluginDetail?.LastUpdateDate
         .ToLocalTime().ToString("yyyy.MM.dd");
 
-    internal static Color TintColor => ConfigManager.AppConfig.App.Theme switch
+    internal static Color TintColor => Instances.ConfigManager.AppConfig.App.Theme switch
     {
         "Light" => Colors.WhiteSmoke,
         "Dark" => Colors.Black,
         "Follow" =>
             Application.Current?.ActualThemeVariant == ThemeVariant.Light ? Colors.WhiteSmoke : Colors.Black,
-        _ => Color.Parse(ConfigManager.AppConfig.App.ThemeColor),
+        _ => Color.Parse(Instances.ConfigManager.AppConfig.App.ThemeColor),
     };
 
     private readonly ObservableCollection<string> functions = [];
@@ -181,7 +180,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase, INotifyPropertyChang
 
         if (PluginDetail?.Tags is null) return;
 
-        var langKey = ConfigManager.AppConfig.App.AppLanguage;
+        var langKey = Instances.ConfigManager.AppConfig.App.AppLanguage;
 
         foreach (var func in PluginDetail.Value.Functions)
         {

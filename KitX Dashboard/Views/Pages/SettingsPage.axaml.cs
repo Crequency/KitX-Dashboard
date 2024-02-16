@@ -9,7 +9,7 @@ using System;
 
 namespace KitX.Dashboard.Views.Pages;
 
-public partial class SettingsPage : UserControl
+public partial class SettingsPage : UserControl, IView
 {
     private readonly SettingsPageViewModel viewModel = new();
 
@@ -28,11 +28,6 @@ public partial class SettingsPage : UserControl
 
         if (nav is not null)
             nav.SelectedItem = this.FindControl<NavigationViewItem>(SelectedViewName);
-    }
-
-    private static void SaveChanges()
-    {
-        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
     }
 
     private void SettingsNavigationView_SelectionChanged(
@@ -57,11 +52,12 @@ public partial class SettingsPage : UserControl
 
     private static string SelectedViewName
     {
-        get => ConfigManager.AppConfig.Pages.Settings.SelectedViewName;
+        get => Instances.ConfigManager.AppConfig.Pages.Settings.SelectedViewName;
         set
         {
-            ConfigManager.AppConfig.Pages.Settings.SelectedViewName = value;
-            SaveChanges();
+            Instances.ConfigManager.AppConfig.Pages.Settings.SelectedViewName = value;
+
+            IView.SaveAppConfigChanges();
         }
     }
 

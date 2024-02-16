@@ -1,8 +1,8 @@
 ﻿using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
 using KitX.Shared.Plugin;
 using Serilog;
@@ -45,7 +45,7 @@ internal class PluginsNetwork
 
                 pluginsToAdd.Enqueue(pluginStruct);
 
-                var workPath = ConfigManager.AppConfig.App.LocalPluginsDataFolder.GetFullPath();
+                var workPath = Instances.ConfigManager.AppConfig.App.LocalPluginsDataFolder.GetFullPath();
                 var sendtxt = $"WorkPath: {workPath}";
                 var bytes = sendtxt.FromUTF8();
 
@@ -99,8 +99,7 @@ internal class PluginsNetwork
                         {
                             IPEndPoint = pluginStruct.Tags["IPEndPoint"]
                         };
-
-                        Instances.PluginCards.Add(card);
+                        ViewInstances.PluginCards.Add(card);
                     });
                 }
 
@@ -108,16 +107,16 @@ internal class PluginsNetwork
                 {
                     var endPoint = pluginsToRemove.Dequeue().ToString();
 
-                    var matched = Instances.PluginCards.FirstOrDefault(
+                    var matched = ViewInstances.PluginCards.FirstOrDefault(
                         x => x!.IPEndPoint?.Equals(endPoint) ?? false,
                         null
                     );
 
                     if (matched is not null)
-                        Instances.PluginCards.Remove(matched);
+                        ViewInstances.PluginCards.Remove(matched);
                 }
 
-                if (!GlobalInfo.Running)
+                if (!ConstantTable.Running)
                 {
                     timer.Stop();
                 }
@@ -205,7 +204,7 @@ PluginsManager.Plugins.FindIndex(
                         }
 
                         var pgfiledir = Path.GetFullPath(
-                            $"{ConfigManager.AppConfig.App.LocalPluginsFileFolder}/" +
+                            $"{Instances.ConfigManager.AppConfig.App.LocalPluginsFileFolder}/" +
                             $"{plugin.PluginDetails.PublisherName}_{plugin.PluginDetails.AuthorName}/" +
                             $"{plugin.PluginDetails.Name}/{plugin.PluginDetails.Version}/"
                         );
@@ -214,7 +213,7 @@ PluginsManager.Plugins.FindIndex(
                     }
                 }
 
-                if (isPluginsListUpdated) EventService.Invoke(nameof(EventService.PluginsListChanged));
+                if (isPluginsListUpdated) EventService.Invoke(nameof(EventService.PluginsConfigChanged));
             }
             catch (Exception ex)
             {

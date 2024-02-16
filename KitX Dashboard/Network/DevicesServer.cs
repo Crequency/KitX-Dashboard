@@ -1,5 +1,4 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Interfaces.Network;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
@@ -96,7 +95,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
                 while (keepListen)
                 {
-                    var buffer = new byte[ConfigManager.AppConfig.Web.SocketBufferSize];
+                    var buffer = new byte[Instances.ConfigManager.AppConfig.Web.SocketBufferSize];
 
                     var length = await stream.ReadAsync(buffer);
 
@@ -198,9 +197,9 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
             var port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
 
-            GlobalInfo.DevicesServerPort = port; // 全局端口号标明
-            GlobalInfo.ServerBuildTime = DateTime.UtcNow;
-            GlobalInfo.IsMainMachine = true;
+            ConstantTable.DevicesServerPort = port; // 全局端口号标明
+            ConstantTable.ServerBuildTime = DateTime.UtcNow;
+            ConstantTable.IsMainMachine = true;
 
             Log.Information($"DevicesServer Port: {port}");
 
@@ -237,8 +236,8 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
             clients.Clear();
 
-            GlobalInfo.IsMainMachine = false;
-            GlobalInfo.DevicesServerPort = -1;
+            ConstantTable.IsMainMachine = false;
+            ConstantTable.DevicesServerPort = -1;
 
             EventService.Invoke(nameof(EventService.DevicesServerPortChanged));
 

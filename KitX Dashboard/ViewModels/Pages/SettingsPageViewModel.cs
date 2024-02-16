@@ -1,6 +1,5 @@
 ﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using ReactiveUI;
 using System.ComponentModel;
@@ -17,7 +16,7 @@ internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
         InitCommands();
     }
 
-    internal void InitCommands()
+    public override void InitCommands()
     {
         ResetToAutoCommand = ReactiveCommand.Create(() =>
         {
@@ -35,14 +34,16 @@ internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
         });
     }
 
+    public override void InitEvents() => throw new System.NotImplementedException();
+
     internal static bool IsPaneOpen
     {
-        get => ConfigManager.AppConfig.Pages.Settings.IsNavigationViewPaneOpened;
+        get => Instances.ConfigManager.AppConfig.Pages.Settings.IsNavigationViewPaneOpened;
         set
         {
-            ConfigManager.AppConfig.Pages.Settings.IsNavigationViewPaneOpened = value;
+            Instances.ConfigManager.AppConfig.Pages.Settings.IsNavigationViewPaneOpened = value;
 
-            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
+            SaveAppConfigChanges();
         }
     }
 
@@ -58,10 +59,10 @@ internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
     {
-        get => ConfigManager.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode;
+        get => Instances.ConfigManager.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode;
         set
         {
-            ConfigManager.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode = value;
+            Instances.ConfigManager.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode = value;
 
             PropertyChanged?.Invoke(
                 this,
@@ -73,7 +74,7 @@ internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
                 new(nameof(FirstItemMargin))
             );
 
-            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
+            SaveAppConfigChanges();
         }
     }
 

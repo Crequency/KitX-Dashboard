@@ -15,8 +15,6 @@
             <AutoCompleteBox Width="400"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"
-                             FontFamily="{StaticResource SourceHanSans}"
-                             FontWeight="Bold"
                              IsTextCompletionEnabled="True"
                              Text="{Binding SearchingText}"
                              Watermark="{DynamicResource Text_Lib_Search_In_Local}"/>
@@ -24,36 +22,15 @@
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
-                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
-                           Text="{Binding PluginsCount}"/>
-                <TextBlock Margin="5,0,0,0"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
-                           Text="{DynamicResource Text_Lib_Tip_Connected}"/>
+                <TextBlock Text="{Binding PluginsCount}"/>
+                <TextBlock Margin="5,0,0,0" Text="{DynamicResource Text_Lib_Tip_Connected}"/>
             </StackPanel>
         </Grid>
-
-        <!--<ScrollViewer HorizontalScrollBarVisibility="Disabled">
-            <ItemsControl Grid.Row="1" Items="{Binding PluginCards}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
-        </ScrollViewer>-->
-
-        <!--<ScrollViewer>
-            <WrapPanel x:Name="LibViewWrapPanel"/>
-        </ScrollViewer>-->
 
         <DockPanel Margin="10">
             <Border Height="{Binding NoPlugins_TipHeight}" DockPanel.Dock="Top">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
                            Text="{DynamicResource Text_Lib_Tip_NoPlugin}"/>
             </Border>
             <ScrollViewer>

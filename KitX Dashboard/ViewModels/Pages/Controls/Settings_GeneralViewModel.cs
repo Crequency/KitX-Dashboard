@@ -30,7 +30,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
         InitEvents();
     }
 
-    private void InitCommands()
+    public override void InitCommands()
     {
         ShowAnnouncementsInstantlyCommand = ReactiveCommand.Create(() =>
         {
@@ -51,7 +51,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
         {
             ++_consolesCount;
 
-            var port = ConfigManager.AppConfig.Web.DebugServicesServerPort;
+            var port = Instances.ConfigManager.AppConfig.Web.DebugServicesServerPort;
 
             if (!_manager.ServerLaunched) _manager = await _manager.LaunchServer(port);
 
@@ -155,7 +155,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
         });
     }
 
-    private void InitEvents()
+    public override void InitEvents()
     {
         EventService.DevelopSettingsChanged += () => PropertyChanged?.Invoke(
             this,
@@ -167,45 +167,45 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal static string LocalPluginsFileDirectory
     {
-        get => ConfigManager.AppConfig.App.LocalPluginsFileFolder;
+        get => Instances.ConfigManager.AppConfig.App.LocalPluginsFileFolder;
         set
         {
-            ConfigManager.AppConfig.App.LocalPluginsFileFolder = value;
+            Instances.ConfigManager.AppConfig.App.LocalPluginsFileFolder = value;
             SaveAppConfigChanges();
         }
     }
 
     internal static string LocalPluginsDataDirectory
     {
-        get => ConfigManager.AppConfig.App.LocalPluginsDataFolder;
+        get => Instances.ConfigManager.AppConfig.App.LocalPluginsDataFolder;
         set
         {
-            ConfigManager.AppConfig.App.LocalPluginsDataFolder = value;
+            Instances.ConfigManager.AppConfig.App.LocalPluginsDataFolder = value;
             SaveAppConfigChanges();
         }
     }
 
     internal static int ShowAnnouncementsStatus
     {
-        get => ConfigManager.AppConfig.App.ShowAnnouncementWhenStart ? 0 : 1;
+        get => Instances.ConfigManager.AppConfig.App.ShowAnnouncementWhenStart ? 0 : 1;
         set
         {
-            ConfigManager.AppConfig.App.ShowAnnouncementWhenStart = value == 0;
+            Instances.ConfigManager.AppConfig.App.ShowAnnouncementWhenStart = value == 0;
             SaveAppConfigChanges();
         }
     }
 
     internal static bool DeveloperSettingEnabled
     {
-        get => ConfigManager.AppConfig.App.DeveloperSetting;
+        get => Instances.ConfigManager.AppConfig.App.DeveloperSetting;
     }
 
     internal static int DeveloperSettingStatus
     {
-        get => ConfigManager.AppConfig.App.DeveloperSetting ? 0 : 1;
+        get => Instances.ConfigManager.AppConfig.App.DeveloperSetting ? 0 : 1;
         set
         {
-            ConfigManager.AppConfig.App.DeveloperSetting = value == 0;
+            Instances.ConfigManager.AppConfig.App.DeveloperSetting = value == 0;
             EventService.Invoke(nameof(EventService.DevelopSettingsChanged));
             SaveAppConfigChanges();
         }

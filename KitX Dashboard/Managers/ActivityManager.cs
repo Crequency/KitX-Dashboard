@@ -1,6 +1,5 @@
 ﻿using Common.Activity;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Names;
 using LiteDB;
 using System;
@@ -32,7 +31,7 @@ internal class ActivityManager
 
                     col?.EnsureIndex(keySelector);
 
-                    ConfigManager.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
+                    Instances.ConfigManager.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
 
                     db.Commit();
                 }
@@ -64,14 +63,14 @@ internal class ActivityManager
     {
         var activity = new Activity()
         {
-            Id = ConfigManager.AppConfig.Activity.TotalRecorded + 1,
+            Id = Instances.ConfigManager.AppConfig.Activity.TotalRecorded + 1,
             Name = nameof(ActivityNames.AppLifetime),
-            Author = GlobalInfo.AppFullName,
+            Author = ConstantTable.AppFullName,
             Title = ActivityTitles.AppStart,
             Category = nameof(ActivitySortNames.DashboardEvent),
             IconKind = Material.Icons.MaterialIconKind.RocketLaunch
         }
-        .Open(GlobalInfo.AppFullName)
+        .Open(ConstantTable.AppFullName)
         ;
 
         _appActivity = activity;
@@ -83,7 +82,7 @@ internal class ActivityManager
     {
         if (_appActivity is Activity activity)
         {
-            activity.Close(GlobalInfo.AppFullName);
+            activity.Close(ConstantTable.AppFullName);
 
             Update(activity);
         }

@@ -1,9 +1,9 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
 using System;
 
-namespace KitX.Dashboard.Data;
+namespace KitX.Dashboard;
 
-internal static class GlobalInfo
+internal static class ConstantTable
 {
     internal const string AppName = "KitX";
 
@@ -25,17 +25,9 @@ internal static class GlobalInfo
 
     internal const int LastBreakAfterExit = 2000;
 
-    private const string configFilePath = $"{ConfigPath}config.json";
-
-    private const string pluginsListConfigFilePath = $"{ConfigPath}plugins.json";
-
     private const string activitiesDataBaseFilePath = $"{DataPath}Activities.db";
 
     private const string thirdPartLicenseFilePath = $"{AssetsPath}ThirdPartLicense.md";
-
-    internal static string ConfigFilePath => configFilePath.GetFullPath();
-
-    internal static string PluginsListConfigFilePath => pluginsListConfigFilePath.GetFullPath();
 
     internal static string ActivitiesDataBaseFilePath => activitiesDataBaseFilePath.GetFullPath();
 

@@ -49,24 +49,16 @@
 
                             <TextBlock Margin="0,5,0,0"
                                        DockPanel.Dock="Bottom"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
                                        Text="{Binding SimpleDescription}"
                                        TextWrapping="Wrap"/>
 
                             <DockPanel DockPanel.Dock="Bottom">
-                                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Plugin_Version}"/>
-                                <TextBlock Margin="5,0,0,0"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{Binding Version}"/>
+                                <TextBlock Text="{DynamicResource Text_Plugin_Version}"/>
+                                <TextBlock Margin="5,0,0,0" Text="{Binding Version}"/>
                                 <Border/>
                             </DockPanel>
 
                             <TextBlock VerticalAlignment="Top"
-                                       FontFamily="{StaticResource SourceHanSans}"
                                        FontSize="24"
                                        FontWeight="UltraBold"
                                        Text="{Binding DisplayName}"/>
@@ -90,23 +82,14 @@
                                 <ui:HyperlinkButton Margin="10,0,0,0"
                                                     Content="{Binding AuthorName}"
                                                     DockPanel.Dock="Right"
-                                                    FontFamily="{StaticResource SourceHanSans}"
-                                                    FontWeight="Bold"
                                                     NavigateUri="{Binding AuthorLink}"
                                                     ToolTip.Tip="{Binding AuthorLink}"/>
                                 <TextBlock VerticalAlignment="Center"
                                            DockPanel.Dock="Right"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
                                            Text="{DynamicResource Text_Plugin_AuthorName}"/>
-                                <TextBlock VerticalAlignment="Center"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Plugin_PublisherName}"/>
+                                <TextBlock VerticalAlignment="Center" Text="{DynamicResource Text_Plugin_PublisherName}"/>
                                 <ui:HyperlinkButton Margin="10,0,0,0"
                                                     Content="{Binding PublisherName}"
-                                                    FontFamily="{StaticResource SourceHanSans}"
-                                                    FontWeight="Bold"
                                                     NavigateUri="{Binding PublisherLink}"
                                                     ToolTip.Tip="{Binding PublisherLink}"/>
                                 <Border/>
@@ -114,26 +97,13 @@
                             <DockPanel Margin="0,5,0,0">
                                 <TextBlock Margin="5,0,0,0"
                                            DockPanel.Dock="Right"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
                                            Text="{Binding LastUpdateDate}"/>
-                                <TextBlock DockPanel.Dock="Right"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Plugin_LastUpdateDate}"/>
-                                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Plugin_PublishDate}"/>
-                                <TextBlock Margin="5,0,0,0"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{Binding PublishDate}"/>
+                                <TextBlock DockPanel.Dock="Right" Text="{DynamicResource Text_Plugin_LastUpdateDate}"/>
+                                <TextBlock Text="{DynamicResource Text_Plugin_PublishDate}"/>
+                                <TextBlock Margin="5,0,0,0" Text="{Binding PublishDate}"/>
                                 <Border/>
                             </DockPanel>
-                            <TextBlock Margin="0,5,0,0"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
-                                       Text="{Binding ComplexDescription}"/>
+                            <TextBlock Margin="0,5,0,0" Text="{Binding ComplexDescription}"/>
                         </StackPanel>
                     </Panel>
 
@@ -203,9 +173,7 @@
                 VerticalAlignment="Bottom"
                 Command="{Binding FinishCommand}"
                 CommandParameter="{DynamicResource ThisWindow}"
-                Content="{DynamicResource Text_Public_Confirm}"
-                FontFamily="{StaticResource SourceHanSans}"
-                FontWeight="Bold"/>
+                Content="{DynamicResource Text_Public_Confirm}"/>
 
     </Panel>
 

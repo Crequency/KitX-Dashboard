@@ -26,27 +26,19 @@
 
                 <TextBlock VerticalAlignment="Center"
                            DockPanel.Dock="Left"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
                            Text="{Binding ComponentsCount}"/>
                 <TextBlock Margin="5,0,0,0"
                            VerticalAlignment="Center"
                            DockPanel.Dock="Left"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
                            Text="{DynamicResource Text_Settings_Update_ComponentsCount}"/>
 
                 <TextBlock Margin="10,0,0,0"
                            VerticalAlignment="Center"
                            DockPanel.Dock="Left"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
                            Text="{Binding CanUpdateCount}"/>
                 <TextBlock Margin="5,0,0,0"
                            VerticalAlignment="Center"
                            DockPanel.Dock="Left"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
                            Text="{DynamicResource Text_Settings_Update_ComponentUpdatable}"/>
 
                 <icon:MaterialIcon Margin="10,0,0,0"
@@ -56,15 +48,11 @@
                 <TextBlock Margin="5,0,0,0"
                            VerticalAlignment="Center"
                            DockPanel.Dock="Left"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
                            Text="{Binding DiskUseStatus}"/>
 
                 <TextBlock Margin="15,0,0,0"
                            VerticalAlignment="Center"
                            DockPanel.Dock="Left"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
                            Text="{Binding Tip}"/>
 
                 <Button Margin="10,0,0,0"
@@ -72,20 +60,14 @@
                         Background="{DynamicResource ThemePrimaryAccent}"
                         Command="{Binding Update}"
                         Content="{DynamicResource Text_Settings_Update}"
-                        DockPanel.Dock="Right"
-                        FontFamily="{StaticResource SourceHanSans}"
-                        FontWeight="Bold"/>
+                        DockPanel.Dock="Right"/>
                 <Button VerticalAlignment="Center"
                         Command="{Binding CheckUpdate}"
                         Content="{DynamicResource Text_Settings_Update_Check}"
-                        DockPanel.Dock="Right"
-                        FontFamily="{StaticResource SourceHanSans}"
-                        FontWeight="Bold"/>
+                        DockPanel.Dock="Right"/>
                 <ComboBox Margin="0,0,10,0"
                           VerticalAlignment="Center"
                           DockPanel.Dock="Right"
-                          FontFamily="{StaticResource SourceHanSans}"
-                          FontWeight="Bold"
                           SelectedIndex="{Binding UpdateChannel}">
                     <ComboBoxItem Content="{DynamicResource Text_Settings_Update_Channel_Stable}"/>
                     <ComboBoxItem Content="{DynamicResource Text_Settings_Update_Channel_Beta}"/>
@@ -94,8 +76,6 @@
                 <TextBlock Margin="0,0,10,0"
                            VerticalAlignment="Center"
                            DockPanel.Dock="Right"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
                            Text="{DynamicResource Text_Settings_Update_Channel}"/>
 
                 <Border/>
@@ -133,18 +113,12 @@
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Width="Auto"
                                     Binding="{Binding Name}"
-                                    FontFamily="{StaticResource SourceHanSans}"
-                                    FontWeight="Bold"
                                     Header="{DynamicResource Text_Settings_Update_ComponentName}"/>
                 <DataGridTextColumn Width="Auto"
                                     Binding="{Binding Size}"
-                                    FontFamily="{StaticResource SourceHanSans}"
-                                    FontWeight="Bold"
                                     Header="{DynamicResource Text_Public_Size}"/>
                 <DataGridTextColumn Width="Auto"
                                     Binding="{Binding Task}"
-                                    FontFamily="{StaticResource SourceHanSans}"
-                                    FontWeight="Bold"
                                     Header="{DynamicResource Text_Public_Task}"/>
                 <DataGridTemplateColumn Header="{DynamicResource Text_Settings_Update_ComponentHash}">
                     <DataGridTemplateColumn.CellTemplate>

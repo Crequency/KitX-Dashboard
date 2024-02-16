@@ -38,7 +38,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         RefreshPluginsCommand?.Execute(new());
     }
 
-    private void InitCommands()
+    public override void InitCommands()
     {
         ImportPluginCommand = ReactiveCommand.Create<object?>(async win =>
         {
@@ -115,11 +115,11 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         return this;
     }
 
-    private void InitEvents()
+    public override void InitEvents()
     {
-        EventService.ConfigSettingsChanged += () =>
+        EventService.AppConfigChanged += () =>
         {
-            ImportButtonVisibility = ConfigManager.AppConfig.App.DeveloperSetting;
+            ImportButtonVisibility = Instances.ConfigManager.AppConfig.App.DeveloperSetting;
         };
 
         PluginBars.CollectionChanged += (_, _) =>
@@ -165,10 +165,10 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal bool ImportButtonVisibility
     {
-        get => ConfigManager.AppConfig.App.DeveloperSetting;
+        get => Instances.ConfigManager.AppConfig.App.DeveloperSetting;
         set
         {
-            ConfigManager.AppConfig.App.DeveloperSetting = value;
+            Instances.ConfigManager.AppConfig.App.DeveloperSetting = value;
 
             PropertyChanged?.Invoke(
                 this,

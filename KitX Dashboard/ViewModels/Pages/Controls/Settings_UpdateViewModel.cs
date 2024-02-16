@@ -4,8 +4,6 @@ using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
 using Common.Update.Checker;
 using KitX.Dashboard.Converters;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Network;
 using KitX.Dashboard.Services;
 using KitX.Shared.Device;
@@ -42,14 +40,14 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         InitEvents();
     }
 
-    internal void InitCommands()
+    public override void InitCommands()
     {
         CheckUpdateCommand = ReactiveCommand.Create(CheckUpdate);
 
         UpdateCommand = ReactiveCommand.Create(Update);
     }
 
-    internal void InitEvents()
+    public override void InitEvents()
     {
         Components.CollectionChanged += (_, _) =>
         {
@@ -107,7 +105,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
     public static int UpdateChannel
     {
-        get => ConfigManager.AppConfig.Web.UpdateChannel switch
+        get => Instances.ConfigManager.AppConfig.Web.UpdateChannel switch
         {
             "stable" => 0,
             "beta" => 1,
@@ -116,14 +114,15 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         };
         set
         {
-            ConfigManager.AppConfig.Web.UpdateChannel = value switch
+            Instances.ConfigManager.AppConfig.Web.UpdateChannel = value switch
             {
                 0 => "stable",
                 1 => "beta",
                 2 => "alpha",
                 _ => "stable"
             };
-            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
+
+            SaveAppConfigChanges();
         }
     }
 
@@ -160,11 +159,11 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     private Checker ScanComponents(string workbase)
     {
         var wd = workbase;
-        var ld = Path.GetFullPath(GlobalInfo.LanguageFilePath);
+        var ld = Path.GetFullPath(ConstantTable.LanguageFilePath);
 
         var checker = new Checker()
             .SetRootDirectory(wd)
-            .SetPerThreadFilesCount(ConfigManager.AppConfig.IO.UpdatingCheckPerThreadFilesCount)
+            .SetPerThreadFilesCount(Instances.ConfigManager.AppConfig.IO.UpdatingCheckPerThreadFilesCount)
             .SetTransHash2String(true)
             .AppendIgnoreFolder("Config")
             .AppendIgnoreFolder("Core")
@@ -174,10 +173,10 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
             .AppendIgnoreFolder("Update")
             .AppendIgnoreFolder("Loaders")
             .AppendIgnoreFolder("Plugins")
-            .AppendIgnoreFolder(ConfigManager.AppConfig.App.LocalPluginsFileFolder)
-            .AppendIgnoreFolder(ConfigManager.AppConfig.App.LocalPluginsDataFolder);
+            .AppendIgnoreFolder(Instances.ConfigManager.AppConfig.App.LocalPluginsFileFolder)
+            .AppendIgnoreFolder(Instances.ConfigManager.AppConfig.App.LocalPluginsDataFolder);
 
-        foreach (var item in ConfigManager.AppConfig.App.SurpportLanguages)
+        foreach (var item in Instances.ConfigManager.AppConfig.App.SurpportLanguages)
             _ = checker.AppendIncludeFile($"{ld}/{item.Key}.axaml");
 
         Tip = GetUpdateTip("Scan");
@@ -238,8 +237,8 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         client.DefaultRequestHeaders.Accept.Clear();    //  清除请求头部
 
         var link = "https://" +
-            ConfigManager.AppConfig.Web.UpdateServer +
-            ConfigManager.AppConfig.Web.UpdatePath.Replace(
+            Instances.ConfigManager.AppConfig.Web.UpdateServer +
+            Instances.ConfigManager.AppConfig.Web.UpdatePath.Replace(
                 "%platform%",
                 DevicesDiscoveryServer.DefaultDeviceInfo.DeviceOSType switch
                 {
@@ -249,8 +248,8 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
                     _ => ""
                 }
             ) +
-            $"{ConfigManager.AppConfig.Web.UpdateChannel}/" +
-            ConfigManager.AppConfig.Web.UpdateSource;
+            $"{Instances.ConfigManager.AppConfig.Web.UpdateChannel}/" +
+            Instances.ConfigManager.AppConfig.Web.UpdateSource;
 
         var json = await client.GetStringAsync(link);
 
@@ -436,8 +435,8 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
         //TODO: 下载有变更的文件
         var downloadLinkBase = "https://" +
-            ConfigManager.AppConfig.Web.UpdateServer +
-            ConfigManager.AppConfig.Web.UpdateDownloadPath.Replace(
+            Instances.ConfigManager.AppConfig.Web.UpdateServer +
+            Instances.ConfigManager.AppConfig.Web.UpdateDownloadPath.Replace(
                 "%platform%",
                 DevicesDiscoveryServer.DefaultDeviceInfo.DeviceOSType switch
                 {
@@ -446,15 +445,15 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
                     OperatingSystems.MacOS => "mac",
                     _ => ""
                 }) +
-            $"{ConfigManager.AppConfig.Web.UpdateChannel}/";
+            $"{Instances.ConfigManager.AppConfig.Web.UpdateChannel}/";
 
-        if (!Directory.Exists(GlobalInfo.UpdateSavePath.GetFullPath()))
-            Directory.CreateDirectory(GlobalInfo.UpdateSavePath.GetFullPath());
+        if (!Directory.Exists(ConstantTable.UpdateSavePath.GetFullPath()))
+            Directory.CreateDirectory(ConstantTable.UpdateSavePath.GetFullPath());
 
         foreach (var item in updatedComponents)
             DownloadNewComponent(
                 $"{downloadLinkBase}{item.Key.Replace(@"\", "/")}",
-                $"{GlobalInfo.UpdateSavePath}{item}".GetFullPath(),
+                $"{ConstantTable.UpdateSavePath}{item}".GetFullPath(),
                 client
             );
     }

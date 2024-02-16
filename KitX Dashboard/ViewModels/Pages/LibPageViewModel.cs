@@ -1,4 +1,5 @@
-﻿using KitX.Dashboard.Views.Pages.Controls;
+﻿using KitX.Dashboard.Views;
+using KitX.Dashboard.Views.Pages.Controls;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
@@ -16,6 +17,10 @@ internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
             PluginsCount = $"{PluginCards.Count}";
         };
     }
+
+    public override void InitCommands() => throw new System.NotImplementedException();
+
+    public override void InitEvents() => throw new System.NotImplementedException();
 
     public string pluginsCount = $"{PluginCards.Count}";
 
@@ -47,7 +52,7 @@ internal class LibPageViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    public static ObservableCollection<PluginCard> PluginCards => Instances.PluginCards;
+    public static ObservableCollection<PluginCard> PluginCards => ViewInstances.PluginCards;
 
     public string? SearchingText { get; set; }
 }

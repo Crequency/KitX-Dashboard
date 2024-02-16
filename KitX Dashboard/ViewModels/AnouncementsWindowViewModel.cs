@@ -1,7 +1,6 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Managers;
+using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.Collections.Generic;
@@ -18,6 +17,8 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 {
     public new event PropertyChangedEventHandler? PropertyChanged;
 
+    private readonly AppConfig appConfig = Instances.ConfigManager.AppConfig;
+
     public AnouncementsWindowViewModel()
     {
         InitCommands();
@@ -29,7 +30,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         IncludeFields = true,
     };
 
-    private void InitCommands()
+    public override void InitCommands()
     {
         ConfirmReceivedCommand = ReactiveCommand.Create(async () =>
         {
@@ -42,7 +43,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
             if (!Readed.Contains(key))
                 Readed.Add(key);
 
-            var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
+            var ConfigFilePath = ConstantTable.AnnouncementsJsonPath.GetFullPath();
 
             await File.WriteAllTextAsync(
                 ConfigFilePath,
@@ -87,7 +88,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
                         Readed.Add(key);
                 }
 
-                var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
+                var ConfigFilePath = ConstantTable.AnnouncementsJsonPath.GetFullPath();
 
                 var options = new JsonSerializerOptions()
                 {
@@ -105,16 +106,21 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         });
     }
 
+    public override void InitEvents()
+    {
+
+    }
+
     internal static double Window_Width
     {
-        get => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width;
-        set => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width = value;
+        get => Instances.ConfigManager.AppConfig.Windows.AnnouncementWindow.Size.Width!.Value;
+        set => Instances.ConfigManager.AppConfig.Windows.AnnouncementWindow.Size.Width = value;
     }
 
     internal static double Window_Height
     {
-        get => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height;
-        set => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height = value;
+        get => Instances.ConfigManager.AppConfig.Windows.AnnouncementWindow.Size.Height!.Value;
+        set => Instances.ConfigManager.AppConfig.Windows.AnnouncementWindow.Size.Height = value;
     }
 
     private NavigationViewItem? selectedMenuItem;

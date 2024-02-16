@@ -17,27 +17,21 @@
             <Button Background="{DynamicResource ThemePrimaryAccentTransparentCC}"
                     Command="{Binding LaunchCommand}"
                     Content="{DynamicResource Text_PluginBar_Launch}"
-                    DockPanel.Dock="Right"
-                    FontFamily="{StaticResource SourceHanSans}"
-                    FontWeight="Bold"/>
+                    DockPanel.Dock="Right"/>
 
             <Button Margin="0,0,20,0"
                     Content="..."
-                    DockPanel.Dock="Right"
-                    FontFamily="{StaticResource SourceHanSans}">
+                    DockPanel.Dock="Right">
                 <Button.Flyout>
                     <ui:FAMenuFlyout Placement="Bottom">
                         <ui:MenuFlyoutItem Command="{Binding ViewDetailsCommand}"
-                                           FontFamily="{StaticResource SourceHanSans}"
                                            IconSource="Copy"
                                            Text="{DynamicResource Text_PluginBar_Details}"/>
                         <ui:MenuFlyoutItem Command="{Binding RemoveCommand}"
-                                           FontFamily="{StaticResource SourceHanSans}"
                                            IconSource="Remove"
                                            Text="{DynamicResource Text_PluginBar_Remove}"/>
                         <ui:MenuFlyoutSeparator/>
                         <ui:MenuFlyoutItem Command="{Binding DeleteCommand}"
-                                           FontFamily="{StaticResource SourceHanSans}"
                                            IconSource="Delete"
                                            Text="{DynamicResource Text_PluginBar_RemoveAndDelete}"/>
                     </ui:FAMenuFlyout>
@@ -62,7 +56,6 @@
                            Stretch="UniformToFill"/>
                     <TextBlock Margin="15,0,0,0"
                                VerticalAlignment="Center"
-                               FontFamily="{StaticResource SourceHanSans}"
                                FontSize="20"
                                Text="{Binding DisplayName}"/>
                 </StackPanel>
@@ -70,22 +63,18 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <TextBlock Margin="20,0,0,0"
                                VerticalAlignment="Center"
-                               FontFamily="{StaticResource SourceHanSans}"
                                Text="{DynamicResource Text_PluginBar_AuthorName}"/>
                     <TextBlock Margin="10,0,0,0"
                                VerticalAlignment="Center"
-                               FontFamily="{StaticResource SourceHanSans}"
                                Text="{Binding AuthorName}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <TextBlock Margin="30,0,0,0"
                                VerticalAlignment="Center"
-                               FontFamily="{StaticResource SourceHanSans}"
                                Text="{DynamicResource Text_PluginBar_Version}"/>
                     <TextBlock Margin="10,0,0,0"
                                VerticalAlignment="Center"
-                               FontFamily="{StaticResource SourceHanSans}"
                                Text="{Binding Version}"/>
                 </StackPanel>
             </Grid>

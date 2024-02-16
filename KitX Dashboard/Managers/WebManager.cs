@@ -85,7 +85,7 @@ public class WebManager : IDisposable
                 devicesDiscoveryServer?.Stop().ContinueWith(
                     async server =>
                     {
-                        await Task.Delay(ConfigManager.AppConfig.Web.UDPSendFrequency + 500);
+                        await Task.Delay(Instances.ConfigManager.AppConfig.Web.UdpSendFrequency + 500);
 
                         server.Dispose();
                     }
@@ -122,7 +122,7 @@ public class WebManager : IDisposable
 
         Task.Run(async () =>
         {
-            await Task.Delay(ConfigManager.AppConfig.Web.UDPSendFrequency + 100);
+            await Task.Delay(Instances.ConfigManager.AppConfig.Web.UdpSendFrequency + 100);
 
             actionBeforeStarting?.Invoke();
 

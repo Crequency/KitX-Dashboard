@@ -1,0 +1,85 @@
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.AppLogo"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             x:Name="AppLogoControl"
+             d:DesignHeight="450"
+             d:DesignWidth="800"
+             mc:Ignorable="d">
+    <UserControl.Styles>
+        <Style Selector="Path,Rectangle">
+            <Setter Property="StrokeThickness" Value="1"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+            <Setter Property="StrokeDashArray" Value="500"/>
+        </Style>
+    </UserControl.Styles>
+    <Grid>
+        <Viewbox Stretch="Uniform">
+            <Grid x:Name="PathsGrid"
+                  Width="1800"
+                  Height="1720">
+                <Path Data="F1 M1800,1720z M0,0z M900,800L900,800 80,800 160,1720 900,1720 900,800z"
+                      Fill="#FFF03800"
+                      Stroke="#FFF03800"/>
+                <Path Data="F1 M1800,1720z M0,0z M900,800L900,800 1720,800 1640,1720 900,1720 900,800z"
+                      Fill="#FFCD0000"
+                      Stroke="#FFCD0000"/>
+                <Path Data="F1 M1800,1720z M0,0z M900,500L900,500 900,290 1640,290 1720,500 900,500z"
+                      Fill="#FFCD0000"
+                      Stroke="#FFCD0000"/>
+                <Path Data="F1 M1800,1720z M0,0z M900,500L900,500 900,290 160,290 80,500 900,500z"
+                      Fill="#FFF03800"
+                      Stroke="#FFF03800"/>
+                <Path Data="F1 M1800,1720z M0,0z M620,0A160,160,0,0,0,460,160L460,290 580,290 580,210A90,90,0,0,1,670,120L900,120 900,0z"
+                      Fill="#FF4F575C"
+                      Stroke="#FF4F575C"/>
+                <Path Data="F1 M1800,1720z M0,0z M1180,0A160,160,0,0,1,1340,160L1340,290 1220,290 1220,210A90,90,0,0,0,1130,120L900,120 900,0z"
+                      Fill="#FF474F54"
+                      Stroke="#FF474F54"/>
+                <Path Data="F1 M1800,1720z M0,0z M355,1040L355,1040 395,1720 545,1720 505,1040 355,1040z"
+                      Fill="#FFCBD7F1"
+                      Stroke="#FFCBD7F1"/>
+                <Path Data="F1 M1800,1720z M0,0z M1445,1040L1445,1040 1405,1720 1255,1720 1295,1040 1445,1040z"
+                      Fill="#FFB1BBE8"
+                      Stroke="#FFB1BBE8"/>
+                <Path Data="F1 M1800,1720z M0,0z M380,500L380,500 400,290 540,290 520,500 380,500z"
+                      Fill="#FFCBD7F1"
+                      Stroke="#FFCBD7F1"/>
+                <Path Data="F1 M1800,1720z M0,0z M1420,500L1420,500 1400,290 1260,290 1280,500 1420,500z"
+                      Fill="#FFB1BBE8"
+                      Stroke="#FFB1BBE8"/>
+            </Grid>
+        </Viewbox>
+        <Viewbox Stretch="Uniform">
+            <Canvas x:Name="RectanglesGrid"
+                    Width="1800"
+                    Height="1720">
+                <Rectangle Canvas.Left="0"
+                           Canvas.Top="500"
+                           Width="900"
+                           Height="300"
+                           Fill="#FF6C6C"
+                           Stroke="#FF6C6C"/>
+                <Rectangle Canvas.Left="900"
+                           Canvas.Top="500"
+                           Width="900"
+                           Height="300"
+                           Fill="#F03800"
+                           Stroke="#F03800"/>
+                <Rectangle Canvas.Left="285"
+                           Canvas.Top="800"
+                           Width="330"
+                           Height="240"
+                           Fill="#4F575C"
+                           Stroke="#4F575C"/>
+                <Rectangle Canvas.Left="1185"
+                           Canvas.Top="800"
+                           Width="330"
+                           Height="240"
+                           Fill="#474F54"
+                           Stroke="#474F54"/>
+            </Canvas>
+        </Viewbox>
+    </Grid>
+</UserControl>

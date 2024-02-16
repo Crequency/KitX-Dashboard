@@ -1,8 +1,8 @@
 ﻿using Common.BasicHelper.Core.Shell;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Converters;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
+using KitX.Dashboard.Views;
 using KitX.Shared.Device;
 using Serilog;
 using System;
@@ -22,7 +22,7 @@ internal static class NetworkHelper
         IPInterfaceProperties adapterProperties
     )
     {
-        var userPointed = ConfigManager.AppConfig.Web.AcceptedNetworkInterfaces;
+        var userPointed = Instances.ConfigManager.AppConfig.Web.AcceptedNetworkInterfaces;
 
         if (userPointed is not null)
             if (userPointed.Contains(adapter.Name))
@@ -69,7 +69,7 @@ internal static class NetworkHelper
                 where ip.AddressFamily == AddressFamily.InterNetwork
                     && IsInterNetworkAddressV4(ip)
                     && !ip.ToString().Equals("127.0.0.1")
-                    && ip.ToString().StartsWith(ConfigManager.AppConfig.Web.IPFilter)
+                    && ip.ToString().StartsWith(Instances.ConfigManager.AppConfig.Web.IPFilter)
                 select ip;
 
             Log.Information($"IPv4 addresses: {search.Print(print: false)}");
@@ -215,13 +215,13 @@ internal static class NetworkHelper
             IPv4 = GetInterNetworkIPv4(),
             IPv6 = GetInterNetworkIPv6(),
         },
-        IsMainDevice = GlobalInfo.IsMainMachine,
+        IsMainDevice = ConstantTable.IsMainMachine,
         SendTime = DateTime.UtcNow,
         DeviceOSType = OperatingSystem2Enum.GetOSType(),
         DeviceOSVersion = TryGetOSVersionString() ?? "",
-        PluginServerPort = GlobalInfo.PluginServerPort,
-        DevicesServerPort = GlobalInfo.DevicesServerPort,
+        PluginServerPort = ConstantTable.PluginServerPort,
+        DevicesServerPort = ConstantTable.DevicesServerPort,
         DeviceServerBuildTime = new(),
-        PluginsCount = Instances.PluginCards.Count,
+        PluginsCount = ViewInstances.PluginCards.Count,
     };
 }

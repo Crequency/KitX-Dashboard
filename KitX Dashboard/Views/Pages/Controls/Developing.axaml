@@ -12,13 +12,10 @@
                 VerticalAlignment="Center">
         <TextBlock Margin="0,0,0,20"
                    HorizontalAlignment="Center"
-                   FontFamily="{StaticResource SourceHanSans}"
                    FontSize="24"
-                   FontWeight="Bold"
                    Text="{DynamicResource Text_Public_Developing}"/>
         <ui:HyperlinkButton HorizontalAlignment="Center"
                             Content="github.com/Crequency/KitX"
-                            FontFamily="{StaticResource SourceHanSans}"
                             FontSize="14"
                             NavigateUri="https://github.com/Crequency/KitX"/>
     </StackPanel>

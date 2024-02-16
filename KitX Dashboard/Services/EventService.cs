@@ -4,16 +4,15 @@ namespace KitX.Dashboard.Services;
 
 internal static class EventService
 {
-
     internal delegate void LanguageChangedHandler();
 
     internal delegate void GreetingTextIntervalUpdatedHandler();
 
-    internal delegate void ConfigSettingsChangedHandler();
+    internal delegate void AppConfigChangedHandler();
+
+    internal delegate void PluginsConfigChangedHandler();
 
     internal delegate void MicaOpacityChangedHandler();
-
-    internal delegate void PluginsListChangedHandler();
 
     internal delegate void DevelopSettingsChangedHandler();
 
@@ -39,11 +38,11 @@ internal static class EventService
 
     internal static event GreetingTextIntervalUpdatedHandler? GreetingTextIntervalUpdated;
 
-    internal static event ConfigSettingsChangedHandler? ConfigSettingsChanged;
+    internal static event AppConfigChangedHandler? AppConfigChanged;
+
+    internal static event PluginsConfigChangedHandler? PluginsConfigChanged;
 
     internal static event MicaOpacityChangedHandler? MicaOpacityChanged;
-
-    internal static event PluginsListChangedHandler? PluginsListChanged;
 
     internal static event DevelopSettingsChangedHandler? DevelopSettingsChanged;
 
@@ -63,13 +62,13 @@ internal static class EventService
 
     internal static event OnConfigHotReloadedHandler? OnConfigHotReloaded;
 
-    internal static void Init()
+    internal static void Initialize()
     {
         LanguageChanged += () => { };
         GreetingTextIntervalUpdated += () => { };
-        ConfigSettingsChanged += () => { };
+        AppConfigChanged += () => { };
+        PluginsConfigChanged += () => { };
         MicaOpacityChanged += () => { };
-        PluginsListChanged += () => { };
         DevelopSettingsChanged += () => { };
         LogConfigUpdated += () => { };
         ThemeConfigChanged += () => { };
@@ -91,14 +90,14 @@ internal static class EventService
             case nameof(GreetingTextIntervalUpdated):
                 GreetingTextIntervalUpdated?.Invoke();
                 break;
-            case nameof(ConfigSettingsChanged):
-                ConfigSettingsChanged?.Invoke();
+            case nameof(AppConfigChanged):
+                AppConfigChanged?.Invoke();
+                break;
+            case nameof(PluginsConfigChanged):
+                PluginsConfigChanged?.Invoke();
                 break;
             case nameof(MicaOpacityChanged):
                 MicaOpacityChanged?.Invoke();
-                break;
-            case nameof(PluginsListChanged):
-                PluginsListChanged?.Invoke();
                 break;
             case nameof(DevelopSettingsChanged):
                 DevelopSettingsChanged?.Invoke();

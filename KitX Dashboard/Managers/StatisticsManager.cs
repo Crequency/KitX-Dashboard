@@ -1,5 +1,4 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Services;
 using Serilog;
 using System;
@@ -30,7 +29,7 @@ internal class StatisticsManager
         {
             try
             {
-                var dataDir = GlobalInfo.DataPath.GetFullPath();
+                var dataDir = ConstantTable.DataPath.GetFullPath();
                 if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
                 var useFile = "UseCount.json";
@@ -49,7 +48,7 @@ internal class StatisticsManager
 
     internal static async void RecoverPreviousStatistics()
     {
-        var dataDir = GlobalInfo.DataPath.GetFullPath();
+        var dataDir = ConstantTable.DataPath.GetFullPath();
         if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
         try

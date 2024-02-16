@@ -1,78 +1,68 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
-using KitX.FileFormats.ExtensionsPackage;
 using KitX.Shared.Loader;
 using KitX.Shared.Plugin;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using JsonSerializer = System.Text.Json.JsonSerializer;
+using System.Text;
+using System.Text.Json;
 
 namespace KitX.Dashboard.Managers;
 
 internal class PluginsManager
 {
-
-    internal static List<Plugin> Plugins = [];
+    internal static List<Plugin> Plugins => Instances.ConfigManager.PluginsConfig.Plugins;
 
     internal static void ImportPlugin(string[] kxpfiles, bool inGraphic = false)
     {
         var location = $"{nameof(PluginsManager)}.{nameof(ImportPlugin)}";
 
-        var processPath = Environment.ProcessPath
-            ?? throw new Exception("Can not get path of `KitX Dashboard` process.");
+        var processPath = Environment.ProcessPath ?? throw new Exception("Can not get path of `KitX.Dashboard` process.");
 
-        var workbase = Path.GetDirectoryName(processPath)
-            ?? throw new Exception("Can not get work base of `KitX`.");
+        var workbase = Path.GetDirectoryName(processPath) ?? throw new Exception("Can not get work base of `KitX`.");
 
         foreach (var item in kxpfiles)
         {
             try
             {
-                var decoder = new Decoder(item);
+                var decoder = new FileFormats.ExtensionsPackage.Decoder(item);
 
                 var rst = decoder.GetLoaderAndPluginInfo();
 
-                var loaderStruct = JsonSerializer.Deserialize<LoaderInfo>(rst.Item1);
-                var pluginStruct = JsonSerializer.Deserialize<PluginInfo>(rst.Item2);
+                var loaderInfo = JsonSerializer.Deserialize<LoaderInfo>(rst.Item1);
 
-                var config = inGraphic ?
-                    ConfigManager.AppConfig :
-                    JsonSerializer.Deserialize<AppConfig>(
-                        File.ReadAllText(GlobalInfo.ConfigFilePath)
-                    );
+                var pluginInfo = JsonSerializer.Deserialize<PluginInfo>(rst.Item2);
 
-                if (config is null)
-                {
-                    Console.WriteLine($"No config file found!");
-
-                    if (!inGraphic) Environment.Exit(ErrorCodes.ConfigFileDidntExists);
-                }
+                var config = Instances.ConfigManager.AppConfig;
 
                 var pluginsavedir = config?.App?.LocalPluginsFileFolder.GetFullPath();
 
-                var thisplugindir = $"" +
-                    $"{pluginsavedir}/" +
-                    $"{pluginStruct.PublisherName}_{pluginStruct.AuthorName}/" +
-                    $"{pluginStruct.Name}/" +
-                    $"{pluginStruct.Version}/";
+                var thisPluginDir = new StringBuilder()
+                    .Append(pluginsavedir)
+                    .Append('/')
+                    .Append($"{pluginInfo.PublisherName}_{pluginInfo.AuthorName}")
+                    .Append('/')
+                    .Append(pluginInfo.Name)
+                    .Append('/')
+                    .Append(pluginInfo.Version)
+                    .ToString()
+                    .GetFullPath()
+                    ;
 
-                thisplugindir = thisplugindir.GetFullPath();
+                if (Directory.Exists(thisPluginDir))
+                    Directory.Delete(thisPluginDir, true);
 
-                if (Directory.Exists(thisplugindir))
-                    Directory.Delete(thisplugindir, true);
+                _ = Directory.CreateDirectory(thisPluginDir);
 
-                _ = Directory.CreateDirectory(thisplugindir);
+                _ = decoder.Decode(thisPluginDir);
 
-                _ = decoder.Decode(thisplugindir);
-
-                if (!Plugins.Exists(x => x.InstallPath?.Equals(thisplugindir) ?? false))
+                if (!Plugins.Exists(x => x.InstallPath?.Equals(thisPluginDir) ?? false))
                     Plugins.Add(new()
                     {
-                        InstallPath = thisplugindir
+                        InstallPath = thisPluginDir
                     });
             }
             catch (Exception e)
@@ -85,11 +75,11 @@ internal class PluginsManager
                 {
                     Log.Error(e, msg);
 
-                    throw;  //  如果是图形界面调用, 则再次抛出便于给出图形化提示
+                    throw;  // If called in graphic mode, throw again for better tip
                 }
             }
         }
 
-        EventService.Invoke(nameof(EventService.PluginsListChanged));
+        EventService.Invoke(nameof(EventService.PluginsConfigChanged));
     }
 }

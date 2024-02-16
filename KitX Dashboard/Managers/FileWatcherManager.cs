@@ -1,4 +1,5 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Names;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +9,11 @@ namespace KitX.Dashboard.Managers;
 internal class FileWatcherManager
 {
     private readonly Dictionary<string, FileWatcher> Watchers = [];
+
+    public FileWatcherManager()
+    {
+        Instances.SignalTasksManager!.RaiseSignal(nameof(SignalsNames.FileWatcherManagerInitializedSignal));
+    }
 
     public FileWatcherManager RegisterWatcher(
         string name,

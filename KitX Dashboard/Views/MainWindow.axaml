@@ -9,6 +9,8 @@
         xmlns:vm="using:KitX.Dashboard.ViewModels"
         x:Name="MainWindowInstance"
         Title="{DynamicResource Text_MainWindow_Title}"
+        Width="{Binding Window_Width}"
+        Height="{Binding Window_Height}"
         MinWidth="800"
         MinHeight="600"
         d:DesignHeight="450"
@@ -21,8 +23,6 @@
 
     <Window.Styles>
         <Style Selector="TextBlock.Normal">
-            <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
-            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Margin" Value="15,0,0,0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
@@ -37,25 +37,6 @@
         <ResourceDictionary>
             <x:String x:Key="GreetingText">Hello, World!</x:String>
             <Window x:Key="MainWindow"/>
-
-            <TrayIcon x:Key="TrayIcon"
-                      Command="{Binding TrayIconClickedCommand}"
-                      CommandParameter="{DynamicResource MainWindow}"
-                      Icon="resm:KitX.Dashboard.Assets.KitX-Icon-256x256.ico"
-                      IsVisible="True"
-                      ToolTipText="{Binding TrayIconText}">
-                <TrayIcon.Menu>
-                    <NativeMenu>
-                        <NativeMenuItem Command="{Binding TrayIconClickedCommand}"
-                                        CommandParameter="{DynamicResource MainWindow}"
-                                        Header="{DynamicResource Text_Public_ShowMainWindow}"/>
-                        <NativeMenuItemSeparator/>
-                        <NativeMenuItem Command="{Binding ExitCommand}"
-                                        CommandParameter="{DynamicResource MainWindow}"
-                                        Header="{DynamicResource Text_Public_Exit}"/>
-                    </NativeMenu>
-                </TrayIcon.Menu>
-            </TrayIcon>
         </ResourceDictionary>
     </Window.Resources>
 

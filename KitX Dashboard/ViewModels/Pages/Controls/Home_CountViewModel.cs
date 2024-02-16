@@ -48,7 +48,9 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
         NoCount_TipHeight = Use_Series.Length == 0 ? 200 : 0;
     }
 
-    private void InitEvents()
+    public override void InitCommands() => throw new System.NotImplementedException();
+
+    public override void InitEvents()
     {
         EventService.UseStatisticsChanged += RecoveryUseCount;
     }
@@ -91,17 +93,17 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal bool UseAreaExpanded
     {
-        get => ConfigManager.AppConfig.Pages.Home.UseAreaExpanded;
+        get => Instances.ConfigManager.AppConfig.Pages.Home.UseAreaExpanded;
         set
         {
-            ConfigManager.AppConfig.Pages.Home.UseAreaExpanded = value;
+            Instances.ConfigManager.AppConfig.Pages.Home.UseAreaExpanded = value;
 
             PropertyChanged?.Invoke(
                 this,
                 new(nameof(UseAreaExpanded))
             );
 
-            EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
+            SaveAppConfigChanges();
         }
     }
 

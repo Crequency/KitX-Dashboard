@@ -6,7 +6,6 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
@@ -24,7 +23,7 @@ namespace KitX.Dashboard;
 public partial class App : Application
 {
     public static readonly Bitmap DefaultIcon = new(
-        $"{GlobalInfo.AssetsPath}{ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
+        $"{ConstantTable.AssetsPath}{Instances.ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
     );
 
     private AppViewModel? viewModel;
@@ -47,12 +46,11 @@ public partial class App : Application
 
     private void LoadLanguage()
     {
-        var lang = ConfigManager.AppConfig.App.AppLanguage;
-        var backup_lang = ConfigManager.AppConfig.App.SurpportLanguages.Keys.First();
-        var path = $"{GlobalInfo.LanguageFilePath}/{lang}.axaml".GetFullPath();
-        var backup_langPath = $"{GlobalInfo.LanguageFilePath}/{backup_lang}.axaml";
-
-        backup_langPath = backup_langPath.GetFullPath();
+        var config = Instances.ConfigManager.AppConfig;
+        var lang = config.App.AppLanguage;
+        var backup_lang = config.App.SurpportLanguages.Keys.First();
+        var path = $"{ConstantTable.LanguageFilePath}/{lang}.axaml".GetFullPath();
+        var backup_langPath = $"{ConstantTable.LanguageFilePath}/{backup_lang}.axaml".GetFullPath();
 
         try
         {
@@ -77,7 +75,8 @@ public partial class App : Application
                         File.ReadAllText(backup_langPath)
                     ) as ResourceDictionary ?? []
                 );
-                ConfigManager.AppConfig.App.AppLanguage = backup_lang;
+
+                config.App.AppLanguage = backup_lang;
             }
             catch (Exception e)
             {
@@ -101,7 +100,7 @@ public partial class App : Application
 
     private static void CalculateThemeColor()
     {
-        Color c = Color.Parse(ConfigManager.AppConfig.App.ThemeColor);
+        Color c = Color.Parse(Instances.ConfigManager.AppConfig.App.ThemeColor);
 
         if (Current is not null)
         {
@@ -156,7 +155,7 @@ public partial class App : Application
             };
         }
 
-        if (ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
+        if (Instances.ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
             new Thread(async () =>
             {
                 try
