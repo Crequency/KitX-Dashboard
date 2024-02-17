@@ -1,0 +1,47 @@
+﻿<Window x:Class="KitX.Dashboard.Views.DebugWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+        xmlns:converters="using:KitX.Dashboard.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Title="DebugWindow"
+        d:DesignHeight="450"
+        d:DesignWidth="800"
+        Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
+        TransparencyLevelHint="Mica"
+        WindowStartupLocation="CenterScreen"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <converters:AvaloniaEditDocumentStringConverter x:Key="AvaloniaEditDocumentStringConverter"/>
+    </Window.Resources>
+    <DockPanel>
+        <StackPanel Margin="30,10" DockPanel.Dock="Top">
+            <Button x:Name="RunButton"
+                    Command="{Binding SubmitCodesCommand}"
+                    CommandParameter="{Binding #Editor.Document}"
+                    Content="Run (F5)"/>
+        </StackPanel>
+        <Grid RowDefinitions="7*, 4, 3*">
+            <AvaloniaEdit:TextEditor x:Name="Editor"
+                                     Grid.Row="0"
+                                     Margin="30,10"
+                                     FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
+                                     FontSize="14"
+                                     FontWeight="Light"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     ShowLineNumbers="True"
+                                     SyntaxHighlighting="C#"
+                                     VerticalScrollBarVisibility="Visible"/>
+            <GridSplitter Grid.Row="1" ResizeDirection="Rows"/>
+            <AvaloniaEdit:TextEditor Grid.Row="2"
+                                     Margin="30,10,30,30"
+                                     Document="{Binding ExecutionResult, Converter={StaticResource AvaloniaEditDocumentStringConverter}}"
+                                     FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
+                                     FontSize="14"
+                                     FontWeight="Light"
+                                     IsReadOnly="True"
+                                     ShowLineNumbers="True"/>
+        </Grid>
+    </DockPanel>
+</Window>

@@ -11,15 +11,20 @@ namespace KitX.Dashboard.Configuration;
 [JsonDerivedType(typeof(AppConfig), typeDiscriminator: nameof(AppConfig))]
 [JsonDerivedType(typeof(PluginsConfig), typeDiscriminator: nameof(PluginsConfig))]
 [JsonDerivedType(typeof(MarketConfig), typeDiscriminator: nameof(MarketConfig))]
+[JsonDerivedType(typeof(AnnouncementConfig), typeDiscriminator: nameof(AnnouncementConfig))]
 public class ConfigBase
 {
     public string? ConfigFileLocation { get; set; }
+
+    public string? ConfigFileWatcherName { get; set; }
 
     public DateTime? ConfigGeneratedTime { get; set; } = DateTime.Now;
 }
 
 public static class ConfigBaseExtensions
 {
+    private static readonly object _configReadWriteLock = new();
+
     private static readonly JsonSerializerOptions serializationOptions = new()
     {
         WriteIndented = true,
@@ -43,7 +48,12 @@ public static class ConfigBaseExtensions
             return conf;
         }
 
-        var text = File.ReadAllText(path);
+        string text;
+
+        lock (_configReadWriteLock)
+        {
+            text = File.ReadAllText(path);
+        }
 
         var result = JsonSerializer.Deserialize<ConfigBase>(text, serializationOptions);
 
@@ -54,9 +64,12 @@ public static class ConfigBaseExtensions
     {
         path = path.GetFullPath();
 
-        var text = JsonSerializer.Serialize<ConfigBase>(config, serializationOptions);
+        lock (_configReadWriteLock)
+        {
+            var text = JsonSerializer.Serialize<ConfigBase>(config, serializationOptions);
 
-        File.WriteAllText(path, text);
+            File.WriteAllText(path, text);
+        }
 
         return config;
     }

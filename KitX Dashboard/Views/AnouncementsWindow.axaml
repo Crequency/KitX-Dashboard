@@ -14,8 +14,9 @@
         MinHeight="600"
         d:DesignHeight="450"
         d:DesignWidth="800"
+        Background="Transparent"
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
-        TransparencyLevelHint="AcrylicBlur"
+        TransparencyLevelHint="Mica"
         mc:Ignorable="d">
     <Grid>
         <ui:NavigationView x:Name="AnouncementsNavigationView"

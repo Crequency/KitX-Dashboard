@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">экспорт</x:String>
     <x:String x:Key="Text_Public_Exit">покидать</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">Показать главное окно</x:String>
+    <x:String x:Key="Text_Public_ShowAnnouncements">Посмотреть объявление</x:String>
     <x:String x:Key="Text_Public_Millisecond">миллисекунда</x:String>
     <x:String x:Key="Text_Public_Second">второй</x:String>
     <x:String x:Key="Text_Public_Minute">минута</x:String>
@@ -30,6 +31,8 @@
     <x:String x:Key="Text_Public_ResetToAuto">сбросить на авто</x:String>
     <x:String x:Key="Text_Public_Random">случайный</x:String>
     <x:String x:Key="Text_Public_Fixed">стабильный</x:String>
+    <x:String x:Key="Text_Public_Name">Имя</x:String>
+    <x:String x:Key="Text_Public_Author">Автор</x:String>
     <x:String x:Key="Text_Log_Verbose">подробный</x:String>
     <x:String x:Key="Text_Log_Debug">отладка</x:String>
     <x:String x:Key="Text_Log_Information">Информация</x:String>

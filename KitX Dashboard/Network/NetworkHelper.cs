@@ -219,7 +219,7 @@ internal static class NetworkHelper
         SendTime = DateTime.UtcNow,
         DeviceOSType = OperatingSystem2Enum.GetOSType(),
         DeviceOSVersion = TryGetOSVersionString() ?? "",
-        PluginsServerPort = ConstantTable.PluginServerPort,
+        PluginsServerPort = ConstantTable.PluginsServerPort,
         DevicesServerPort = ConstantTable.DevicesServerPort,
         DevicesServerBuildTime = new(),
         PluginsCount = ViewInstances.PluginCards.Count,

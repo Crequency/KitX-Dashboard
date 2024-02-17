@@ -1,15 +1,12 @@
-﻿using Common.BasicHelper.Utils.Extensions;
+﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Reactive;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -17,38 +14,31 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 {
     public new event PropertyChangedEventHandler? PropertyChanged;
 
-    private readonly AppConfig appConfig = Instances.ConfigManager.AppConfig;
+    private static AppConfig AppConfig => Instances.ConfigManager.AppConfig;
 
     public AnouncementsWindowViewModel()
     {
         InitCommands();
     }
 
-    public static JsonSerializerOptions JsonSerializerOptions = new()
-    {
-        WriteIndented = true,
-        IncludeFields = true,
-    };
-
     public override void InitCommands()
     {
-        ConfirmReceivedCommand = ReactiveCommand.Create(async () =>
+        ConfirmReceivedCommand = ReactiveCommand.Create(() =>
         {
-            if (SelectedMenuItem is null || Readed is null) return;
+            var config = Instances.ConfigManager.AnnouncementConfig;
+
+            var accepted = config.Accepted;
+
+            if (SelectedMenuItem is null || accepted is null) return;
 
             var key = SelectedMenuItem.Content!.ToString();
 
             if (key is null) return;
 
-            if (!Readed.Contains(key))
-                Readed.Add(key);
+            if (!accepted.Contains(key))
+                accepted.Add(key);
 
-            var ConfigFilePath = ConstantTable.AnnouncementsJsonPath.GetFullPath();
-
-            await File.WriteAllTextAsync(
-                ConfigFilePath,
-                JsonSerializer.Serialize(Readed, JsonSerializerOptions)
-            );
+            config.Save(config.ConfigFileLocation!);
 
             var finded = false;
 
@@ -70,9 +60,11 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
             }
         });
 
-        ConfirmReceivedAllCommand = ReactiveCommand.Create(async () =>
+        ConfirmReceivedAllCommand = ReactiveCommand.Create(() =>
         {
-            if (Readed is null) return;
+            var config = Instances.ConfigManager.AnnouncementConfig;
+
+            var accepted = config.Accepted;
 
             var navView = Window?.AnouncementsNavigationView;
 
@@ -84,22 +76,11 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
                     if (key is null) continue;
 
-                    if (!Readed.Contains(key))
-                        Readed.Add(key);
+                    if (!accepted.Contains(key))
+                        accepted.Add(key);
                 }
 
-                var ConfigFilePath = ConstantTable.AnnouncementsJsonPath.GetFullPath();
-
-                var options = new JsonSerializerOptions()
-                {
-                    WriteIndented = true,
-                    IncludeFields = true,
-                };
-
-                await File.WriteAllTextAsync(
-                    ConfigFilePath,
-                    JsonSerializer.Serialize(Readed, options)
-                );
+                config.Save(config.ConfigFileLocation!);
 
                 Window?.Close();
             }
@@ -113,14 +94,14 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal static double Window_Width
     {
-        get => Instances.ConfigManager.AppConfig.Windows.AnnouncementWindow.Size.Width!.Value;
-        set => Instances.ConfigManager.AppConfig.Windows.AnnouncementWindow.Size.Width = value;
+        get => AppConfig.Windows.AnnouncementWindow.Size.Width!.Value;
+        set => AppConfig.Windows.AnnouncementWindow.Size.Width = value;
     }
 
     internal static double Window_Height
     {
-        get => Instances.ConfigManager.AppConfig.Windows.AnnouncementWindow.Size.Height!.Value;
-        set => Instances.ConfigManager.AppConfig.Windows.AnnouncementWindow.Size.Height = value;
+        get => AppConfig.Windows.AnnouncementWindow.Size.Height!.Value;
+        set => AppConfig.Windows.AnnouncementWindow.Size.Height = value;
     }
 
     private NavigationViewItem? selectedMenuItem;
@@ -190,9 +171,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal AnouncementsWindow? Window { get; set; }
 
-    internal List<string>? Readed { get; set; }
+    internal ReactiveCommand<Unit, Unit>? ConfirmReceivedCommand { get; set; }
 
-    internal ReactiveCommand<Unit, Task>? ConfirmReceivedCommand { get; set; }
-
-    internal ReactiveCommand<Unit, Task>? ConfirmReceivedAllCommand { get; set; }
+    internal ReactiveCommand<Unit, Unit>? ConfirmReceivedAllCommand { get; set; }
 }

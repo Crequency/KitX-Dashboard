@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace KitX.Dashboard.Managers;
 
-internal class CacheManager
+public class CacheManager
 {
     internal CacheManager()
     {

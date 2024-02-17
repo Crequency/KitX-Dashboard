@@ -251,7 +251,7 @@ public static class AppFramework
 
                 ConstantTable.Running = false;
 
-                Thread.Sleep(ConstantTable.LastBreakAfterExit);
+                Thread.Sleep(Instances.ConfigManager.AppConfig.App.LastBreakAfterExit);
 
                 Environment.Exit(0);
             }

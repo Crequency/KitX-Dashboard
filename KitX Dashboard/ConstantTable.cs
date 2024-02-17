@@ -9,8 +9,6 @@ internal static class ConstantTable
 
     internal const string AppFullName = "KitX Dashboard";
 
-    internal const string ConfigPath = "./Config/";
-
     internal const string DataPath = "./Data/";
 
     internal const string LanguageFilePath = "./Languages/";
@@ -23,8 +21,6 @@ internal static class ConstantTable
 
     internal const string IconBase64FileName = "KitX.Base64.txt";
 
-    internal const int LastBreakAfterExit = 2000;
-
     private const string activitiesDataBaseFilePath = $"{DataPath}Activities.db";
 
     private const string thirdPartLicenseFilePath = $"{AssetsPath}ThirdPartLicense.md";
@@ -33,7 +29,7 @@ internal static class ConstantTable
 
     internal static string ThirdPartLicenseFilePath => thirdPartLicenseFilePath.GetFullPath();
 
-    internal static int PluginServerPort = -1;
+    internal static int PluginsServerPort = -1;
 
     internal static bool Running = true;
 
@@ -50,8 +46,6 @@ internal static class ConstantTable
     internal const string Api_Get_Announcements = "get-announcements.php";
 
     internal const string Api_Get_Announcement = "get-announcement.php";
-
-    internal const string AnnouncementsJsonPath = $"{ConfigPath}announcements.json";
 
     internal static string MyMacAddress = string.Empty;
 

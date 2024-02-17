@@ -2,6 +2,7 @@
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace KitX.Dashboard.Managers;
@@ -49,10 +50,15 @@ public class WebManager : IDisposable
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"In {location}: " +
-                    $"{nameof(startPluginsNetwork)}: {startPluginsNetwork}," +
-                    $"{nameof(startDevicesNetwork)}: {startDevicesNetwork}," +
-                    $"{nameof(startDevicesDiscoveryServer)}: {startDevicesDiscoveryServer}");
+                Log.Error(
+                    ex,
+                    new StringBuilder()
+                        .Append($"In {location}: ")
+                        .Append($"{nameof(startPluginsNetwork)}: {startPluginsNetwork}, ")
+                        .Append($"{nameof(startDevicesNetwork)}: {startDevicesNetwork}, ")
+                        .Append($"{nameof(startDevicesDiscoveryServer)}: {startDevicesDiscoveryServer}")
+                        .ToString()
+                );
             }
         }, location);
 

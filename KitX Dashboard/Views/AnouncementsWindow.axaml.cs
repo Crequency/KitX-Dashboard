@@ -63,10 +63,9 @@ public partial class AnouncementsWindow : Window, IView
 
     }
 
-    internal AnouncementsWindow UpdateSource(Dictionary<string, string> src, List<string> readed)
+    internal AnouncementsWindow UpdateSource(Dictionary<string, string> src)
     {
         viewModel.Sources = src;
-        viewModel.Readed = readed;
 
         return this;
     }

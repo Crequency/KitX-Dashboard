@@ -59,25 +59,17 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         foreach (var adapter in NetworkInterface.GetAllNetworkInterfaces())
         {
             var adapterProperties = adapter.GetIPProperties();
-            if (adapterProperties is null) continue;
 
-            try
-            {
-                var logs = adapter.Dump2Lines();
-                for (int i = 0; i < logs.Length; i++)
-                    Log.Information(logs[i]);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Logging network interface items.");
-            }
+            if (adapterProperties is null) continue;
 
             if (!NetworkHelper.CheckNetworkInterface(adapter, adapterProperties)) continue;
 
             var unicastIPAddresses = adapterProperties.UnicastAddresses;
+
             if (unicastIPAddresses is null) continue;
 
             var p = adapterProperties.GetIPv4Properties();
+
             if (p is null) continue;    // IPv4 is not configured on this adapter
 
             SupportedNetworkInterfacesIndexes.Add(IPAddress.HostToNetworkOrder(p.Index));
@@ -98,6 +90,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                 catch (Exception ex)
                 {
                     var location = $"{nameof(DevicesServer)}.{nameof(FindSupportNetworkInterfaces)}";
+
                     Log.Error(ex, $"In {location}: {ex.Message}");
                 }
             }
@@ -105,10 +98,9 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal));
 
-        Log.Information($"" +
-            $"Find {SupportedNetworkInterfacesIndexes.Count} supported network interfaces.");
-        Log.Information($"" +
-            $"Joined {multicastGroupJoinedInterfacesCount} multicast groups.");
+        Log.Information($"Find {SupportedNetworkInterfacesIndexes.Count} supported network interfaces.");
+
+        Log.Information($"Joined {multicastGroupJoinedInterfacesCount} multicast groups.");
     }
 
     private static void UpdateDefaultDeviceInfo()
@@ -117,8 +109,9 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         DefaultDeviceInfo.SendTime = DateTime.UtcNow;
         DefaultDeviceInfo.Device
             .ResetIPv4(NetworkHelper.GetInterNetworkIPv4())
-            .ResetIPv6(NetworkHelper.GetInterNetworkIPv6());
-        DefaultDeviceInfo.PluginsServerPort = ConstantTable.PluginServerPort;
+            .ResetIPv6(NetworkHelper.GetInterNetworkIPv6())
+            ;
+        DefaultDeviceInfo.PluginsServerPort = ConstantTable.PluginsServerPort;
         DefaultDeviceInfo.PluginsCount = ViewInstances.PluginCards.Count;
         DefaultDeviceInfo.IsMainDevice = ConstantTable.IsMainMachine;
         DefaultDeviceInfo.DevicesServerPort = ConstantTable.DevicesServerPort;
@@ -158,6 +151,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             Interval = Instances.ConfigManager.AppConfig.Web.UdpSendFrequency,
             AutoReset = true
         };
+
         UdpSendTimer.Elapsed += (_, _) =>
         {
             var closingRequest = CloseDevicesDiscoveryServerRequest;

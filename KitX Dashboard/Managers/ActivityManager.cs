@@ -3,6 +3,8 @@ using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Names;
 using LiteDB;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace KitX.Dashboard.Managers;
@@ -14,6 +16,17 @@ internal class ActivityManager
     public static string CollectionName => DateTime.UtcNow.ToString("yyyy_MM").Num2UpperChar();
 
     private static Activity? _appActivity;
+
+    public static List<Activity> ReadActivities()
+    {
+        if (Instances.ActivitiesDataBase is LiteDatabase db)
+        {
+            var col = db.GetCollection<Activity>(CollectionName);
+
+            return col.FindAll().ToList();
+        }
+        else return [];
+    }
 
     public static void Record(Activity activity, Expression<Func<Activity, int>> keySelector)
     {
@@ -63,15 +76,13 @@ internal class ActivityManager
     {
         var activity = new Activity()
         {
-            Id = Instances.ConfigManager.AppConfig.Activity.TotalRecorded + 1,
+            Id = Instances.ConfigManager.AppConfig.Activity.TotalRecorded++,
             Name = nameof(ActivityNames.AppLifetime),
             Author = ConstantTable.AppFullName,
             Title = ActivityTitles.AppStart,
             Category = nameof(ActivitySortNames.DashboardEvent),
-            IconKind = Material.Icons.MaterialIconKind.RocketLaunch
-        }
-        .Open(ConstantTable.AppFullName)
-        ;
+            IconKind = Material.Icons.MaterialIconKind.RocketLaunch,
+        }.Open(ConstantTable.AppFullName);
 
         _appActivity = activity;
 

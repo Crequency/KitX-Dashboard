@@ -50,9 +50,19 @@ public class ConfigManager
         TasksManager.RunTask(() =>
         {
 
-            EventService.AppConfigChanged += () => AppConfig.Save(AppConfig.ConfigFileLocation!);
+            EventService.AppConfigChanged += () =>
+            {
+                Instances.FileWatcherManager!.IncreaseExceptCount(AppConfig.ConfigFileWatcherName!);
 
-            EventService.PluginsConfigChanged += () => PluginsConfig.Save(PluginsConfig.ConfigFileLocation!);
+                AppConfig.Save(AppConfig.ConfigFileLocation!);
+            };
+
+            EventService.PluginsConfigChanged += () =>
+            {
+                Instances.FileWatcherManager!.IncreaseExceptCount(PluginsConfig.ConfigFileWatcherName!);
+
+                PluginsConfig.Save(PluginsConfig.ConfigFileLocation!);
+            };
 
         }, location);
     }
@@ -70,6 +80,10 @@ public class ConfigManager
         var name = "ConfigFileWatcher".Append(typeof(T).Name);
 
         var path = config.ConfigFileLocation!;
+
+        config.ConfigFileWatcherName = name;
+
+        config.Save(config.ConfigFileLocation!);
 
         Instances.FileWatcherManager!.RegisterWatcher(
             name,
@@ -125,6 +139,7 @@ public class ConfigManager
             LoadConfigFile<AppConfig>();
             LoadConfigFile<PluginsConfig>();
             LoadConfigFile<MarketConfig>();
+            LoadConfigFile<AnnouncementConfig>();
         }, location, catchException: false);
 
         return this;
@@ -146,11 +161,18 @@ public class ConfigManager
         return this;
     }
 
-    private T GetConfig<T>(string name) where T : ConfigBase => _configs[name] as T ?? throw new Exception($"Can not find config: {name}");
+    private T GetConfig<T>() where T : ConfigBase
+    {
+        var name = typeof(T).Name;
 
-    public AppConfig AppConfig => GetConfig<AppConfig>(nameof(AppConfig));
+        return _configs[name] as T ?? throw new Exception($"Can not find config: {name}");
+    }
 
-    public PluginsConfig PluginsConfig => GetConfig<PluginsConfig>(nameof(PluginsConfig));
+    public AppConfig AppConfig => GetConfig<AppConfig>();
 
-    public MarketConfig MarketConfig => GetConfig<MarketConfig>(nameof(MarketConfig));
+    public PluginsConfig PluginsConfig => GetConfig<PluginsConfig>();
+
+    public MarketConfig MarketConfig => GetConfig<MarketConfig>();
+
+    public AnnouncementConfig AnnouncementConfig => GetConfig<AnnouncementConfig>();
 }

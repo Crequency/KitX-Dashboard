@@ -201,7 +201,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
     internal static int PluginsServerPort
     {
-        get => ConstantTable.PluginServerPort;
+        get => ConstantTable.PluginsServerPort;
         set
         {
             if (value >= 0 && value <= 65535)
