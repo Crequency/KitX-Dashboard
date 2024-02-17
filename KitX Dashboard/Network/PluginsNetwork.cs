@@ -25,7 +25,7 @@ internal class PluginsNetwork
         {
             if (msg.StartsWith("PluginInfo: "))
             {
-                var json = msg[14..];
+                var json = msg[12..];
 
                 var pluginStruct = JsonSerializer.Deserialize<PluginInfo>(json);
 
