@@ -47,8 +47,6 @@ public static class AppFramework
         if (File.Exists("./dump.log".GetFullPath()))
             File.Delete("./dump.log".GetFullPath());
 
-        EventService.Initialize();
-
         Instances.Initialize();
 
         Instances.ConfigManager.AppConfig.App.RanTime++;

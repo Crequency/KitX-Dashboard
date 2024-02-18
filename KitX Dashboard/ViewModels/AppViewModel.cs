@@ -52,8 +52,6 @@ internal class AppViewModel : ViewModelBase
         {
             ConstantTable.Exiting = true;
 
-            ViewInstances.CloseWindows();
-
             EventService.Invoke(nameof(EventService.OnExiting));
 
             var win = ViewInstances.MainWindow;
