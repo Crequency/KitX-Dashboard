@@ -41,6 +41,29 @@ internal class AppViewModel : ViewModelBase
             SaveAppConfigChanges();
         });
 
+        PluginLauncherCommand = ReactiveCommand.Create(() =>
+        {
+            var win = ViewInstances.PluginsLaunchWindow;
+
+            if (win is null)
+            {
+                win = new PluginsLaunchWindow();
+
+                ViewInstances.PluginsLaunchWindow = win;
+            }
+
+            if (win.IsVisible)
+            {
+                win.Hide();
+
+                return;
+            }
+
+            win.Show();
+
+            win.Activate();
+        });
+
         ExitCommand = ReactiveCommand.Create(() =>
         {
             ConstantTable.Exiting = true;
@@ -101,4 +124,6 @@ internal class AppViewModel : ViewModelBase
     internal ReactiveCommand<Unit, Unit>? TrayIconClickedCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? ExitCommand { get; set; }
+
+    internal ReactiveCommand<Unit, Unit>? PluginLauncherCommand { get; set; }
 }

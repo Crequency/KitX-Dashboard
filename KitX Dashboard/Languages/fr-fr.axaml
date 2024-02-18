@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">exporter</x:String>
     <x:String x:Key="Text_Public_Exit">quitter</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">Afficher la fenêtre principale</x:String>
+    <x:String x:Key="Text_Public_ShowLauncherWindow">Text_Public_ShowLauncherWindow</x:String>
     <x:String x:Key="Text_Public_Millisecond">milliseconde</x:String>
     <x:String x:Key="Text_Public_Second">deuxième</x:String>
     <x:String x:Key="Text_Public_Minute">minute</x:String>

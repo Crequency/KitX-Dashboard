@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">書き出す</x:String>
     <x:String x:Key="Text_Public_Exit">終了する</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">メインウィンドウを表示</x:String>
+    <x:String x:Key="Text_Public_ShowLauncherWindow">Text_Public_ShowLauncherWindow</x:String>
     <x:String x:Key="Text_Public_Millisecond">ミリ秒</x:String>
     <x:String x:Key="Text_Public_Second">2番目</x:String>
     <x:String x:Key="Text_Public_Minute">分</x:String>

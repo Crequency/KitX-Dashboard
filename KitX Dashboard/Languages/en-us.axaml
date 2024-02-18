@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">Export</x:String>
     <x:String x:Key="Text_Public_Exit">Exit</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">Show Main Window</x:String>
+    <x:String x:Key="Text_Public_ShowLauncherWindow">Show Launcher Window</x:String>
     <x:String x:Key="Text_Public_Millisecond">Millisecond</x:String>
     <x:String x:Key="Text_Public_Second">s</x:String>
     <x:String x:Key="Text_Public_Minute">minute</x:String>

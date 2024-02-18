@@ -106,4 +106,10 @@
     <ItemGroup>
       <Folder Include="Styles\" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Views\Pages\Controls\PluginLaunchCard.axaml.cs">
+        <DependentUpon>PluginLaunchCard.axaml</DependentUpon>
+      </Compile>
+    </ItemGroup>
 </Project>

@@ -54,6 +54,7 @@
                 <TrayIcon.Menu>
                     <NativeMenu>
                         <NativeMenuItem Command="{Binding TrayIconClickedCommand}" Header="{DynamicResource Text_Public_ShowMainWindow}"/>
+                        <NativeMenuItem Command="{Binding PluginLauncherCommand}" Header="{DynamicResource Text_Public_ShowLauncherWindow}"/>
                         <NativeMenuItemSeparator/>
                         <NativeMenuItem Command="{Binding ExitCommand}" Header="{DynamicResource Text_Public_Exit}"/>
                     </NativeMenu>
