@@ -100,6 +100,12 @@ internal class PluginsNetwork
                             IPEndPoint = pluginStruct.Tags["IPEndPoint"]
                         };
                         ViewInstances.PluginCards.Add(card);
+
+                        var launch_card = new PluginLaunchCard(pluginStruct)
+                        {
+                            IPEndPoint = pluginStruct.Tags["IPEndPoint"]
+                        };
+                        ViewInstances.PluginLaunchCards.Add(launch_card);
                     });
                 }
 
@@ -114,6 +120,14 @@ internal class PluginsNetwork
 
                     if (matched is not null)
                         ViewInstances.PluginCards.Remove(matched);
+
+                    var launch_matched = ViewInstances.PluginLaunchCards.FirstOrDefault(
+                        x => x!.IPEndPoint?.Equals(endPoint) ?? false,
+                        null
+                    );
+
+                    if (launch_matched is not null)
+                        ViewInstances.PluginLaunchCards.Remove(launch_matched);
                 }
 
                 if (!ConstantTable.Running)

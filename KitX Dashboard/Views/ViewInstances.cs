@@ -10,6 +10,8 @@ internal static class ViewInstances
 
     internal static ObservableCollection<PluginCard> PluginCards { get; set; } = [];
 
+    internal static ObservableCollection<PluginLaunchCard> PluginLaunchCards { get; set; } = [];
+
     internal static ObservableCollection<DeviceCard> DeviceCards { get; set; } = [];
 
     internal static MainWindow? MainWindow { get; set; }

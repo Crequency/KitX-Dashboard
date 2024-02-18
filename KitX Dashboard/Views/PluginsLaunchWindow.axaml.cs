@@ -4,6 +4,8 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
+using KitX.Dashboard.Views.Pages.Controls;
+using ReactiveUI;
 using Serilog;
 using SharpHook.Native;
 using System;

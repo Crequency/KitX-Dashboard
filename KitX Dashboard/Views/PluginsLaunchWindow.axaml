@@ -3,23 +3,55 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
+        xmlns:vm="using:KitX.Dashboard.ViewModels"
+        
         Title="PluginsLaunchWindow"
-        Width="500"
+        Width="650"
         Height="300"
-        d:DesignHeight="450"
-        d:DesignWidth="800"
+        MinHeight="300"
+        MinWidth="650"
+        d:DesignHeight="300"
+        d:DesignWidth="650"
+        x:DataType="vm:PluginsLaunchWindowViewModel"
         Background="Transparent"
+        TransparencyLevelHint="Mica"
         ExtendClientAreaToDecorationsHint="True"
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
         KeyDown="PluginsLaunchWindow_KeyDown"
         PointerPressed="PluginsLaunchWindow_PointerPressed"
         Topmost="True"
-        TransparencyLevelHint="AcrylicBlur"
         WindowStartupLocation="CenterScreen"
         mc:Ignorable="d">
-    <Grid>
-        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">
-            Developing ...
-        </TextBlock>
-    </Grid>
+    <DockPanel>
+        <Grid Height="80" DockPanel.Dock="Top">
+            <AutoCompleteBox Width="400"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             IsTextCompletionEnabled="True"
+                             Text="{Binding SearchingText}"
+                             Watermark="{DynamicResource Text_Lib_Search_In_Local}"/>
+            <StackPanel Margin="25,0,0,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                <TextBlock Text="{Binding PluginsCount}"/>
+                <TextBlock Margin="5,0,0,0" Text="{DynamicResource Text_Lib_Tip_Connected}"/>
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="20,0" Orientation="Vertical">
+                <ItemsControl ItemsSource="{Binding PluginLaunchCards}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
 </Window>

@@ -1,8 +1,57 @@
-﻿namespace KitX.Dashboard.ViewModels;
+﻿using Avalonia.Controls;
+using KitX.Dashboard.Views;
+using KitX.Dashboard.Views.Pages.Controls;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 
-internal class PluginsLaunchWindowViewModel : ViewModelBase
+namespace KitX.Dashboard.ViewModels;
+
+internal class PluginsLaunchWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
     public override void InitCommands() => throw new System.NotImplementedException();
 
     public override void InitEvents() => throw new System.NotImplementedException();
+
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
+    public PluginsLaunchWindowViewModel()
+    {
+        PluginLaunchCards.CollectionChanged += (_, _) =>
+        {
+            PluginsCount = $"{PluginLaunchCards.Count}";
+        };
+    }
+
+    internal void BuildLauncherMenu(PluginsLaunchWindow window)
+    {
+        var menu = window.FindControl<StackPanel>("Menu");
+
+        menu?.Children.Clear();
+
+        foreach (var card in PluginLaunchCards)
+        {
+            ;
+        }
+    }
+
+    public string pluginsCount = $"9";
+
+    public string PluginsCount
+    {
+        get => pluginsCount;
+        set
+        {
+            pluginsCount = value;
+            PropertyChanged?.Invoke(
+                this,
+                new(nameof(PluginsCount))
+            );
+        }
+    }
+
+    //public ObservableCollection<PluginLaunchCard> PluginLaunchCards = [];
+    public static ObservableCollection<PluginLaunchCard> PluginLaunchCards => ViewInstances.PluginLaunchCards;
+
+
+    public string? SearchingText { get; set; }
 }
