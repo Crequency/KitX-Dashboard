@@ -5,41 +5,62 @@ using System;
 using System.Text;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Threading;
+using System.Diagnostics;
 
 namespace KitX.Dashboard.Services;
 
-internal class DebugService
+public static class DebugService
 {
     private static readonly CSharpScriptEngine Engine = new();
 
-    internal static async Task<string?> ExecuteCodesAsync(string code)
+    public static async Task<string?> ExecuteCodesAsync(string code, CancellationToken cancellationToken = default)
     {
+        var sw = new Stopwatch();
+
+        var begin = DateTime.Now;
+
+        sw.Start();
+
         try
         {
-            var result = (await Engine.ExecuteAsync(code, options =>
-            {
-                options = options
-                    .WithReferences(Assembly.GetExecutingAssembly())
-                    .WithImports("KitX", "KitX.Dashboard")
-                    .WithLanguageVersion(LanguageVersion.Preview)
-                    ;
+            var result = (await Engine.ExecuteAsync(
+                code,
+                options =>
+                {
+                    options = options
+                        .WithReferences(Assembly.GetExecutingAssembly())
+                        .WithImports("KitX", "KitX.Dashboard")
+                        .WithLanguageVersion(LanguageVersion.Preview)
+                        ;
 
-                return options;
+                    return options;
 
-            }))?.ToString();
+                },
+                addDefaultImports: true,
+                runInReplMode: false,
+                cancellationToken: cancellationToken
+            ))?.ToString();
+
+            sw.Stop();
 
             return new StringBuilder()
-                .AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Executed, result below:")
+                .AppendLine($"[{begin:yyyy-MM-dd HH:mm:ss}] [I] Posted.")
+                .AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [I] Ended, took {sw.ElapsedMilliseconds} ms.")
                 .AppendLine(result)
                 .ToString()
                 ;
         }
         catch (Exception e)
         {
+            sw.Stop();
+
             return new StringBuilder()
-                .AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Exception: {e.Message}")
+                .AppendLine($"[{begin:yyyy-MM-dd HH:mm:ss}] [I] Posted.")
+                .AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [E] Exception caught after {sw.ElapsedMilliseconds} ms, Message: {e.Message}")
                 .AppendLine(e.StackTrace)
-                .ToString();
+                .ToString()
+                ;
         };
     }
 }

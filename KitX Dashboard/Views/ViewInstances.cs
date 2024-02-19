@@ -21,17 +21,15 @@ public static class ViewInstances
 
     public static List<Window> Windows { get; set; } = [];
 
-    public static void ShowWindow<T>(T window) where T : Window
+    public static void ShowWindow<T>(T window, Window? owner = null) where T : Window
     {
-        EventService.OnExiting += () => window.Close();
+        EventService.OnExiting += window.Close;
 
         Windows.Add(window);
 
-        window.Show();
-    }
-
-    public static void CloseWindows()
-    {
-        Windows.ForEach(x => x.Close());
+        if (owner is null)
+            window.Show();
+        else
+            window.ShowDialog(owner);
     }
 }

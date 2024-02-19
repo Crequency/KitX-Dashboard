@@ -44,6 +44,7 @@
         <materialIcons:MaterialIconStyles/>
 
         <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml"/>
+        <StyleInclude Source="avares://AvaloniaProgressRing/Styles/ProgressRing.xaml"/>
         <StyleInclude Source="/Styles/FontsStyles.axaml"/>
     </Application.Styles>
 

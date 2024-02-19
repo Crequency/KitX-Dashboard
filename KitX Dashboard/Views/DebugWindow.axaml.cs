@@ -1,5 +1,4 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Styling;
 using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
@@ -26,30 +25,33 @@ public partial class DebugWindow : Window, IView
     {
         InitializeEditor();
 
-        var runButton = this.FindControl<Button>("RunButton");
-
-        if (runButton is not null)
-            HotKeyManager.SetHotKey(runButton, new KeyGesture(Key.F5));
-
-        EventService.ThemeConfigChanged += () => InitializeEditor();
+        EventService.ThemeConfigChanged += InitializeEditor;
     }
 
     private void InitializeEditor()
     {
-        //First of all you need to have a reference for your TextEditor for it to be used inside AvaloniaEdit.TextMate project.
-        var textEditor = this.FindControl<TextEditor>("Editor");
+        var textEditor = this.FindControl<TextEditor>("CodeEditor");
 
-        //Here we initialize RegistryOptions with the theme we want to use.
-        var registryOptions = new RegistryOptions(ActualThemeVariant == ThemeVariant.Light ? ThemeName.LightPlus : ThemeName.DarkPlus);
+        var outputEditor = this.FindControl<TextEditor>("OutputEditor");
 
-        //Initial setup of TextMate.
+        SetEditor(textEditor, ".cs");
+
+        SetEditor(outputEditor, ".log");
+    }
+
+    private void SetEditor(TextEditor? textEditor, string ext)
+    {
+        if (textEditor is null) return;
+
+        var registryOptions = new RegistryOptions(
+            ActualThemeVariant == ThemeVariant.Light ? ThemeName.LightPlus : ThemeName.DarkPlus
+        );
+
         var textMateInstallation = textEditor.InstallTextMate(registryOptions);
 
-        //Here we are getting the language by the extension and right after that we are initializing grammar with this language.
-        //And that's all 😀, you are ready to use AvaloniaEdit with syntax highlighting!
         textMateInstallation.SetGrammar(
             registryOptions.GetScopeByLanguageId(
-                registryOptions.GetLanguageByExtension(".cs").Id
+                registryOptions.GetLanguageByExtension(ext).Id
             )
         );
     }
