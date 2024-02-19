@@ -8,13 +8,16 @@ namespace KitX.Dashboard.ViewModels;
 
 internal class PluginsLaunchWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
-    public override void InitCommands() => throw new System.NotImplementedException();
-
-    public override void InitEvents() => throw new System.NotImplementedException();
-
     public new event PropertyChangedEventHandler? PropertyChanged;
 
     public PluginsLaunchWindowViewModel()
+    {
+        InitEvents();
+    }
+
+    public override void InitCommands() => throw new System.NotImplementedException();
+
+    public override void InitEvents()
     {
         PluginLaunchCards.CollectionChanged += (_, _) =>
         {
@@ -34,7 +37,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase, INotifyPropertyChan
         }
     }
 
-    public string pluginsCount = $"9";
+    public string pluginsCount = $"0";
 
     public string PluginsCount
     {

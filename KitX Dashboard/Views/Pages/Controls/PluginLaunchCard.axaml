@@ -6,6 +6,7 @@
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
              xmlns:icon="using:Material.Icons.Avalonia"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              Design.Width="600"
              Design.Height="450"
              Margin="10"
@@ -15,6 +16,11 @@
             <Setter Property="Opacity" Value="0.8"/>
         </Style>
     </UserControl.Styles>
+    <UserControl.Resources>
+        <converters:PluginParamTypeVisibilityConverter x:Key="PluginParamTypeVisibilityConverter"/>
+        <converters:StringOverLengthConverter x:Key="WideString"/>
+        <converters:DisplayNamesLanguageConverter x:Key="DisplayLanguageName"/>
+    </UserControl.Resources>
     <Expander Margin="5,5" >
         <Expander.Header>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -57,45 +63,75 @@
                     <UniformGrid Columns="3"/>
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
-            <ListBox Background="Azure">
-                <TextBlock>FuncName</TextBlock>
-                <Button FontSize="14"
-                        FontWeight="Bold"
-                        Content="Launch"
-                        Command="{Binding LaunchFuncCommand}"
-                        CommandParameter="FuncName"/>
-
-                <ui:InfoBar IsClosable="False"
-                            IsIconVisible="False"
-                            IsOpen="True">
-                    <Grid Margin="0,10,10,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Grid.Row="0"
-                                    VerticalAlignment="Center"
-                                    Orientation="Horizontal">
-                            <ComboBox VerticalContentAlignment="Center"
-                                      DockPanel.Dock="Right"
-                                      FontFamily="{StaticResource SourceHanSans}"
-                                      FontWeight="Bold"
-                                      IsTextSearchEnabled="True"
-                                      ItemsSource="spe">
-                            </ComboBox>
-                            <icon:MaterialIcon Margin="5,0" Kind="Input"/>
+            <ItemsControl ItemsSource="{Binding Functions}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Vertical" Background="Azure">
+                            
+                            <TextBlock Text="{Binding DisplayNames, Converter={StaticResource DisplayLanguageName}}"/>
+                            <Button FontSize="14"
+                                    FontWeight="Bold"
+                                    Content="{DynamicResource Text_PluginBar_Launch}"
+                                    Command="{Binding $parent[UserControl].DataContext.LaunchFuncCommand}"
+                                    CommandParameter="{Binding Name}"/>
+                            <ListBox ItemsSource="{Binding Parameters}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <ui:InfoBar IsClosable="False"
+                                                    IsIconVisible="False"
+                                                    IsOpen="True">
+                                            <Grid Margin="0,10,10,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Grid.Row="0"
+                                                            VerticalAlignment="Center"
+                                                            Orientation="Horizontal">
+                                                    <TextBox VerticalContentAlignment="Center"
+                                                             FontFamily="{StaticResource SourceHanSans}"
+                                                             FontWeight="Bold"
+                                                             IsVisible="{Binding Type,
+                                                                    Converter={StaticResource PluginParamTypeVisibilityConverter},
+                                                                    ConverterParameter=string}"
+                                                             Text="{Binding Value, Mode=TwoWay}" />
+                                                    <NumericUpDown VerticalContentAlignment="Center"
+                                                                    FontFamily="{StaticResource SourceHanSans}"
+                                                                    FontWeight="Bold"
+                                                                    IsVisible="{Binding Type,
+                                                                            Converter={StaticResource PluginParamTypeVisibilityConverter},
+                                                                            ConverterParameter=int}"
+                                                                    Value="{Binding Value}" />
+                                                    <ComboBox VerticalContentAlignment="Center"
+                                                              FontFamily="{StaticResource SourceHanSans}"
+                                                              FontWeight="Bold"
+                                                              IsTextSearchEnabled="True"
+                                                              IsVisible="{Binding Type,
+                                                                    Converter={StaticResource PluginParamTypeVisibilityConverter},
+                                                                    ConverterParameter=enum}"
+                                                              ItemsSource="xxx"
+                                                              SelectedItem="{Binding Value}"/>
+                                                    <icon:MaterialIcon Margin="5,0" Kind="Input"/>
+                                                </StackPanel>
+                                                <Grid Grid.Column="1" Grid.Row="0"
+                                                      VerticalAlignment="Center">
+                                                    <TextBlock FontFamily="{StaticResource SourceHanSans}"
+                                                               FontWeight="Bold"
+                                                               TextAlignment="Center"
+                                                               Text="{Binding Name}"
+                                                               ToolTip.Tip="{Binding Name}"/>
+                                                </Grid>
+                                            </Grid>
+                                        </ui:InfoBar>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            
                         </StackPanel>
-                        <Grid Grid.Column="0" Grid.Row="0"
-                              VerticalAlignment="Center">
-                            <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                       Width=""
-                                       FontWeight="Bold"
-                                       TextAlignment="Center"
-                                       Text="hhhhhhhhhh"/>
-                        </Grid>
-                    </Grid>
-                </ui:InfoBar>
-            </ListBox>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+           
         </ListBox>
     </Expander>
 </UserControl>

@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using AvaloniaEdit.Utils;
 using KitX.Dashboard.ViewModels.Pages.Controls;
 using KitX.Shared.Plugin;
 
@@ -22,7 +23,9 @@ public partial class PluginLaunchCard : UserControl
 
         viewModel.pluginStruct = ps;
 
-        viewModel.BuildFuncsUI(this);
+        viewModel.functions.AddRange(ps.Functions);
+
+        //viewModel.BuildFuncsUI(this);
 
         DataContext = viewModel;
     }
