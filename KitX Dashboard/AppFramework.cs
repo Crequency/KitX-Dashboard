@@ -47,8 +47,6 @@ public static class AppFramework
         if (File.Exists("./dump.log".GetFullPath()))
             File.Delete("./dump.log".GetFullPath());
 
-        EventService.Initialize();
-
         Instances.Initialize();
 
         Instances.ConfigManager.AppConfig.App.RanTime++;
@@ -251,7 +249,7 @@ public static class AppFramework
 
                 ConstantTable.Running = false;
 
-                Thread.Sleep(ConstantTable.LastBreakAfterExit);
+                Thread.Sleep(Instances.ConfigManager.AppConfig.App.LastBreakAfterExit);
 
                 Environment.Exit(0);
             }

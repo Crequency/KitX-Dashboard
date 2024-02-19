@@ -57,6 +57,8 @@ public class AppConfig : ConfigBase
         public bool ShowAnnouncementWhenStart { get; set; } = true;
 
         public ulong RanTime { get; set; } = 0;
+
+        public int LastBreakAfterExit { get; set; } = 2000;
     }
 
     public class Config_Windows

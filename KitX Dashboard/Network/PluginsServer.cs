@@ -210,7 +210,7 @@ internal class PluginsServer : IKitXServer<PluginsServer>
 
             var port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
 
-            ConstantTable.PluginServerPort = port; // 全局端口号标明
+            ConstantTable.PluginsServerPort = port; // 全局端口号标明
 
             EventService.Invoke(nameof(EventService.PluginsServerPortChanged));
 

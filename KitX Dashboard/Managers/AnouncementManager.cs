@@ -39,22 +39,14 @@ internal class AnouncementManager
 
         var list = JsonSerializer.Deserialize<List<string>>(msg);
 
-        var readed = new List<string>();
-
-        var confPath = ConstantTable.AnnouncementsJsonPath.GetFullPath();
-
-        if (File.Exists(confPath))
-            readed = JsonSerializer.Deserialize<List<string>>(
-                await FileHelper.ReadAllAsync(confPath)
-            );
-        else readed = [];
+        var accepted = Instances.ConfigManager.AnnouncementConfig.Accepted;
 
         var unreads = new List<DateTime>();
 
-        if (list is null || readed is null) return;
+        if (list is null || accepted is null) return;
 
         foreach (var item in list)
-            if (!readed.Contains(item))
+            if (!accepted.Contains(item))
                 unreads.Add(DateTime.Parse(item));
 
         var src = new Dictionary<string, string>();
@@ -82,7 +74,7 @@ internal class AnouncementManager
         {
             Dispatcher.UIThread.Post(() =>
             {
-                var toast = new AnouncementsWindow().UpdateSource(src, readed);
+                var toast = new AnouncementsWindow().UpdateSource(src);
 
                 toast.Show();
             });

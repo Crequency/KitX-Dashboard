@@ -11,6 +11,7 @@
     <x:String x:Key="Text_Public_Export">導出</x:String>
     <x:String x:Key="Text_Public_Exit">退出</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">顯示主窗口</x:String>
+    <x:String x:Key="Text_Public_ShowAnnouncements">查看公告</x:String>
     <x:String x:Key="Text_Public_ShowLauncherWindow">Text_Public_ShowLauncherWindow</x:String>
     <x:String x:Key="Text_Public_Millisecond">毫秒</x:String>
     <x:String x:Key="Text_Public_Second">秒</x:String>
@@ -31,6 +32,8 @@
     <x:String x:Key="Text_Public_ResetToAuto">重置到自動</x:String>
     <x:String x:Key="Text_Public_Random">隨機</x:String>
     <x:String x:Key="Text_Public_Fixed">固定</x:String>
+    <x:String x:Key="Text_Public_Name">名稱</x:String>
+    <x:String x:Key="Text_Public_Author">作者</x:String>
     <x:String x:Key="Text_Log_Verbose">詳細</x:String>
     <x:String x:Key="Text_Log_Debug">調試</x:String>
     <x:String x:Key="Text_Log_Information">信息</x:String>

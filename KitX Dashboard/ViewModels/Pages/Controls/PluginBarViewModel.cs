@@ -78,7 +78,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
                     var connectStr = "" +
                         $"{DevicesDiscoveryServer.DefaultDeviceInfo.Device.IPv4}" +
                         $":" +
-                        $"{ConstantTable.PluginServerPort}";
+                        $"{ConstantTable.PluginsServerPort}";
 
                     if (PluginDetail is null) return;
 

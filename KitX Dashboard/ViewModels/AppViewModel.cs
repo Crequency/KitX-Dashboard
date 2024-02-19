@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using ReactiveUI;
@@ -7,6 +8,7 @@ using System.ComponentModel;
 using System.Reactive;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -39,6 +41,11 @@ internal class AppViewModel : ViewModelBase
             Instances.ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
 
             SaveAppConfigChanges();
+        });
+
+        ViewLatestAnnouncementsCommand = ReactiveCommand.Create(async () =>
+        {
+            await AnouncementManager.CheckNewAnnouncements();
         });
 
         PluginLauncherCommand = ReactiveCommand.Create(() =>
@@ -122,6 +129,8 @@ internal class AppViewModel : ViewModelBase
     }
 
     internal ReactiveCommand<Unit, Unit>? TrayIconClickedCommand { get; set; }
+
+    internal ReactiveCommand<Unit, Task>? ViewLatestAnnouncementsCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? ExitCommand { get; set; }
 

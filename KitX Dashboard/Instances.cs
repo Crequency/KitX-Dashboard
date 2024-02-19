@@ -5,21 +5,21 @@ using KitX.Dashboard.Managers;
 using LiteDB;
 using System.Linq;
 
-internal static class Instances
+public static class Instances
 {
-    internal static SignalTasksManager? SignalTasksManager { get; set; }
+    public static SignalTasksManager? SignalTasksManager { get; set; }
 
-    internal static WebManager? WebManager { get; set; }
+    public static WebManager? WebManager { get; set; }
 
-    internal static FileWatcherManager? FileWatcherManager { get; set; }
+    public static FileWatcherManager? FileWatcherManager { get; set; }
 
-    internal static LiteDatabase? ActivitiesDataBase { get; set; }
+    public static LiteDatabase? ActivitiesDataBase { get; set; }
 
-    internal static CacheManager? CacheManager { get; set; }
+    public static CacheManager? CacheManager { get; set; }
 
-    internal static HotKeyManager? HotKeyManager { get; set; }
+    public static KeyHookManager? KeyHookManager { get; set; }
 
-    internal static ConfigManager ConfigManager { get; set; } = new ConfigManager().SetLocation("./Config/").Load();
+    public static ConfigManager ConfigManager { get; set; } = new ConfigManager().SetLocation("./Config/").Load();
 
     internal static void Initialize()
     {
@@ -40,8 +40,8 @@ internal static class Instances
             );
 
             //TasksManager.RunTask(
-            //    () => HotKeyManager = new HotKeyManager().Hook(),
-            //    location.Append(nameof(HotKeyManager)),
+            //    () => KeyHookManager = new KeyHookManager().Hook(),
+            //    location.Append(nameof(KeyHookManager)),
             //    catchException: true
             //);
 

@@ -1,13 +1,14 @@
-﻿using KitX.Dashboard.Views;
+﻿using Avalonia;
+using KitX.Dashboard.Configuration;
+using KitX.Dashboard.Views;
 using ReactiveUI;
-using System.ComponentModel;
 using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels;
 
 internal class MainWindowViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
+    private static AppConfig AppConfig => Instances.ConfigManager.AppConfig;
 
     public MainWindowViewModel()
     {
@@ -33,14 +34,14 @@ internal class MainWindowViewModel : ViewModelBase
 
     internal static double Window_Width
     {
-        get => Instances.ConfigManager.AppConfig.Windows.MainWindow.Size.Width!.Value;
-        set => Instances.ConfigManager.AppConfig.Windows.MainWindow.Size.Width = value;
+        get => AppConfig.Windows.MainWindow.Size.Width!.Value;
+        set => AppConfig.Windows.MainWindow.Size.Width = value;
     }
 
     internal static double Window_Height
     {
-        get => Instances.ConfigManager.AppConfig.Windows.MainWindow.Size.Height!.Value;
-        set => Instances.ConfigManager.AppConfig.Windows.MainWindow.Size.Height = value;
+        get => AppConfig.Windows.MainWindow.Size.Height!.Value;
+        set => AppConfig.Windows.MainWindow.Size.Height = value;
     }
 
     internal ReactiveCommand<object?, Unit>? RefreshGreetingCommand { get; set; }

@@ -227,7 +227,7 @@ internal class DevicesNetwork
             }
         }
 
-        EventService.Invoke(nameof(EventService.OnReceivingDeviceInfo), deviceInfo);
+        EventService.Invoke(nameof(EventService.OnReceivingDeviceInfo), [deviceInfo]);
     }
 
     internal static void Watch4MainDevice()

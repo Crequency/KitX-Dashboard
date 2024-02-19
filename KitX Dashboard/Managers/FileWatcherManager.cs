@@ -2,17 +2,21 @@
 using KitX.Dashboard.Names;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace KitX.Dashboard.Managers;
 
-internal class FileWatcherManager
+public class FileWatcherManager
 {
     private readonly Dictionary<string, FileWatcher> Watchers = [];
 
     public FileWatcherManager()
     {
-        Instances.SignalTasksManager!.RaiseSignal(nameof(SignalsNames.FileWatcherManagerInitializedSignal));
+        AppFramework.AfterInitailization(() =>
+        {
+            Instances.SignalTasksManager!.RaiseSignal(nameof(SignalsNames.FileWatcherManagerInitializedSignal));
+        });
     }
 
     public FileWatcherManager RegisterWatcher(
@@ -84,23 +88,25 @@ internal class FileWatcher : IDisposable
     {
         var location = $"{nameof(FileWatcherManager)}.{nameof(FileWatcher)}";
 
-        watcher = new();
+        var filepath = filename.GetFullPath();
+
+        var path = Path.GetDirectoryName(filepath) ?? throw new NullReferenceException($"In {location}._ctor: Failed in {nameof(Path.GetDirectoryName)}");
+
+        watcher = new()
+        {
+            NotifyFilter = notifyFilters ?? NotifyFilters.LastWrite,
+            Path = path,
+            Filter = Path.GetFileName(filepath.GetFullPath())
+        };
 
         watcher.Changed += (x, y) =>
         {
             if (ExceptCounts > 0)
                 --ExceptCounts;
-            else onchanged(x, y);
+            else
+                onchanged(x, y);
         };
 
-        watcher.NotifyFilter = notifyFilters ?? NotifyFilters.LastWrite;
-
-        var filepath = filename.GetFullPath();
-        var path = Path.GetDirectoryName(filepath)
-            ?? throw new NullReferenceException("In FileWatcher(): Failed in GetDirectoryName()");
-
-        watcher.Path = path;
-        watcher.Filter = filepath.GetFullPath();
         watcher.EnableRaisingEvents = true;
     }
 

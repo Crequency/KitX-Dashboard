@@ -1,138 +1,98 @@
 ﻿using KitX.Shared.Device;
+using System.Reflection;
+using System;
 
 namespace KitX.Dashboard.Services;
 
-internal static class EventService
+public static class EventService
 {
-    internal delegate void LanguageChangedHandler();
+    public delegate void LanguageChangedHandler();
 
-    internal delegate void GreetingTextIntervalUpdatedHandler();
-
-    internal delegate void AppConfigChangedHandler();
-
-    internal delegate void PluginsConfigChangedHandler();
-
-    internal delegate void MicaOpacityChangedHandler();
-
-    internal delegate void DevelopSettingsChangedHandler();
-
-    internal delegate void LogConfigUpdatedHandler();
-
-    internal delegate void ThemeConfigChangedHandler();
-
-    internal delegate void UseStatisticsChangedHandler();
-
-    internal delegate void OnExitingHandler();
-
-    internal delegate void PluginsServerPortChangedHandler();
-
-    internal delegate void DevicesServerPortChangedHandler();
-
-    internal delegate void OnReceivingDeviceInfoHandler(DeviceInfo dis);
-
-    internal delegate void OnConfigHotReloadedHandler();
+    public static event LanguageChangedHandler LanguageChanged = new(() => { });
 
 
+    public delegate void GreetingTextIntervalUpdatedHandler();
 
-    internal static event LanguageChangedHandler? LanguageChanged;
+    public static event GreetingTextIntervalUpdatedHandler GreetingTextIntervalUpdated = new(() => { });
 
-    internal static event GreetingTextIntervalUpdatedHandler? GreetingTextIntervalUpdated;
 
-    internal static event AppConfigChangedHandler? AppConfigChanged;
+    public delegate void AppConfigChangedHandler();
 
-    internal static event PluginsConfigChangedHandler? PluginsConfigChanged;
+    public static event AppConfigChangedHandler AppConfigChanged = new(() => { });
 
-    internal static event MicaOpacityChangedHandler? MicaOpacityChanged;
 
-    internal static event DevelopSettingsChangedHandler? DevelopSettingsChanged;
+    public delegate void PluginsConfigChangedHandler();
 
-    internal static event LogConfigUpdatedHandler? LogConfigUpdated;
+    public static event PluginsConfigChangedHandler PluginsConfigChanged = new(() => { });
 
-    internal static event ThemeConfigChangedHandler? ThemeConfigChanged;
 
-    internal static event UseStatisticsChangedHandler? UseStatisticsChanged;
+    public delegate void MicaOpacityChangedHandler();
 
-    internal static event OnExitingHandler? OnExiting;
+    public static event MicaOpacityChangedHandler MicaOpacityChanged = new(() => { });
 
-    internal static event PluginsServerPortChangedHandler? PluginsServerPortChanged;
 
-    internal static event DevicesServerPortChangedHandler? DevicesServerPortChanged;
+    public delegate void DevelopSettingsChangedHandler();
 
-    internal static event OnReceivingDeviceInfoHandler? OnReceivingDeviceInfo;
+    public static event DevelopSettingsChangedHandler DevelopSettingsChanged = new(() => { });
 
-    internal static event OnConfigHotReloadedHandler? OnConfigHotReloaded;
 
-    internal static void Initialize()
+    public delegate void LogConfigUpdatedHandler();
+
+    public static event LogConfigUpdatedHandler LogConfigUpdated = new(() => { });
+
+
+    public delegate void ThemeConfigChangedHandler();
+
+    public static event ThemeConfigChangedHandler ThemeConfigChanged = new(() => { });
+
+
+    public delegate void UseStatisticsChangedHandler();
+
+    public static event UseStatisticsChangedHandler UseStatisticsChanged = new(() => { });
+
+
+    public delegate void PluginsServerPortChangedHandler();
+
+    public static event PluginsServerPortChangedHandler PluginsServerPortChanged = new(() => { });
+
+
+    public delegate void DevicesServerPortChangedHandler();
+
+    public static event DevicesServerPortChangedHandler DevicesServerPortChanged = new(() => { });
+
+
+    public delegate void OnActivitiesUpdatedHandler();
+
+    public static event OnActivitiesUpdatedHandler OnActivitiesUpdated = new(() => { });
+
+
+    public delegate void OnExitingHandler();
+
+    public static event OnExitingHandler OnExiting = new(() => { });
+
+
+    public delegate void OnReceivingDeviceInfoHandler(DeviceInfo dis);
+
+    public static event OnReceivingDeviceInfoHandler OnReceivingDeviceInfo = new(_ => { });
+
+
+    public delegate void OnConfigHotReloadedHandler();
+
+    public static event OnConfigHotReloadedHandler OnConfigHotReloaded = new(() => { });
+
+    public static void Invoke(string eventName, object[]? objects = null)
     {
-        LanguageChanged += () => { };
-        GreetingTextIntervalUpdated += () => { };
-        AppConfigChanged += () => { };
-        PluginsConfigChanged += () => { };
-        MicaOpacityChanged += () => { };
-        DevelopSettingsChanged += () => { };
-        LogConfigUpdated += () => { };
-        ThemeConfigChanged += () => { };
-        UseStatisticsChanged += () => { };
-        OnExiting += () => { };
-        DevicesServerPortChanged += () => { };
-        OnReceivingDeviceInfo += dis => { };
-        OnConfigHotReloaded += () => { };
-        PluginsServerPortChanged += () => { };
-    }
+        var type = typeof(EventService);
 
-    internal static void Invoke(string eventName)
-    {
-        switch (eventName)
+        var eventField = type.GetField(eventName, BindingFlags.Static | BindingFlags.NonPublic);
+
+        if (eventField is null || !typeof(Delegate).IsAssignableFrom(eventField.FieldType))
         {
-            case nameof(LanguageChanged):
-                LanguageChanged?.Invoke();
-                break;
-            case nameof(GreetingTextIntervalUpdated):
-                GreetingTextIntervalUpdated?.Invoke();
-                break;
-            case nameof(AppConfigChanged):
-                AppConfigChanged?.Invoke();
-                break;
-            case nameof(PluginsConfigChanged):
-                PluginsConfigChanged?.Invoke();
-                break;
-            case nameof(MicaOpacityChanged):
-                MicaOpacityChanged?.Invoke();
-                break;
-            case nameof(DevelopSettingsChanged):
-                DevelopSettingsChanged?.Invoke();
-                break;
-            case nameof(LogConfigUpdated):
-                LogConfigUpdated?.Invoke();
-                break;
-            case nameof(ThemeConfigChanged):
-                ThemeConfigChanged?.Invoke();
-                break;
-            case nameof(UseStatisticsChanged):
-                UseStatisticsChanged?.Invoke();
-                break;
-            case nameof(OnExiting):
-                OnExiting?.Invoke();
-                break;
-            case nameof(DevicesServerPortChanged):
-                DevicesServerPortChanged?.Invoke();
-                break;
-            case nameof(OnConfigHotReloaded):
-                OnConfigHotReloaded?.Invoke();
-                break;
-            case nameof(PluginsServerPortChanged):
-                PluginsServerPortChanged?.Invoke();
-                break;
+            throw new ArgumentException($"No event found with the name '{eventName}'.", nameof(eventName));
         }
-    }
 
-    internal static void Invoke(string eventName, object arg)
-    {
-        switch (eventName)
-        {
-            case nameof(OnReceivingDeviceInfo):
-                OnReceivingDeviceInfo?.Invoke((DeviceInfo)arg);
-                break;
-        }
+        var @delegate = eventField.GetValue(null) as Delegate;
+
+        @delegate?.DynamicInvoke(objects);
     }
 }

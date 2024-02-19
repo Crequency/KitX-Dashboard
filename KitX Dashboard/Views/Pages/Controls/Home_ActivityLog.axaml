@@ -1,17 +1,235 @@
 ﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.Home_ActivityLog"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
              d:DesignHeight="450"
              d:DesignWidth="800"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:ActivityStatusIconConverter x:Key="ActivityStatusIconConverter"/>
+        <converters:ActivityTasksStatusIconConverter x:Key="ActivityTasksStatusIconConverter"/>
+        <converters:AvaloniaEditDocumentStringConverter x:Key="AvaloniaEditDocumentStringConverter"/>
+    </UserControl.Resources>
     <DockPanel>
         <Border Height="{Binding NoActivityLog_TipHeight}" DockPanel.Dock="Top">
             <TextBlock HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        Text="{DynamicResource Text_MainWindow_ActivityLog_No}"/>
         </Border>
-        <ScrollViewer/>
+
+        <ScrollViewer>
+            <StackPanel Margin="10,20" Orientation="Vertical">
+                <ItemsControl ItemsSource="{Binding Activities}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Expander Margin="20,5" IsExpanded="false">
+                                <Expander.Header>
+                                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                        <icon:MaterialIcon Margin="5,0" Kind="{Binding Status, Converter={StaticResource ActivityStatusIconConverter}}">
+                                            <icon:MaterialIcon.Styles>
+                                                <!--  Unknown  -->
+                                                <Style Selector="icon|MaterialIcon[Kind=TimerSandEmpty]">
+                                                    <Setter Property="Foreground" Value="#9BA7A2"/>
+                                                </Style>
+                                                <!--  Opened  -->
+                                                <Style Selector="icon|MaterialIcon[Kind=TimerSand]">
+                                                    <Setter Property="Foreground" Value="#6C55C8"/>
+                                                </Style>
+                                                <!--  Pending  -->
+                                                <Style Selector="icon|MaterialIcon[Kind=TimerSandPaused]">
+                                                    <Setter Property="Foreground" Value="#FDFC07"/>
+                                                    <Style.Animations>
+                                                        <Animation IterationCount="INFINITE" Duration="0:0:1">
+                                                            <KeyFrame Cue="0%">
+                                                                <Setter Property="ScaleTransform.ScaleX" Value="1.0"/>
+                                                                <Setter Property="ScaleTransform.ScaleY" Value="1.0"/>
+                                                            </KeyFrame>
+                                                            <KeyFrame Cue="25%">
+                                                                <Setter Property="ScaleTransform.ScaleX" Value="1.3"/>
+                                                                <Setter Property="ScaleTransform.ScaleY" Value="1.3"/>
+                                                            </KeyFrame>
+                                                            <KeyFrame Cue="50%">
+                                                                <Setter Property="ScaleTransform.ScaleX" Value="1.0"/>
+                                                                <Setter Property="ScaleTransform.ScaleY" Value="1.0"/>
+                                                            </KeyFrame>
+                                                            <KeyFrame Cue="75%">
+                                                                <Setter Property="ScaleTransform.ScaleX" Value="0.7"/>
+                                                                <Setter Property="ScaleTransform.ScaleY" Value="0.7"/>
+                                                            </KeyFrame>
+                                                            <KeyFrame Cue="100%">
+                                                                <Setter Property="ScaleTransform.ScaleX" Value="1.0"/>
+                                                                <Setter Property="ScaleTransform.ScaleY" Value="1.0"/>
+                                                            </KeyFrame>
+                                                        </Animation>
+                                                    </Style.Animations>
+                                                </Style>
+                                                <!--  Running  -->
+                                                <Style Selector="icon|MaterialIcon[Kind=TimerSandComplete]">
+                                                    <Setter Property="Foreground" Value="#59FBA6"/>
+                                                    <Style.Animations>
+                                                        <Animation IterationCount="INFINITE" Duration="0:0:0.8">
+                                                            <KeyFrame Cue="0%">
+                                                                <Setter Property="RotateTransform.Angle" Value="0"/>
+                                                            </KeyFrame>
+                                                            <KeyFrame Cue="50%">
+                                                                <Setter Property="RotateTransform.Angle" Value="180"/>
+                                                            </KeyFrame>
+                                                            <KeyFrame Cue="100%">
+                                                                <Setter Property="RotateTransform.Angle" Value="360"/>
+                                                            </KeyFrame>
+                                                        </Animation>
+                                                    </Style.Animations>
+                                                </Style>
+                                                <!--  Closed  -->
+                                                <Style Selector="icon|MaterialIcon[Kind=TimerSandFull]">
+                                                    <Setter Property="Foreground" Value="#25B0F0"/>
+                                                </Style>
+                                            </icon:MaterialIcon.Styles>
+                                        </icon:MaterialIcon>
+                                        <icon:MaterialIcon Margin="5,0" Kind="{Binding IconKind}"/>
+                                        <TextBlock Margin="15,0,0,0" Text="{Binding Title}"/>
+                                    </StackPanel>
+                                </Expander.Header>
+
+                                <StackPanel Orientation="Vertical">
+
+                                    <ui:InfoBar Margin="10,5"
+                                                IsClosable="False"
+                                                IsIconVisible="False"
+                                                IsOpen="True">
+                                        <DockPanel Margin="0,10,10,10">
+                                            <StackPanel DockPanel.Dock="Left">
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                                    <TextBlock Text="{DynamicResource Text_Public_Name}"/>
+                                                    <Border Width="10"/>
+                                                    <TextBlock Text="{Binding Name}"/>
+                                                </StackPanel>
+                                                <Border Height="15"/>
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                                    <TextBlock Text="{DynamicResource Text_Public_Author}"/>
+                                                    <Border Width="10"/>
+                                                    <TextBlock Text="{Binding Author}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <StackPanel DockPanel.Dock="Right">
+                                                <StackPanel HorizontalAlignment="Right"
+                                                            VerticalAlignment="Center"
+                                                            Orientation="Horizontal">
+                                                    <ItemsControl ItemsSource="{Binding Assigners}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Content="{Binding}"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                                <Border Height="15"/>
+                                                <StackPanel HorizontalAlignment="Right"
+                                                            VerticalAlignment="Center"
+                                                            Orientation="Horizontal">
+                                                    <ItemsControl ItemsSource="{Binding Labels}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Content="{Binding}"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <Border/>
+                                        </DockPanel>
+                                    </ui:InfoBar>
+
+                                    <TreeView Margin="10,5" ItemsSource="{Binding Tasks}">
+                                        <TreeView.ItemTemplate>
+                                            <TreeDataTemplate ItemsSource="{Binding SubTasks}">
+                                                <Expander Margin="10">
+                                                    <Expander.Header>
+                                                        <StackPanel>
+                                                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                                                <icon:MaterialIcon x:Name="ActivityTaskStatusIcon"
+                                                                                   Margin="5,0"
+                                                                                   Kind="{Binding Status, Converter={StaticResource ActivityTasksStatusIconConverter}}">
+                                                                    <icon:MaterialIcon.Styles>
+                                                                        <!--  Unknown  -->
+                                                                        <Style Selector="icon|MaterialIcon[Kind=SourceFork]">
+                                                                            <Setter Property="Foreground" Value="#9BA7A2"/>
+                                                                        </Style>
+                                                                        <!--  Pending  -->
+                                                                        <Style Selector="icon|MaterialIcon[Kind=SourceBranchPlus]">
+                                                                            <Setter Property="Foreground" Value="#6C55C8"/>
+                                                                        </Style>
+                                                                        <!--  Running  -->
+                                                                        <Style Selector="icon|MaterialIcon[Kind=SourceBranchSync]">
+                                                                            <Setter Property="Foreground" Value="#25B0F0"/>
+                                                                            <Style.Animations>
+                                                                                <Animation IterationCount="INFINITE" Duration="0:0:0.8">
+                                                                                    <KeyFrame Cue="0%">
+                                                                                        <Setter Property="RotateTransform.Angle" Value="0"/>
+                                                                                    </KeyFrame>
+                                                                                    <KeyFrame Cue="50%">
+                                                                                        <Setter Property="RotateTransform.Angle" Value="180"/>
+                                                                                    </KeyFrame>
+                                                                                    <KeyFrame Cue="100%">
+                                                                                        <Setter Property="RotateTransform.Angle" Value="360"/>
+                                                                                    </KeyFrame>
+                                                                                </Animation>
+                                                                            </Style.Animations>
+                                                                        </Style>
+                                                                        <!--  Success  -->
+                                                                        <Style Selector="icon|MaterialIcon[Kind=SourceBranchCheck]">
+                                                                            <Setter Property="Foreground" Value="#59FBA6"/>
+                                                                        </Style>
+                                                                        <!--  Warning  -->
+                                                                        <Style Selector="icon|MaterialIcon[Kind=SourceBranchMinus]">
+                                                                            <Setter Property="Foreground" Value="#FDFC07"/>
+                                                                        </Style>
+                                                                        <!--  Errored  -->
+                                                                        <Style Selector="icon|MaterialIcon[Kind=SourceBranchRemove]">
+                                                                            <Setter Property="Foreground" Value="#EA3600"/>
+                                                                            <Setter Property="Tag" Value="Errored"/>
+                                                                        </Style>
+                                                                    </icon:MaterialIcon.Styles>
+                                                                </icon:MaterialIcon>
+                                                                <TextBlock Tag="{Binding #ActivityTaskStatusIcon.Tag}" Text="{Binding Name}">
+                                                                    <TextBlock.Styles>
+                                                                        <Style Selector="TextBlock[Tag=Errored]">
+                                                                            <Setter Property="Foreground" Value="#EA3600"/>
+                                                                        </Style>
+                                                                    </TextBlock.Styles>
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                            <TextBlock Margin="26,0,26,5"
+                                                                       Foreground="#EA3600"
+                                                                       IsVisible="{Binding !!Exception}"
+                                                                       Text="{Binding Exception.Message}"/>
+                                                        </StackPanel>
+                                                    </Expander.Header>
+
+                                                    <StackPanel>
+                                                        <AvaloniaEdit:TextEditor Document="{Binding ActivityTaskResult, Converter={StaticResource AvaloniaEditDocumentStringConverter}, ConverterParameter={Binding ActivityTaskResultLines}}"
+                                                                                 FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
+                                                                                 IsReadOnly="True"
+                                                                                 ShowLineNumbers="True"
+                                                                                 WordWrap="False"/>
+                                                    </StackPanel>
+                                                </Expander>
+                                            </TreeDataTemplate>
+                                        </TreeView.ItemTemplate>
+                                    </TreeView>
+
+                                </StackPanel>
+
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
     </DockPanel>
 </UserControl>

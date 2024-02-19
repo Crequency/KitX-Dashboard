@@ -21,7 +21,7 @@ public partial class MainWindow : Window, IView
 {
     private readonly MainWindowViewModel viewModel = new();
 
-    private readonly AppConfig appConfig = Instances.ConfigManager.AppConfig;
+    private static AppConfig AppConfig => Instances.ConfigManager.AppConfig;
 
     public MainWindow()
     {
@@ -35,7 +35,7 @@ public partial class MainWindow : Window, IView
 
         DataContext = viewModel;
 
-        var config = appConfig.Windows.MainWindow;
+        var config = AppConfig.Windows.MainWindow;
 
         var screen = Screens.ScreenFromWindow(this);
 
@@ -84,7 +84,7 @@ public partial class MainWindow : Window, IView
     {
         MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
 
-        RequestedThemeVariant = appConfig.App.Theme switch
+        RequestedThemeVariant = AppConfig.App.Theme switch
         {
             "Light" => ThemeVariant.Light,
             "Dark" => ThemeVariant.Dark,
@@ -101,7 +101,7 @@ public partial class MainWindow : Window, IView
         var timer = new Timer()
         {
             AutoReset = true,
-            Interval = 1000 * 60 * appConfig.Windows.MainWindow.GreetingUpdateInterval
+            Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval
         };
 
         timer.Elapsed += (_, _) => UpdateGreetingText();
@@ -149,12 +149,12 @@ public partial class MainWindow : Window, IView
         _ => typeof(Pages.HomePage),
     };
 
-    private string SelectedPageName
+    private static string SelectedPageName
     {
-        get => appConfig.Windows.MainWindow.Tags["SelectedPage"];
+        get => AppConfig.Windows.MainWindow.Tags["SelectedPage"];
         set
         {
-            appConfig.Windows.MainWindow.Tags["SelectedPage"] = value;
+            AppConfig.Windows.MainWindow.Tags["SelectedPage"] = value;
 
             IView.SaveAppConfigChanges();
         }
@@ -162,7 +162,8 @@ public partial class MainWindow : Window, IView
 
     private void MainNavigationView_SelectionChanged(
         object? sender,
-        NavigationViewSelectionChangedEventArgs e)
+        NavigationViewSelectionChangedEventArgs e
+    )
     {
         try
         {
@@ -190,15 +191,13 @@ public partial class MainWindow : Window, IView
     {
         base.OnClosing(e);
 
-        IView.SaveAppConfigChanges();
-
         if (!ConstantTable.Exiting)
         {
             e.Cancel = true;
 
             Hide();
 
-            appConfig.Windows.MainWindow.IsHidden = true;
+            AppConfig.Windows.MainWindow.IsHidden = true;
 
             IView.SaveAppConfigChanges();
         }

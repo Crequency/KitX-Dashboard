@@ -49,7 +49,7 @@ public partial class PluginsLaunchWindow : Window
 
     private void RegisterGlobalHotKey()
     {
-        Instances.HotKeyManager?.RegisterHotKeyHandler("", codes =>
+        Instances.KeyHookManager?.RegisterHotKeyHandler("", codes =>
         {
             var count = codes.Length;
 
