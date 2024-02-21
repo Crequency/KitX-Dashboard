@@ -109,7 +109,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             new(nameof(DevicesServerPort))
         );
 
-        EventService.PluginsServerPortChanged += () => PropertyChanged?.Invoke(
+        EventService.PluginsServerPortChanged += port => PropertyChanged?.Invoke(
             this,
             new(nameof(PluginsServerPort))
         );

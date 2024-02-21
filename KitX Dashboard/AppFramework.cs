@@ -133,7 +133,7 @@ public static class AppFramework
                 if (ConstantTable.SkipNetworkSystemOnStartup)
                     Instances.WebManager = new();
                 else
-                    Instances.WebManager = await new WebManager().Start();
+                    Instances.WebManager = await new WebManager().RunAsync(new());
             }).Start();
         });
 
@@ -229,7 +229,7 @@ public static class AppFramework
     {
         var location = $"{nameof(AppFramework)}.{nameof(EnsureExit)}";
 
-        new Thread(() =>
+        new Thread(async () =>
         {
             try
             {
@@ -241,7 +241,8 @@ public static class AppFramework
 
                 Log.CloseAndFlush();
 
-                Instances.WebManager?.Stop();
+                if (Instances.WebManager is not null)
+                    await Instances.WebManager.CloseAsync(new());
                 Instances.WebManager?.Dispose();
 
                 Instances.ActivitiesDataBase?.Commit();

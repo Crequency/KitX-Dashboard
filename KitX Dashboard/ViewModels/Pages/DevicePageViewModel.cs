@@ -1,5 +1,4 @@
-﻿using KitX.Dashboard.Managers;
-using KitX.Dashboard.Views;
+﻿using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
 using ReactiveUI;
 using System.Collections.ObjectModel;
@@ -22,33 +21,37 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     public override void InitCommands()
     {
-
-        RestartDevicesServerCommand = ReactiveCommand.Create(() =>
+        RestartDevicesServerCommand = ReactiveCommand.Create(async () =>
         {
-            Instances.WebManager?.Restart(
-                restartAll: false,
-                restartDevicesServices: true,
-                restartDevicesDiscoveryServer: true,
-                restartPluginsServices: false,
+            if (Instances.WebManager is null)
+                return;
+
+            await Instances.WebManager.RestartAsync(
+                new()
+                {
+                    ClosePluginsServer = false,
+                    RunPluginsServer = false
+                },
                 actionBeforeStarting: () => DeviceCards.Clear()
             );
         });
 
-        StopDevicesServerCommand = ReactiveCommand.Create(() =>
+        StopDevicesServerCommand = ReactiveCommand.Create(async () =>
         {
-            Task.Run(async () =>
-            {
-                Instances.WebManager?.Stop(
-                    stopAll: false,
-                    stopDevicesServices: true,
-                    stopDevicesDiscoveryServer: true,
-                    stopPluginsServices: false
-                );
+            if (Instances.WebManager is null)
+                return;
 
-                await Task.Delay(Instances.ConfigManager.AppConfig.Web.UdpSendFrequency + 200);
+            await Instances.WebManager.CloseAsync(
+                new()
+                {
+                    ClosePluginsServer = false,
+                    RunPluginsServer = false
+                }
+            );
 
-                DeviceCards.Clear();
-            });
+            await Task.Delay(Instances.ConfigManager.AppConfig.Web.UdpSendFrequency + 200);
+
+            DeviceCards.Clear();
         });
     }
 
@@ -97,7 +100,7 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal static ObservableCollection<DeviceCard> DeviceCards => ViewInstances.DeviceCards;
 
-    internal ReactiveCommand<Unit, Unit>? RestartDevicesServerCommand { get; set; }
+    internal ReactiveCommand<Unit, Task>? RestartDevicesServerCommand { get; set; }
 
-    internal ReactiveCommand<Unit, Unit>? StopDevicesServerCommand { get; set; }
+    internal ReactiveCommand<Unit, Task>? StopDevicesServerCommand { get; set; }
 }

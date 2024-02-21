@@ -1,8 +1,7 @@
 ﻿using Common.BasicHelper.Core.Shell;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Converters;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Views;
+using KitX.Dashboard.Network.PluginsNetwork;
 using KitX.Shared.Device;
 using Serilog;
 using System;
@@ -222,6 +221,6 @@ internal static class NetworkHelper
         PluginsServerPort = ConstantTable.PluginsServerPort,
         DevicesServerPort = ConstantTable.DevicesServerPort,
         DevicesServerBuildTime = new(),
-        PluginsCount = ViewInstances.PluginCards.Count,
+        PluginsCount = PluginsServer.Instance.PluginConnectors.Count,
     };
 }

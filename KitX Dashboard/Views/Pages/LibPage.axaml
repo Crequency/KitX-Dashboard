@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.LibPage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:local="using:KitX.Dashboard.Views.Pages.Controls"
@@ -10,6 +11,10 @@
              d:DesignHeight="450"
              d:DesignWidth="800"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:PluginMultiLanguagePropertyConverter x:Key="PluginMultiLanguagePropertyConverter"/>
+        <converters:Base64ToIconConverter x:Key="Base64ToIconConverter"/>
+    </UserControl.Resources>
     <DockPanel>
         <Grid Height="80" DockPanel.Dock="Top">
             <AutoCompleteBox Width="400"
@@ -24,6 +29,10 @@
                         Orientation="Horizontal">
                 <TextBlock Text="{Binding PluginsCount}"/>
                 <TextBlock Margin="5,0,0,0" Text="{DynamicResource Text_Lib_Tip_Connected}"/>
+
+                <Button x:Name="ViewDetailsCommandProvider"
+                        Command="{Binding ViewDetailsCommand}"
+                        IsVisible="False"/>
             </StackPanel>
         </Grid>
 
@@ -34,15 +43,71 @@
                            Text="{DynamicResource Text_Lib_Tip_NoPlugin}"/>
             </Border>
             <ScrollViewer>
-                <WrapPanel Orientation="Horizontal">
-                    <ItemsControl ItemsSource="{Binding PluginCards}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                    </ItemsControl>
-                </WrapPanel>
+                <ItemsControl ItemsSource="{Binding PluginInfos}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="160"
+                                  Height="240"
+                                  Margin="10">
+                                <Grid.Styles>
+                                    <Style Selector="Image.img:pointerover">
+                                        <Setter Property="Opacity" Value="0.8"/>
+                                    </Style>
+                                </Grid.Styles>
+                                <Button Width="140"
+                                        Height="220"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Bottom"
+                                        Command="{Binding #ViewDetailsCommandProvider.Command}"
+                                        CommandParameter="{Binding}">
+                                    <StackPanel Width="120"
+                                                Height="130"
+                                                Orientation="Vertical">
+                                        <TextBlock FontSize="20"
+                                                   FontWeight="ExtraBold"
+                                                   Text="{Binding DisplayName, Converter={StaticResource PluginMultiLanguagePropertyConverter}}"
+                                                   TextWrapping="WrapWithOverflow"
+                                                   ToolTip.Tip="{Binding DisplayName, Converter={StaticResource PluginMultiLanguagePropertyConverter}}"/>
+                                        <TextBlock FontSize="14"
+                                                   FontWeight="Light"
+                                                   Text="{Binding Version}"/>
+                                        <TextBlock FontSize="16"
+                                                   Text="{Binding SimpleDescription, Converter={StaticResource PluginMultiLanguagePropertyConverter}}"
+                                                   TextWrapping="WrapWithOverflow"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="Imager"
+                                        Width="100"
+                                        Height="100"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center"
+                                        CornerRadius="10">
+                                    <Border Width="90"
+                                            Height="90"
+                                            ClipToBounds="True"
+                                            CornerRadius="6">
+                                        <Image Width="90"
+                                               Height="90"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Classes="img"
+                                               Source="{Binding IconInBase64, Converter={StaticResource Base64ToIconConverter}}"
+                                               Stretch="UniformToFill"/>
+                                    </Border>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </ScrollViewer>
         </DockPanel>
 

@@ -76,7 +76,7 @@ internal class ActivityManager
     {
         var activity = new Activity()
         {
-            Id = Instances.ConfigManager.AppConfig.Activity.TotalRecorded++,
+            Id = Instances.ConfigManager.AppConfig.Activity.TotalRecorded,
             Name = nameof(ActivityNames.AppLifetime),
             Author = ConstantTable.AppFullName,
             Title = ActivityTitles.AppStart,

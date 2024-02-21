@@ -13,7 +13,7 @@ using System.Collections.ObjectModel;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class PluginLaunchCardViewModel: ViewModelBase, INotifyPropertyChanged
+internal class PluginLaunchCardViewModel : ViewModelBase, INotifyPropertyChanged
 {
     internal PluginInfo pluginStruct = new();
 
@@ -56,7 +56,7 @@ internal class PluginLaunchCardViewModel: ViewModelBase, INotifyPropertyChanged
     {
         get
         {
-            var location = $"{nameof(PluginCardViewModel)}.{nameof(IconDisplay)}.getter";
+            var location = $"{nameof(PluginLaunchCardViewModel)}.{nameof(IconDisplay)}.getter";
 
             try
             {

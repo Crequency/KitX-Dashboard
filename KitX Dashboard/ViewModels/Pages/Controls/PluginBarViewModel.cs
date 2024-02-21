@@ -1,9 +1,9 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Network;
+using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
@@ -48,7 +48,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
             {
                 PluginBars?.Remove(PluginBar);
 
-                PluginsNetwork.RequireRemovePlugin(PluginDetail);
+                //PluginsNetwork.RequireRemovePlugin(PluginDetail);
             }
         });
 
@@ -57,7 +57,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
             if (PluginDetail is not null && PluginBar is not null)
             {
                 PluginBars?.Remove(PluginBar);
-                PluginsNetwork.RequireDeletePlugin(PluginDetail);
+                //PluginsNetwork.RequireDeletePlugin(PluginDetail);
             }
         });
 
@@ -75,10 +75,10 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
 
                     var pluginPath = $"{PluginDetail?.InstallPath}/{pd?.RootStartupFileName}";
                     var pluginFile = pluginPath.GetFullPath();
-                    var connectStr = "" +
+                    var connectStr = "ws://" +
                         $"{DevicesDiscoveryServer.DefaultDeviceInfo.Device.IPv4}" +
                         $":" +
-                        $"{ConstantTable.PluginsServerPort}";
+                        $"{ConstantTable.PluginsServerPort}/";
 
                     if (PluginDetail is null) return;
 

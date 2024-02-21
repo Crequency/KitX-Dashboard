@@ -1,17 +1,16 @@
-﻿using KitX.Dashboard.Network;
+﻿using KitX.Dashboard.Models.Network;
+using KitX.Dashboard.Network.DevicesNetwork;
+using KitX.Dashboard.Network.PluginsNetwork;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
-using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace KitX.Dashboard.Managers;
 
 public class WebManager : IDisposable
 {
-    internal PluginsServer? pluginsServer;
-    internal DevicesDiscoveryServer? devicesDiscoveryServer;
-
     internal ObservableCollection<string>? NetworkInterfaceRegistered;
 
     public WebManager()
@@ -19,76 +18,44 @@ public class WebManager : IDisposable
         NetworkInterfaceRegistered = [];
     }
 
-    public async Task<WebManager> Start
-    (
-        bool startAll = true,
-
-        bool startPluginsNetwork = false,
-        bool startDevicesNetwork = false,
-        bool startDevicesDiscoveryServer = false
-    )
+    public async Task<WebManager> RunAsync(WebManagerOperationInfo info)
     {
-        var location = $"{nameof(WebManager)}.{nameof(Start)}";
+        var location = $"{nameof(WebManager)}.{nameof(RunAsync)}";
 
         await TasksManager.RunTaskAsync(async () =>
         {
             try
             {
-                if (startAll || startDevicesDiscoveryServer)
-                    devicesDiscoveryServer = await new DevicesDiscoveryServer().Start();
+                if (info.RunAll || info.RunPluginsServer)
+                    PluginsServer.Instance.Run();
 
-                if (startAll || startDevicesNetwork)
-                    DevicesNetwork.Start();
+                if (info.RunAll || info.RunDevicesDiscoveryServer)
+                    await DevicesDiscoveryServer.Instance.RunAsync();
 
-                if (startAll || startPluginsNetwork)
-                {
-                    PluginsNetwork.KeepCheckAndRemove();
-                    PluginsNetwork.KeepCheckAndRemoveOrDelete();
-
-                    pluginsServer = await new PluginsServer().Start();
-                }
+                if (info.RunAll || info.RunDevicesServer)
+                    DevicesManager.Start();
             }
             catch (Exception ex)
             {
-                Log.Error(
-                    ex,
-                    new StringBuilder()
-                        .Append($"In {location}: ")
-                        .Append($"{nameof(startPluginsNetwork)}: {startPluginsNetwork}, ")
-                        .Append($"{nameof(startDevicesNetwork)}: {startDevicesNetwork}, ")
-                        .Append($"{nameof(startDevicesDiscoveryServer)}: {startDevicesDiscoveryServer}")
-                        .ToString()
-                );
+                Log.Error(ex, $"In {location}: {JsonSerializer.Serialize(info)}");
             }
         }, location);
 
         return this;
     }
 
-    public WebManager Stop
-    (
-        bool stopAll = true,
-
-        bool stopPluginsServices = false,
-        bool stopDevicesServices = false,
-        bool stopDevicesDiscoveryServer = false
-    )
+    public async Task<WebManager> CloseAsync(WebManagerOperationInfo info)
     {
-        var location = $"{nameof(WebManager)}.{nameof(Stop)}";
+        var location = $"{nameof(WebManager)}.{nameof(CloseAsync)}";
 
         try
         {
-            if (stopAll || stopPluginsServices)
-                pluginsServer?.Stop().ContinueWith(
-                    server => server.Dispose()
-                );
+            if (info.CloseAll || info.CloseDevicesServer)
+                DevicesManager.Stop();
 
-            if (stopAll || stopDevicesServices)
-                DevicesNetwork.Stop();
-
-            if (stopAll || stopDevicesDiscoveryServer)
+            if (info.CloseAll || info.CloseDevicesDiscoveryServer)
             {
-                devicesDiscoveryServer?.Stop().ContinueWith(
+                await DevicesDiscoveryServer.Instance.CloseAsync().ContinueWith(
                     async server =>
                     {
                         await Task.Delay(Instances.ConfigManager.AppConfig.Web.UdpSendFrequency + 500);
@@ -99,6 +66,9 @@ public class WebManager : IDisposable
 
                 while (DevicesDiscoveryServer.CloseDevicesDiscoveryServerRequest) { }
             }
+
+            if (info.CloseAll || info.ClosePluginsServer)
+                await PluginsServer.Instance.Close();
         }
         catch (Exception ex)
         {
@@ -108,37 +78,13 @@ public class WebManager : IDisposable
         return this;
     }
 
-    public WebManager Restart
-    (
-        bool restartAll = true,
-
-        bool restartPluginsServices = false,
-        bool restartDevicesServices = false,
-        bool restartDevicesDiscoveryServer = false,
-
-        Action? actionBeforeStarting = null
-    )
+    public async Task<WebManager> RestartAsync(WebManagerOperationInfo info, Action? actionBeforeStarting = null)
     {
-        Stop(
-            restartAll,
-            restartPluginsServices,
-            restartDevicesServices,
-            restartDevicesDiscoveryServer
-        );
+        await CloseAsync(info);
 
-        Task.Run(async () =>
-        {
-            await Task.Delay(Instances.ConfigManager.AppConfig.Web.UdpSendFrequency + 100);
+        actionBeforeStarting?.Invoke();
 
-            actionBeforeStarting?.Invoke();
-
-            await Start(
-                restartAll,
-                restartPluginsServices,
-                restartDevicesServices,
-                restartDevicesDiscoveryServer
-            );
-        });
+        await RunAsync(info);
 
         return this;
     }

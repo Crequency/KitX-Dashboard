@@ -4,7 +4,7 @@ using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
 using Common.Update.Checker;
 using KitX.Dashboard.Converters;
-using KitX.Dashboard.Network;
+using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Dashboard.Services;
 using KitX.Shared.Device;
 using MsBox.Avalonia;

@@ -4,8 +4,6 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
-using KitX.Dashboard.Views.Pages.Controls;
-using ReactiveUI;
 using Serilog;
 using SharpHook.Native;
 using System;
@@ -44,38 +42,47 @@ public partial class PluginsLaunchWindow : Window
             }
         }
 
+        LostFocus += (_, _) =>
+        {
+            Hide();
+
+            OnHideAction?.Invoke();
+        };
+
         RegisterGlobalHotKey();
     }
 
     private void RegisterGlobalHotKey()
     {
-        Instances.KeyHookManager?.RegisterHotKeyHandler("", codes =>
+        Instances.KeyHookManager?.RegisterHotKeyHandler(nameof(PluginsLaunchWindow), codes =>
         {
             var count = codes.Length;
 
             var tmpList = codes;
 
-            if (count >= 3 &&
-            tmpList[count - 3] == KeyCode.VcLeftControl &&
-            tmpList[count - 2] == KeyCode.VcLeftMeta &&
-            tmpList[count - 1] == KeyCode.VcC)
+            if (count < 3) return;
+
+            if (tmpList[count - 3] != KeyCode.VcLeftControl) return;
+
+            if (tmpList[count - 2] != KeyCode.VcLeftMeta) return;
+
+            if (tmpList[count - 1] != KeyCode.VcC) return;
+
+            Dispatcher.UIThread.Post(() =>
             {
-                Dispatcher.UIThread.Post(() =>
+                if (pluginsLaunchWindowDisplayed)
                 {
-                    if (pluginsLaunchWindowDisplayed)
-                    {
-                        Activate();
+                    Activate();
 
-                        Focus();
-                    }
-                    else
-                    {
-                        Show();
-                    }
+                    Focus();
+                }
+                else
+                {
+                    Show();
+                }
 
-                    pluginsLaunchWindowDisplayed = true;
-                });
-            }
+                pluginsLaunchWindowDisplayed = true;
+            });
         });
     }
 
@@ -86,8 +93,7 @@ public partial class PluginsLaunchWindow : Window
         return this;
     }
 
-    private void PluginsLaunchWindow_PointerPressed(object? sender, PointerPressedEventArgs e)
-        => BeginMoveDrag(e);
+    private void PluginsLaunchWindow_PointerPressed(object? sender, PointerPressedEventArgs e) => BeginMoveDrag(e);
 
     private void PluginsLaunchWindow_KeyDown(object? sender, KeyEventArgs e)
     {

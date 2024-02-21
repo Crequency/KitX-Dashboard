@@ -12,8 +12,6 @@
 
     <Application.Resources>
         <ResourceDictionary>
-            <x:String x:Key="TrayIconText">KitX</x:String>
-
             <SolidColorBrush x:Key="ThemePrimaryAccent" Color="#FF3873D9"/>
             <SolidColorBrush x:Key="ThemePrimaryAccentTransparentAA" Color="#AA3873D9"/>
             <SolidColorBrush x:Key="ThemePrimaryAccentTransparentBB" Color="#BB3873D9"/>
@@ -53,12 +51,13 @@
             <TrayIcon Command="{Binding TrayIconClickedCommand}"
                       Icon="resm:KitX.Dashboard.Assets.KitX-Icon-256x256.ico"
                       IsVisible="True"
-                      ToolTipText="{DynamicResource TrayIconText}">
+                      ToolTipText="{Binding TrayIconText}">
                 <TrayIcon.Menu>
                     <NativeMenu>
                         <NativeMenuItem Command="{Binding TrayIconClickedCommand}" Header="{DynamicResource Text_Public_ShowMainWindow}"/>
-                        <NativeMenuItem Command="{Binding ViewLatestAnnouncementsCommand}" Header="{DynamicResource Text_Public_ShowAnnouncements}"/>
                         <NativeMenuItem Command="{Binding PluginLauncherCommand}" Header="{DynamicResource Text_Public_ShowLauncherWindow}"/>
+                        <NativeMenuItemSeparator/>
+                        <NativeMenuItem Command="{Binding ViewLatestAnnouncementsCommand}" Header="{DynamicResource Text_Public_ShowAnnouncements}"/>
                         <NativeMenuItemSeparator/>
                         <NativeMenuItem Command="{Binding ExitCommand}" Header="{DynamicResource Text_Public_Exit}"/>
                     </NativeMenu>

@@ -1,8 +1,7 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Interfaces.Network;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
-using KitX.Dashboard.Views;
+using KitX.Dashboard.Network.PluginsNetwork;
 using KitX.Shared.Device;
 using Serilog;
 using System;
@@ -15,10 +14,14 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KitX.Dashboard.Network;
+namespace KitX.Dashboard.Network.DevicesNetwork;
 
-internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
+public class DevicesDiscoveryServer
 {
+    private static DevicesDiscoveryServer? _instance;
+
+    public static DevicesDiscoveryServer Instance => _instance ??= new DevicesDiscoveryServer();
+
     private static UdpClient? UdpSender = null;
 
     private static UdpClient? UdpReceiver = null;
@@ -112,7 +115,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             .ResetIPv6(NetworkHelper.GetInterNetworkIPv6())
             ;
         DefaultDeviceInfo.PluginsServerPort = ConstantTable.PluginsServerPort;
-        DefaultDeviceInfo.PluginsCount = ViewInstances.PluginCards.Count;
+        DefaultDeviceInfo.PluginsCount = PluginsServer.Instance.PluginConnectors.Count;
         DefaultDeviceInfo.IsMainDevice = ConstantTable.IsMainMachine;
         DefaultDeviceInfo.DevicesServerPort = ConstantTable.DevicesServerPort;
         DefaultDeviceInfo.DevicesServerBuildTime = ConstantTable.ServerBuildTime;
@@ -253,7 +256,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
                     try
                     {
-                        DevicesNetwork.Update(
+                        DevicesManager.Update(
                             JsonSerializer.Deserialize<DeviceInfo>(result)
                         );
                     }
@@ -270,7 +273,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                 Status = ServerStatus.Errored;
             }
 
-            await Stop();
+            await CloseAsync();
 
         }).Start();
     }
@@ -292,7 +295,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         DefaultDeviceInfo = NetworkHelper.GetDeviceInfo();
     }
 
-    public async Task<DevicesDiscoveryServer> Start()
+    public async Task<DevicesDiscoveryServer> RunAsync()
     {
         if (Status != ServerStatus.Pending) return this;
 
@@ -327,7 +330,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(DevicesServer)}.{nameof(Start)}";
+                var location = $"{nameof(DevicesServer)}.{nameof(RunAsync)}";
                 Log.Warning(ex, $"In {location}: {ex.Message}");
             }
         }, nameof(FindSupportNetworkInterfaces));
@@ -347,7 +350,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         return this;
     }
 
-    public async Task<DevicesDiscoveryServer> Stop()
+    public async Task<DevicesDiscoveryServer> CloseAsync()
     {
         if (Status != ServerStatus.Running) return this;
 
@@ -367,9 +370,9 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     {
         await Task.Run(async () =>
         {
-            await Stop();
+            await CloseAsync();
 
-            await Start();
+            await RunAsync();
         });
 
         return this;
@@ -414,6 +417,6 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         UdpSender?.Dispose();
         UdpReceiver?.Dispose();
 
-        GC.SuppressFinalize(this);
+        GC.Collect();
     }
 }

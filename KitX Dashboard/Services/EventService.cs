@@ -6,6 +6,22 @@ namespace KitX.Dashboard.Services;
 
 public static class EventService
 {
+    public static void Invoke(string eventName, object[]? objects = null)
+    {
+        var type = typeof(EventService);
+
+        var eventField = type.GetField(eventName, BindingFlags.Static | BindingFlags.NonPublic);
+
+        if (eventField is null || !typeof(Delegate).IsAssignableFrom(eventField.FieldType))
+        {
+            throw new ArgumentException($"No event found with the name '{eventName}'.", nameof(eventName));
+        }
+
+        var @delegate = eventField.GetValue(null) as Delegate;
+
+        @delegate?.DynamicInvoke(objects);
+    }
+
     public delegate void LanguageChangedHandler();
 
     public static event LanguageChangedHandler LanguageChanged = new(() => { });
@@ -51,9 +67,9 @@ public static class EventService
     public static event UseStatisticsChangedHandler UseStatisticsChanged = new(() => { });
 
 
-    public delegate void PluginsServerPortChangedHandler();
+    public delegate void PluginsServerPortChangedHandler(int port);
 
-    public static event PluginsServerPortChangedHandler PluginsServerPortChanged = new(() => { });
+    public static event PluginsServerPortChangedHandler PluginsServerPortChanged = new(port => ConstantTable.PluginsServerPort = port);
 
 
     public delegate void DevicesServerPortChangedHandler();
@@ -79,20 +95,4 @@ public static class EventService
     public delegate void OnConfigHotReloadedHandler();
 
     public static event OnConfigHotReloadedHandler OnConfigHotReloaded = new(() => { });
-
-    public static void Invoke(string eventName, object[]? objects = null)
-    {
-        var type = typeof(EventService);
-
-        var eventField = type.GetField(eventName, BindingFlags.Static | BindingFlags.NonPublic);
-
-        if (eventField is null || !typeof(Delegate).IsAssignableFrom(eventField.FieldType))
-        {
-            throw new ArgumentException($"No event found with the name '{eventName}'.", nameof(eventName));
-        }
-
-        var @delegate = eventField.GetValue(null) as Delegate;
-
-        @delegate?.DynamicInvoke(objects);
-    }
 }

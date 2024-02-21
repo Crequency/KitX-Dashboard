@@ -1,5 +1,6 @@
 ﻿using Avalonia.Threading;
-using KitX.Dashboard.Managers;
+using KitX.Dashboard.Network;
+using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
@@ -7,12 +8,13 @@ using KitX.Shared.Device;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using Timer = System.Timers.Timer;
 
-namespace KitX.Dashboard.Network;
+namespace KitX.Dashboard.Managers;
 
-internal class DevicesNetwork
+internal class DevicesManager
 {
     internal static DevicesServer? devicesServer = null;
 
@@ -38,9 +40,13 @@ internal class DevicesNetwork
 
                 Watch4MainDevice();
 
-                Log.Information($"In DevicesService: Watched earlier built server. " +
-                    $"DeviceServerAddress: {dis.Device.IPv4}:{dis.DevicesServerPort} " +
-                    $"DeviceServerBuildTime: {dis.DevicesServerBuildTime}");
+                Log.Information(
+                    new StringBuilder()
+                        .AppendLine("Watched earlier built server.")
+                        .AppendLine($"DevicesServerAddress: {dis.Device.IPv4}:{dis.DevicesServerPort} ")
+                        .AppendLine($"DevicesServerBuildTime: {dis.DevicesServerBuildTime}")
+                        .ToString()
+                );
             }
         };
     }
@@ -173,7 +179,7 @@ internal class DevicesNetwork
 
     private static void KeepCheckAndRemove()
     {
-        var location = $"{nameof(DevicesNetwork)}.{nameof(KeepCheckAndRemove)}";
+        var location = $"{nameof(DevicesManager)}.{nameof(KeepCheckAndRemove)}";
 
         var timer = new Timer()
         {
@@ -232,7 +238,7 @@ internal class DevicesNetwork
 
     internal static void Watch4MainDevice()
     {
-        var location = $"{nameof(DevicesNetwork)}.{nameof(Watch4MainDevice)}";
+        var location = $"{nameof(DevicesManager)}.{nameof(Watch4MainDevice)}";
 
         new Thread(() =>
         {
@@ -297,7 +303,7 @@ internal class DevicesNetwork
 
     internal static async void WatchingOver(bool foundMainDevice, string serverAddress, int serverPort)
     {
-        var location = $"{nameof(DevicesNetwork)}.{nameof(WatchingOver)}";
+        var location = $"{nameof(DevicesManager)}.{nameof(WatchingOver)}";
 
         Log.Information($"In {location}: " +
             $"{nameof(foundMainDevice)} -> {foundMainDevice}, " +

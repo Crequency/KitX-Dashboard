@@ -1,6 +1,6 @@
 ﻿namespace KitX.Dashboard.Network;
 
-internal enum ServerStatus
+public enum ServerStatus
 {
     Unknown = 0,
 
@@ -15,7 +15,7 @@ internal enum ServerStatus
     Errored = 5,
 }
 
-internal enum ClientStatus
+public enum ClientStatus
 {
     Unknown = 0,
 

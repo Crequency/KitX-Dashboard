@@ -76,34 +76,36 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             PluginBars.Clear();
 
-            lock (PluginsNetwork.PluginsListOperationLock)
-            {
-                foreach (var item in PluginsManager.Plugins)
-                {
-                    try
-                    {
-                        var plugin = new Plugin()
-                        {
-                            InstallPath = item.InstallPath,
-                            PluginDetails = JsonSerializer.Deserialize<PluginInfo>(
-                                File.ReadAllText(
-                                    Path.GetFullPath($"{item.InstallPath}/PluginInfo.json")
-                                )
-                            ),
-                            RequiredLoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
-                                File.ReadAllText(
-                                    Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json")
-                                )
-                            ),
-                            InstalledDevices = []
-                        };
+            //lock (PluginsNetwork.PluginsListOperationLock)
+            //{
 
-                        PluginBars.Add(new(plugin, ref pluginBars));
-                    }
-                    catch (Exception ex)
+            //}
+
+            foreach (var item in PluginsManager.Plugins)
+            {
+                try
+                {
+                    var plugin = new Plugin()
                     {
-                        Log.Error(ex, "In RefreshPlugins()");
-                    }
+                        InstallPath = item.InstallPath,
+                        PluginDetails = JsonSerializer.Deserialize<PluginInfo>(
+                            File.ReadAllText(
+                                Path.GetFullPath($"{item.InstallPath}/PluginInfo.json")
+                            )
+                        ),
+                        RequiredLoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
+                            File.ReadAllText(
+                                Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json")
+                            )
+                        ),
+                        InstalledDevices = []
+                    };
+
+                    PluginBars.Add(new(plugin, ref pluginBars));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "In RefreshPlugins()");
                 }
             }
         });

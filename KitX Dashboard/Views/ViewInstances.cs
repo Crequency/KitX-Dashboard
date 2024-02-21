@@ -1,7 +1,9 @@
 ﻿using Avalonia.Controls;
 using FluentAvalonia.Styling;
+using KitX.Dashboard.Network.PluginsNetwork;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views.Pages.Controls;
+using KitX.Shared.Plugin;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -11,7 +13,9 @@ public static class ViewInstances
 {
     public static PluginsLaunchWindow? PluginsLaunchWindow { get; set; }
 
-    public static ObservableCollection<PluginCard> PluginCards { get; set; } = [];
+    public static ObservableCollection<PluginConnector> PluginConnectors => PluginsServer.Instance.PluginConnectors;
+
+    public static ObservableCollection<PluginInfo> PluginInfos { get; set; } = [];
 
     public static ObservableCollection<DeviceCard> DeviceCards { get; set; } = [];
 

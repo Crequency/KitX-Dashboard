@@ -1,9 +1,10 @@
 ﻿using Common.BasicHelper.Core.TaskSystem;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard;
 using KitX.Dashboard.Managers;
 using LiteDB;
 using System.Linq;
+
+namespace KitX.Dashboard;
 
 public static class Instances
 {
@@ -29,27 +30,27 @@ public static class Instances
         {
             TasksManager.RunTask(
                 () => SignalTasksManager = new(),
-                location.Append(nameof(SignalTasksManager)),
+                location.Append("." + nameof(SignalTasksManager)),
                 catchException: true
             );
 
             TasksManager.RunTask(
                 () => CacheManager = new(),
-                location.Append(nameof(CacheManager)),
+                location.Append("." + nameof(CacheManager)),
                 catchException: true
             );
 
-            //TasksManager.RunTask(
-            //    () => KeyHookManager = new KeyHookManager().Hook(),
-            //    location.Append(nameof(KeyHookManager)),
-            //    catchException: true
-            //);
+            TasksManager.RunTask(
+                () => KeyHookManager = new KeyHookManager().Hook(),
+                location.Append("." + nameof(KeyHookManager)),
+                catchException: true
+            );
 
             TasksManager.RunTask(() =>
             {
                 if (ConstantTable.EnabledConfigFileHotReload)
                     FileWatcherManager = new();
-            }, location.Append(nameof(FileWatcherManager)), catchException: true);
+            }, location.Append("." + nameof(FileWatcherManager)), catchException: true);
         }, location, catchException: true);
     }
 }

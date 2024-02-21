@@ -19,20 +19,18 @@ public partial class PluginDetailWindow : Window
 
         InitializeComponent();
 
-        Resources["ThisWindow"] = this;
+        var screen = Screens.ScreenFromWindow(this);
 
-        if (Screens.Primary is not null)
+        if (screen is not null)
         {
             var suggest = Resolution.Suggest(
                 Resolution.Parse("2560x1440"),
                 Resolution.Parse("820x500"),
-                Resolution.Parse(
-                    $"{Screens.Primary.Bounds.Width}x{Screens.Primary.Bounds.Height}"
-                )
+                Resolution.Parse($"{screen.Bounds.Width}x{screen.Bounds.Height}")
             ).Integerization();
 
-            Width = suggest.Width ?? 820;
-            Height = suggest.Height ?? 500;
+            if (suggest is not null)
+                ClientSize = new(suggest.Width ?? 820, suggest.Height ?? 500);
         }
 
         if (OperatingSystem.IsWindows() == false)

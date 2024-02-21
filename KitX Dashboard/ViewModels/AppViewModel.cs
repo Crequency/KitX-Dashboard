@@ -4,7 +4,6 @@ using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using ReactiveUI;
-using System.ComponentModel;
 using System.Reactive;
 using System.Reflection;
 using System.Text;
@@ -14,8 +13,6 @@ namespace KitX.Dashboard.ViewModels;
 
 internal class AppViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     public AppViewModel()
     {
         InitCommands();
@@ -50,14 +47,9 @@ internal class AppViewModel : ViewModelBase
 
         PluginLauncherCommand = ReactiveCommand.Create(() =>
         {
+            ViewInstances.PluginsLaunchWindow ??= new();
+
             var win = ViewInstances.PluginsLaunchWindow;
-
-            if (win is null)
-            {
-                win = new PluginsLaunchWindow();
-
-                ViewInstances.PluginsLaunchWindow = win;
-            }
 
             if (win.IsVisible)
             {
@@ -87,45 +79,48 @@ internal class AppViewModel : ViewModelBase
     {
         ViewInstances.DeviceCards.CollectionChanged += (_, _) => UpdateTrayIconText();
 
-        ViewInstances.PluginCards.CollectionChanged += (_, _) => UpdateTrayIconText();
+        ViewInstances.PluginConnectors.CollectionChanged += (_, _) => UpdateTrayIconText();
     }
 
-    private static void UpdateTrayIconText()
+    private void UpdateTrayIconText()
     {
-        if (Application.Current is not null)
-            Application.Current.Resources[nameof(TrayIconText)] = TrayIconText;
+        var sb = new StringBuilder();
+
+        sb.AppendLine(
+            FetchStringFromResource(Application.Current, "Text_MainWindow_Title") ?? "KitX"
+        );
+
+        sb.AppendLine($"v{Assembly.GetEntryAssembly()?.GetName().Version}");
+
+        sb.AppendLine();
+
+        sb.AppendLine(
+            $"{ViewInstances.DeviceCards.Count} " +
+            $"{FetchStringFromResource(Application.Current, "Text_Device_Tip_Detected")}"
+        );
+
+        sb.AppendLine(
+            $"{ViewInstances.PluginConnectors.Count} " +
+            $"{FetchStringFromResource(Application.Current, "Text_Lib_Tip_Connected")}"
+        );
+
+        sb.AppendLine();
+
+        sb.Append("Hello, World!");
+
+        TrayIconText = sb.ToString();
     }
 
-    internal static string TrayIconText
+    internal string trayIconText = "";
+
+    internal string TrayIconText
     {
-        get
-        {
-            var sb = new StringBuilder();
-
-            sb.AppendLine(
-                FetchStringFromResource(Application.Current, "Text_MainWindow_Title") ?? "KitX"
-            );
-
-            sb.AppendLine($"v{Assembly.GetEntryAssembly()?.GetName().Version}");
-
-            sb.AppendLine();
-
-            sb.AppendLine(
-                $"{ViewInstances.DeviceCards.Count} " +
-                $"{FetchStringFromResource(Application.Current, "Text_Device_Tip_Detected")}"
-            );
-
-            sb.AppendLine(
-                $"{ViewInstances.PluginCards.Count} " +
-                $"{FetchStringFromResource(Application.Current, "Text_Lib_Tip_Connected")}"
-            );
-
-            sb.AppendLine();
-
-            sb.Append("Hello, World!");
-
-            return sb.ToString();
-        }
+        get => trayIconText;
+        set => this.RaiseAndSetIfChanged(
+            ref trayIconText,
+            value,
+            nameof(TrayIconText)
+        );
     }
 
     internal ReactiveCommand<Unit, Unit>? TrayIconClickedCommand { get; set; }

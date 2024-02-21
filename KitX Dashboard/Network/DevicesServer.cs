@@ -1,5 +1,4 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Interfaces.Network;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using Serilog;
@@ -12,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace KitX.Dashboard.Network;
 
-internal class DevicesServer : IKitXServer<DevicesServer>
+internal class DevicesServer
 {
     private static TcpListener? listener = null;
 
@@ -34,7 +33,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
             status = value;
 
             if (status == ServerStatus.Errored)
-                DevicesNetwork.Restart();
+                DevicesManager.Restart();
         }
     }
 

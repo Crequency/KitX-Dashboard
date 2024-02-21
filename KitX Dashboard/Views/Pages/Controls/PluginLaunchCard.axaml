@@ -1,15 +1,15 @@
 ﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.PluginLaunchCard"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
-             xmlns:icon="using:Material.Icons.Avalonia"
-             xmlns:converters="using:KitX.Dashboard.Converters"
-             Design.Width="600"
-             Design.Height="450"
              Margin="10"
+             Design.Height="450"
+             Design.Width="600"
              mc:Ignorable="d">
     <UserControl.Styles>
         <Style Selector="Image.img:pointerover">
@@ -17,13 +17,11 @@
         </Style>
     </UserControl.Styles>
     <UserControl.Resources>
-        <converters:PluginParamTypeVisibilityConverter x:Key="PluginParamTypeVisibilityConverter"/>
-        <converters:StringOverLengthConverter x:Key="WideString"/>
-        <converters:DisplayNamesLanguageConverter x:Key="DisplayLanguageName"/>
+        <converters:PluginMultiLanguagePropertyConverter x:Key="PluginMultiLanguagePropertyConverter"/>
     </UserControl.Resources>
-    <Expander Margin="5,5" >
+    <Expander Margin="5,5">
         <Expander.Header>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                 <Button x:Name="Imager"
                         Width="50"
                         Height="50"
@@ -38,23 +36,23 @@
                             ClipToBounds="True"
                             CornerRadius="6">
                         <Image Width="40"
-                                Height="40"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Classes="img"
-                                Source="{Binding IconDisplay}"
-                                Stretch="UniformToFill"/>
+                               Height="40"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Classes="img"
+                               Source="{Binding IconDisplay}"
+                               Stretch="UniformToFill"/>
                     </Border>
                 </Button>
                 <TextBlock Margin="45,13,0,0"
-                            FontSize="20"
-                            FontWeight="ExtraBold"
-                            Text="{Binding DisplayName}"
-                            ToolTip.Tip="{Binding DisplayName}"/>
+                           FontSize="20"
+                           FontWeight="ExtraBold"
+                           Text="{Binding DisplayName}"
+                           ToolTip.Tip="{Binding DisplayName}"/>
                 <TextBlock Margin="45,15,0,0"
-                            FontSize="14"
-                            FontWeight="Light"
-                            Text="{Binding Version}"/>
+                           FontSize="14"
+                           FontWeight="Light"
+                           Text="{Binding Version}"/>
             </StackPanel>
         </Expander.Header>
         <ListBox x:Name="Functions">
@@ -66,14 +64,14 @@
             <ItemsControl ItemsSource="{Binding Functions}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Vertical" Background="Azure">
-                            
-                            <TextBlock Text="{Binding DisplayNames, Converter={StaticResource DisplayLanguageName}}"/>
-                            <Button FontSize="14"
-                                    FontWeight="Bold"
+                        <StackPanel Background="Azure" Orientation="Vertical">
+
+                            <TextBlock Text="{Binding DisplayNames, Converter={StaticResource PluginMultiLanguagePropertyConverter}}"/>
+                            <Button Command="{Binding $parent[UserControl].DataContext.LaunchFuncCommand}"
+                                    CommandParameter="{Binding Name}"
                                     Content="{DynamicResource Text_PluginBar_Launch}"
-                                    Command="{Binding $parent[UserControl].DataContext.LaunchFuncCommand}"
-                                    CommandParameter="{Binding Name}"/>
+                                    FontSize="14"
+                                    FontWeight="Bold"/>
                             <ListBox ItemsSource="{Binding Parameters}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
@@ -85,40 +83,36 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0" Grid.Row="0"
+                                                <StackPanel Grid.Row="0"
+                                                            Grid.Column="0"
                                                             VerticalAlignment="Center"
                                                             Orientation="Horizontal">
                                                     <TextBox VerticalContentAlignment="Center"
                                                              FontFamily="{StaticResource SourceHanSans}"
                                                              FontWeight="Bold"
-                                                             IsVisible="{Binding Type,
-                                                                    Converter={StaticResource PluginParamTypeVisibilityConverter},
-                                                                    ConverterParameter=string}"
-                                                             Text="{Binding Value, Mode=TwoWay}" />
+                                                             IsVisible="{Binding !!Type}"
+                                                             Text="{Binding Value, Mode=TwoWay}"/>
                                                     <NumericUpDown VerticalContentAlignment="Center"
-                                                                    FontFamily="{StaticResource SourceHanSans}"
-                                                                    FontWeight="Bold"
-                                                                    IsVisible="{Binding Type,
-                                                                            Converter={StaticResource PluginParamTypeVisibilityConverter},
-                                                                            ConverterParameter=int}"
-                                                                    Value="{Binding Value}" />
+                                                                   FontFamily="{StaticResource SourceHanSans}"
+                                                                   FontWeight="Bold"
+                                                                   IsVisible="{Binding !!Type}"
+                                                                   Value="{Binding Value}"/>
                                                     <ComboBox VerticalContentAlignment="Center"
                                                               FontFamily="{StaticResource SourceHanSans}"
                                                               FontWeight="Bold"
                                                               IsTextSearchEnabled="True"
-                                                              IsVisible="{Binding Type,
-                                                                    Converter={StaticResource PluginParamTypeVisibilityConverter},
-                                                                    ConverterParameter=enum}"
+                                                              IsVisible="{Binding !!Type}"
                                                               ItemsSource="xxx"
                                                               SelectedItem="{Binding Value}"/>
                                                     <icon:MaterialIcon Margin="5,0" Kind="Input"/>
                                                 </StackPanel>
-                                                <Grid Grid.Column="1" Grid.Row="0"
+                                                <Grid Grid.Row="0"
+                                                      Grid.Column="1"
                                                       VerticalAlignment="Center">
                                                     <TextBlock FontFamily="{StaticResource SourceHanSans}"
                                                                FontWeight="Bold"
-                                                               TextAlignment="Center"
                                                                Text="{Binding Name}"
+                                                               TextAlignment="Center"
                                                                ToolTip.Tip="{Binding Name}"/>
                                                 </Grid>
                                             </Grid>
@@ -126,12 +120,12 @@
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                            
+
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-           
+
         </ListBox>
     </Expander>
 </UserControl>
