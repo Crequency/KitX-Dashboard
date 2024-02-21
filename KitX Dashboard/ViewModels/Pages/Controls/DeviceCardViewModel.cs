@@ -26,7 +26,7 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
             DeviceName = DeviceInfo.Device.DeviceName;
             DeviceMacAddress = DeviceInfo.Device.MacAddress.IsNullOrWhiteSpace()
                 ?
-                FetchStringFromResource(Application.Current, "Text_Device_NoMacAddress")
+                Translate("Text_Device_NoMacAddress")
                 :
                 DeviceInfo.Device.MacAddress
                 ;
@@ -52,8 +52,8 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
             IPv6 = DeviceInfo.Device.IPv6;
             PluginsCount = DeviceInfo.PluginsCount.ToString();
             DeviceControlStatus = DeviceInfo.IsMainDevice
-                ? FetchStringFromResource(Application.Current, "Text_Device_Type_Master")
-                : FetchStringFromResource(Application.Current, "Text_Device_Type_Slave");
+                ? Translate("Text_Device_Type_Master")
+                : Translate("Text_Device_Type_Slave");
 
             PropertyChanged?.Invoke(
                 this,

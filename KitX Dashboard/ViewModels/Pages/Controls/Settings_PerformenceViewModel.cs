@@ -356,11 +356,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         }
     }
 
-    private static string GetLogLevelDisplayText(string key) => FetchStringFromResource(
-        Application.Current,
-        key,
-        prefix: "Text_Log_"
-    ) ?? string.Empty;
+    private static string GetLogLevelDisplayText(string key) => Translate(key, prefix: "Text_Log_") ?? string.Empty;
 
     internal static List<SupportedLogLevel> SupportedLogLevels { get; } =
     [

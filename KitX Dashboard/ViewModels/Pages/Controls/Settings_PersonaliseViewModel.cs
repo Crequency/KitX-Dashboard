@@ -125,11 +125,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         set => themeColor = value;
     }
 
-    private static string GetThemeDisplayText(string key) => FetchStringFromResource(
-        Application.Current,
-        key,
-        prefix: "Text_Settings_Personalise_Theme_"
-    ) ?? string.Empty;
+    private static string GetThemeDisplayText(string key) => Translate(key, prefix: "Text_Settings_Personalise_Theme_") ?? string.Empty;
 
     internal static List<SupportedTheme> SupportedThemes { get; } =
     [

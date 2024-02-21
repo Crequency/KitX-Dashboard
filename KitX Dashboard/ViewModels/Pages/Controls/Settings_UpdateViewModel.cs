@@ -126,11 +126,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private static string GetUpdateTip(string key) => FetchStringFromResource(
-        Application.Current,
-        key,
-        prefix: "Text_Settings_Update_Tip_"
-    ) ?? string.Empty;
+    private static string GetUpdateTip(string key) => Translate(key, prefix: "Text_Settings_Update_Tip_") ?? string.Empty;
 
     private static async void DownloadNewComponent(string url, string to, HttpClient client)
     {
@@ -366,12 +362,12 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
             if (updatedComponents.ContainsKey(item.Name))
             {
                 item.CanUpdate = true;
-                item.Task = FetchStringFromResource(Application.Current, "Text_Public_Replace");
+                item.Task = Translate("Text_Public_Replace");
             }
             else if (tdeleteComponents.ContainsKey(item.Name))
             {
                 item.CanUpdate = true;
-                item.Task = FetchStringFromResource(Application.Current, "Text_Public_Delete");
+                item.Task = Translate("Text_Public_Delete");
             }
         }
 
@@ -385,7 +381,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
                 CanUpdate = true,
                 MD5 = latestComponents[item.Key].Item1,
                 SHA1 = latestComponents[item.Key].Item2,
-                Task = FetchStringFromResource(Application.Current, "Text_Public_Add"),
+                Task = Translate("Text_Public_Add"),
                 Size = GetDisplaySize(item.Value)
             });
         }

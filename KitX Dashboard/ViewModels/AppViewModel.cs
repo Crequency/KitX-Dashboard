@@ -1,5 +1,4 @@
-﻿using Avalonia;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
@@ -79,34 +78,31 @@ internal class AppViewModel : ViewModelBase
     {
         ViewInstances.DeviceCards.CollectionChanged += (_, _) => UpdateTrayIconText();
 
-        ViewInstances.PluginConnectors.CollectionChanged += (_, _) => UpdateTrayIconText();
+        ViewInstances.PluginInfos.CollectionChanged += (_, _) => UpdateTrayIconText();
+
+        EventService.DevicesServerPortChanged += UpdateTrayIconText;
+
+        EventService.DevicesServerPortChanged += UpdateTrayIconText;
     }
 
     private void UpdateTrayIconText()
     {
-        var sb = new StringBuilder();
-
-        sb.AppendLine(
-            FetchStringFromResource(Application.Current, "Text_MainWindow_Title") ?? "KitX"
-        );
-
-        sb.AppendLine($"v{Assembly.GetEntryAssembly()?.GetName().Version}");
-
-        sb.AppendLine();
-
-        sb.AppendLine(
-            $"{ViewInstances.DeviceCards.Count} " +
-            $"{FetchStringFromResource(Application.Current, "Text_Device_Tip_Detected")}"
-        );
-
-        sb.AppendLine(
-            $"{ViewInstances.PluginConnectors.Count} " +
-            $"{FetchStringFromResource(Application.Current, "Text_Lib_Tip_Connected")}"
-        );
-
-        sb.AppendLine();
-
-        sb.Append("Hello, World!");
+        var sb = new StringBuilder()
+            .AppendLine(Translate("Text_MainWindow_Title") ?? "KitX")
+            .AppendLine($"v{Assembly.GetEntryAssembly()?.GetName().Version}")
+            .AppendLine()
+            .Append(Translate("Text_Settings_Performence_Web_DevicesServerPort"))
+            .AppendLine(": " + ConstantTable.DevicesServerPort)
+            .Append(Translate("Text_Settings_Performence_Web_PluginsServerPort"))
+            .AppendLine(": " + ConstantTable.PluginsServerPort)
+            .AppendLine()
+            .Append(ViewInstances.DeviceCards.Count + " ")
+            .AppendLine(Translate("Text_Device_Tip_Detected"))
+            .Append(ViewInstances.PluginInfos.Count + " ")
+            .AppendLine(Translate("Text_Lib_Tip_Connected"))
+            .AppendLine()
+            .Append("Hello, World!")
+            ;
 
         TrayIconText = sb.ToString();
     }
