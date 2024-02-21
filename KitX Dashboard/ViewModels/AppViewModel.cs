@@ -64,6 +64,10 @@ internal class AppViewModel : ViewModelBase
 
         ExitCommand = ReactiveCommand.Create(() =>
         {
+            ViewInstances.DeviceCards.Clear();
+
+            ViewInstances.PluginInfos.Clear();
+
             ConstantTable.Exiting = true;
 
             EventService.Invoke(nameof(EventService.OnExiting));
