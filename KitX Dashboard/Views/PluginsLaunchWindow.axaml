@@ -9,12 +9,12 @@
         xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
         xmlns:vm="using:KitX.Dashboard.ViewModels"
         Title="PluginsLaunchWindow"
-        Width="650"
-        Height="300"
-        MinWidth="650"
-        MinHeight="300"
-        d:DesignHeight="300"
-        d:DesignWidth="650"
+        Width="600"
+        Height="330"
+        MinWidth="600"
+        MinHeight="330"
+        d:DesignHeight="330"
+        d:DesignWidth="600"
         Background="Transparent"
         ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaToDecorationsHint="True"
@@ -62,7 +62,18 @@
             </StackPanel>
         </Grid>
 
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer x:Name="PluginsScrollViewer"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Offset="{Binding ScrollViewerOffset}">
+            <ScrollViewer.Transitions>
+                <Transitions>
+                    <VectorTransition Property="Offset" Duration="0:0:0.2">
+                        <VectorTransition.Easing>
+                            <CubicEaseInOut/>
+                        </VectorTransition.Easing>
+                    </VectorTransition>
+                </Transitions>
+            </ScrollViewer.Transitions>
             <ItemsControl ItemsSource="{Binding PluginInfos}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -93,7 +104,7 @@
                                 <Transitions>
                                     <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1">
                                         <TransformOperationsTransition.Easing>
-                                            <BounceEaseInOut/>
+                                            <CubicEaseInOut/>
                                         </TransformOperationsTransition.Easing>
                                     </TransformOperationsTransition>
                                 </Transitions>

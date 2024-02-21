@@ -96,15 +96,50 @@ public partial class PluginsLaunchWindow : Window
                 Hide();
                 OnHideAction?.Invoke();
                 break;
-            case Key.Right:
-                viewModel.SelectRightOne();
-                break;
             case Key.Left:
-                viewModel.SelectLeftOne();
+                viewModel.SelectLeftOne(
+                    Width,
+                    this.FindControl<ScrollViewer>("PluginsScrollViewer")
+                );
+                break;
+            case Key.Right:
+                viewModel.SelectRightOne(
+                    Width,
+                    this.FindControl<ScrollViewer>("PluginsScrollViewer")
+                );
+                break;
+            case Key.Up:
+                viewModel.SelectUpOne(
+                    Width,
+                    this.FindControl<ScrollViewer>("PluginsScrollViewer")
+                );
+                break;
+            case Key.Down:
+                viewModel.SelectDownOne(
+                    Width,
+                    this.FindControl<ScrollViewer>("PluginsScrollViewer")
+                );
                 break;
             case Key.Enter:
                 viewModel.SelectPluginInfo();
                 break;
+        }
+    }
+
+    protected override void OnResized(WindowResizedEventArgs e)
+    {
+        if (ExperimentalFlags.EnablePluginLaunchWindowWidthSnap)
+        {
+            var basicWidth = 80;
+            var addonWidth = 40;
+            var windowWidth = (int)e.ClientSize.Width;
+            var oneLineCount = (windowWidth - addonWidth) / basicWidth;
+            var left = (windowWidth - addonWidth) % basicWidth;
+
+            if (left < basicWidth / 2)
+                Width = oneLineCount * basicWidth + addonWidth;
+            else
+                Width = (oneLineCount + 1) * basicWidth + addonWidth;
         }
     }
 

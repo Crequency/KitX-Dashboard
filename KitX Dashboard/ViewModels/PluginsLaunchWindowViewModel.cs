@@ -2,6 +2,9 @@
 using KitX.Shared.Plugin;
 using ReactiveUI;
 using System.Collections.ObjectModel;
+using Avalonia;
+using System;
+using Avalonia.Controls;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -87,28 +90,104 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
     public string? SearchingText { get; set; }
 
+    private Vector scrollViewerOffset = new(0, 0);
+
+    public Vector ScrollViewerOffset
+    {
+        get => scrollViewerOffset;
+        set => this.RaiseAndSetIfChanged(ref scrollViewerOffset, value);
+    }
+
+    private void BringSelectedButtonIntoView(int perLineButtonsCount, object? scrollvierwer)
+    {
+        if (scrollvierwer is not ScrollViewer viewer) return;
+
+        var viewerHeight = (int)Math.Floor(viewer?.DesiredSize.Height ?? 240);
+
+        var viewerOffsetY = (int)Math.Floor(viewer?.Offset.Y ?? 0);
+
+        var lineIndex = SelectedPluginIndex / perLineButtonsCount;
+
+        var up = lineIndex * 80;
+
+        var down = up + 80;
+
+        var targetY = lineIndex * 80;
+
+        var condition = (up >= viewerOffsetY && down <= viewerOffsetY + viewerHeight);
+
+        if (condition == false)
+        {
+            ScrollViewerOffset = new(0, targetY);
+        }
+    }
+
     private static bool SelectedPluginIndexInRange(int index) => index >= 0 && index < PluginInfos.Count;
 
-    internal void SelectRightOne()
+    internal void SelectRightOne(double WindowWidth, object? scrollviewer)
     {
+        var perLineCount = (int)Math.Floor((WindowWidth - 40) / 80);
+
         if (SelectedPluginIndexInRange(SelectedPluginIndex + 1))
+        {
             SelectedPluginIndex++;
+
+            BringSelectedButtonIntoView(perLineCount, scrollviewer);
+        }
     }
 
-    internal void SelectLeftOne()
+    internal void SelectLeftOne(double WindowWidth, object? scrollviewer)
     {
+        var perLineCount = (int)Math.Floor((WindowWidth - 40) / 80);
+
         if (SelectedPluginIndexInRange(selectedPluginIndex - 1))
+        {
             SelectedPluginIndex--;
+
+            BringSelectedButtonIntoView(perLineCount, scrollviewer);
+        }
     }
 
-    internal void SelectUpOne()
+    internal void SelectUpOne(double WindowWidth, object? scrollviewer)
     {
+        var perLineCount = (int)Math.Floor((WindowWidth - 40) / 80);
 
+        var targetIndex = SelectedPluginIndex - perLineCount;
+
+        if (SelectedPluginIndexInRange(targetIndex))
+        {
+            SelectedPluginIndex = targetIndex;
+
+            BringSelectedButtonIntoView(perLineCount, scrollviewer);
+        }
     }
 
-    internal void SelectDownOne()
+    internal void SelectDownOne(double WindowWidth, object? scrollviewer)
     {
+        var perLineCount = (int)Math.Floor((WindowWidth - 40) / 80);
 
+        var targetIndex = SelectedPluginIndex + perLineCount;
+
+        if (SelectedPluginIndexInRange(targetIndex))
+        {
+            SelectedPluginIndex = targetIndex;
+
+            BringSelectedButtonIntoView(perLineCount, scrollviewer);
+        }
+        else
+        {
+            targetIndex = PluginInfos.Count - 1;
+
+            if ((targetIndex / perLineCount) - (SelectedPluginIndex / perLineCount) == 0)
+                return;
+
+            if (SelectedPluginIndexInRange(targetIndex))
+            {
+                SelectedPluginIndex = targetIndex;
+
+                BringSelectedButtonIntoView(perLineCount, scrollviewer);
+            }
+        }
     }
 
     internal void SelectPluginInfo()
