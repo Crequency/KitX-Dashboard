@@ -36,7 +36,6 @@
     <Window.Resources>
         <ResourceDictionary>
             <x:String x:Key="GreetingText">Hello, World!</x:String>
-            <Window x:Key="MainWindow"/>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -136,7 +135,7 @@
                     <TextBlock.ContextFlyout>
                         <ui:FAMenuFlyout>
                             <ui:MenuFlyoutItem Command="{Binding RefreshGreetingCommand}"
-                                               CommandParameter="{DynamicResource MainWindow}"
+                                               CommandParameter="{Binding #MainWindowInstance}"
                                                Text="{DynamicResource Text_Public_Refresh}"/>
                         </ui:FAMenuFlyout>
                     </TextBlock.ContextFlyout>

@@ -31,8 +31,6 @@ public partial class MainWindow : Window, IView
 
         ViewInstances.MainWindow = this;
 
-        Resources["MainWindow"] = this;
-
         DataContext = viewModel;
 
         var config = AppConfig.Windows.MainWindow;
@@ -200,10 +198,6 @@ public partial class MainWindow : Window, IView
             AppConfig.Windows.MainWindow.IsHidden = true;
 
             IView.SaveAppConfigChanges();
-        }
-        else
-        {
-            (Resources["TrayIcon"] as TrayIcon)?.Dispose();
         }
     }
 
