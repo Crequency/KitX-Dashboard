@@ -42,13 +42,6 @@ public partial class PluginsLaunchWindow : Window
             }
         }
 
-        LostFocus += (_, _) =>
-        {
-            Hide();
-
-            OnHideAction?.Invoke();
-        };
-
         RegisterGlobalHotKey();
     }
 
@@ -97,8 +90,32 @@ public partial class PluginsLaunchWindow : Window
 
     private void PluginsLaunchWindow_KeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape)
+        switch (e.Key)
         {
+            case Key.Escape:
+                Hide();
+                OnHideAction?.Invoke();
+                break;
+            case Key.Right:
+                viewModel.SelectRightOne();
+                break;
+            case Key.Left:
+                viewModel.SelectLeftOne();
+                break;
+            case Key.Enter:
+                viewModel.SelectPluginInfo();
+                break;
+        }
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+
+        if (!ConstantTable.Exiting)
+        {
+            e.Cancel = true;
+
             Hide();
 
             OnHideAction?.Invoke();

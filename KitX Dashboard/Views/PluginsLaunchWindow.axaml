@@ -1,7 +1,9 @@
 ﻿<Window x:Class="KitX.Dashboard.Views.PluginsLaunchWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="using:KitX.Dashboard.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:icon="using:Material.Icons.Avalonia"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="using:FluentAvalonia.UI.Controls"
         xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
@@ -14,6 +16,7 @@
         d:DesignHeight="300"
         d:DesignWidth="650"
         Background="Transparent"
+        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaToDecorationsHint="True"
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
         KeyDown="PluginsLaunchWindow_KeyDown"
@@ -22,6 +25,12 @@
         TransparencyLevelHint="Mica"
         WindowStartupLocation="CenterScreen"
         mc:Ignorable="d">
+    <Window.Resources>
+        <converters:PluginMultiLanguagePropertyConverter x:Key="PluginMultiLanguagePropertyConverter"/>
+        <converters:PluginInfoTagsFetchConverter x:Key="PluginInfoTagsFetchConverter"/>
+        <converters:Base64ToIconConverter x:Key="Base64ToIconConverter"/>
+        <converters:PluginInfoSelectedConverter x:Key="PluginInfoSelectedConverter"/>
+    </Window.Resources>
     <DockPanel>
         <Grid Height="80"
               Margin="0,10,0,0"
@@ -34,23 +43,84 @@
                              Watermark="{DynamicResource Text_Lib_Search_In_Local}"/>
         </Grid>
 
+        <Border Height="{Binding NoPlugins_TipHeight}" DockPanel.Dock="Top">
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Text="{DynamicResource Text_Lib_Tip_NoPlugin}"/>
+        </Border>
+
         <Grid DockPanel.Dock="Bottom">
             <StackPanel Margin="10" Orientation="Horizontal">
                 <TextBlock Text="{Binding PluginsCount}"/>
                 <TextBlock Margin="5,0,0,0" Text="{DynamicResource Text_Lib_Tip_Connected}"/>
+                <Border Width="20"/>
+                <TextBlock Text="{Binding SelectedPluginInfo.DisplayName, Converter={StaticResource PluginMultiLanguagePropertyConverter}}"/>
+                <Border Width="20"/>
+                <TextBlock Text="{Binding SelectedPluginInfo.Version}"/>
+                <Border Width="20"/>
+                <TextBlock x:Name="SelectedPluginInfoConnectionIdTextBlock" Text="{Binding SelectedPluginInfo.Tags, Converter={StaticResource PluginInfoTagsFetchConverter}, ConverterParameter=ConnectionId}"/>
             </StackPanel>
         </Grid>
 
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="20,0" Orientation="Vertical">
-                <ItemsControl ItemsSource="{Binding PluginLaunchCards}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
-            </StackPanel>
+            <ItemsControl ItemsSource="{Binding PluginInfos}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Margin="20,0" Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Width="60"
+                                Height="60"
+                                Margin="10"
+                                CornerRadius="10"
+                                ToolTip.Tip="{Binding DisplayName, Converter={StaticResource PluginMultiLanguagePropertyConverter}}">
+                            <Classes.selected>
+                                <MultiBinding Converter="{StaticResource PluginInfoSelectedConverter}">
+                                    <Binding Converter="{StaticResource PluginInfoTagsFetchConverter}"
+                                             ConverterParameter="ConnectionId"
+                                             Path="Tags"/>
+                                    <Binding Path="#SelectedPluginInfoConnectionIdTextBlock.Text"/>
+                                </MultiBinding>
+                            </Classes.selected>
+                            <Button.Styles>
+                                <Style Selector="Button.selected">
+                                    <Setter Property="RenderTransform" Value="scale(1.2)"/>
+                                </Style>
+                            </Button.Styles>
+                            <Button.Transitions>
+                                <Transitions>
+                                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1">
+                                        <TransformOperationsTransition.Easing>
+                                            <BounceEaseInOut/>
+                                        </TransformOperationsTransition.Easing>
+                                    </TransformOperationsTransition>
+                                </Transitions>
+                            </Button.Transitions>
+                            <Border Width="50"
+                                    Height="50"
+                                    ClipToBounds="True"
+                                    CornerRadius="6">
+                                <Image x:Name="IconDisplayer"
+                                       Width="50"
+                                       Height="50"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Classes="img"
+                                       Source="{Binding IconInBase64, Converter={StaticResource Base64ToIconConverter}}"
+                                       Stretch="UniformToFill">
+                                    <Image.Styles>
+                                        <Style Selector="Image.img:pointerover">
+                                            <Setter Property="Opacity" Value="0.6"/>
+                                        </Style>
+                                    </Image.Styles>
+                                </Image>
+                            </Border>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </ScrollViewer>
     </DockPanel>
 </Window>
