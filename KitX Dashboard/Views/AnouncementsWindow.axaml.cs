@@ -1,9 +1,7 @@
-﻿using Avalonia;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Common.BasicHelper.Graphics.Screen;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Converters;
-using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
 using KitX.Dashboard.ViewModels;
 using System;
@@ -16,8 +14,6 @@ public partial class AnouncementsWindow : Window, IView
     private readonly AnouncementsWindowViewModel viewModel = new();
 
     private readonly AppConfig appConfig = Instances.ConfigManager.AppConfig;
-
-    private bool closed = false;
 
     public AnouncementsWindow()
     {
@@ -50,17 +46,6 @@ public partial class AnouncementsWindow : Window, IView
             if (WindowState == WindowState.Normal)
                 config.Location = new(left: Position.X, top: Position.Y);
         };
-
-        EventService.OnExiting += () =>
-        {
-            if (!closed)
-                Close();
-        };
-
-#if DEBUG
-        this.AttachDevTools();
-#endif
-
     }
 
     internal AnouncementsWindow UpdateSource(Dictionary<string, string> src)
@@ -73,8 +58,6 @@ public partial class AnouncementsWindow : Window, IView
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         IView.SaveAppConfigChanges();
-
-        closed = true;
 
         base.OnClosing(e);
     }

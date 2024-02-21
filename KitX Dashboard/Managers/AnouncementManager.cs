@@ -1,10 +1,7 @@
 ﻿using Avalonia.Threading;
-using Common.BasicHelper.IO;
-using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Views;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -76,7 +73,7 @@ internal class AnouncementManager
             {
                 var toast = new AnouncementsWindow().UpdateSource(src);
 
-                toast.Show();
+                ViewInstances.ShowWindow(toast);
             });
         }
     }
