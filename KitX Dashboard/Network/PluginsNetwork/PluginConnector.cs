@@ -137,6 +137,8 @@ public class PluginConnector
 
                     ArgumentNullException.ThrowIfNull(PluginInfo, nameof(PluginInfo));
 
+                    ArgumentNullException.ThrowIfNull(PluginInfo.Value.Tags, nameof(PluginInfo.Value.Tags));
+
                     PluginInfo.Value.Tags.Add(nameof(ConnectionId), ConnectionId ?? string.Empty);
                     PluginInfo.Value.Tags.Add(
                         nameof(PluginTagsNames.JoinTime),
