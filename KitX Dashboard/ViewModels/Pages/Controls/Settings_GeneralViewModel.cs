@@ -40,7 +40,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
 
         OpenDebugToolCommand = ReactiveCommand.Create(() =>
         {
-            ViewInstances.ShowWindow(new DebugWindow());
+            ViewInstances.ShowWindow(new DebugWindow(), ViewInstances.MainWindow);
         });
     }
 
