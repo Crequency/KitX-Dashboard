@@ -1,7 +1,7 @@
 ﻿using Fleck;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Services;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -16,9 +16,9 @@ public class PluginsServer : ConfigFetcher
 
     private WebSocketServer? _server;
 
-    private readonly ObservableCollection<PluginConnector> _connectors = [];
+    private readonly List<PluginConnector> _connectors = [];
 
-    public ObservableCollection<PluginConnector> PluginConnectors => _connectors;
+    public List<PluginConnector> PluginConnectors => _connectors;
 
     public PluginsServer()
     {

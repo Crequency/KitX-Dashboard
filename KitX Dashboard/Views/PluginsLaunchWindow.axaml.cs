@@ -18,6 +18,8 @@ public partial class PluginsLaunchWindow : Window
 
     private bool pluginsLaunchWindowDisplayed = false;
 
+    private int? previousSelectedPluginIndex = null;
+
     public PluginsLaunchWindow()
     {
         var location = $"{nameof(PluginsLaunchWindow)}.ctor";
@@ -26,7 +28,7 @@ public partial class PluginsLaunchWindow : Window
 
         DataContext = viewModel;
 
-        OnHide(() => pluginsLaunchWindowDisplayed = false);
+        OnHideAction = () => pluginsLaunchWindowDisplayed = false;
 
         EventService.OnExiting += Close;
 
@@ -42,7 +44,53 @@ public partial class PluginsLaunchWindow : Window
             }
         }
 
+        if (this.FindControl<AutoCompleteBox>("MainAutoCompleteBox") is AutoCompleteBox box)
+        {
+            //box.AttachedToVisualTree += (_, _) => box.Focus();
+            //box.TextChanged += (_, _) =>
+            //{
+            //    if (box.Text?.Equals("`") ?? false)
+            //        box.Text = "";
+            //};
+            //box.KeyDown += (_, e) =>
+            //{
+            //    if (e.PhysicalKey == PhysicalKey.Backquote)
+            //        e.Handled = true;
+            //};
+        }
+
+        if (this.FindControl<ScrollViewer>("PluginsScrollViewer") is ScrollViewer viewer)
+        {
+            viewer.KeyDown += PluginsScrollViewer_KeyDown;
+        }
+
         RegisterGlobalHotKey();
+    }
+
+    private void PluginsScrollViewer_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (sender is not ScrollViewer viewer) return;
+
+        if (viewer.IsFocused == false) return;
+
+        switch (e.Key)
+        {
+            case Key.Left:
+                viewModel.SelectLeftOne(Width, sender);
+                break;
+            case Key.Right:
+                viewModel.SelectRightOne(Width, sender);
+                break;
+            case Key.Up:
+                viewModel.SelectUpOne(Width, sender);
+                break;
+            case Key.Down:
+                viewModel.SelectDownOne(Width, sender);
+                break;
+            case Key.Enter:
+                viewModel.SelectPluginInfo();
+                break;
+        }
     }
 
     private void RegisterGlobalHotKey()
@@ -79,51 +127,59 @@ public partial class PluginsLaunchWindow : Window
         });
     }
 
-    public PluginsLaunchWindow OnHide(Action onHideAction)
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        OnHideAction = onHideAction;
+        BeginMoveDrag(e);
 
-        return this;
+        base.OnPointerPressed(e);
     }
 
-    private void PluginsLaunchWindow_PointerPressed(object? sender, PointerPressedEventArgs e) => BeginMoveDrag(e);
-
-    private void PluginsLaunchWindow_KeyDown(object? sender, KeyEventArgs e)
+    protected override void OnKeyDown(KeyEventArgs e)
     {
         switch (e.Key)
         {
+            case Key.Tab:
+                e.Handled = true;
+                break;
             case Key.Escape:
                 Hide();
                 OnHideAction?.Invoke();
                 break;
-            case Key.Left:
-                viewModel.SelectLeftOne(
-                    Width,
-                    this.FindControl<ScrollViewer>("PluginsScrollViewer")
-                );
-                break;
-            case Key.Right:
-                viewModel.SelectRightOne(
-                    Width,
-                    this.FindControl<ScrollViewer>("PluginsScrollViewer")
-                );
-                break;
-            case Key.Up:
-                viewModel.SelectUpOne(
-                    Width,
-                    this.FindControl<ScrollViewer>("PluginsScrollViewer")
-                );
-                break;
-            case Key.Down:
-                viewModel.SelectDownOne(
-                    Width,
-                    this.FindControl<ScrollViewer>("PluginsScrollViewer")
-                );
-                break;
-            case Key.Enter:
-                viewModel.SelectPluginInfo();
+        }
+
+        switch (e.PhysicalKey)
+        {
+            case PhysicalKey.Backquote:
+                if (viewModel.SelectedPluginIndex == -1)
+                {
+                    viewModel.SelectedPluginIndex = previousSelectedPluginIndex ?? 0;
+
+                    if (this.FindControl<ScrollViewer>("PluginsScrollViewer") is ScrollViewer viewer)
+                        viewer.Focus();
+                }
+                else
+                {
+                    previousSelectedPluginIndex = viewModel.SelectedPluginIndex;
+
+                    viewModel.SelectedPluginIndex = -1;
+
+                    if (this.FindControl<AutoCompleteBox>("MainAutoCompleteBox") is AutoCompleteBox box)
+                        box.Focus();
+                }
+                e.Handled = true;
                 break;
         }
+
+        base.OnKeyDown(e);
+    }
+
+    protected override void OnGotFocus(GotFocusEventArgs e)
+    {
+        base.OnGotFocus(e);
+
+        //if (viewModel.SelectedPluginIndex == -1)
+        //    if (this.FindControl<AutoCompleteBox>("MainAutoCompleteBox") is AutoCompleteBox box)
+        //        box.Focus();
     }
 
     protected override void OnResized(WindowResizedEventArgs e)
@@ -141,12 +197,12 @@ public partial class PluginsLaunchWindow : Window
             else
                 Width = (oneLineCount + 1) * basicWidth + addonWidth;
         }
+
+        base.OnResized(e);
     }
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
-        base.OnClosing(e);
-
         if (!ConstantTable.Exiting)
         {
             e.Cancel = true;
@@ -155,5 +211,7 @@ public partial class PluginsLaunchWindow : Window
 
             OnHideAction?.Invoke();
         }
+
+        base.OnClosing(e);
     }
 }

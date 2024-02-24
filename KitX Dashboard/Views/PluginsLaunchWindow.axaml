@@ -19,8 +19,6 @@
         ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaToDecorationsHint="True"
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
-        KeyDown="PluginsLaunchWindow_KeyDown"
-        PointerPressed="PluginsLaunchWindow_PointerPressed"
         Topmost="True"
         TransparencyLevelHint="Mica"
         WindowStartupLocation="CenterScreen"
@@ -35,10 +33,14 @@
         <Grid Height="80"
               Margin="0,10,0,0"
               DockPanel.Dock="Top">
-            <AutoCompleteBox Width="400"
+            <AutoCompleteBox x:Name="MainAutoCompleteBox"
+                             Width="400"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"
+                             FilterMode="Contains"
+                             Focusable="True"
                              IsTextCompletionEnabled="True"
+                             ItemsSource="{Binding SearchItems}"
                              Text="{Binding SearchingText}"
                              Watermark="{DynamicResource Text_Lib_Search_In_Local}"/>
         </Grid>
@@ -63,6 +65,7 @@
         </Grid>
 
         <ScrollViewer x:Name="PluginsScrollViewer"
+                      Focusable="True"
                       HorizontalScrollBarVisibility="Disabled"
                       Offset="{Binding ScrollViewerOffset}">
             <ScrollViewer.Transitions>
@@ -98,6 +101,7 @@
                             <Button.Styles>
                                 <Style Selector="Button.selected">
                                     <Setter Property="RenderTransform" Value="scale(1.2)"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
                                 </Style>
                             </Button.Styles>
                             <Button.Transitions>
@@ -107,6 +111,11 @@
                                             <CubicEaseInOut/>
                                         </TransformOperationsTransition.Easing>
                                     </TransformOperationsTransition>
+                                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25">
+                                        <BrushTransition.Easing>
+                                            <CubicEaseInOut/>
+                                        </BrushTransition.Easing>
+                                    </BrushTransition>
                                 </Transitions>
                             </Button.Transitions>
                             <Border Width="50"

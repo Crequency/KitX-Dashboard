@@ -1,7 +1,7 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
-using KitX.Dashboard.Network.PluginsNetwork;
+using KitX.Dashboard.Views;
 using KitX.Shared.Device;
 using Serilog;
 using System;
@@ -115,7 +115,7 @@ public class DevicesDiscoveryServer
             .ResetIPv6(NetworkHelper.GetInterNetworkIPv6())
             ;
         DefaultDeviceInfo.PluginsServerPort = ConstantTable.PluginsServerPort;
-        DefaultDeviceInfo.PluginsCount = PluginsServer.Instance.PluginConnectors.Count;
+        DefaultDeviceInfo.PluginsCount = ViewInstances.PluginInfos.Count;
         DefaultDeviceInfo.IsMainDevice = ConstantTable.IsMainMachine;
         DefaultDeviceInfo.DevicesServerPort = ConstantTable.DevicesServerPort;
         DefaultDeviceInfo.DevicesServerBuildTime = ConstantTable.ServerBuildTime;
@@ -230,7 +230,7 @@ public class DevicesDiscoveryServer
     {
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastReceive)}";
 
-        IPEndPoint multicast = new(IPAddress.Any, 0);
+        var multicast = new IPEndPoint(IPAddress.Any, 0);
         UdpReceiver?.Client.SetSocketOption(
             SocketOptionLevel.Socket,
             SocketOptionName.ReuseAddress,

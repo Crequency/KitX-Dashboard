@@ -1,10 +1,12 @@
-﻿using KitX.Dashboard.Views;
+﻿using Avalonia;
+using Avalonia.Controls;
+using KitX.Dashboard.Views;
 using KitX.Shared.Plugin;
 using ReactiveUI;
-using System.Collections.ObjectModel;
-using Avalonia;
 using System;
-using Avalonia.Controls;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -27,6 +29,8 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         PluginInfos.CollectionChanged += (_, _) =>
         {
             PluginsCount = $"{PluginInfos.Count}";
+
+            this.RaisePropertyChanged(nameof(SearchItems));
         };
     }
 
@@ -45,7 +49,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
     public static double NoPlugins_TipHeight => PluginInfos.Count == 0 ? 40 : 0;
 
-    private int selectedPluginIndex = 0;
+    private int selectedPluginIndex = -1;
 
     public int SelectedPluginIndex
     {
@@ -59,7 +63,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
     public PluginInfo? SelectedPluginInfo
     {
-        get => (SelectedPluginIndex >= 0 && SelectedPluginIndex < PluginInfos.Count) ? PluginInfos[SelectedPluginIndex] : null;
+        get => SelectedPluginIndexInRange(SelectedPluginIndex) ? PluginInfos[SelectedPluginIndex] : null;
         set
         {
             if (value is null) return;
@@ -87,6 +91,17 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
     }
 
     public static ObservableCollection<PluginInfo> PluginInfos => ViewInstances.PluginInfos;
+
+    public static IEnumerable<string> SearchItems => PluginInfos.Select(x => x.Name).Distinct();
+    //.Concat(
+    //    PluginInfos.SelectMany(
+    //        x => x.SimpleDescription.Select(x => x.Value)
+    //    )
+    //).Concat(
+    //    PluginInfos.SelectMany(
+    //        x => x.ComplexDescription.Select(x => x.Value)
+    //    )
+    //).Distinct();
 
     public string? SearchingText { get; set; }
 
