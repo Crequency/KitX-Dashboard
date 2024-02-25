@@ -1,5 +1,4 @@
-﻿using Avalonia;
-using KitX.Dashboard.Configuration;
+﻿using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.Reactive;
@@ -8,8 +7,6 @@ namespace KitX.Dashboard.ViewModels;
 
 internal class MainWindowViewModel : ViewModelBase
 {
-    private static AppConfig AppConfig => Instances.ConfigManager.AppConfig;
-
     public MainWindowViewModel()
     {
         InitCommands();

@@ -14,8 +14,6 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 {
     public new event PropertyChangedEventHandler? PropertyChanged;
 
-    private static AppConfig AppConfig => Instances.ConfigManager.AppConfig;
-
     public AnouncementsWindowViewModel()
     {
         InitCommands();
