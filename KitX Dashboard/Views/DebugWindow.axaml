@@ -1,0 +1,63 @@
+﻿<Window x:Class="KitX.Dashboard.Views.DebugWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+        xmlns:converters="using:KitX.Dashboard.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:progRing="clr-namespace:AvaloniaProgressRing;assembly=AvaloniaProgressRing"
+        Title="Debug Window"
+        Width="800"
+        Height="600"
+        d:DesignHeight="450"
+        d:DesignWidth="800"
+        Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
+        TransparencyLevelHint="Mica"
+        WindowStartupLocation="CenterOwner"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <converters:AvaloniaEditDocumentStringConverter x:Key="AvaloniaEditDocumentStringConverter"/>
+    </Window.Resources>
+    <DockPanel>
+        <StackPanel Margin="20,10"
+                    DockPanel.Dock="Top"
+                    Orientation="Horizontal">
+            <Button Margin="10,0"
+                    Command="{Binding SubmitCodesCommand}"
+                    CommandParameter="{Binding #CodeEditor.Document}"
+                    Content="Run (F5)"
+                    HotKey="F5"/>
+            <Button Margin="10,0"
+                    Command="{Binding CancelExecutionCommand}"
+                    Content="Cancel (F6)"
+                    HotKey="F6"
+                    IsVisible="{Binding IsExecuting}"/>
+            <progRing:ProgressRing Width="20"
+                                   Height="20"
+                                   Margin="10,0"
+                                   VerticalAlignment="Center"
+                                   IsActive="{Binding IsExecuting}"/>
+        </StackPanel>
+        <Grid RowDefinitions="7*, 4, 3*">
+            <AvaloniaEdit:TextEditor x:Name="CodeEditor"
+                                     Grid.Row="0"
+                                     Margin="30,10"
+                                     FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
+                                     FontSize="14"
+                                     FontWeight="Light"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     ShowLineNumbers="True"
+                                     VerticalScrollBarVisibility="Visible"/>
+            <GridSplitter Grid.Row="1" ResizeDirection="Rows"/>
+            <AvaloniaEdit:TextEditor x:Name="OutputEditor"
+                                     Grid.Row="2"
+                                     Margin="30,10,30,30"
+                                     Document="{Binding ExecutionResult, Converter={StaticResource AvaloniaEditDocumentStringConverter}}"
+                                     FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
+                                     FontSize="14"
+                                     FontWeight="Light"
+                                     IsReadOnly="True"
+                                     ShowLineNumbers="True"/>
+        </Grid>
+    </DockPanel>
+</Window>

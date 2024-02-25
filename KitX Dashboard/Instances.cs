@@ -1,29 +1,56 @@
 ﻿using Common.BasicHelper.Core.TaskSystem;
+using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Managers;
-using KitX.Dashboard.Views;
-using KitX.Dashboard.Views.Pages.Controls;
 using LiteDB;
-using System.Collections.ObjectModel;
+using System.Linq;
 
-internal class Instances
+namespace KitX.Dashboard;
+
+public static class Instances
 {
-    internal static SignalTasksManager? SignalTasksManager;
+    public static SignalTasksManager? SignalTasksManager { get; set; }
 
-    internal static WebManager? WebManager;
+    public static WebManager? WebManager { get; set; }
 
-    internal static FileWatcherManager? FileWatcherManager;
+    public static FileWatcherManager? FileWatcherManager { get; set; }
 
-    internal static ObservableCollection<PluginCard> PluginCards = new();
+    public static LiteDatabase? ActivitiesDataBase { get; set; }
 
-    internal static ObservableCollection<DeviceCard> DeviceCards = new();
+    public static CacheManager? CacheManager { get; set; }
 
-    internal static LiteDatabase? ActivitiesDataBase;
+    public static KeyHookManager? KeyHookManager { get; set; }
 
-    internal static CacheManager? CacheManager;
+    public static ConfigManager ConfigManager { get; set; } = new ConfigManager().SetLocation("./Config/").Load();
 
-    internal static HotKeyManager? HotKeyManager;
+    internal static void Initialize()
+    {
+        var location = $"{nameof(Instances)}.{nameof(Initialize)}";
 
-    internal static MainWindow? MainWindow;
+        TasksManager.RunTask(() =>
+        {
+            TasksManager.RunTask(
+                () => SignalTasksManager = new(),
+                location.Append("." + nameof(SignalTasksManager)),
+                catchException: true
+            );
 
-    internal static PluginsLaunchWindow? PluginsLaunchWindow;
+            TasksManager.RunTask(
+                () => CacheManager = new(),
+                location.Append("." + nameof(CacheManager)),
+                catchException: true
+            );
+
+            TasksManager.RunTask(
+                () => KeyHookManager = new KeyHookManager().Hook(),
+                location.Append("." + nameof(KeyHookManager)),
+                catchException: true
+            );
+
+            TasksManager.RunTask(() =>
+            {
+                if (ConstantTable.EnabledConfigFileHotReload)
+                    FileWatcherManager = new();
+            }, location.Append("." + nameof(FileWatcherManager)), catchException: true);
+        }, location, catchException: true);
+    }
 }

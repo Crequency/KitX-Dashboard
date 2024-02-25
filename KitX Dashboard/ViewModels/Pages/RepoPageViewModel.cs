@@ -2,14 +2,17 @@
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Views.Pages;
 using KitX.Dashboard.Views.Pages.Controls;
-using KitX.Web.Rules;
+using KitX.Shared.Loader;
+using KitX.Shared.Plugin;
 using ReactiveUI;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Text.Json;
 using System.Threading;
@@ -18,6 +21,8 @@ namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    private RepoPage? CurrentPage { get; set; }
+
     public new event PropertyChangedEventHandler? PropertyChanged;
 
     public RepoPageViewModel()
@@ -33,24 +38,21 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         RefreshPluginsCommand?.Execute(new());
     }
 
-    private void InitCommands()
+    public override void InitCommands()
     {
         ImportPluginCommand = ReactiveCommand.Create<object?>(async win =>
         {
             if (win is not Window window) return;
 
-            var ofd = new OpenFileDialog()
+            var topLevel = TopLevel.GetTopLevel(CurrentPage!);
+
+            if (topLevel is null) return;
+
+            var files = (await topLevel.StorageProvider.OpenFilePickerAsync(new()
             {
+                Title = "Open KitX Extensions Package File",
                 AllowMultiple = true,
-            };
-
-            ofd.Filters?.Add(new()
-            {
-                Name = "KitX Extensions Packages",
-                Extensions = { "kxp" }
-            });
-
-            var files = await ofd.ShowAsync(window);
+            })).Select(x => x.Path.LocalPath).ToList().ToArray();
 
             if (files is not null && files?.Length > 0)
             {
@@ -74,44 +76,52 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             PluginBars.Clear();
 
-            lock (PluginsNetwork.PluginsListOperationLock)
-            {
-                foreach (var item in PluginsManager.Plugins)
-                {
-                    try
-                    {
-                        var plugin = new Plugin()
-                        {
-                            InstallPath = item.InstallPath,
-                            PluginDetails = JsonSerializer.Deserialize<PluginStruct>(
-                                File.ReadAllText(
-                                    Path.GetFullPath($"{item.InstallPath}/PluginStruct.json")
-                                )
-                            ),
-                            RequiredLoaderStruct = JsonSerializer.Deserialize<LoaderStruct>(
-                                File.ReadAllText(
-                                    Path.GetFullPath($"{item.InstallPath}/LoaderStruct.json")
-                                )
-                            ),
-                            InstalledDevices = new()
-                        };
+            //lock (PluginsNetwork.PluginsListOperationLock)
+            //{
 
-                        PluginBars.Add(new(plugin, ref pluginBars));
-                    }
-                    catch (Exception ex)
+            //}
+
+            foreach (var item in PluginsManager.Plugins)
+            {
+                try
+                {
+                    var plugin = new Plugin()
                     {
-                        Log.Error(ex, "In RefreshPlugins()");
-                    }
+                        InstallPath = item.InstallPath,
+                        PluginDetails = JsonSerializer.Deserialize<PluginInfo>(
+                            File.ReadAllText(
+                                Path.GetFullPath($"{item.InstallPath}/PluginInfo.json")
+                            )
+                        ),
+                        RequiredLoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
+                            File.ReadAllText(
+                                Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json")
+                            )
+                        ),
+                        InstalledDevices = []
+                    };
+
+                    PluginBars.Add(new(plugin, ref pluginBars));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "In RefreshPlugins()");
                 }
             }
         });
     }
 
-    private void InitEvents()
+    internal RepoPageViewModel SetControl(RepoPage control)
     {
-        EventService.ConfigSettingsChanged += () =>
+        CurrentPage = control;
+        return this;
+    }
+
+    public override void InitEvents()
+    {
+        EventService.AppConfigChanged += () =>
         {
-            ImportButtonVisibility = ConfigManager.AppConfig.App.DeveloperSetting;
+            ImportButtonVisibility = Instances.ConfigManager.AppConfig.App.DeveloperSetting;
         };
 
         PluginBars.CollectionChanged += (_, _) =>
@@ -157,10 +167,10 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal bool ImportButtonVisibility
     {
-        get => ConfigManager.AppConfig.App.DeveloperSetting;
+        get => Instances.ConfigManager.AppConfig.App.DeveloperSetting;
         set
         {
-            ConfigManager.AppConfig.App.DeveloperSetting = value;
+            Instances.ConfigManager.AppConfig.App.DeveloperSetting = value;
 
             PropertyChanged?.Invoke(
                 this,
@@ -169,7 +179,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private ObservableCollection<PluginBar> pluginBars = new();
+    private ObservableCollection<PluginBar> pluginBars = [];
 
     internal ObservableCollection<PluginBar> PluginBars
     {

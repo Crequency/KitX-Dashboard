@@ -12,8 +12,6 @@
             <AutoCompleteBox Width="400"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"
-                             FontFamily="{StaticResource SourceHanSans}"
-                             FontWeight="Bold"
                              IsTextCompletionEnabled="True"
                              Text="{Binding SearchingText}"
                              Watermark="{DynamicResource Text_Repo_Search_In_Network}"/>
@@ -21,13 +19,8 @@
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
-                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
-                           Text="{Binding PluginsCount}"/>
-                <TextBlock Margin="5,0,0,0"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
-                           Text="{DynamicResource Text_Repo_Tip_Installed}"/>
+                <TextBlock Text="{Binding PluginsCount}"/>
+                <TextBlock Margin="5,0,0,0" Text="{DynamicResource Text_Repo_Tip_Installed}"/>
             </StackPanel>
 
             <StackPanel Margin="0,0,20,0"
@@ -37,9 +30,7 @@
                 <Button Command="{Binding ImportPluginCommand}"
                         CommandParameter="{DynamicResource MainWindow}"
                         Content="{DynamicResource Text_Public_Import}"
-                        FontFamily="{StaticResource SourceHanSans}"
                         FontSize="14"
-                        FontWeight="Bold"
                         IsVisible="{Binding ImportButtonVisibility}"/>
                 <Button Margin="10,0" Command="{Binding RefreshPluginsCommand}">
                     <icon:MaterialIcon Width="20"
@@ -53,8 +44,6 @@
             <Border Height="{Binding NoPlugins_TipHeight}" DockPanel.Dock="Top">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           FontFamily="{StaticResource SourceHanSans}"
-                           FontWeight="Bold"
                            Text="{DynamicResource Text_Repo_No_Plugin}"/>
             </Border>
             <ScrollViewer>

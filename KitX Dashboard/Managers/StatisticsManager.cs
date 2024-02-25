@@ -1,5 +1,4 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Services;
 using Serilog;
 using System;
@@ -13,7 +12,7 @@ namespace KitX.Dashboard.Managers;
 
 internal class StatisticsManager
 {
-    internal static Dictionary<string, double>? UseStatistics = new();
+    internal static Dictionary<string, double>? UseStatistics = [];
 
     internal static void Start()
     {
@@ -30,7 +29,7 @@ internal class StatisticsManager
         {
             try
             {
-                var dataDir = GlobalInfo.DataPath.GetFullPath();
+                var dataDir = ConstantTable.DataPath.GetFullPath();
                 if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
                 var useFile = "UseCount.json";
@@ -49,7 +48,7 @@ internal class StatisticsManager
 
     internal static async void RecoverPreviousStatistics()
     {
-        var dataDir = GlobalInfo.DataPath.GetFullPath();
+        var dataDir = ConstantTable.DataPath.GetFullPath();
         if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
 
         try
@@ -106,14 +105,10 @@ internal class StatisticsManager
 
                 if (UseStatistics is null) return;
 
-                if (UseStatistics.ContainsKey(today))
+                if (!UseStatistics.TryAdd(today, 0.01))
                 {
                     UseStatistics[today] += 0.01;
                     UseStatistics[today] = Math.Round(UseStatistics[today], 2);
-                }
-                else
-                {
-                    UseStatistics.Add(today, 0.01);
                 }
 
                 EventService.Invoke(nameof(EventService.UseStatisticsChanged));

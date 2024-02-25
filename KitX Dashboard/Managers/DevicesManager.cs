@@ -1,28 +1,30 @@
 ﻿using Avalonia.Threading;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Managers;
+using KitX.Dashboard.Network;
+using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
-using KitX.Web.Rules;
+using KitX.Shared.Device;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using Timer = System.Timers.Timer;
 
-namespace KitX.Dashboard.Network;
+namespace KitX.Dashboard.Managers;
 
-internal class DevicesNetwork
+internal class DevicesManager
 {
     internal static DevicesServer? devicesServer = null;
 
     internal static DevicesClient? devicesClient = null;
 
-    private static readonly object _receivedDeviceInfoStruct4WatchLock = new();
+    private static readonly object _receivedDeviceInfo4WatchLock = new();
 
-    internal static List<DeviceInfoStruct>? receivedDeviceInfoStruct4Watch;
+    internal static List<DeviceInfo>? receivedDeviceInfo4Watch;
 
-    internal static readonly Queue<DeviceInfoStruct> deviceInfoStructs = new();
+    internal static readonly Queue<DeviceInfo> deviceInfoStructs = new();
 
     private static readonly object AddDeviceCard2ViewLock = new();
 
@@ -30,49 +32,40 @@ internal class DevicesNetwork
 
     private static void InitEvents()
     {
-        EventService.OnReceivingDeviceInfoStruct += dis =>
+        EventService.OnReceivingDeviceInfo += dis =>
         {
-            if (dis.IsMainDevice && dis.DeviceServerBuildTime < GlobalInfo.ServerBuildTime)
+            if (dis.IsMainDevice && dis.DevicesServerBuildTime < ConstantTable.ServerBuildTime)
             {
                 Stop();
 
                 Watch4MainDevice();
 
-                Log.Information($"In DevicesService: Watched earlier built server. " +
-                    $"DeviceServerAddress: {dis.IPv4}:{dis.DeviceServerPort} " +
-                    $"DeviceServerBuildTime: {dis.DeviceServerBuildTime}");
+                Log.Information(
+                    new StringBuilder()
+                        .AppendLine("Watched earlier built server.")
+                        .AppendLine($"DevicesServerAddress: {dis.Device.IPv4}:{dis.DevicesServerPort} ")
+                        .AppendLine($"DevicesServerBuildTime: {dis.DevicesServerBuildTime}")
+                        .ToString()
+                );
             }
         };
     }
 
-    /// <summary>
-    /// 判断设备是否应该标记为离线
-    /// </summary>
-    /// <param name="info">设备广播信息</param>
-    /// <returns>是否离线</returns>
-    private static bool CheckDeviceIsOffline(DeviceInfoStruct info)
+    private static bool CheckDeviceIsOffline(DeviceInfo info)
         => DateTime.UtcNow - info.SendTime.ToUniversalTime() > new TimeSpan(
             0,
             0,
-            ConfigManager.AppConfig.Web.DeviceInfoStructTTLSeconds
+            Instances.ConfigManager.AppConfig.Web.DeviceInfoTTLSeconds
         );
 
-    /// <summary>
-    /// 判断是否是本机卡片
-    /// </summary>
-    /// <param name="info">设备信息</param>
-    /// <returns>是否是本机卡片</returns>
-    private static bool CheckIsCurrentMachine(DeviceInfoStruct info)
+    private static bool CheckIsCurrentMachine(DeviceInfo info)
     {
-        var self = DevicesDiscoveryServer.DefaultDeviceInfoStruct;
+        var self = DevicesDiscoveryServer.DefaultDeviceInfo;
 
-        return info.DeviceMacAddress.Equals(self.DeviceMacAddress)
-            && info.DeviceName.Equals(self.DeviceName);
+        return info.Device.MacAddress.Equals(self.Device.MacAddress)
+            && info.Device.DeviceName.Equals(self.Device.DeviceName);
     }
 
-    /// <summary>
-    /// 更新数据源中的设备信息并添加数据源中没有的设备卡片
-    /// </summary>
     private static void UpdateSourceAndAddCards()
     {
         var needToAddDevicesCount = 0;
@@ -89,9 +82,9 @@ internal class DevicesNetwork
 
             if (findThis) continue;
 
-            foreach (var item in Instances.DeviceCards)
+            foreach (var item in ViewInstances.DeviceCards)
             {
-                if (item.viewModel.DeviceInfo.DeviceName.Equals(deviceInfoStruct.DeviceName))
+                if (item.viewModel.DeviceInfo.Device.DeviceName.Equals(deviceInfoStruct.Device.DeviceName))
                 {
                     item.viewModel.DeviceInfo = deviceInfoStruct;
                     findThis = true;
@@ -112,7 +105,7 @@ internal class DevicesNetwork
                 {
                     lock (AddDeviceCard2ViewLock)
                     {
-                        Instances.DeviceCards.Add(new(deviceInfoStruct));
+                        ViewInstances.DeviceCards.Add(new(deviceInfoStruct));
 
                         --needToAddDevicesCount;
                     }
@@ -123,14 +116,11 @@ internal class DevicesNetwork
         while (needToAddDevicesCount != 0) ;
     }
 
-    /// <summary>
-    /// 移除离线设备
-    /// </summary>
     private static void RemoveOfflineCards()
     {
         var devicesNeedToBeRemoved = new List<DeviceCard>();
 
-        foreach (var item in Instances.DeviceCards)
+        foreach (var item in ViewInstances.DeviceCards)
         {
             var info = item.viewModel.DeviceInfo;
 
@@ -144,7 +134,7 @@ internal class DevicesNetwork
             lock (AddDeviceCard2ViewLock)
             {
                 foreach (var item in devicesNeedToBeRemoved)
-                    Instances.DeviceCards.Remove(item);
+                    ViewInstances.DeviceCards.Remove(item);
             }
             removeDeviceTaskRunning = false;
         });
@@ -152,15 +142,12 @@ internal class DevicesNetwork
         while (removeDeviceTaskRunning) ;
     }
 
-    /// <summary>
-    /// 移动本机设备卡片到第一个
-    /// </summary>
     private static void MoveSelfCard2First()
     {
         var index = 0;
         var moveSelfCardTaskRunning = true;
 
-        foreach (var item in Instances.DeviceCards)
+        foreach (var item in ViewInstances.DeviceCards)
         {
             var info = item.viewModel.DeviceInfo;
 
@@ -172,7 +159,7 @@ internal class DevicesNetwork
                     {
                         try
                         {
-                            Instances.DeviceCards.Move(index, 0);
+                            ViewInstances.DeviceCards.Move(index, 0);
                         }
                         catch (Exception e)
                         {
@@ -190,16 +177,13 @@ internal class DevicesNetwork
         }
     }
 
-    /// <summary>
-    /// 持续检查并移除
-    /// </summary>
     private static void KeepCheckAndRemove()
     {
-        var location = $"{nameof(DevicesNetwork)}.{nameof(KeepCheckAndRemove)}";
+        var location = $"{nameof(DevicesManager)}.{nameof(KeepCheckAndRemove)}";
 
         var timer = new Timer()
         {
-            Interval = ConfigManager.AppConfig.Web.DevicesViewRefreshDelay,
+            Interval = Instances.ConfigManager.AppConfig.Web.DevicesViewRefreshDelay,
             AutoReset = true
         };
 
@@ -215,7 +199,7 @@ internal class DevicesNetwork
 
                     UpdateSourceAndAddCards();
 
-                    if (!ConfigManager.AppConfig.Web.DisableRemovingOfflineDeviceCard)
+                    if (!Instances.ConfigManager.AppConfig.Web.DisableRemovingOfflineDeviceCard)
                         RemoveOfflineCards();
 
                     MoveSelfCard2First();
@@ -231,41 +215,34 @@ internal class DevicesNetwork
 
         timer.Start();
 
-        EventService.ConfigSettingsChanged += () =>
+        EventService.AppConfigChanged += () =>
         {
-            timer.Interval = ConfigManager.AppConfig.Web.DevicesViewRefreshDelay;
+            timer.Interval = Instances.ConfigManager.AppConfig.Web.DevicesViewRefreshDelay;
         };
     }
 
-    /// <summary>
-    /// 更新收到的UDP包
-    /// </summary>
-    /// <param name="deviceInfo">设备信息结构</param>
-    internal static void Update(DeviceInfoStruct deviceInfo)
+    internal static void Update(DeviceInfo deviceInfo)
     {
         deviceInfoStructs.Enqueue(deviceInfo);
 
-        if (receivedDeviceInfoStruct4Watch is not null)
+        if (receivedDeviceInfo4Watch is not null)
         {
-            lock (_receivedDeviceInfoStruct4WatchLock)
+            lock (_receivedDeviceInfo4WatchLock)
             {
-                receivedDeviceInfoStruct4Watch.Add(deviceInfo);
+                receivedDeviceInfo4Watch.Add(deviceInfo);
             }
         }
 
-        EventService.Invoke(nameof(EventService.OnReceivingDeviceInfoStruct), deviceInfo);
+        EventService.Invoke(nameof(EventService.OnReceivingDeviceInfo), [deviceInfo]);
     }
 
-    /// <summary>
-    /// 观察主控
-    /// </summary>
     internal static void Watch4MainDevice()
     {
-        var location = $"{nameof(DevicesNetwork)}.{nameof(Watch4MainDevice)}";
+        var location = $"{nameof(DevicesManager)}.{nameof(Watch4MainDevice)}";
 
         new Thread(() =>
         {
-            receivedDeviceInfoStruct4Watch = new();
+            receivedDeviceInfo4Watch = [];
 
             var checkedTime = 0;
             var hadMainDevice = false;
@@ -277,18 +254,18 @@ internal class DevicesNetwork
             {
                 try
                 {
-                    if (receivedDeviceInfoStruct4Watch is null) continue;
+                    if (receivedDeviceInfo4Watch is null) continue;
 
-                    lock (_receivedDeviceInfoStruct4WatchLock)
+                    lock (_receivedDeviceInfo4WatchLock)
                     {
-                        foreach (var item in receivedDeviceInfoStruct4Watch)
+                        foreach (var item in receivedDeviceInfo4Watch)
                         {
                             if (item.IsMainDevice)
                             {
-                                if (item.DeviceServerBuildTime.ToUniversalTime() < earliestBuiltServerTime)
+                                if (item.DevicesServerBuildTime.ToUniversalTime() < earliestBuiltServerTime)
                                 {
-                                    serverPort = item.DeviceServerPort;
-                                    serverAddress = item.IPv4;
+                                    serverPort = item.DevicesServerPort;
+                                    serverAddress = item.Device.IPv4;
                                 }
                                 hadMainDevice = true;
                             }
@@ -301,8 +278,8 @@ internal class DevicesNetwork
 
                     if (checkedTime == 7)
                     {
-                        receivedDeviceInfoStruct4Watch?.Clear();
-                        receivedDeviceInfoStruct4Watch = null;
+                        receivedDeviceInfo4Watch?.Clear();
+                        receivedDeviceInfo4Watch = null;
 
                         WatchingOver(hadMainDevice, serverAddress, serverPort);
                     }
@@ -311,8 +288,8 @@ internal class DevicesNetwork
                 }
                 catch (Exception e)
                 {
-                    receivedDeviceInfoStruct4Watch?.Clear();
-                    receivedDeviceInfoStruct4Watch = null;
+                    receivedDeviceInfo4Watch?.Clear();
+                    receivedDeviceInfo4Watch = null;
 
                     Log.Error(e, $"In {location}: {e.Message} Rewatch.");
 
@@ -324,12 +301,9 @@ internal class DevicesNetwork
         }).Start();
     }
 
-    /// <summary>
-    /// 观察结束
-    /// </summary>
     internal static async void WatchingOver(bool foundMainDevice, string serverAddress, int serverPort)
     {
-        var location = $"{nameof(DevicesNetwork)}.{nameof(WatchingOver)}";
+        var location = $"{nameof(DevicesManager)}.{nameof(WatchingOver)}";
 
         Log.Information($"In {location}: " +
             $"{nameof(foundMainDevice)} -> {foundMainDevice}, " +

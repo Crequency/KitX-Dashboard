@@ -1,19 +1,24 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Services;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 
-public class ViewModelBase : ReactiveObject
+public abstract class ViewModelBase : ReactiveObject
 {
-    protected static string? FetchStringFromResource(
-        Application? app,
-        string key,
+    protected static string? Translate
+    (
+        string key = "",
         string prefix = "",
         string suffix = "",
-        string seperator = "")
+        string seperator = "",
+        Application? app = null
+    )
     {
+        app ??= Application.Current;
+
         if (app is null) return null;
 
         var res_key = $"{prefix}{seperator}{key}{seperator}{suffix}";
@@ -27,6 +32,12 @@ public class ViewModelBase : ReactiveObject
     }
 
     protected static void SaveAppConfigChanges() => EventService.Invoke(
-        nameof(EventService.ConfigSettingsChanged)
+        nameof(EventService.AppConfigChanged)
     );
+
+    public abstract void InitCommands();
+
+    public abstract void InitEvents();
+
+    internal static AppConfig AppConfig => Instances.ConfigManager.AppConfig;
 }

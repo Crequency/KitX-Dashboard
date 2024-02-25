@@ -1,23 +1,27 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Platform;
 using Common.BasicHelper.Graphics.Screen;
 
 namespace KitX.Dashboard.Converters;
 
 internal class WindowAttributesConverter
 {
-    /// <summary>
-    /// 坐标回正
-    /// </summary>
-    /// <param name="input">传入的坐标</param>
-    /// <param name="isLeft">是否是距左距离</param>
-    /// <returns>回正的坐标</returns>
-    internal static int PositionCameCenter(int input, bool isLeft, Screens screens, Resolution win)
+    internal static Distances PositionCameCenter(Distances location, Screen? screen, Resolution win)
     {
-        if (win.Width is null || win.Height is null) return 0;
+        if (location.Left == -1)
+            location.Left = ((screen?.WorkingArea.Width ?? 2560) - (int)win.Width!) / 2;
 
-        return isLeft
-            ? (input == -1 ? (screens.Primary?.WorkingArea.Width ?? 2560 - (int)win.Width) / 2 : input)
-            : (input == -1 ? (screens.Primary?.WorkingArea.Height ?? 1440 - (int)win.Height) / 2 : input)
-            ;
+        if (location.Top == -1)
+            location.Top = (screen?.WorkingArea.Height ?? 1440 - (int)win.Height!) / 2;
+
+        return location;
+    }
+}
+
+internal static class WindowAttributesConverterExtensions
+{
+    internal static Distances BringToCenter(this Distances location, Screen? screen, Resolution win)
+    {
+        return WindowAttributesConverter.PositionCameCenter(location, screen, win);
     }
 }

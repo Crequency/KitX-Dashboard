@@ -11,6 +11,8 @@
     <x:String x:Key="Text_Public_Export">書き出す</x:String>
     <x:String x:Key="Text_Public_Exit">終了する</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">メインウィンドウを表示</x:String>
+    <x:String x:Key="Text_Public_ShowAnnouncements">お知らせを見る</x:String>
+    <x:String x:Key="Text_Public_ShowLauncherWindow">Text_Public_ShowLauncherWindow</x:String>
     <x:String x:Key="Text_Public_Millisecond">ミリ秒</x:String>
     <x:String x:Key="Text_Public_Second">2番目</x:String>
     <x:String x:Key="Text_Public_Minute">分</x:String>
@@ -30,6 +32,8 @@
     <x:String x:Key="Text_Public_ResetToAuto">自動にリセット</x:String>
     <x:String x:Key="Text_Public_Random">ランダム</x:String>
     <x:String x:Key="Text_Public_Fixed">安定</x:String>
+    <x:String x:Key="Text_Public_Name">名前</x:String>
+    <x:String x:Key="Text_Public_Author">著者</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">情報</x:String>

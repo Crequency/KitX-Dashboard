@@ -1,9 +1,8 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Interfaces.Network;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
-using KitX.Web.Rules;
+using KitX.Dashboard.Views;
+using KitX.Shared.Device;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -15,24 +14,25 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KitX.Dashboard.Network;
+namespace KitX.Dashboard.Network.DevicesNetwork;
 
-/// <summary>
-/// 设备自发现网络服务器
-/// </summary>
-internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
+public class DevicesDiscoveryServer
 {
+    private static DevicesDiscoveryServer? _instance;
+
+    public static DevicesDiscoveryServer Instance => _instance ??= new DevicesDiscoveryServer();
+
     private static UdpClient? UdpSender = null;
 
     private static UdpClient? UdpReceiver = null;
 
     private static System.Timers.Timer? UdpSendTimer = null;
 
-    private static int DeviceInfoStructUpdatedTimes = 0;
+    private static int DeviceInfoUpdatedTimes = 0;
 
     private static int LastTimeToOSVersionUpdated = 0;
 
-    private static readonly List<int> SupportedNetworkInterfacesIndexes = new();
+    private static readonly List<int> SupportedNetworkInterfacesIndexes = [];
 
     private static bool disposed = false;
 
@@ -42,7 +42,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
     internal static readonly Queue<string> Messages2BroadCast = new();
 
-    internal static DeviceInfoStruct DefaultDeviceInfoStruct = NetworkHelper.GetDeviceInfo();
+    internal static DeviceInfo DefaultDeviceInfo = NetworkHelper.GetDeviceInfo();
 
     private static ServerStatus status = ServerStatus.Pending;
 
@@ -55,9 +55,6 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         }
     }
 
-    /// <summary>
-    /// 寻找受支持的网络适配器并把 UDP 客户端加入组播
-    /// </summary>
     private static void FindSupportNetworkInterfaces(List<UdpClient> clients, IPAddress multicastAddress)
     {
         var multicastGroupJoinedInterfacesCount = 0;
@@ -65,25 +62,17 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         foreach (var adapter in NetworkInterface.GetAllNetworkInterfaces())
         {
             var adapterProperties = adapter.GetIPProperties();
-            if (adapterProperties is null) continue;
 
-            try
-            {
-                var logs = adapter.Dump2Lines();
-                for (int i = 0; i < logs.Length; i++)
-                    Log.Information(logs[i]);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Logging network interface items.");
-            }
+            if (adapterProperties is null) continue;
 
             if (!NetworkHelper.CheckNetworkInterface(adapter, adapterProperties)) continue;
 
             var unicastIPAddresses = adapterProperties.UnicastAddresses;
+
             if (unicastIPAddresses is null) continue;
 
             var p = adapterProperties.GetIPv4Properties();
+
             if (p is null) continue;    // IPv4 is not configured on this adapter
 
             SupportedNetworkInterfacesIndexes.Add(IPAddress.HostToNetworkOrder(p.Index));
@@ -104,6 +93,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                 catch (Exception ex)
                 {
                     var location = $"{nameof(DevicesServer)}.{nameof(FindSupportNetworkInterfaces)}";
+
                     Log.Error(ex, $"In {location}: {ex.Message}");
                 }
             }
@@ -111,49 +101,44 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal));
 
-        Log.Information($"" +
-            $"Find {SupportedNetworkInterfacesIndexes.Count} supported network interfaces.");
-        Log.Information($"" +
-            $"Joined {multicastGroupJoinedInterfacesCount} multicast groups.");
+        Log.Information($"Find {SupportedNetworkInterfacesIndexes.Count} supported network interfaces.");
+
+        Log.Information($"Joined {multicastGroupJoinedInterfacesCount} multicast groups.");
     }
 
-    /// <summary>
-    /// 更新默认设备信息结构
-    /// </summary>
-    private static void UpdateDefaultDeviceInfoStruct()
+    private static void UpdateDefaultDeviceInfo()
     {
-        DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
-        DefaultDeviceInfoStruct.SendTime = DateTime.UtcNow;
-        DefaultDeviceInfoStruct.IPv4 = NetworkHelper.GetInterNetworkIPv4();
-        DefaultDeviceInfoStruct.IPv6 = NetworkHelper.GetInterNetworkIPv6();
-        DefaultDeviceInfoStruct.PluginServerPort = GlobalInfo.PluginServerPort;
-        DefaultDeviceInfoStruct.PluginsCount = Instances.PluginCards.Count;
-        DefaultDeviceInfoStruct.IsMainDevice = GlobalInfo.IsMainMachine;
-        DefaultDeviceInfoStruct.DeviceServerPort = GlobalInfo.DeviceServerPort;
-        DefaultDeviceInfoStruct.DeviceServerBuildTime = GlobalInfo.ServerBuildTime;
+        DefaultDeviceInfo.IsMainDevice = ConstantTable.IsMainMachine;
+        DefaultDeviceInfo.SendTime = DateTime.UtcNow;
+        DefaultDeviceInfo.Device
+            .ResetIPv4(NetworkHelper.GetInterNetworkIPv4())
+            .ResetIPv6(NetworkHelper.GetInterNetworkIPv6())
+            ;
+        DefaultDeviceInfo.PluginsServerPort = ConstantTable.PluginsServerPort;
+        DefaultDeviceInfo.PluginsCount = ViewInstances.PluginInfos.Count;
+        DefaultDeviceInfo.IsMainDevice = ConstantTable.IsMainMachine;
+        DefaultDeviceInfo.DevicesServerPort = ConstantTable.DevicesServerPort;
+        DefaultDeviceInfo.DevicesServerBuildTime = ConstantTable.ServerBuildTime;
 
-        if (LastTimeToOSVersionUpdated > ConfigManager.AppConfig.IO.OperatingSystemVersionUpdateInterval)
+        if (LastTimeToOSVersionUpdated > Instances.ConfigManager.AppConfig.IO.OperatingSystemVersionUpdateInterval)
         {
             LastTimeToOSVersionUpdated = 0;
-            DefaultDeviceInfoStruct.DeviceOSVersion = NetworkHelper.TryGetOSVersionString();
+            DefaultDeviceInfo.DeviceOSVersion = NetworkHelper.TryGetOSVersionString() ?? "";
         }
 
-        ++DeviceInfoStructUpdatedTimes;
+        ++DeviceInfoUpdatedTimes;
         ++LastTimeToOSVersionUpdated;
 
-        if (DeviceInfoStructUpdatedTimes < 0) DeviceInfoStructUpdatedTimes = 0;
+        if (DeviceInfoUpdatedTimes < 0) DeviceInfoUpdatedTimes = 0;
     }
 
-    /// <summary>
-    /// 多设备广播发送方法
-    /// </summary>
     private void MultiDevicesBroadCastSend()
     {
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastSend)}";
 
         IPEndPoint multicast = new(
-            IPAddress.Parse(ConfigManager.AppConfig.Web.UDPBroadcastAddress),
-            ConfigManager.AppConfig.Web.UDPPortReceive
+            IPAddress.Parse(Instances.ConfigManager.AppConfig.Web.UdpBroadcastAddress),
+            Instances.ConfigManager.AppConfig.Web.UdpPortReceive
         );
         UdpSender?.Client.SetSocketOption(
             SocketOptionLevel.Socket,
@@ -166,9 +151,10 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         UdpSendTimer = new()
         {
-            Interval = ConfigManager.AppConfig.Web.UDPSendFrequency,
+            Interval = Instances.ConfigManager.AppConfig.Web.UdpSendFrequency,
             AutoReset = true
         };
+
         UdpSendTimer.Elapsed += (_, _) =>
         {
             var closingRequest = CloseDevicesDiscoveryServerRequest;
@@ -181,17 +167,17 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                 erroredInterfacesIndexes.Clear();
             }
 
-            UpdateDefaultDeviceInfoStruct();
+            UpdateDefaultDeviceInfo();
 
             if (closingRequest)
-                DefaultDeviceInfoStruct.SendTime -= TimeSpan.FromSeconds(20);
+                DefaultDeviceInfo.SendTime -= TimeSpan.FromSeconds(20);
 
-            var sendText = JsonSerializer.Serialize(DefaultDeviceInfoStruct);
+            var sendText = JsonSerializer.Serialize(DefaultDeviceInfo);
             var sendBytes = sendText.FromUTF8();
 
             foreach (var item in SupportedNetworkInterfacesIndexes)
             {
-                if (!GlobalInfo.Running) break;
+                if (!ConstantTable.Running) break;
 
                 //  如果错误网络适配器中存在当前项的记录, 跳过
                 if (erroredInterfacesIndexes.Contains(item)) continue;
@@ -240,14 +226,11 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         UdpSendTimer.Start();
     }
 
-    /// <summary>
-    /// 多设备广播接收方法
-    /// </summary>
     private void MultiDevicesBroadCastReceive()
     {
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastReceive)}";
 
-        IPEndPoint multicast = new(IPAddress.Any, 0);
+        var multicast = new IPEndPoint(IPAddress.Any, 0);
         UdpReceiver?.Client.SetSocketOption(
             SocketOptionLevel.Socket,
             SocketOptionName.ReuseAddress,
@@ -258,7 +241,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         {
             try
             {
-                while (GlobalInfo.Running && !CloseDevicesDiscoveryServerRequest)
+                while (ConstantTable.Running && !CloseDevicesDiscoveryServerRequest)
                 {
                     var bytes = UdpReceiver?.Receive(ref multicast);
                     var client = $"{multicast.Address}:{multicast.Port}";
@@ -273,8 +256,8 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
                     try
                     {
-                        DevicesNetwork.Update(
-                            JsonSerializer.Deserialize<DeviceInfoStruct>(result)
+                        DevicesManager.Update(
+                            JsonSerializer.Deserialize<DeviceInfo>(result)
                         );
                     }
                     catch (Exception ex)
@@ -290,7 +273,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
                 Status = ServerStatus.Errored;
             }
 
-            await Stop();
+            await CloseAsync();
 
         }).Start();
     }
@@ -299,7 +282,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     {
         disposed = false;
 
-        DeviceInfoStructUpdatedTimes = 0;
+        DeviceInfoUpdatedTimes = 0;
 
         LastTimeToOSVersionUpdated = 0;
 
@@ -309,10 +292,10 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
 
         Messages2BroadCast.Clear();
 
-        DefaultDeviceInfoStruct = NetworkHelper.GetDeviceInfo();
+        DefaultDeviceInfo = NetworkHelper.GetDeviceInfo();
     }
 
-    public async Task<DevicesDiscoveryServer> Start()
+    public async Task<DevicesDiscoveryServer> RunAsync()
     {
         if (Status != ServerStatus.Pending) return this;
 
@@ -321,7 +304,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         Init();
 
         UdpSender = new(
-            ConfigManager.AppConfig.Web.UDPPortSend,
+            Instances.ConfigManager.AppConfig.Web.UdpPortSend,
             AddressFamily.InterNetwork
         )
         {
@@ -332,7 +315,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         UdpReceiver = new(
             new IPEndPoint(
                 IPAddress.Any,
-                ConfigManager.AppConfig.Web.UDPPortReceive
+                Instances.ConfigManager.AppConfig.Web.UdpPortReceive
             )
         );
 
@@ -341,16 +324,13 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
             try
             {
                 FindSupportNetworkInterfaces(
-                    new()
-                    {
-                        UdpSender, UdpReceiver
-                    },
-                    IPAddress.Parse(ConfigManager.AppConfig.Web.UDPBroadcastAddress)
+                    [UdpSender, UdpReceiver],
+                    IPAddress.Parse(Instances.ConfigManager.AppConfig.Web.UdpBroadcastAddress)
                 ); // 寻找所有支持的网络适配器
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(DevicesServer)}.{nameof(Start)}";
+                var location = $"{nameof(DevicesServer)}.{nameof(RunAsync)}";
                 Log.Warning(ex, $"In {location}: {ex.Message}");
             }
         }, nameof(FindSupportNetworkInterfaces));
@@ -370,7 +350,7 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         return this;
     }
 
-    public async Task<DevicesDiscoveryServer> Stop()
+    public async Task<DevicesDiscoveryServer> CloseAsync()
     {
         if (Status != ServerStatus.Running) return this;
 
@@ -390,9 +370,9 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
     {
         await Task.Run(async () =>
         {
-            await Stop();
+            await CloseAsync();
 
-            await Start();
+            await RunAsync();
         });
 
         return this;
@@ -419,11 +399,6 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         return this;
     }
 
-    /// <summary>
-    /// 设定当接收到数据时的处理代码
-    /// </summary>
-    /// <param name="action">处理代码, 参数一为接收到的数据 (byte[]), 参数二是数据发送者, ip:port</param>
-    /// <returns>设备自发现网络服务器本身</returns>
     public DevicesDiscoveryServer OnReceive(Action<byte[], int?, string> action)
     {
         onReceive = action;
@@ -442,6 +417,6 @@ internal class DevicesDiscoveryServer : IKitXServer<DevicesDiscoveryServer>
         UdpSender?.Dispose();
         UdpReceiver?.Dispose();
 
-        GC.SuppressFinalize(this);
+        GC.Collect();
     }
 }

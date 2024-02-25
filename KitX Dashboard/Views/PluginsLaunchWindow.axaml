@@ -1,25 +1,212 @@
 ﻿<Window x:Class="KitX.Dashboard.Views.PluginsLaunchWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="using:KitX.Dashboard.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:icon="using:Material.Icons.Avalonia"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
+        xmlns:vm="using:KitX.Dashboard.ViewModels"
         Title="PluginsLaunchWindow"
-        Width="500"
-        Height="300"
-        d:DesignHeight="450"
-        d:DesignWidth="800"
+        Width="600"
+        Height="360"
+        MinWidth="600"
+        MinHeight="360"
+        d:DesignHeight="360"
+        d:DesignWidth="600"
         Background="Transparent"
+        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaToDecorationsHint="True"
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
-        KeyDown="PluginsLaunchWindow_KeyDown"
-        PointerPressed="PluginsLaunchWindow_PointerPressed"
         Topmost="True"
-        TransparencyLevelHint="AcrylicBlur"
+        TransparencyLevelHint="Mica"
         WindowStartupLocation="CenterScreen"
         mc:Ignorable="d">
-    <Grid>
-        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">
-            Developing ...
-        </TextBlock>
-    </Grid>
+    <Window.Resources>
+        <converters:PluginMultiLanguagePropertyConverter x:Key="PluginMultiLanguagePropertyConverter"/>
+        <converters:PluginInfoTagsFetchConverter x:Key="PluginInfoTagsFetchConverter"/>
+        <converters:Base64ToIconConverter x:Key="Base64ToIconConverter"/>
+        <converters:PluginInfoSelectedConverter x:Key="PluginInfoSelectedConverter"/>
+    </Window.Resources>
+    <DockPanel>
+        <StackPanel Height="100"
+                    Margin="0,20,0,0"
+                    Classes.blured="{Binding IsInDirectSelectingMode}"
+                    DockPanel.Dock="Top">
+            <StackPanel.Styles>
+                <Style Selector="StackPanel.blured">
+                    <Setter Property="Effect" Value="blur(5)"/>
+                </Style>
+            </StackPanel.Styles>
+            <AutoCompleteBox x:Name="MainAutoCompleteBox"
+                             Width="400"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             FilterMode="Contains"
+                             Focusable="True"
+                             IsTextCompletionEnabled="True"
+                             ItemsSource="{Binding SearchItems}"
+                             Text="{Binding SearchingText}"
+                             Watermark="{DynamicResource Text_Lib_Search_In_Local}"/>
+            <StackPanel Margin="0,10,0,0"
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal">
+                <StackPanel.Styles>
+                    <Style Selector="Button.inStep">
+                        <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+                    </Style>
+                </StackPanel.Styles>
+                <Button Margin="10" Classes.inStep="{Binding IsSelectingPlugin}">
+                    <Grid>
+                        <TextBlock IsVisible="{Binding SelectedPluginInfo, Converter={x:Static ObjectConverters.IsNotNull}}" Text="{Binding SelectedPluginInfo.Name}"/>
+                        <TextBlock IsVisible="{Binding SelectedPluginInfo, Converter={x:Static ObjectConverters.IsNull}}" Text="[Plugin]"/>
+                    </Grid>
+                </Button>
+                <TextBlock Width="10"
+                           VerticalAlignment="Center"
+                           Text=">"/>
+                <Button Margin="10" Classes.inStep="{Binding IsSelectingFunction}">
+                    <Grid>
+                        <TextBlock IsVisible="{Binding SelectedFunction, Converter={x:Static ObjectConverters.IsNotNull}}" Text="{Binding SelectedFunction.Name}"/>
+                        <TextBlock IsVisible="{Binding SelectedFunction, Converter={x:Static ObjectConverters.IsNull}}" Text="[Function]"/>
+                    </Grid>
+                </Button>
+                <TextBlock Width="10"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding HavingParameters}"
+                           Text=">"/>
+                <ItemsControl IsVisible="{Binding HavingParameters}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </StackPanel>
+
+        <Border Height="{Binding NoPlugins_TipHeight}" DockPanel.Dock="Top">
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Text="{DynamicResource Text_Lib_Tip_NoPlugin}"/>
+        </Border>
+
+        <DockPanel Margin="10" DockPanel.Dock="Bottom">
+            <StackPanel VerticalAlignment="Center"
+                        DockPanel.Dock="Left"
+                        Orientation="Horizontal">
+                <TextBlock Text="{Binding PluginsCount}"/>
+                <TextBlock Margin="5,0,0,0" Text="{DynamicResource Text_Lib_Tip_Connected}"/>
+                <Border Width="20"/>
+                <TextBlock Text="{Binding SelectedPluginInfo.DisplayName, Converter={StaticResource PluginMultiLanguagePropertyConverter}}"/>
+                <Border Width="20"/>
+                <TextBlock Text="{Binding SelectedPluginInfo.Version}"/>
+                <Border Width="20"/>
+                <TextBlock x:Name="SelectedPluginInfoConnectionIdTextBlock" Text="{Binding SelectedPluginInfo.Tags, Converter={StaticResource PluginInfoTagsFetchConverter}, ConverterParameter=ConnectionId}"/>
+            </StackPanel>
+            <Grid Width="20"
+                  Height="20"
+                  VerticalAlignment="Center"
+                  DockPanel.Dock="Right">
+                <Border x:Name="IsInDirectSelectingModeIndicator"
+                        Width="20"
+                        Height="20"
+                        Background="#FFD26F"
+                        CornerRadius="15"
+                        IsVisible="{Binding IsInDirectSelectingMode}"/>
+                <Border Width="20"
+                        Height="20"
+                        Background="#3677FF"
+                        CornerRadius="15"
+                        IsVisible="{Binding !IsInDirectSelectingMode}"/>
+            </Grid>
+            <Border/>
+        </DockPanel>
+
+        <ScrollViewer x:Name="PluginsScrollViewer"
+                      Focusable="True"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Offset="{Binding ScrollViewerOffset}">
+            <ScrollViewer.Transitions>
+                <Transitions>
+                    <VectorTransition Property="Offset" Duration="0:0:0.2">
+                        <VectorTransition.Easing>
+                            <CubicEaseInOut/>
+                        </VectorTransition.Easing>
+                    </VectorTransition>
+                </Transitions>
+            </ScrollViewer.Transitions>
+            <ItemsControl ItemsSource="{Binding PluginInfos}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Margin="20,0" Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Width="60"
+                                Height="60"
+                                Margin="10"
+                                CornerRadius="10"
+                                ToolTip.Tip="{Binding DisplayName, Converter={StaticResource PluginMultiLanguagePropertyConverter}}">
+                            <Classes.selected>
+                                <MultiBinding Converter="{StaticResource PluginInfoSelectedConverter}">
+                                    <Binding Converter="{StaticResource PluginInfoTagsFetchConverter}"
+                                             ConverterParameter="ConnectionId"
+                                             Path="Tags"/>
+                                    <Binding Path="#SelectedPluginInfoConnectionIdTextBlock.Text"/>
+                                    <Binding Path="#IsInDirectSelectingModeIndicator.IsVisible"/>
+                                </MultiBinding>
+                            </Classes.selected>
+                            <Button.Styles>
+                                <Style Selector="Button.selected">
+                                    <Setter Property="RenderTransform" Value="scale(1.2)"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+                                </Style>
+                            </Button.Styles>
+                            <Button.Transitions>
+                                <Transitions>
+                                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1">
+                                        <TransformOperationsTransition.Easing>
+                                            <CubicEaseInOut/>
+                                        </TransformOperationsTransition.Easing>
+                                    </TransformOperationsTransition>
+                                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25">
+                                        <BrushTransition.Easing>
+                                            <CubicEaseInOut/>
+                                        </BrushTransition.Easing>
+                                    </BrushTransition>
+                                </Transitions>
+                            </Button.Transitions>
+                            <Border Width="50"
+                                    Height="50"
+                                    ClipToBounds="True"
+                                    CornerRadius="6">
+                                <Image x:Name="IconDisplayer"
+                                       Width="50"
+                                       Height="50"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Classes="img"
+                                       Source="{Binding IconInBase64, Converter={StaticResource Base64ToIconConverter}}"
+                                       Stretch="UniformToFill">
+                                    <Image.Styles>
+                                        <Style Selector="Image.img:pointerover">
+                                            <Setter Property="Opacity" Value="0.6"/>
+                                        </Style>
+                                    </Image.Styles>
+                                </Image>
+                            </Border>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
 </Window>

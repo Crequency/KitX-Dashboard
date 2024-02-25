@@ -26,15 +26,10 @@
                                 DockPanel.Dock="Left"
                                 Orientation="Horizontal">
                         <icon:MaterialIcon Margin="5,0" Kind="Folder"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_General_LocalPluginsFileDirectory}"/>
+                        <TextBlock Text="{DynamicResource Text_Settings_General_LocalPluginsFileDirectory}"/>
                     </StackPanel>
 
-                    <TextBox DockPanel.Dock="Right"
-                             FontFamily="{StaticResource SourceHanSans}"
-                             FontWeight="Bold"
-                             Text="{Binding LocalPluginsFileDirectory}"/>
+                    <TextBox DockPanel.Dock="Right" Text="{Binding LocalPluginsFileDirectory}"/>
 
                     <Border/>
                 </DockPanel>
@@ -49,15 +44,10 @@
                                 DockPanel.Dock="Left"
                                 Orientation="Horizontal">
                         <icon:MaterialIcon Margin="5,0" Kind="FolderTransfer"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_General_LocalPluginsDataDirectory}"/>
+                        <TextBlock Text="{DynamicResource Text_Settings_General_LocalPluginsDataDirectory}"/>
                     </StackPanel>
 
-                    <TextBox DockPanel.Dock="Right"
-                             FontFamily="{StaticResource SourceHanSans}"
-                             FontWeight="Bold"
-                             Text="{Binding LocalPluginsDataDirectory}"/>
+                    <TextBox DockPanel.Dock="Right" Text="{Binding LocalPluginsDataDirectory}"/>
 
                     <Border/>
                 </DockPanel>
@@ -72,15 +62,11 @@
                                 DockPanel.Dock="Left"
                                 Orientation="Horizontal">
                         <icon:MaterialIcon Margin="5,0" Kind="Announcement"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_General_ShowAnnouncement}"/>
+                        <TextBlock Text="{DynamicResource Text_Settings_General_ShowAnnouncement}"/>
                     </StackPanel>
 
                     <ComboBox VerticalContentAlignment="Center"
                               DockPanel.Dock="Right"
-                              FontFamily="{StaticResource SourceHanSans}"
-                              FontWeight="Bold"
                               SelectedIndex="{Binding ShowAnnouncementsStatus}">
                         <ComboBoxItem Content="{DynamicResource Text_Public_Enable}"/>
                         <ComboBoxItem Content="{DynamicResource Text_Public_Disable}"/>
@@ -89,9 +75,7 @@
                     <Button Margin="0,0,10,0"
                             Command="{Binding ShowAnnouncementsInstantlyCommand}"
                             Content="{DynamicResource Text_Settings_General_ShowAnnouncementNow}"
-                            DockPanel.Dock="Right"
-                            FontFamily="{StaticResource SourceHanSans}"
-                            FontWeight="Bold"/>
+                            DockPanel.Dock="Right"/>
 
                     <Border/>
 
@@ -107,15 +91,11 @@
                                 DockPanel.Dock="Left"
                                 Orientation="Horizontal">
                         <icon:MaterialIcon Margin="5,0" Kind="Code"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_General_DeveloperSetting}"/>
+                        <TextBlock Text="{DynamicResource Text_Settings_General_DeveloperSetting}"/>
                     </StackPanel>
 
                     <ComboBox VerticalContentAlignment="Center"
                               DockPanel.Dock="Right"
-                              FontFamily="{StaticResource SourceHanSans}"
-                              FontWeight="Bold"
                               SelectedIndex="{Binding DeveloperSettingStatus}">
                         <ComboBoxItem Content="{DynamicResource Text_Public_Enable}"/>
                         <ComboBoxItem Content="{DynamicResource Text_Public_Disable}"/>
@@ -125,8 +105,6 @@
                             Command="{Binding OpenDebugToolCommand}"
                             Content="{DynamicResource Text_Settings_General_OpenDebugTool}"
                             DockPanel.Dock="Right"
-                            FontFamily="{StaticResource SourceHanSans}"
-                            FontWeight="Bold"
                             IsVisible="{Binding DeveloperSettingEnabled}"/>
 
                     <Border/>

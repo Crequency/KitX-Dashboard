@@ -39,8 +39,6 @@
                         <icon:MaterialIcon VerticalAlignment="Center" Kind="Clock"/>
                         <TextBlock Margin="15,0,0,0"
                                    VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
                                    Text="{DynamicResource Text_MainWindow_HomePage_Recent}"/>
                     </StackPanel>
                 </ui:NavigationViewItem.Content>
@@ -55,8 +53,6 @@
                         <icon:MaterialIcon VerticalAlignment="Center" Kind="Numbers"/>
                         <TextBlock Margin="15,0,0,0"
                                    VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
                                    Text="{DynamicResource Text_MainWindow_HomePage_Count}"/>
                     </StackPanel>
                 </ui:NavigationViewItem.Content>
@@ -71,8 +67,6 @@
                         <icon:MaterialIcon VerticalAlignment="Center" Kind="DocumentSign"/>
                         <TextBlock Margin="15,0,0,0"
                                    VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
                                    Text="{DynamicResource Text_MainWindow_HomePage_ActivityLog}"/>
                     </StackPanel>
                 </ui:NavigationViewItem.Content>

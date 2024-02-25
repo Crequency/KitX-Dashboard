@@ -7,4 +7,6 @@ internal class SignalsNames
     internal static string? MainWindowOpenedSignal { get; }
 
     internal static string? FinishedFindingNetworkInterfacesSignal { get; }
+
+    internal static string? FileWatcherManagerInitializedSignal { get; }
 }

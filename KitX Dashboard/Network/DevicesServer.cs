@@ -1,6 +1,4 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Interfaces.Network;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using Serilog;
@@ -13,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace KitX.Dashboard.Network;
 
-internal class DevicesServer : IKitXServer<DevicesServer>
+internal class DevicesServer
 {
     private static TcpListener? listener = null;
 
@@ -21,7 +19,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
     private static bool disposed = false;
 
-    private static readonly Dictionary<string, TcpClient> clients = new();
+    private static readonly Dictionary<string, TcpClient> clients = [];
 
     private static Action<byte[], int?, string>? onReceive = null;
 
@@ -35,7 +33,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
             status = value;
 
             if (status == ServerStatus.Errored)
-                DevicesNetwork.Restart();
+                DevicesManager.Restart();
         }
     }
 
@@ -50,9 +48,6 @@ internal class DevicesServer : IKitXServer<DevicesServer>
         keepListen = true;
     }
 
-    /// <summary>
-    /// 接收客户端
-    /// </summary>
     private static void AcceptClient()
     {
         var location = $"{nameof(DevicesServer)}.{nameof(AcceptClient)}";
@@ -80,10 +75,6 @@ internal class DevicesServer : IKitXServer<DevicesServer>
         }
     }
 
-    /// <summary>
-    /// 接收客户端消息
-    /// </summary>
-    /// <param name="client">TcpClient</param>
     private static void ReceiveMessage(TcpClient client)
     {
         var location = $"{nameof(DevicesServer)}.{nameof(ReceiveMessage)}";
@@ -103,7 +94,7 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
                 while (keepListen)
                 {
-                    var buffer = new byte[ConfigManager.AppConfig.Web.SocketBufferSize];
+                    var buffer = new byte[Instances.ConfigManager.AppConfig.Web.SocketBufferSize];
 
                     var length = await stream.ReadAsync(buffer);
 
@@ -205,9 +196,9 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
             var port = ((IPEndPoint)listener.LocalEndpoint).Port; // 取服务端口号
 
-            GlobalInfo.DeviceServerPort = port; // 全局端口号标明
-            GlobalInfo.ServerBuildTime = DateTime.UtcNow;
-            GlobalInfo.IsMainMachine = true;
+            ConstantTable.DevicesServerPort = port; // 全局端口号标明
+            ConstantTable.ServerBuildTime = DateTime.UtcNow;
+            ConstantTable.IsMainMachine = true;
 
             Log.Information($"DevicesServer Port: {port}");
 
@@ -244,8 +235,8 @@ internal class DevicesServer : IKitXServer<DevicesServer>
 
             clients.Clear();
 
-            GlobalInfo.IsMainMachine = false;
-            GlobalInfo.DeviceServerPort = -1;
+            ConstantTable.IsMainMachine = false;
+            ConstantTable.DevicesServerPort = -1;
 
             EventService.Invoke(nameof(EventService.DevicesServerPortChanged));
 

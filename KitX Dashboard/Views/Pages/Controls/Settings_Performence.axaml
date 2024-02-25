@@ -27,10 +27,6 @@
             <Setter Property="DockPanel.Dock" Value="Right"/>
             <Setter Property="IsEnabled" Value="True"/>
         </Style>
-        <Style Selector="TextBlock.Normal">
-            <Setter Property="FontFamily" Value="{StaticResource SourceHanSans}"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
         <Style Selector="StackPanel.TitleBar">
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Orientation" Value="Horizontal"/>
@@ -271,9 +267,7 @@
                             </StackPanel>
                             <Button Command="{Binding EmptyLogsCommand}"
                                     Content="{DynamicResource Text_Public_Empty}"
-                                    DockPanel.Dock="Right"
-                                    FontFamily="{StaticResource SourceHanSans}"
-                                    FontWeight="Bold"/>
+                                    DockPanel.Dock="Right"/>
                             <TextBlock Margin="10,0"
                                        VerticalAlignment="Center"
                                        Classes="Normal"
@@ -364,8 +358,6 @@
 
                             <ComboBox VerticalContentAlignment="Center"
                                       DockPanel.Dock="Right"
-                                      FontFamily="{StaticResource SourceHanSans}"
-                                      FontWeight="Bold"
                                       IsTextSearchEnabled="True"
                                       ItemsSource="{Binding SupportedLogLevels}"
                                       SelectedItem="{Binding CurrentLogLevel}">

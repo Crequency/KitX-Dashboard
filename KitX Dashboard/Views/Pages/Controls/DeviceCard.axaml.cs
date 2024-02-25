@@ -1,6 +1,6 @@
 ﻿using Avalonia.Controls;
 using KitX.Dashboard.ViewModels.Pages.Controls;
-using KitX.Web.Rules;
+using KitX.Shared.Device;
 
 namespace KitX.Dashboard.Views.Pages.Controls;
 
@@ -15,7 +15,7 @@ public partial class DeviceCard : UserControl
         DataContext = viewModel;
     }
 
-    public DeviceCard(DeviceInfoStruct deviceInfo)
+    public DeviceCard(DeviceInfo deviceInfo)
     {
         InitializeComponent();
 

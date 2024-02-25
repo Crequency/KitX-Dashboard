@@ -1,10 +1,8 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Media;
 using Avalonia.Threading;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
-using Serilog;
 using SharpHook.Native;
 using System;
 
@@ -14,86 +12,230 @@ public partial class PluginsLaunchWindow : Window
 {
     private readonly PluginsLaunchWindowViewModel viewModel = new();
 
-    private Action? OnHideAction;
+    private readonly Action? OnHideAction;
 
     private bool pluginsLaunchWindowDisplayed = false;
 
+    private int? previousSelectedPluginIndex = null;
+
     public PluginsLaunchWindow()
     {
-        var location = $"{nameof(PluginsLaunchWindow)}.ctor";
-
         InitializeComponent();
 
         DataContext = viewModel;
 
-        OnHide(() => pluginsLaunchWindowDisplayed = false);
+        OnHideAction = () => pluginsLaunchWindowDisplayed = false;
 
         EventService.OnExiting += Close;
 
-        if (OperatingSystem.IsWindows() == false)
+        Initialize();
+    }
+
+    private void Initialize()
+    {
+        if (this.FindControl<AutoCompleteBox>("MainAutoCompleteBox") is AutoCompleteBox box)
         {
-            try
+            box.KeyDown += (_, e) =>
             {
-                Background = Resources["ThemePrimaryAccent"] as SolidColorBrush;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, $"In {location}: {ex.Message}");
-            }
+                if (e.Key == Key.Enter)
+                {
+                    viewModel.SubmitSearchingText();
+
+                    e.Handled = true;
+                }
+            };
+        }
+
+        if (this.FindControl<ScrollViewer>("PluginsScrollViewer") is ScrollViewer viewer)
+        {
+            viewer.KeyDown += PluginsScrollViewer_KeyDown;
         }
 
         RegisterGlobalHotKey();
     }
 
+    private void PluginsScrollViewer_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (sender is not ScrollViewer viewer) return;
+
+        if (viewer.IsFocused == false) return;
+
+        switch (e.Key)
+        {
+            case Key.Enter:
+                // ToDo: Select Plugin Info
+                return;
+        }
+
+        var perLineCount = (int)Math.Floor((Width - 40) / 80);
+
+        var viewerHeight = viewer.DesiredSize.Height;
+
+        var viewerOffsetY = viewer.Offset.Y;
+
+        switch (e.Key)
+        {
+            case Key.Left:
+                viewModel.SelectLeftOne(
+                    perLineCount,
+                    viewerHeight,
+                    viewerOffsetY
+                );
+                break;
+            case Key.Right:
+                viewModel.SelectRightOne(
+                    perLineCount,
+                    viewerHeight,
+                    viewerOffsetY
+                );
+                break;
+            case Key.Up:
+                viewModel.SelectUpOne(
+                    perLineCount,
+                    viewerHeight,
+                    viewerOffsetY
+                );
+                break;
+            case Key.Down:
+                viewModel.SelectDownOne(
+                    perLineCount,
+                    viewerHeight,
+                    viewerOffsetY
+                );
+                break;
+            case Key.Home:
+                viewModel.SelectHomeOne(perLineCount);
+                break;
+            case Key.End:
+                viewModel.SelectEndOne(perLineCount);
+                break;
+        }
+    }
+
     private void RegisterGlobalHotKey()
     {
-        Instances.HotKeyManager?.RegisterHotKeyHandler("", codes =>
+        Instances.KeyHookManager?.RegisterHotKeyHandler(nameof(PluginsLaunchWindow), codes =>
         {
             var count = codes.Length;
 
             var tmpList = codes;
 
-            if (count >= 3 &&
-            tmpList[count - 3] == KeyCode.VcLeftControl &&
-            tmpList[count - 2] == KeyCode.VcLeftMeta &&
-            tmpList[count - 1] == KeyCode.VcC)
+            if (count < 3) return;
+
+            if (tmpList[count - 3] != KeyCode.VcLeftControl) return;
+
+            if (tmpList[count - 2] != KeyCode.VcLeftMeta) return;
+
+            if (tmpList[count - 1] != KeyCode.VcC) return;
+
+            Dispatcher.UIThread.Post(() =>
             {
-                Dispatcher.UIThread.Post(() =>
+                if (pluginsLaunchWindowDisplayed)
                 {
-                    if (pluginsLaunchWindowDisplayed)
-                    {
-                        Activate();
+                    Activate();
 
-                        Focus();
-                    }
-                    else
-                    {
-                        Show();
-                    }
+                    Focus();
+                }
+                else
+                {
+                    Show();
+                }
 
-                    pluginsLaunchWindowDisplayed = true;
-                });
-            }
+                pluginsLaunchWindowDisplayed = true;
+            });
         });
     }
 
-    public PluginsLaunchWindow OnHide(Action onHideAction)
+    protected override void OnKeyDown(KeyEventArgs e)
     {
-        OnHideAction = onHideAction;
+        var box = this.FindControl<AutoCompleteBox>("MainAutoCompleteBox");
 
-        return this;
+        switch (e.Key)
+        {
+            case Key.Tab:
+                if (viewModel.IsInDirectSelectingMode == false)
+                {
+                    if (e.KeyModifiers == KeyModifiers.Shift)
+                    {
+                        if (viewModel.IsSelectingFunction)
+                            viewModel.IsSelectingPlugin = true;
+                    }
+                    else
+                    {
+                        if (viewModel.IsSelectingPlugin)
+                            viewModel.IsSelectingFunction = true;
+                    }
+                }
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                Hide();
+                OnHideAction?.Invoke();
+                break;
+        }
+
+        switch (e.PhysicalKey)
+        {
+            case PhysicalKey.Backquote:
+                if (viewModel.IsInDirectSelectingMode == false)
+                {
+                    viewModel.IsInDirectSelectingMode = true;
+
+                    if (this.FindControl<ScrollViewer>("PluginsScrollViewer") is ScrollViewer viewer)
+                        viewer.Focus();
+                }
+                else
+                {
+                    previousSelectedPluginIndex = viewModel.SelectedPluginIndex;
+
+                    viewModel.IsInDirectSelectingMode = false;
+
+                    box?.Focus();
+                }
+                e.Handled = true;
+                break;
+        }
+
+        base.OnKeyDown(e);
     }
 
-    private void PluginsLaunchWindow_PointerPressed(object? sender, PointerPressedEventArgs e)
-        => BeginMoveDrag(e);
-
-    private void PluginsLaunchWindow_KeyDown(object? sender, KeyEventArgs e)
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        if (e.Key == Key.Escape)
+        BeginMoveDrag(e);
+
+        base.OnPointerPressed(e);
+    }
+
+    protected override void OnResized(WindowResizedEventArgs e)
+    {
+        if (ExperimentalFlags.EnablePluginLaunchWindowWidthSnap)
         {
+            var basicWidth = 80;
+            var addonWidth = 40;
+            var windowWidth = (int)e.ClientSize.Width;
+            var oneLineCount = (windowWidth - addonWidth) / basicWidth;
+            var left = (windowWidth - addonWidth) % basicWidth;
+
+            if (left < basicWidth / 2)
+                Width = oneLineCount * basicWidth + addonWidth;
+            else
+                Width = (oneLineCount + 1) * basicWidth + addonWidth;
+        }
+
+        base.OnResized(e);
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        if (!ConstantTable.Exiting)
+        {
+            e.Cancel = true;
+
             Hide();
 
             OnHideAction?.Invoke();
         }
+
+        base.OnClosing(e);
     }
 }

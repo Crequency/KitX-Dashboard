@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.Settings_About"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
              xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
@@ -18,10 +19,10 @@
                 <Button Margin="20,20,20,30"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Top">
-                    <Image Width="128"
-                           Height="128"
-                           Margin="20"
-                           Source="avares://KitX.Dashboard.Assets/KitX-Icon-1920x-margin-2x.png"/>
+                    <controls:AppLogo x:Name="AppLogoItem"
+                                      Width="140"
+                                      Height="140"
+                                      Margin="20,20,20,35"/>
                 </Button>
 
                 <Button Width="110"
@@ -31,10 +32,8 @@
                         Command="{Binding AppNameButtonClickedCommand}"
                         Content="KitX"
                         CornerRadius="45"
-                        FontFamily="{StaticResource SourceHanSans}"
                         FontSize="30"
-                        FontWeight="ExtraBold"
-                        KeyDown="AppNameButtonKeyDown"/>
+                        FontWeight="SemiBold"/>
 
             </Grid>
 
@@ -44,14 +43,12 @@
 
                 <TextBlock Margin="2.5,0"
                            VerticalAlignment="Center"
-                           FontFamily="{StaticResource SourceHanSans}"
                            FontSize="20"
                            FontWeight="Medium"
                            Text="{DynamicResource Text_Settings_About_Version}"/>
 
                 <TextBlock Margin="2.5,0"
                            VerticalAlignment="Center"
-                           FontFamily="{StaticResource SourceHanSans}"
                            FontSize="20"
                            FontWeight="Medium"
                            Text="{Binding VersionText}"/>
@@ -67,10 +64,7 @@
                                     ToolTip.Tip="{Binding $self.NavigateUri}">
                     <StackPanel Orientation="Horizontal">
                         <icon:MaterialIcon Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Kind="Github"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}"
-                                   Text=" GitHub Repo "/>
+                        <TextBlock Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Text=" GitHub Repo "/>
                     </StackPanel>
                 </ui:HyperlinkButton>
 
@@ -79,10 +73,7 @@
                                     ToolTip.Tip="{Binding $self.NavigateUri}">
                     <StackPanel Orientation="Horizontal">
                         <icon:MaterialIcon Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Kind="OfficeBuilding"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}"
-                                   Text=" Official Website "/>
+                        <TextBlock Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Text=" Official Website "/>
                     </StackPanel>
                 </ui:HyperlinkButton>
 
@@ -91,10 +82,7 @@
                                     ToolTip.Tip="{Binding $self.NavigateUri}">
                     <StackPanel Orientation="Horizontal">
                         <icon:MaterialIcon Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Kind="BlogOutline"/>
-                        <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}"
-                                   Text=" Author Blog "/>
+                        <TextBlock Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Text=" Author Blog "/>
                     </StackPanel>
                 </ui:HyperlinkButton>
 
@@ -106,10 +94,7 @@
                         <icon:MaterialIcon Margin="5,0"
                                            VerticalAlignment="Center"
                                            Kind="InfoCircle"/>
-                        <TextBlock VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_About}"/>
+                        <TextBlock VerticalAlignment="Center" Text="{DynamicResource Text_Settings_About}"/>
                     </StackPanel>
                 </Expander.Header>
 
@@ -121,10 +106,7 @@
                         <icon:MaterialIcon Margin="5,0"
                                            VerticalAlignment="Center"
                                            Kind="User"/>
-                        <TextBlock VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_About_Authors}"/>
+                        <TextBlock VerticalAlignment="Center" Text="{DynamicResource Text_Settings_About_Authors}"/>
                     </StackPanel>
                 </Expander.Header>
 
@@ -132,133 +114,29 @@
                     <WrapPanel Margin="5">
                         <ui:HyperlinkButton Margin="4"
                                             Content="调皮豆干"
-                                            FontFamily="{StaticResource SourceHanSans}"
-                                            FontWeight="Bold"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
                                             NavigateUri="https://blog.catrol.cn"/>
                         <ui:HyperlinkButton Margin="4"
                                             Content="LYF"
-                                            FontFamily="{StaticResource SourceHanSans}"
-                                            FontWeight="Bold"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
                                             NavigateUri="https://github.com/LYF511"/>
                         <ui:HyperlinkButton Margin="4"
                                             Content="白学森"
-                                            FontFamily="{StaticResource SourceHanSans}"
-                                            FontWeight="Bold"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
                                             NavigateUri="https://github.com/MrBBBaiXue"/>
                         <ui:HyperlinkButton Margin="4"
                                             Content="truebigsand"
-                                            FontFamily="{StaticResource SourceHanSans}"
-                                            FontWeight="Bold"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
                                             NavigateUri="https://github.com/truebigsand"/>
                         <ui:HyperlinkButton Margin="4"
                                             Content="felixonmars"
-                                            FontFamily="{StaticResource SourceHanSans}"
-                                            FontWeight="Bold"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
                                             NavigateUri="https://github.com/felixonmars"/>
                         <ui:HyperlinkButton Margin="4"
                                             Content="SpaceTimee"
-                                            FontFamily="{StaticResource SourceHanSans}"
-                                            FontWeight="Bold"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
                                             NavigateUri="https://github.com/SpaceTimee"/>
                     </WrapPanel>
-
-                </StackPanel>
-
-            </Expander>
-
-
-            <Expander Margin="20,5" IsVisible="{Binding EasterEggsFounded}">
-                <Expander.Header>
-                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                        <icon:MaterialIcon Margin="5,0"
-                                           VerticalAlignment="Center"
-                                           Kind="EggEaster"/>
-                        <TextBlock VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_About_Found}"/>
-                    </StackPanel>
-                </Expander.Header>
-
-                <StackPanel>
-
-                    <Grid>
-
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                            <ColumnDefinition Width="300"/>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
-
-                        <Border Grid.Column="0"
-                                Height="240"
-                                Background="White"
-                                Opacity="0.01"/>
-
-                        <Border Grid.Column="2"
-                                Height="240"
-                                Background="White"
-                                Opacity="0.01"/>
-
-                        <Grid Grid.Column="1"
-                              Width="300"
-                              Height="240"
-                              HorizontalAlignment="Center"
-                              Cursor="Ibeam">
-
-                            <Button x:Name="Btn_WQY"
-                                    Width="200"
-                                    Height="40"
-                                    Margin="50,30"
-                                    Content="王七叶"/>
-
-                            <Grid Width="300" Height="240">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="110"/>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="110"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition/>
-                                    <RowDefinition Height="100"/>
-                                    <RowDefinition/>
-                                </Grid.RowDefinitions>
-                                <Border Grid.Row="0"
-                                        Grid.ColumnSpan="3"
-                                        Background="White"
-                                        Opacity="0.01"/>
-                                <Border Grid.Row="2"
-                                        Grid.ColumnSpan="3"
-                                        Background="White"
-                                        Opacity="0.01"/>
-                                <Border Grid.Row="1"
-                                        Grid.Column="0"
-                                        Background="White"
-                                        Opacity="0.01"
-                                        PointerEntered="WQY_LeftEnter"
-                                        PointerExited="WQY_Leave"/>
-                                <Border Grid.Row="1"
-                                        Grid.Column="1"
-                                        Background="White"
-                                        Opacity="0.01"
-                                        PointerEntered="WQY_CenterEnter"
-                                        PointerExited="WQY_Leave"/>
-                                <Border Grid.Row="1"
-                                        Grid.Column="2"
-                                        Background="White"
-                                        Opacity="0.01"
-                                        PointerEntered="WQY_RightEnter"
-                                        PointerExited="WQY_Leave"/>
-                            </Grid>
-
-                        </Grid>
-                    </Grid>
 
                 </StackPanel>
 
@@ -270,10 +148,7 @@
                         <icon:MaterialIcon Margin="5,0"
                                            VerticalAlignment="Center"
                                            Kind="Link"/>
-                        <TextBlock VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_About_Links}"/>
+                        <TextBlock VerticalAlignment="Center" Text="{DynamicResource Text_Settings_About_Links}"/>
                     </StackPanel>
                 </Expander.Header>
 
@@ -285,10 +160,7 @@
                         <icon:MaterialIcon Margin="5,0"
                                            VerticalAlignment="Center"
                                            Kind="ToyBrick"/>
-                        <TextBlock VerticalAlignment="Center"
-                                   FontFamily="{StaticResource SourceHanSans}"
-                                   FontWeight="Bold"
-                                   Text="{DynamicResource Text_Settings_About_ThirdPartLicense}"/>
+                        <TextBlock VerticalAlignment="Center" Text="{DynamicResource Text_Settings_About_ThirdPartLicense}"/>
                     </StackPanel>
                 </Expander.Header>
                 <DockPanel Margin="5">

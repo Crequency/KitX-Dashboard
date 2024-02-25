@@ -1,9 +1,10 @@
 ﻿using Common.Activity;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Names;
 using LiteDB;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace KitX.Dashboard.Managers;
@@ -16,11 +17,17 @@ internal class ActivityManager
 
     private static Activity? _appActivity;
 
-    /// <summary>
-    /// 记录活动
-    /// </summary>
-    /// <param name="activity">活动</param>
-    /// <param name="keySelector">键选择器</param>
+    public static List<Activity> ReadActivities()
+    {
+        if (Instances.ActivitiesDataBase is LiteDatabase db)
+        {
+            var col = db.GetCollection<Activity>(CollectionName);
+
+            return col.FindAll().ToList();
+        }
+        else return [];
+    }
+
     public static void Record(Activity activity, Expression<Func<Activity, int>> keySelector)
     {
         var location = $"{nameof(ActivityManager)}.{nameof(Record)}";
@@ -37,7 +44,7 @@ internal class ActivityManager
 
                     col?.EnsureIndex(keySelector);
 
-                    ConfigManager.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
+                    Instances.ConfigManager.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
 
                     db.Commit();
                 }
@@ -45,10 +52,6 @@ internal class ActivityManager
         }, location, catchException: true);
     }
 
-    /// <summary>
-    /// 更新活动
-    /// </summary>
-    /// <param name="activity">活动</param>
     public static void Update(Activity activity)
     {
         var location = $"{nameof(ActivityManager)}.{nameof(Update)}";
@@ -73,15 +76,13 @@ internal class ActivityManager
     {
         var activity = new Activity()
         {
-            Id = ConfigManager.AppConfig.Activity.TotalRecorded + 1,
+            Id = Instances.ConfigManager.AppConfig.Activity.TotalRecorded,
             Name = nameof(ActivityNames.AppLifetime),
-            Author = GlobalInfo.AppFullName,
+            Author = ConstantTable.AppFullName,
             Title = ActivityTitles.AppStart,
             Category = nameof(ActivitySortNames.DashboardEvent),
-            IconKind = Material.Icons.MaterialIconKind.RocketLaunch
-        }
-        .Open(GlobalInfo.AppFullName)
-        ;
+            IconKind = Material.Icons.MaterialIconKind.RocketLaunch,
+        }.Open(ConstantTable.AppFullName);
 
         _appActivity = activity;
 
@@ -92,7 +93,7 @@ internal class ActivityManager
     {
         if (_appActivity is Activity activity)
         {
-            activity.Close(GlobalInfo.AppFullName);
+            activity.Close(ConstantTable.AppFullName);
 
             Update(activity);
         }

@@ -20,7 +20,7 @@ public partial class RepoPage : UserControl
 
         InitHandlers();
 
-        DataContext = viewModel;
+        DataContext = viewModel.SetControl(this);
     }
 
     private void InitHandlers()
@@ -34,7 +34,7 @@ public partial class RepoPage : UserControl
     {
         var location = $"{nameof(RepoPage)}.{nameof(Drop)}";
 
-        var files = e.Data?.GetFileNames()?.ToArray();
+        var files = e.Data?.GetFiles()?.Select(x => x.Path.LocalPath).ToArray();
 
         if (files is not null && files?.Length > 0)
         {
@@ -59,8 +59,8 @@ public partial class RepoPage : UserControl
         // Only allow Copy or Link as Drop Operations.
         e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
 
-        // Only allow if the dragged data contains filenames.
-        if (!e.Data.Contains(DataFormats.FileNames))
+        // Only allow if the dragged data's type is file.
+        if (!e.Data.Contains(DataFormats.Files))
             e.DragEffects = DragDropEffects.None;
     }
 

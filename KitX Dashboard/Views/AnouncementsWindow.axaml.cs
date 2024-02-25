@@ -1,19 +1,19 @@
-﻿using Avalonia;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Common.BasicHelper.Graphics.Screen;
+using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Converters;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Services;
+using KitX.Dashboard.Utils;
 using KitX.Dashboard.ViewModels;
+using System;
 using System.Collections.Generic;
 
 namespace KitX.Dashboard.Views;
 
-public partial class AnouncementsWindow : Window
+public partial class AnouncementsWindow : Window, IView
 {
     private readonly AnouncementsWindowViewModel viewModel = new();
 
-    private bool closed = false;
+    private readonly AppConfig appConfig = Instances.ConfigManager.AppConfig;
 
     public AnouncementsWindow()
     {
@@ -21,85 +21,44 @@ public partial class AnouncementsWindow : Window
 
         viewModel.Window = this;
 
-        SuggestResolutionAndLocation();
-
         DataContext = viewModel;
 
-        var nowRes = Resolution.Parse(
-            $"{ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width}" +
-            $"x{ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height}"
-        );
+        var config = appConfig.Windows.AnnouncementWindow;
 
-        // 设置窗体坐标
+        var screen = Screens.ScreenFromWindow(this);
 
-        Position = new(
-            WindowAttributesConverter.PositionCameCenter(
-                ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Left,
-                true, Screens, nowRes
-            ),
-            WindowAttributesConverter.PositionCameCenter(
-                ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Top,
-                false, Screens, nowRes
-            )
-        );
+        var nowRes = config.Size.SuggestResolution(screen);
 
-        EventService.OnExiting += () =>
+        var centerPos = config.Location.BringToCenter(screen, nowRes);
+
+        ClientSize = new(nowRes.Width!.Value, nowRes.Height!.Value);
+
+        Position = new((int)centerPos.Left, (int)centerPos.Top);
+
+        ClientSizeProperty.Changed.Subscribe(size =>
         {
-            if (!closed)
-                Close();
+            if (WindowState != WindowState.Maximized)
+                config.Size = new Resolution(ClientSize.Width, ClientSize.Height);
+        });
+
+        PositionChanged += (_, args) =>
+        {
+            if (WindowState == WindowState.Normal)
+                config.Location = new(left: Position.X, top: Position.Y);
         };
-
-#if DEBUG
-        this.AttachDevTools();
-#endif
-
     }
 
-    private void SuggestResolutionAndLocation()
-    {
-        if (ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width == 1280
-            && ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height == 720)
-        {
-            var suggest = Resolution.Suggest(
-                Resolution.Parse("2560x1440"),
-                Resolution.Parse("1280x720"),
-                Resolution.Parse(
-                    $"{Screens.Primary.Bounds.Width}x{Screens.Primary.Bounds.Height}"
-                )
-            ).Integerization();
-
-            if (suggest.Width is not null && suggest.Height is not null)
-            {
-                ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width = (double)suggest.Width;
-                ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height = (double)suggest.Height;
-            }
-        }
-    }
-
-    internal void UpdateSource(Dictionary<string, string> src, List<string> readed)
+    internal AnouncementsWindow UpdateSource(Dictionary<string, string> src)
     {
         viewModel.Sources = src;
-        viewModel.Readed = readed;
-    }
 
-    private void SaveMetaData()
-    {
-        if (WindowState != WindowState.Minimized)
-        {
-            ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Left = Position.X;
-            ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Top = Position.Y;
-        }
-
-        ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width = Width;
-        ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height = Height;
+        return this;
     }
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
-        base.OnClosed(e);
+        IView.SaveAppConfigChanges();
 
-        SaveMetaData();
-
-        closed = true;
+        base.OnClosing(e);
     }
 }

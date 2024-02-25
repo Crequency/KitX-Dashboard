@@ -9,7 +9,7 @@ using System;
 
 namespace KitX.Dashboard.Views.Pages;
 
-public partial class SettingsPage : UserControl
+public partial class SettingsPage : UserControl, IView
 {
     private readonly SettingsPageViewModel viewModel = new();
 
@@ -22,28 +22,14 @@ public partial class SettingsPage : UserControl
         InitSettingsPage();
     }
 
-    /// <summary>
-    /// 初始化设置页面
-    /// </summary>
     private void InitSettingsPage()
     {
-        this.FindControl<NavigationView>("SettingsNavigationView").SelectedItem
-            = this.FindControl<NavigationViewItem>(SelectedViewName);
+        var nav = this.FindControl<NavigationView>("SettingsNavigationView");
+
+        if (nav is not null)
+            nav.SelectedItem = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
 
-    /// <summary>
-    /// 保存对配置文件的修改
-    /// </summary>
-    private static void SaveChanges()
-    {
-        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
-    }
-
-    /// <summary>
-    /// 前台页面切换事件
-    /// </summary>
-    /// <param name="sender">被点击的 NavigationViewItem</param>
-    /// <param name="e">路由事件参数</param>
     private void SettingsNavigationView_SelectionChanged(
         object? sender,
         NavigationViewSelectionChangedEventArgs e)
@@ -56,7 +42,7 @@ public partial class SettingsPage : UserControl
 
             SelectedViewName = tag;
 
-            this.FindControl<Frame>("SettingsFrame").Navigate(SelectedViewType());
+            this.FindControl<Frame>("SettingsFrame")?.Navigate(SelectedViewType());
         }
         catch (NullReferenceException o)
         {
@@ -66,11 +52,12 @@ public partial class SettingsPage : UserControl
 
     private static string SelectedViewName
     {
-        get => ConfigManager.AppConfig.Pages.Settings.SelectedViewName;
+        get => Instances.ConfigManager.AppConfig.Pages.Settings.SelectedViewName;
         set
         {
-            ConfigManager.AppConfig.Pages.Settings.SelectedViewName = value;
-            SaveChanges();
+            Instances.ConfigManager.AppConfig.Pages.Settings.SelectedViewName = value;
+
+            IView.SaveAppConfigChanges();
         }
     }
 

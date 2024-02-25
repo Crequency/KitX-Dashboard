@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace KitX.Dashboard.Managers;
 
-internal class HotKeyManager
+public class KeyHookManager
 {
     private const int keysLimitation = 5;
 
@@ -14,14 +14,14 @@ internal class HotKeyManager
 
     private readonly Dictionary<string, Action<KeyCode[]>>? hotKeyHandlers;
 
-    public HotKeyManager()
+    public KeyHookManager()
     {
         keyPressed = new();
 
-        hotKeyHandlers = new();
+        hotKeyHandlers = [];
     }
 
-    public HotKeyManager Hook()
+    public KeyHookManager Hook()
     {
         var hook = new TaskPoolGlobalHook();
 
@@ -58,14 +58,14 @@ internal class HotKeyManager
             handler.Invoke(tmpList);
     }
 
-    public HotKeyManager RegisterHotKeyHandler(string name, Action<KeyCode[]> handler)
+    public KeyHookManager RegisterHotKeyHandler(string name, Action<KeyCode[]> handler)
     {
         hotKeyHandlers!.Add(name, handler);
 
         return this;
     }
 
-    public HotKeyManager UnregisterHotKeyHandler(string name)
+    public KeyHookManager UnregisterHotKeyHandler(string name)
     {
         if (hotKeyHandlers!.TryGetValue(name, out _))
         {

@@ -11,6 +11,8 @@
     <x:String x:Key="Text_Public_Export">exporter</x:String>
     <x:String x:Key="Text_Public_Exit">quitter</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">Afficher la fenêtre principale</x:String>
+    <x:String x:Key="Text_Public_ShowAnnouncements">Voir l'annonce</x:String>
+    <x:String x:Key="Text_Public_ShowLauncherWindow">Text_Public_ShowLauncherWindow</x:String>
     <x:String x:Key="Text_Public_Millisecond">milliseconde</x:String>
     <x:String x:Key="Text_Public_Second">deuxième</x:String>
     <x:String x:Key="Text_Public_Minute">minute</x:String>
@@ -30,6 +32,8 @@
     <x:String x:Key="Text_Public_ResetToAuto">réinitialiser automatiquement</x:String>
     <x:String x:Key="Text_Public_Random">Aléatoire</x:String>
     <x:String x:Key="Text_Public_Fixed">écurie</x:String>
+    <x:String x:Key="Text_Public_Name">Nom</x:String>
+    <x:String x:Key="Text_Public_Author">Auteur</x:String>
     <x:String x:Key="Text_Log_Verbose">détaillé</x:String>
     <x:String x:Key="Text_Log_Debug">débogage</x:String>
     <x:String x:Key="Text_Log_Information">informations</x:String>

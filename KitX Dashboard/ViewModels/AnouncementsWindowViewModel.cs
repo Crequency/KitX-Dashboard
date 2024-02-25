@@ -1,17 +1,12 @@
-﻿using Avalonia.Collections;
-using Common.BasicHelper.Utils.Extensions;
+﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Managers;
+using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Reactive;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -24,31 +19,24 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         InitCommands();
     }
 
-    private void InitCommands()
+    public override void InitCommands()
     {
-        ConfirmReceivedCommand = ReactiveCommand.Create(async () =>
+        ConfirmReceivedCommand = ReactiveCommand.Create(() =>
         {
-            if (SelectedMenuItem is null || Readed is null) return;
+            var config = Instances.ConfigManager.AnnouncementConfig;
 
-            var key = SelectedMenuItem.Content.ToString();
+            var accepted = config.Accepted;
+
+            if (SelectedMenuItem is null || accepted is null) return;
+
+            var key = SelectedMenuItem.Content!.ToString();
 
             if (key is null) return;
 
-            if (!Readed.Contains(key))
-                Readed.Add(key);
+            if (!accepted.Contains(key))
+                accepted.Add(key);
 
-            var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
-
-            var options = new JsonSerializerOptions()
-            {
-                WriteIndented = true,
-                IncludeFields = true,
-            };
-
-            await File.WriteAllTextAsync(
-                ConfigFilePath,
-                JsonSerializer.Serialize(Readed, options)
-            );
+            config.Save(config.ConfigFileLocation!);
 
             var finded = false;
 
@@ -70,9 +58,11 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
             }
         });
 
-        ConfirmReceivedAllCommand = ReactiveCommand.Create(async () =>
+        ConfirmReceivedAllCommand = ReactiveCommand.Create(() =>
         {
-            if (Readed is null) return;
+            var config = Instances.ConfigManager.AnnouncementConfig;
+
+            var accepted = config.Accepted;
 
             var navView = Window?.AnouncementsNavigationView;
 
@@ -84,38 +74,32 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
                     if (key is null) continue;
 
-                    if (!Readed.Contains(key))
-                        Readed.Add(key);
+                    if (!accepted.Contains(key))
+                        accepted.Add(key);
                 }
 
-                var ConfigFilePath = GlobalInfo.AnnouncementsJsonPath.GetFullPath();
-
-                var options = new JsonSerializerOptions()
-                {
-                    WriteIndented = true,
-                    IncludeFields = true,
-                };
-
-                await File.WriteAllTextAsync(
-                    ConfigFilePath,
-                    JsonSerializer.Serialize(Readed, options)
-                );
+                config.Save(config.ConfigFileLocation!);
 
                 Window?.Close();
             }
         });
     }
 
+    public override void InitEvents()
+    {
+
+    }
+
     internal static double Window_Width
     {
-        get => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width;
-        set => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Width = value;
+        get => AppConfig.Windows.AnnouncementWindow.Size.Width!.Value;
+        set => AppConfig.Windows.AnnouncementWindow.Size.Width = value;
     }
 
     internal static double Window_Height
     {
-        get => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height;
-        set => ConfigManager.AppConfig.Windows.AnnouncementWindow.Window_Height = value;
+        get => AppConfig.Windows.AnnouncementWindow.Size.Height!.Value;
+        set => AppConfig.Windows.AnnouncementWindow.Size.Height = value;
     }
 
     private NavigationViewItem? selectedMenuItem;
@@ -157,7 +141,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
         }
     }
 
-    private Dictionary<string, string> sources = new();
+    private Dictionary<string, string> sources = [];
 
     internal Dictionary<string, string> Sources
     {
@@ -185,9 +169,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
     internal AnouncementsWindow? Window { get; set; }
 
-    internal List<string>? Readed { get; set; }
+    internal ReactiveCommand<Unit, Unit>? ConfirmReceivedCommand { get; set; }
 
-    internal ReactiveCommand<Unit, Task>? ConfirmReceivedCommand { get; set; }
-
-    internal ReactiveCommand<Unit, Task>? ConfirmReceivedAllCommand { get; set; }
+    internal ReactiveCommand<Unit, Unit>? ConfirmReceivedAllCommand { get; set; }
 }

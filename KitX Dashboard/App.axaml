@@ -12,8 +12,6 @@
 
     <Application.Resources>
         <ResourceDictionary>
-            <x:String x:Key="TrayIconText">KitX</x:String>
-
             <SolidColorBrush x:Key="ThemePrimaryAccent" Color="#FF3873D9"/>
             <SolidColorBrush x:Key="ThemePrimaryAccentTransparentAA" Color="#AA3873D9"/>
             <SolidColorBrush x:Key="ThemePrimaryAccentTransparentBB" Color="#BB3873D9"/>
@@ -32,12 +30,20 @@
 
             <FontFamily x:Key="SarasaMonoCL">avares://KitX.Dashboard.Fonts/sarasa-mono-cl-regular.ttf#Sarasa Mono CL</FontFamily>
             <FontFamily x:Key="SourceHanSans">avares://KitX.Dashboard.Fonts/SourceHanSans-VF.ttf#Source Han Sans VF</FontFamily>
+
+            <ResourceDictionary.MergedDictionaries>
+
+            </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 
     <Application.Styles>
         <sty:FluentAvaloniaTheme/>
         <materialIcons:MaterialIconStyles/>
+
+        <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml"/>
+        <StyleInclude Source="avares://AvaloniaProgressRing/Styles/ProgressRing.xaml"/>
+        <StyleInclude Source="/Styles/FontsStyles.axaml"/>
     </Application.Styles>
 
     <TrayIcon.Icons>
@@ -45,10 +51,13 @@
             <TrayIcon Command="{Binding TrayIconClickedCommand}"
                       Icon="resm:KitX.Dashboard.Assets.KitX-Icon-256x256.ico"
                       IsVisible="True"
-                      ToolTipText="{DynamicResource TrayIconText}">
+                      ToolTipText="{Binding TrayIconText}">
                 <TrayIcon.Menu>
                     <NativeMenu>
                         <NativeMenuItem Command="{Binding TrayIconClickedCommand}" Header="{DynamicResource Text_Public_ShowMainWindow}"/>
+                        <NativeMenuItem Command="{Binding PluginLauncherCommand}" Header="{DynamicResource Text_Public_ShowLauncherWindow}"/>
+                        <NativeMenuItemSeparator/>
+                        <NativeMenuItem Command="{Binding ViewLatestAnnouncementsCommand}" Header="{DynamicResource Text_Public_ShowAnnouncements}"/>
                         <NativeMenuItemSeparator/>
                         <NativeMenuItem Command="{Binding ExitCommand}" Header="{DynamicResource Text_Public_Exit}"/>
                     </NativeMenu>

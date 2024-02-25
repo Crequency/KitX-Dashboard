@@ -6,7 +6,6 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
@@ -24,14 +23,11 @@ namespace KitX.Dashboard;
 public partial class App : Application
 {
     public static readonly Bitmap DefaultIcon = new(
-        $"{GlobalInfo.AssetsPath}{ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
+        $"{ConstantTable.AssetsPath}{Instances.ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
     );
 
     private AppViewModel? viewModel;
 
-    /// <summary>
-    /// Override `Initialize` function
-    /// </summary>
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -48,17 +44,13 @@ public partial class App : Application
         DataContext = viewModel;
     }
 
-    /// <summary>
-    /// Load Language
-    /// </summary>
     private void LoadLanguage()
     {
-        var lang = ConfigManager.AppConfig.App.AppLanguage;
-        var backup_lang = ConfigManager.AppConfig.App.SurpportLanguages.Keys.First();
-        var path = $"{GlobalInfo.LanguageFilePath}/{lang}.axaml".GetFullPath();
-        var backup_langPath = $"{GlobalInfo.LanguageFilePath}/{backup_lang}.axaml";
-
-        backup_langPath = backup_langPath.GetFullPath();
+        var config = Instances.ConfigManager.AppConfig;
+        var lang = config.App.AppLanguage;
+        var backup_lang = config.App.SurpportLanguages.Keys.First();
+        var path = $"{ConstantTable.LanguageFilePath}/{lang}.axaml".GetFullPath();
+        var backup_langPath = $"{ConstantTable.LanguageFilePath}/{backup_lang}.axaml".GetFullPath();
 
         try
         {
@@ -67,7 +59,7 @@ public partial class App : Application
             Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
                     File.ReadAllText(path)
-                ) as ResourceDictionary ?? new()
+                ) as ResourceDictionary ?? []
             );
         }
         catch (Exception ex)
@@ -81,9 +73,10 @@ public partial class App : Application
                 Resources.MergedDictionaries.Add(
                     AvaloniaRuntimeXamlLoader.Load(
                         File.ReadAllText(backup_langPath)
-                    ) as ResourceDictionary ?? new()
+                    ) as ResourceDictionary ?? []
                 );
-                ConfigManager.AppConfig.App.AppLanguage = backup_lang;
+
+                config.App.AppLanguage = backup_lang;
             }
             catch (Exception e)
             {
@@ -105,12 +98,9 @@ public partial class App : Application
         }
     }
 
-    /// <summary>
-    /// Calculate theme color
-    /// </summary>
     private static void CalculateThemeColor()
     {
-        Color c = Color.Parse(ConfigManager.AppConfig.App.ThemeColor);
+        Color c = Color.Parse(Instances.ConfigManager.AppConfig.App.ThemeColor);
 
         if (Current is not null)
         {
@@ -129,9 +119,6 @@ public partial class App : Application
         }
     }
 
-    /// <summary>
-    /// Init `LiveCharts`
-    /// </summary>
     private static void InitLiveCharts()
     {
         {
@@ -156,9 +143,6 @@ public partial class App : Application
         };
     }
 
-    /// <summary>
-    /// Override `OnFrameworkInitializationCompleted` function
-    /// </summary>
     public override void OnFrameworkInitializationCompleted()
     {
         var location = $"{nameof(App)}.{nameof(OnFrameworkInitializationCompleted)}";
@@ -171,7 +155,7 @@ public partial class App : Application
             };
         }
 
-        if (ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
+        if (Instances.ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
             new Thread(async () =>
             {
                 try

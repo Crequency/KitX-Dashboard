@@ -1,12 +1,14 @@
 ﻿<Window x:Class="KitX.Dashboard.Views.PluginDetailWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="using:KitX.Dashboard.Converters"
         xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:md="clr-namespace:Markdown.Avalonia;assembly=Markdown.Avalonia"
         xmlns:ui="using:FluentAvalonia.UI.Controls"
         xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
+        x:Name="WindowInstance"
         Title="PluginDetailWindow"
         d:DesignHeight="450"
         d:DesignWidth="800"
@@ -17,7 +19,8 @@
         mc:Ignorable="d">
 
     <Window.Resources>
-        <Window x:Key="ThisWindow"/>
+        <converters:PluginMultiLanguagePropertyConverter x:Key="PluginMultiLanguagePropertyConverter"/>
+        <converters:Base64ToIconConverter x:Key="Base64ToIconConverter"/>
     </Window.Resources>
 
     <Panel>
@@ -30,7 +33,7 @@
             </ExperimentalAcrylicBorder.Material>
         </ExperimentalAcrylicBorder>
 
-        <ScrollViewer Margin="20,20,20,60">
+        <ScrollViewer Margin="20,40,20,60">
 
             <Panel>
 
@@ -42,34 +45,26 @@
                                Height="80"
                                VerticalAlignment="Top"
                                DockPanel.Dock="Left"
-                               Source="{Binding IconDisplay}"
+                               Source="{Binding PluginDetail.IconInBase64, Converter={StaticResource Base64ToIconConverter}}"
                                Stretch="UniformToFill"/>
 
                         <DockPanel Margin="15,0,0,0" VerticalAlignment="Top">
 
                             <TextBlock Margin="0,5,0,0"
                                        DockPanel.Dock="Bottom"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
-                                       Text="{Binding SimpleDescription}"
+                                       Text="{Binding PluginDetail.SimpleDescription, Converter={StaticResource PluginMultiLanguagePropertyConverter}}"
                                        TextWrapping="Wrap"/>
 
                             <DockPanel DockPanel.Dock="Bottom">
-                                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Plugin_Version}"/>
-                                <TextBlock Margin="5,0,0,0"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{Binding Version}"/>
+                                <TextBlock Text="{DynamicResource Text_Plugin_Version}"/>
+                                <TextBlock Margin="5,0,0,0" Text="{Binding PluginDetail.Version}"/>
                                 <Border/>
                             </DockPanel>
 
                             <TextBlock VerticalAlignment="Top"
-                                       FontFamily="{StaticResource SourceHanSans}"
                                        FontSize="24"
                                        FontWeight="UltraBold"
-                                       Text="{Binding DisplayName}"/>
+                                       Text="{Binding PluginDetail.DisplayName, Converter={StaticResource PluginMultiLanguagePropertyConverter}}"/>
 
                         </DockPanel>
 
@@ -88,52 +83,30 @@
                         <StackPanel Margin="10">
                             <DockPanel Margin="0,5,0,0">
                                 <ui:HyperlinkButton Margin="10,0,0,0"
-                                                    Content="{Binding AuthorName}"
+                                                    Content="{Binding PluginDetail.AuthorName}"
                                                     DockPanel.Dock="Right"
-                                                    FontFamily="{StaticResource SourceHanSans}"
-                                                    FontWeight="Bold"
-                                                    NavigateUri="{Binding AuthorLink}"
-                                                    ToolTip.Tip="{Binding AuthorLink}"/>
+                                                    NavigateUri="{Binding PluginDetail.AuthorLink}"
+                                                    ToolTip.Tip="{Binding PluginDetail.AuthorLink}"/>
                                 <TextBlock VerticalAlignment="Center"
                                            DockPanel.Dock="Right"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
                                            Text="{DynamicResource Text_Plugin_AuthorName}"/>
-                                <TextBlock VerticalAlignment="Center"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Plugin_PublisherName}"/>
+                                <TextBlock VerticalAlignment="Center" Text="{DynamicResource Text_Plugin_PublisherName}"/>
                                 <ui:HyperlinkButton Margin="10,0,0,0"
-                                                    Content="{Binding PublisherName}"
-                                                    FontFamily="{StaticResource SourceHanSans}"
-                                                    FontWeight="Bold"
-                                                    NavigateUri="{Binding PublisherLink}"
-                                                    ToolTip.Tip="{Binding PublisherLink}"/>
+                                                    Content="{Binding PluginDetail.PublisherName}"
+                                                    NavigateUri="{Binding PluginDetail.PublisherLink}"
+                                                    ToolTip.Tip="{Binding PluginDetail.PublisherLink}"/>
                                 <Border/>
                             </DockPanel>
                             <DockPanel Margin="0,5,0,0">
                                 <TextBlock Margin="5,0,0,0"
                                            DockPanel.Dock="Right"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
                                            Text="{Binding LastUpdateDate}"/>
-                                <TextBlock DockPanel.Dock="Right"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Plugin_LastUpdateDate}"/>
-                                <TextBlock FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{DynamicResource Text_Plugin_PublishDate}"/>
-                                <TextBlock Margin="5,0,0,0"
-                                           FontFamily="{StaticResource SourceHanSans}"
-                                           FontWeight="Bold"
-                                           Text="{Binding PublishDate}"/>
+                                <TextBlock DockPanel.Dock="Right" Text="{DynamicResource Text_Plugin_LastUpdateDate}"/>
+                                <TextBlock Text="{DynamicResource Text_Plugin_PublishDate}"/>
+                                <TextBlock Margin="5,0,0,0" Text="{Binding PublishDate}"/>
                                 <Border/>
                             </DockPanel>
-                            <TextBlock Margin="0,5,0,0"
-                                       FontFamily="{StaticResource SourceHanSans}"
-                                       FontWeight="Bold"
-                                       Text="{Binding ComplexDescription}"/>
+                            <TextBlock Margin="0,5,0,0" Text="{Binding PluginDetail.ComplexDescription, Converter={StaticResource PluginMultiLanguagePropertyConverter}}"/>
                         </StackPanel>
                     </Panel>
 
@@ -148,7 +121,7 @@
                                                                      TintOpacity="1"/>
                                     </ExperimentalAcrylicBorder.Material>
                                 </ExperimentalAcrylicBorder>
-                                <md:MarkdownScrollViewer Margin="5" Markdown="{Binding TotalDescriptionInMarkdown}">
+                                <md:MarkdownScrollViewer Margin="5" Markdown="{Binding PluginDetail.TotalDescriptionInMarkdown, Converter={StaticResource PluginMultiLanguagePropertyConverter}}">
                                     <md:MarkdownScrollViewer.Styles>
                                         <Style Selector="ctxt|CTextBlock.Heading1">
                                             <Setter Property="FontSize" Value="36"/>
@@ -186,7 +159,15 @@
                             <ListBox Margin="0,10,0,0" ItemsSource="{Binding Functions}"/>
                         </TabItem>
                         <TabItem FontSize="16" Header="{DynamicResource Text_Plugin_Tags}">
-                            <ListBox Margin="0,10,0,0" ItemsSource="{Binding Tags}"/>
+                            <ListBox Margin="0,10,0,0" ItemsSource="{Binding Tags}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBox Margin="10"
+                                                 IsReadOnly="True"
+                                                 Text="{Binding}"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </TabItem>
                     </TabControl>
 
@@ -202,10 +183,8 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 Command="{Binding FinishCommand}"
-                CommandParameter="{DynamicResource ThisWindow}"
-                Content="{DynamicResource Text_Public_Confirm}"
-                FontFamily="{StaticResource SourceHanSans}"
-                FontWeight="Bold"/>
+                CommandParameter="{Binding #WindowInstance}"
+                Content="{DynamicResource Text_Public_Confirm}"/>
 
     </Panel>
 

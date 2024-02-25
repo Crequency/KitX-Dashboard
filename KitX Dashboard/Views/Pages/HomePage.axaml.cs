@@ -1,15 +1,14 @@
 ﻿using Avalonia.Controls;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels.Pages;
-using KitX.Dashboard.Views.Controls;
+using KitX.Dashboard.Views.Pages.Controls;
 using Serilog;
 using System;
 
 namespace KitX.Dashboard.Views.Pages;
 
-public partial class HomePage : UserControl
+public partial class HomePage : UserControl, IView
 {
     private readonly HomePageViewModel viewModel = new();
 
@@ -22,38 +21,25 @@ public partial class HomePage : UserControl
         InitHomePage();
     }
 
-    /// <summary>
-    /// 初始化主页
-    /// </summary>
     private void InitHomePage()
     {
-        this.FindControl<NavigationView>("HomeNavigationView").SelectedItem
-            = this.FindControl<NavigationViewItem>(SelectedViewName);
-    }
+        var nav = this.FindControl<NavigationView>("HomeNavigationView");
 
-    /// <summary>
-    /// 保存对配置文件的修改
-    /// </summary>
-    private static void SaveChanges()
-    {
-        EventService.Invoke(nameof(EventService.ConfigSettingsChanged));
+        if (nav is not null)
+            nav.SelectedItem = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
 
     private static string SelectedViewName
     {
-        get => ConfigManager.AppConfig.Pages.Home.SelectedViewName;
+        get => Instances.ConfigManager.AppConfig.Pages.Home.SelectedViewName;
         set
         {
-            ConfigManager.AppConfig.Pages.Home.SelectedViewName = value;
-            SaveChanges();
+            Instances.ConfigManager.AppConfig.Pages.Home.SelectedViewName = value;
+
+            IView.SaveAppConfigChanges();
         }
     }
 
-    /// <summary>
-    /// 前台页面切换事件
-    /// </summary>
-    /// <param name="sender">被点击的 NavigationViewItem</param>
-    /// <param name="e">路由事件参数</param>
     private void HomeNavigationView_SelectionChanged(
         object? sender,
         NavigationViewSelectionChangedEventArgs e)
@@ -68,7 +54,7 @@ public partial class HomePage : UserControl
 
             SelectedViewName = tag;
 
-            this.FindControl<Frame>("HomeFrame").Navigate(SelectedViewType());
+            this.FindControl<Frame>("HomeFrame")?.Navigate(SelectedViewType());
         }
         catch (NullReferenceException o)
         {

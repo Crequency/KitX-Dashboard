@@ -1,8 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Services;
 using System;
 using System.IO;
 
@@ -22,26 +20,14 @@ class Program
     {
         try
         {
-            // If dump file exists, delete it.
-            if (File.Exists("./dump.log".GetFullPath()))
-                File.Delete("./dump.log".GetFullPath());
-
-            // Init event service
-            EventService.Init();
-
-            // Process startup arguments
-            Helper.ProcessStartupArguments(args);
-
             // Run framework
-            Helper.RunFramework();
-
-            ConfigManager.AppConfig.App.RanTime++;
+            AppFramework.RunFramework();
 
             // Run Avalonia
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
             // Make sure all threads exit
-            Helper.Exit();
+            AppFramework.EnsureExit();
         }
         catch (Exception e)
         {
@@ -53,11 +39,9 @@ class Program
                 {e.StackTrace}
                 """
             );
-
 #if !DEBUG
             Environment.Exit(1);
 #endif
-
         }
     }
 

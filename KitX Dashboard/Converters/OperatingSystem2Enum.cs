@@ -1,4 +1,4 @@
-﻿using KitX.Web.Rules;
+﻿using KitX.Shared.Device;
 using System;
 
 namespace KitX.Dashboard.Converters;

@@ -1,10 +1,9 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Data;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Network;
+using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
@@ -30,17 +29,17 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
         InitEvents();
     }
 
-    internal void InitCommands()
+    public override void InitCommands()
     {
         ViewDetailsCommand = ReactiveCommand.Create(() =>
         {
-            if (PluginDetail is not null && Instances.MainWindow is not null)
+            if (PluginDetail is not null && ViewInstances.MainWindow is not null)
                 new PluginDetailWindow()
                 {
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 }
-                .SetPluginStruct(PluginDetail.PluginDetails)
-                .Show(Instances.MainWindow);
+                .SetPluginInfo(PluginDetail.PluginDetails)
+                .Show(ViewInstances.MainWindow);
         });
 
         RemoveCommand = ReactiveCommand.Create(() =>
@@ -49,7 +48,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
             {
                 PluginBars?.Remove(PluginBar);
 
-                PluginsNetwork.RequireRemovePlugin(PluginDetail);
+                //PluginsNetwork.RequireRemovePlugin(PluginDetail);
             }
         });
 
@@ -58,7 +57,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
             if (PluginDetail is not null && PluginBar is not null)
             {
                 PluginBars?.Remove(PluginBar);
-                PluginsNetwork.RequireDeletePlugin(PluginDetail);
+                //PluginsNetwork.RequireDeletePlugin(PluginDetail);
             }
         });
 
@@ -70,24 +69,24 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
             {
                 try
                 {
-                    var loaderName = PluginDetail?.RequiredLoaderStruct.LoaderName;
-                    var loaderVersion = PluginDetail?.RequiredLoaderStruct.LoaderVersion;
+                    var loaderName = PluginDetail?.RequiredLoaderInfo.LoaderName;
+                    var loaderVersion = PluginDetail?.RequiredLoaderInfo.LoaderVersion;
                     var pd = PluginDetail?.PluginDetails;
 
                     var pluginPath = $"{PluginDetail?.InstallPath}/{pd?.RootStartupFileName}";
                     var pluginFile = pluginPath.GetFullPath();
-                    var connectStr = "" +
-                        $"{DevicesDiscoveryServer.DefaultDeviceInfoStruct.IPv4}" +
+                    var connectStr = "ws://" +
+                        $"{DevicesDiscoveryServer.DefaultDeviceInfo.Device.IPv4}" +
                         $":" +
-                        $"{GlobalInfo.PluginServerPort}";
+                        $"{ConstantTable.PluginsServerPort}/";
 
                     if (PluginDetail is null) return;
 
-                    if (PluginDetail.RequiredLoaderStruct.SelfLoad)
+                    if (PluginDetail.RequiredLoaderInfo.SelfLoad)
                         Process.Start(pluginFile, $"--connect {connectStr}");
                     else
                     {
-                        var loaderFile = $"{ConfigManager.AppConfig.Loaders.InstallPath}/" +
+                        var loaderFile = $"{Instances.ConfigManager.AppConfig.Loaders.InstallPath}/" +
                             $"{loaderName}/{loaderVersion}/{loaderName}";
 
                         if (OperatingSystem.IsWindows())
@@ -115,7 +114,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
         });
     }
 
-    internal void InitEvents()
+    public override void InitEvents()
     {
         EventService.LanguageChanged += () =>
         {
@@ -134,7 +133,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
             if (PluginDetail is null) return null;
 
             return PluginDetail.PluginDetails.DisplayName.TryGetValue(
-                ConfigManager.AppConfig.App.AppLanguage, out var lang
+                Instances.ConfigManager.AppConfig.App.AppLanguage, out var lang
             ) ? lang : PluginDetail.PluginDetails.DisplayName.Values.GetEnumerator().Current;
         }
     }

@@ -1,12 +1,12 @@
-﻿{
-    "profiles": {
-        "KitX Dashboard": {
-            "commandName": "Project"
-        },
-        "WSL": {
-            "commandName": "WSL2",
-            "environmentVariables": {},
-            "distributionName": "Ubuntu-20.04"
-        }
+{
+  "profiles": {
+    "KitX Dashboard": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": "Ubuntu-20.04"
     }
+  }
 }

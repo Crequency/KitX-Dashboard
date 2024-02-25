@@ -4,7 +4,7 @@
 
 # Architecture
 
-Based on `.NET 7` platform.
+Based on `.NET 8` platform.
 
 Using [Avalonia UI](https://avaloniaui.net) as UI framework, using `Avalonia 11.0` .
 
@@ -22,18 +22,21 @@ git clone https://github.com/Crequency/KitX-Dashboard.git
 
 # Build
 
-Make sure you have `dotnet 7` sdk installed on your machine and added to `PATH` environment variable firstly.
+Make sure you have `dotnet 8` sdk installed on your machine firstly.
+
+> Execute command `dotnet --list-sdks` to check if you have installed `dotnet 8` sdk.
 
 Then,
 
 ```shell
 cd 'KitX Dashboard/KitX Dashboard'
+
 dotnet build
 ```
 
 this will only build the project.
 
-output is in `./bin/Debug/net7.0/` folder.
+output is in `./bin/Debug/net8.0/` folder.
 
 or
 
@@ -43,7 +46,7 @@ dotnet run
 
 this will build and run in current folder.
 
-suggest using `dotnet run --project ../../..` command in `KitX Dashboard/bin/Debug/net7.0` folder, in order to avoid workspace error.
+suggest using `dotnet run --project ../../..` command in `KitX Dashboard/bin/Debug/net8.0` folder, in order to avoid workspace error.
 
 # Dependencies
 
@@ -63,6 +66,7 @@ git submodule init
 # Update submodules
 # If you are developing on Windows OS, replace `start.sh` with `start.ps1`
 # which requires powershell installed
+# WARN: We're developing new `cheese` program to replace `start.sh` and `start.ps1`
 ./ToolKits/start.sh dashboard
 ./ToolKits/start.sh reference
 ```

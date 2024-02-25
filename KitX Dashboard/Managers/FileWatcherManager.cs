@@ -1,21 +1,24 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Names;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace KitX.Dashboard.Managers;
 
-internal class FileWatcherManager
+public class FileWatcherManager
 {
-    private readonly Dictionary<string, FileWatcher> Watchers = new();
+    private readonly Dictionary<string, FileWatcher> Watchers = [];
 
-    /// <summary>
-    /// 注册文件监控
-    /// </summary>
-    /// <param name="name">监控名称</param>
-    /// <param name="filePath">监控文件路径</param>
-    /// <param name="onchange">文件变更时事件</param>
-    /// <exception cref="InvalidOperationException">试图注册已经注册的监控</exception>
+    public FileWatcherManager()
+    {
+        AppFramework.AfterInitailization(() =>
+        {
+            Instances.SignalTasksManager!.RaiseSignal(nameof(SignalsNames.FileWatcherManagerInitializedSignal));
+        });
+    }
+
     public FileWatcherManager RegisterWatcher(
         string name,
         string filePath,
@@ -34,10 +37,6 @@ internal class FileWatcherManager
         return this;
     }
 
-    /// <summary>
-    /// 注销文件监控, 不存在则什么也不做
-    /// </summary>
-    /// <param name="name">监控名称</param>
     public FileWatcherManager UnregisterWatcher(string name)
     {
         if (Watchers.TryGetValue(name, out var watcher))
@@ -49,11 +48,6 @@ internal class FileWatcherManager
         return this;
     }
 
-    /// <summary>
-    /// 增加例外次数
-    /// </summary>
-    /// <param name="name">要增加的监控</param>
-    /// <param name="count">要增加的次数</param>
     public FileWatcherManager IncreaseExceptCount(string name, int count = 1)
     {
         if (Watchers.TryGetValue(name, out var watcher))
@@ -62,11 +56,6 @@ internal class FileWatcherManager
         return this;
     }
 
-    /// <summary>
-    /// 减少例外次数
-    /// </summary>
-    /// <param name="name">要减少的监控</param>
-    /// <param name="count">要减少的例外次数</param>
     public FileWatcherManager DecreaseExceptCount(string name, int count = 1)
     {
         if (Watchers.TryGetValue(name, out var watcher))
@@ -75,9 +64,6 @@ internal class FileWatcherManager
         return this;
     }
 
-    /// <summary>
-    /// 清空所有监控
-    /// </summary>
     public FileWatcherManager Clear()
     {
         foreach (KeyValuePair<string, FileWatcher> item in Watchers)
@@ -102,36 +88,30 @@ internal class FileWatcher : IDisposable
     {
         var location = $"{nameof(FileWatcherManager)}.{nameof(FileWatcher)}";
 
-        watcher = new();
+        var filepath = filename.GetFullPath();
+
+        var path = Path.GetDirectoryName(filepath) ?? throw new NullReferenceException($"In {location}._ctor: Failed in {nameof(Path.GetDirectoryName)}");
+
+        watcher = new()
+        {
+            NotifyFilter = notifyFilters ?? NotifyFilters.LastWrite,
+            Path = path,
+            Filter = Path.GetFileName(filepath.GetFullPath())
+        };
 
         watcher.Changed += (x, y) =>
         {
             if (ExceptCounts > 0)
                 --ExceptCounts;
-            else onchanged(x, y);
+            else
+                onchanged(x, y);
         };
 
-        watcher.NotifyFilter = notifyFilters ?? NotifyFilters.LastWrite;
-
-        var filepath = filename.GetFullPath();
-        var path = Path.GetDirectoryName(filepath)
-            ?? throw new NullReferenceException("In FileWatcher(): Failed in GetDirectoryName()");
-
-        watcher.Path = path;
-        watcher.Filter = filepath.GetFullPath();
         watcher.EnableRaisingEvents = true;
     }
 
-    /// <summary>
-    /// 增加例外次数
-    /// </summary>
-    /// <param name="count">次数</param>
     public void IncreaseExceptCount(int count) => ExceptCounts += count;
 
-    /// <summary>
-    /// 减少例外次数
-    /// </summary>
-    /// <param name="count">次数</param>
     public void DecreaseExceptCount(int count) => ExceptCounts -= count;
 
     public void Dispose()

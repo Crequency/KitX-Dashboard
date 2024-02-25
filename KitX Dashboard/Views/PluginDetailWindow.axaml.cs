@@ -3,7 +3,7 @@ using Avalonia.Media;
 using Common.BasicHelper.Graphics.Screen;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
-using KitX.Web.Rules;
+using KitX.Shared.Plugin;
 using Serilog;
 using System;
 
@@ -19,18 +19,19 @@ public partial class PluginDetailWindow : Window
 
         InitializeComponent();
 
-        Resources["ThisWindow"] = this;
+        var screen = Screens.ScreenFromWindow(this);
 
-        var suggest = Resolution.Suggest(
-            Resolution.Parse("2560x1440"),
-            Resolution.Parse("820x500"),
-            Resolution.Parse(
-                $"{Screens.Primary.Bounds.Width}x{Screens.Primary.Bounds.Height}"
-            )
-        ).Integerization();
+        if (screen is not null)
+        {
+            var suggest = Resolution.Suggest(
+                Resolution.Parse("2560x1440"),
+                Resolution.Parse("820x500"),
+                Resolution.Parse($"{screen.Bounds.Width}x{screen.Bounds.Height}")
+            ).Integerization();
 
-        Width = suggest.Width ?? 820;
-        Height = suggest.Height ?? 500;
+            if (suggest is not null)
+                ClientSize = new(suggest.Width ?? 820, suggest.Height ?? 500);
+        }
 
         if (OperatingSystem.IsWindows() == false)
         {
@@ -60,7 +61,7 @@ public partial class PluginDetailWindow : Window
         EventService.OnExiting += Close;
     }
 
-    public PluginDetailWindow SetPluginStruct(PluginStruct ps)
+    public PluginDetailWindow SetPluginInfo(PluginInfo ps)
     {
         viewModel.PluginDetail = ps;
 

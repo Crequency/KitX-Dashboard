@@ -1,6 +1,6 @@
 ﻿using Avalonia;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Web.Rules;
+using KitX.Shared.Device;
 using Material.Icons;
 using System.ComponentModel;
 
@@ -15,20 +15,20 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
 
     }
 
-    private DeviceInfoStruct deviceInfo = new();
+    private DeviceInfo deviceInfo = new();
 
-    internal DeviceInfoStruct DeviceInfo
+    internal DeviceInfo DeviceInfo
     {
         get => deviceInfo;
         set
         {
             deviceInfo = value;
-            DeviceName = DeviceInfo.DeviceName;
-            DeviceMacAddress = DeviceInfo.DeviceMacAddress.IsNullOrWhiteSpace()
+            DeviceName = DeviceInfo.Device.DeviceName;
+            DeviceMacAddress = DeviceInfo.Device.MacAddress.IsNullOrWhiteSpace()
                 ?
-                FetchStringFromResource(Application.Current, "Text_Device_NoMacAddress")
+                Translate("Text_Device_NoMacAddress")
                 :
-                DeviceInfo.DeviceMacAddress
+                DeviceInfo.Device.MacAddress
                 ;
             LastOnlineTime = DeviceInfo.SendTime.ToLocalTime().ToString("yyyy.MM.dd HH:mm:ss");
             DeviceVersion = DeviceInfo.DeviceOSVersion;
@@ -48,12 +48,12 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
                 OperatingSystems.IoT => MaterialIconKind.Chip,
                 _ => MaterialIconKind.QuestionMarkCircle,
             };
-            IPv4 = $"{DeviceInfo.IPv4}:{DeviceInfo.PluginServerPort}";
-            IPv6 = DeviceInfo.IPv6;
+            IPv4 = $"{DeviceInfo.Device.IPv4}:{DeviceInfo.PluginsServerPort}";
+            IPv6 = DeviceInfo.Device.IPv6;
             PluginsCount = DeviceInfo.PluginsCount.ToString();
             DeviceControlStatus = DeviceInfo.IsMainDevice
-                ? FetchStringFromResource(Application.Current, "Text_Device_Type_Master")
-                : FetchStringFromResource(Application.Current, "Text_Device_Type_Slave");
+                ? Translate("Text_Device_Type_Master")
+                : Translate("Text_Device_Type_Slave");
 
             PropertyChanged?.Invoke(
                 this,
@@ -119,7 +119,11 @@ internal class DeviceCardViewModel : ViewModelBase, INotifyPropertyChanged
     internal string? DeviceServerAddress
     {
         get => deviceInfo.IsMainDevice
-            ? $"{deviceInfo.IPv4}:{deviceInfo.DeviceServerPort}"
+            ? $"{deviceInfo.Device.IPv4}:{deviceInfo.DevicesServerPort}"
             : null;
     }
+
+    public override void InitCommands() => throw new System.NotImplementedException();
+
+    public override void InitEvents() => throw new System.NotImplementedException();
 }

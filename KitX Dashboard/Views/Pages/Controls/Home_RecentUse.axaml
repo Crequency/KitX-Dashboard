@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="KitX.Dashboard.Views.Controls.Home_RecentUse"
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.Controls.Home_RecentUse"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -10,8 +10,6 @@
         <Border Height="{Binding NoRecent_TipHeight}" DockPanel.Dock="Top">
             <TextBlock HorizontalAlignment="Center"
                        VerticalAlignment="Center"
-                       FontFamily="{StaticResource SourceHanSans}"
-                       FontWeight="Bold"
                        Text="{DynamicResource Text_MainWindow_Recent_No}"/>
         </Border>
         <ScrollViewer>
