@@ -1,12 +1,15 @@
 ﻿using Avalonia;
-using Avalonia.Controls;
+using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Network.PluginsNetwork;
 using KitX.Dashboard.Views;
 using KitX.Shared.Plugin;
+using KitX.Shared.WebCommand;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.Json;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -30,11 +33,15 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         {
             PluginsCount = $"{PluginInfos.Count}";
 
+            CheckPluginIndex();
+
             this.RaisePropertyChanged(nameof(SearchItems));
+            this.RaisePropertyChanged(nameof(SelectedPluginInfo));
+            this.RaisePropertyChanged(nameof(SelectedFunction));
         };
     }
 
-    public string pluginsCount = $"0";
+    public string pluginsCount = "0";
 
     public string PluginsCount
     {
@@ -49,7 +56,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
     public static double NoPlugins_TipHeight => PluginInfos.Count == 0 ? 40 : 0;
 
-    private int selectedPluginIndex = -1;
+    private int selectedPluginIndex = 0;
 
     public int SelectedPluginIndex
     {
@@ -63,7 +70,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
     public PluginInfo? SelectedPluginInfo
     {
-        get => SelectedPluginIndexInRange(SelectedPluginIndex) ? PluginInfos[SelectedPluginIndex] : null;
+        get => PluginIndexInRange(SelectedPluginIndex) ? PluginInfos[SelectedPluginIndex] : null;
         set
         {
             if (value is null) return;
@@ -78,32 +85,102 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
     public Function? SelectedFunction
     {
-        get => selectedFunction;
-        set => this.RaiseAndSetIfChanged(ref selectedFunction, value);
-    }
+        get
+        {
+            if (SelectedPluginInfo is null) selectedFunction = null;
 
-    private Parameter? selectedParameter;
+            return selectedFunction;
+        }
 
-    public Parameter? SelectedParameter
-    {
-        get => selectedParameter;
-        set => this.RaiseAndSetIfChanged(ref selectedParameter, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref selectedFunction, value);
+
+            this.RaisePropertyChanged(nameof(HavingParameters));
+        }
     }
 
     public static ObservableCollection<PluginInfo> PluginInfos => ViewInstances.PluginInfos;
 
-    public static IEnumerable<string> SearchItems => PluginInfos.Select(x => x.Name).Distinct();
-    //.Concat(
-    //    PluginInfos.SelectMany(
-    //        x => x.SimpleDescription.Select(x => x.Value)
-    //    )
-    //).Concat(
-    //    PluginInfos.SelectMany(
-    //        x => x.ComplexDescription.Select(x => x.Value)
-    //    )
-    //).Distinct();
+    private bool isSelectingPlugin = true;
 
-    public string? SearchingText { get; set; }
+    public bool IsSelectingPlugin
+    {
+        get => isSelectingPlugin;
+        set
+        {
+            if (IsSelectingFunction)
+                IsSelectingFunction = false;
+
+            this.RaiseAndSetIfChanged(ref isSelectingPlugin, value);
+
+            if (value)
+            {
+                SearchingText = SelectedPluginInfo?.Name;
+
+                this.RaisePropertyChanged(nameof(SearchItems));
+            }
+        }
+    }
+
+    private bool isSelectingFunction = false;
+
+    public bool IsSelectingFunction
+    {
+        get => isSelectingFunction;
+        set
+        {
+            if (IsSelectingPlugin)
+                IsSelectingPlugin = false;
+
+            this.RaiseAndSetIfChanged(ref isSelectingFunction, value);
+
+
+            if (value)
+            {
+                SearchingText = SelectedFunction?.Name;
+
+                this.RaisePropertyChanged(nameof(SearchItems));
+            }
+        }
+    }
+
+    public bool HavingParameters
+    {
+        get
+        {
+            if (SelectedFunction is null) return false;
+
+            return SelectedFunction.Value.Parameters.Count != 0;
+        }
+    }
+
+    public IEnumerable<string> SearchItems
+    {
+        get
+        {
+            if (IsSelectingPlugin)
+            {
+                return PluginInfos.Select(x => x.Name).Distinct();
+            }
+            else if (IsSelectingFunction)
+            {
+                return SelectedPluginInfo?.Functions.Select(f => f.Name) ?? [];
+            }
+            else return [];
+        }
+    }
+
+    private string? searchingText;
+
+    public string? SearchingText
+    {
+        get => searchingText;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref searchingText, value);
+        }
+    }
 
     private Vector scrollViewerOffset = new(0, 0);
 
@@ -113,13 +190,19 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref scrollViewerOffset, value);
     }
 
-    private void BringSelectedButtonIntoView(int perLineButtonsCount, object? scrollvierwer)
+    private bool isInDirectSelectingMode = false;
+
+    public bool IsInDirectSelectingMode
     {
-        if (scrollvierwer is not ScrollViewer viewer) return;
+        get => isInDirectSelectingMode;
+        set => this.RaiseAndSetIfChanged(ref isInDirectSelectingMode, value);
+    }
 
-        var viewerHeight = (int)Math.Floor(viewer?.DesiredSize.Height ?? 240);
+    private void BringSelectedButtonIntoView(int perLineButtonsCount, double scrollviewerHeight, double scrollviewerOffsetY)
+    {
+        var viewerHeight = (int)Math.Floor(scrollviewerHeight);
 
-        var viewerOffsetY = (int)Math.Floor(viewer?.Offset.Y ?? 0);
+        var viewerOffsetY = (int)Math.Floor(scrollviewerOffsetY);
 
         var lineIndex = SelectedPluginIndex / perLineButtonsCount;
 
@@ -137,57 +220,60 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    private static bool SelectedPluginIndexInRange(int index) => index >= 0 && index < PluginInfos.Count;
+    private static bool PluginIndexInRange(int index) => index >= 0 && index < PluginInfos.Count;
 
-    internal void SelectRightOne(double WindowWidth, object? scrollviewer)
+    private void CheckPluginIndex()
     {
-        var perLineCount = (int)Math.Floor((WindowWidth - 40) / 80);
-
-        if (SelectedPluginIndexInRange(SelectedPluginIndex + 1))
+        if (PluginIndexInRange(SelectedPluginIndex) == false)
         {
-            SelectedPluginIndex++;
-
-            BringSelectedButtonIntoView(perLineCount, scrollviewer);
+            if (SelectedPluginIndex >= PluginInfos.Count)
+                SelectedPluginIndex = PluginInfos.Count - 1;
+            else if (SelectedPluginIndex < 0)
+                SelectedPluginIndex = 0;
         }
     }
 
-    internal void SelectLeftOne(double WindowWidth, object? scrollviewer)
+    internal void SelectLeftOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
     {
-        var perLineCount = (int)Math.Floor((WindowWidth - 40) / 80);
-
-        if (SelectedPluginIndexInRange(selectedPluginIndex - 1))
+        if (PluginIndexInRange(selectedPluginIndex - 1))
         {
             SelectedPluginIndex--;
 
-            BringSelectedButtonIntoView(perLineCount, scrollviewer);
+            BringSelectedButtonIntoView(perLineCount, scrollviewerHeight, scrollviewerOffsetY);
         }
     }
 
-    internal void SelectUpOne(double WindowWidth, object? scrollviewer)
+    internal void SelectRightOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
     {
-        var perLineCount = (int)Math.Floor((WindowWidth - 40) / 80);
+        if (PluginIndexInRange(SelectedPluginIndex + 1))
+        {
+            SelectedPluginIndex++;
 
+            BringSelectedButtonIntoView(perLineCount, scrollviewerHeight, scrollviewerOffsetY);
+        }
+    }
+
+    internal void SelectUpOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
+    {
         var targetIndex = SelectedPluginIndex - perLineCount;
 
-        if (SelectedPluginIndexInRange(targetIndex))
+        if (PluginIndexInRange(targetIndex))
         {
             SelectedPluginIndex = targetIndex;
 
-            BringSelectedButtonIntoView(perLineCount, scrollviewer);
+            BringSelectedButtonIntoView(perLineCount, scrollviewerHeight, scrollviewerOffsetY);
         }
     }
 
-    internal void SelectDownOne(double WindowWidth, object? scrollviewer)
+    internal void SelectDownOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
     {
-        var perLineCount = (int)Math.Floor((WindowWidth - 40) / 80);
-
         var targetIndex = SelectedPluginIndex + perLineCount;
 
-        if (SelectedPluginIndexInRange(targetIndex))
+        if (PluginIndexInRange(targetIndex))
         {
             SelectedPluginIndex = targetIndex;
 
-            BringSelectedButtonIntoView(perLineCount, scrollviewer);
+            BringSelectedButtonIntoView(perLineCount, scrollviewerHeight, scrollviewerOffsetY);
         }
         else
         {
@@ -196,17 +282,93 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
             if ((targetIndex / perLineCount) - (SelectedPluginIndex / perLineCount) == 0)
                 return;
 
-            if (SelectedPluginIndexInRange(targetIndex))
+            if (PluginIndexInRange(targetIndex))
             {
                 SelectedPluginIndex = targetIndex;
 
-                BringSelectedButtonIntoView(perLineCount, scrollviewer);
+                BringSelectedButtonIntoView(perLineCount, scrollviewerHeight, scrollviewerOffsetY);
             }
         }
     }
 
-    internal void SelectPluginInfo()
+    internal void SelectHomeOne(int perLineCount)
     {
+        var currentLine = SelectedPluginIndex / perLineCount;
 
+        var targetIndex = currentLine * perLineCount;
+
+        if (PluginIndexInRange(targetIndex))
+            SelectedPluginIndex = targetIndex;
+    }
+
+    internal void SelectEndOne(int perLineCount)
+    {
+        var currentLine = SelectedPluginIndex / perLineCount;
+
+        var targetIndex = ((currentLine + 1) * perLineCount) - 1;
+
+        while (PluginIndexInRange(targetIndex) == false && targetIndex >= 0)
+            targetIndex--;
+
+        if (PluginIndexInRange(targetIndex))
+            SelectedPluginIndex = targetIndex;
+    }
+
+    internal void SubmitSearchingText()
+    {
+        var text = SearchingText;
+
+        if (IsSelectingPlugin)
+        {
+            var index = PluginInfos.IndexOf(x => x.Name.Equals(text));
+
+            if (index != -1)
+            {
+                SelectedPluginIndex = index;
+
+                if (SelectedFunction is not null) SelectedFunction = null;
+
+                IsSelectingFunction = true;
+            }
+        }
+        else if (IsSelectingFunction)
+        {
+            if (SelectedPluginInfo is not null)
+                foreach (var func in SelectedPluginInfo.Value.Functions)
+                    if (func.Name.Equals(text))
+                    {
+                        SelectedFunction = func;
+
+                        break;
+                    }
+
+            if (SelectedPluginInfo is not null && SelectedFunction is not null && (HavingParameters == false))
+            {
+                var plugConnector = PluginsServer.Instance.FindConnector(SelectedPluginInfo.Value);
+
+                if (plugConnector is not null)
+                {
+                    var connector = new Connector()
+                        .SetSerializer(x => JsonSerializer.Serialize(x))
+                        .SetSender(plugConnector.Request)
+                        ;
+
+                    var request = connector.Request()
+                        .ReceiveCommand()
+                        .UpdateCommand(cmd =>
+                        {
+                            cmd.FunctionName = SelectedFunction.Value.Name;
+
+                            return cmd;
+                        })
+                        .Send()
+                        ;
+                }
+            }
+        }
+        else
+        {
+
+        }
     }
 }

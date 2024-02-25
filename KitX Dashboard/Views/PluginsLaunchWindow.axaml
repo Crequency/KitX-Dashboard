@@ -10,10 +10,10 @@
         xmlns:vm="using:KitX.Dashboard.ViewModels"
         Title="PluginsLaunchWindow"
         Width="600"
-        Height="330"
+        Height="360"
         MinWidth="600"
-        MinHeight="330"
-        d:DesignHeight="330"
+        MinHeight="360"
+        d:DesignHeight="360"
         d:DesignWidth="600"
         Background="Transparent"
         ExtendClientAreaChromeHints="NoChrome"
@@ -30,9 +30,15 @@
         <converters:PluginInfoSelectedConverter x:Key="PluginInfoSelectedConverter"/>
     </Window.Resources>
     <DockPanel>
-        <Grid Height="80"
-              Margin="0,10,0,0"
-              DockPanel.Dock="Top">
+        <StackPanel Height="100"
+                    Margin="0,20,0,0"
+                    Classes.blured="{Binding IsInDirectSelectingMode}"
+                    DockPanel.Dock="Top">
+            <StackPanel.Styles>
+                <Style Selector="StackPanel.blured">
+                    <Setter Property="Effect" Value="blur(5)"/>
+                </Style>
+            </StackPanel.Styles>
             <AutoCompleteBox x:Name="MainAutoCompleteBox"
                              Width="400"
                              HorizontalAlignment="Center"
@@ -43,7 +49,47 @@
                              ItemsSource="{Binding SearchItems}"
                              Text="{Binding SearchingText}"
                              Watermark="{DynamicResource Text_Lib_Search_In_Local}"/>
-        </Grid>
+            <StackPanel Margin="0,10,0,0"
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal">
+                <StackPanel.Styles>
+                    <Style Selector="Button.inStep">
+                        <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+                    </Style>
+                </StackPanel.Styles>
+                <Button Margin="10" Classes.inStep="{Binding IsSelectingPlugin}">
+                    <Grid>
+                        <TextBlock IsVisible="{Binding SelectedPluginInfo, Converter={x:Static ObjectConverters.IsNotNull}}" Text="{Binding SelectedPluginInfo.Name}"/>
+                        <TextBlock IsVisible="{Binding SelectedPluginInfo, Converter={x:Static ObjectConverters.IsNull}}" Text="[Plugin]"/>
+                    </Grid>
+                </Button>
+                <TextBlock Width="10"
+                           VerticalAlignment="Center"
+                           Text=">"/>
+                <Button Margin="10" Classes.inStep="{Binding IsSelectingFunction}">
+                    <Grid>
+                        <TextBlock IsVisible="{Binding SelectedFunction, Converter={x:Static ObjectConverters.IsNotNull}}" Text="{Binding SelectedFunction.Name}"/>
+                        <TextBlock IsVisible="{Binding SelectedFunction, Converter={x:Static ObjectConverters.IsNull}}" Text="[Function]"/>
+                    </Grid>
+                </Button>
+                <TextBlock Width="10"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding HavingParameters}"
+                           Text=">"/>
+                <ItemsControl IsVisible="{Binding HavingParameters}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </StackPanel>
 
         <Border Height="{Binding NoPlugins_TipHeight}" DockPanel.Dock="Top">
             <TextBlock HorizontalAlignment="Center"
@@ -51,8 +97,10 @@
                        Text="{DynamicResource Text_Lib_Tip_NoPlugin}"/>
         </Border>
 
-        <Grid DockPanel.Dock="Bottom">
-            <StackPanel Margin="10" Orientation="Horizontal">
+        <DockPanel Margin="10" DockPanel.Dock="Bottom">
+            <StackPanel VerticalAlignment="Center"
+                        DockPanel.Dock="Left"
+                        Orientation="Horizontal">
                 <TextBlock Text="{Binding PluginsCount}"/>
                 <TextBlock Margin="5,0,0,0" Text="{DynamicResource Text_Lib_Tip_Connected}"/>
                 <Border Width="20"/>
@@ -62,7 +110,24 @@
                 <Border Width="20"/>
                 <TextBlock x:Name="SelectedPluginInfoConnectionIdTextBlock" Text="{Binding SelectedPluginInfo.Tags, Converter={StaticResource PluginInfoTagsFetchConverter}, ConverterParameter=ConnectionId}"/>
             </StackPanel>
-        </Grid>
+            <Grid Width="20"
+                  Height="20"
+                  VerticalAlignment="Center"
+                  DockPanel.Dock="Right">
+                <Border x:Name="IsInDirectSelectingModeIndicator"
+                        Width="20"
+                        Height="20"
+                        Background="#FFD26F"
+                        CornerRadius="15"
+                        IsVisible="{Binding IsInDirectSelectingMode}"/>
+                <Border Width="20"
+                        Height="20"
+                        Background="#3677FF"
+                        CornerRadius="15"
+                        IsVisible="{Binding !IsInDirectSelectingMode}"/>
+            </Grid>
+            <Border/>
+        </DockPanel>
 
         <ScrollViewer x:Name="PluginsScrollViewer"
                       Focusable="True"
@@ -96,6 +161,7 @@
                                              ConverterParameter="ConnectionId"
                                              Path="Tags"/>
                                     <Binding Path="#SelectedPluginInfoConnectionIdTextBlock.Text"/>
+                                    <Binding Path="#IsInDirectSelectingModeIndicator.IsVisible"/>
                                 </MultiBinding>
                             </Classes.selected>
                             <Button.Styles>

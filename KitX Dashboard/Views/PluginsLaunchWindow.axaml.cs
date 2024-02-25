@@ -1,10 +1,8 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Media;
 using Avalonia.Threading;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
-using Serilog;
 using SharpHook.Native;
 using System;
 
@@ -14,7 +12,7 @@ public partial class PluginsLaunchWindow : Window
 {
     private readonly PluginsLaunchWindowViewModel viewModel = new();
 
-    private Action? OnHideAction;
+    private readonly Action? OnHideAction;
 
     private bool pluginsLaunchWindowDisplayed = false;
 
@@ -22,8 +20,6 @@ public partial class PluginsLaunchWindow : Window
 
     public PluginsLaunchWindow()
     {
-        var location = $"{nameof(PluginsLaunchWindow)}.ctor";
-
         InitializeComponent();
 
         DataContext = viewModel;
@@ -32,31 +28,22 @@ public partial class PluginsLaunchWindow : Window
 
         EventService.OnExiting += Close;
 
-        if (OperatingSystem.IsWindows() == false)
-        {
-            try
-            {
-                Background = Resources["ThemePrimaryAccent"] as SolidColorBrush;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, $"In {location}: {ex.Message}");
-            }
-        }
+        Initialize();
+    }
 
+    private void Initialize()
+    {
         if (this.FindControl<AutoCompleteBox>("MainAutoCompleteBox") is AutoCompleteBox box)
         {
-            //box.AttachedToVisualTree += (_, _) => box.Focus();
-            //box.TextChanged += (_, _) =>
-            //{
-            //    if (box.Text?.Equals("`") ?? false)
-            //        box.Text = "";
-            //};
-            //box.KeyDown += (_, e) =>
-            //{
-            //    if (e.PhysicalKey == PhysicalKey.Backquote)
-            //        e.Handled = true;
-            //};
+            box.KeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Enter)
+                {
+                    viewModel.SubmitSearchingText();
+
+                    e.Handled = true;
+                }
+            };
         }
 
         if (this.FindControl<ScrollViewer>("PluginsScrollViewer") is ScrollViewer viewer)
@@ -75,20 +62,52 @@ public partial class PluginsLaunchWindow : Window
 
         switch (e.Key)
         {
+            case Key.Enter:
+                // ToDo: Select Plugin Info
+                return;
+        }
+
+        var perLineCount = (int)Math.Floor((Width - 40) / 80);
+
+        var viewerHeight = viewer.DesiredSize.Height;
+
+        var viewerOffsetY = viewer.Offset.Y;
+
+        switch (e.Key)
+        {
             case Key.Left:
-                viewModel.SelectLeftOne(Width, sender);
+                viewModel.SelectLeftOne(
+                    perLineCount,
+                    viewerHeight,
+                    viewerOffsetY
+                );
                 break;
             case Key.Right:
-                viewModel.SelectRightOne(Width, sender);
+                viewModel.SelectRightOne(
+                    perLineCount,
+                    viewerHeight,
+                    viewerOffsetY
+                );
                 break;
             case Key.Up:
-                viewModel.SelectUpOne(Width, sender);
+                viewModel.SelectUpOne(
+                    perLineCount,
+                    viewerHeight,
+                    viewerOffsetY
+                );
                 break;
             case Key.Down:
-                viewModel.SelectDownOne(Width, sender);
+                viewModel.SelectDownOne(
+                    perLineCount,
+                    viewerHeight,
+                    viewerOffsetY
+                );
                 break;
-            case Key.Enter:
-                viewModel.SelectPluginInfo();
+            case Key.Home:
+                viewModel.SelectHomeOne(perLineCount);
+                break;
+            case Key.End:
+                viewModel.SelectEndOne(perLineCount);
                 break;
         }
     }
@@ -127,18 +146,26 @@ public partial class PluginsLaunchWindow : Window
         });
     }
 
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
-    {
-        BeginMoveDrag(e);
-
-        base.OnPointerPressed(e);
-    }
-
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        var box = this.FindControl<AutoCompleteBox>("MainAutoCompleteBox");
+
         switch (e.Key)
         {
             case Key.Tab:
+                if (viewModel.IsInDirectSelectingMode == false)
+                {
+                    if (e.KeyModifiers == KeyModifiers.Shift)
+                    {
+                        if (viewModel.IsSelectingFunction)
+                            viewModel.IsSelectingPlugin = true;
+                    }
+                    else
+                    {
+                        if (viewModel.IsSelectingPlugin)
+                            viewModel.IsSelectingFunction = true;
+                    }
+                }
                 e.Handled = true;
                 break;
             case Key.Escape:
@@ -150,9 +177,9 @@ public partial class PluginsLaunchWindow : Window
         switch (e.PhysicalKey)
         {
             case PhysicalKey.Backquote:
-                if (viewModel.SelectedPluginIndex == -1)
+                if (viewModel.IsInDirectSelectingMode == false)
                 {
-                    viewModel.SelectedPluginIndex = previousSelectedPluginIndex ?? 0;
+                    viewModel.IsInDirectSelectingMode = true;
 
                     if (this.FindControl<ScrollViewer>("PluginsScrollViewer") is ScrollViewer viewer)
                         viewer.Focus();
@@ -161,10 +188,9 @@ public partial class PluginsLaunchWindow : Window
                 {
                     previousSelectedPluginIndex = viewModel.SelectedPluginIndex;
 
-                    viewModel.SelectedPluginIndex = -1;
+                    viewModel.IsInDirectSelectingMode = false;
 
-                    if (this.FindControl<AutoCompleteBox>("MainAutoCompleteBox") is AutoCompleteBox box)
-                        box.Focus();
+                    box?.Focus();
                 }
                 e.Handled = true;
                 break;
@@ -173,13 +199,11 @@ public partial class PluginsLaunchWindow : Window
         base.OnKeyDown(e);
     }
 
-    protected override void OnGotFocus(GotFocusEventArgs e)
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        base.OnGotFocus(e);
+        BeginMoveDrag(e);
 
-        //if (viewModel.SelectedPluginIndex == -1)
-        //    if (this.FindControl<AutoCompleteBox>("MainAutoCompleteBox") is AutoCompleteBox box)
-        //        box.Focus();
+        base.OnPointerPressed(e);
     }
 
     protected override void OnResized(WindowResizedEventArgs e)

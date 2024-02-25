@@ -54,11 +54,11 @@ public class PluginInfoSelectedConverter : IMultiValueConverter
 {
     public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (values.Count != 2) return false;
+        if (values.Count != 3) return false;
 
         if (values[0] is string id1)
             if (values[1] is string id2)
-                return id1.Equals(id2);
+                return id1.Equals(id2) && (bool)values[2]!;
 
         return false;
     }

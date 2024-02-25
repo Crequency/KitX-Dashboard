@@ -200,7 +200,7 @@ public class PluginConnector
         }
     }
 
-    private async void Request(Request request)
+    internal async void Request(Request request)
     {
         await _connection!.Send(JsonSerializer.Serialize(request, serializerOptions));
     }

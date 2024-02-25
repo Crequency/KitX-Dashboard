@@ -1,6 +1,7 @@
 ﻿using Fleck;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Services;
+using KitX.Shared.Plugin;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
@@ -48,6 +49,18 @@ public class PluginsServer : ConfigFetcher
         EventService.Invoke(nameof(EventService.PluginsServerPortChanged), [_server!.Port]);
 
         return this;
+    }
+
+    public PluginConnector? FindConnector(PluginInfo info)
+    {
+        var query = PluginConnectors.Where(
+            x => x.PluginInfo.HasValue && x.PluginInfo.Value.Equals(info)
+        );
+
+        if (query.Any())
+            return query.First();
+        else
+            return null;
     }
 
     public async Task<PluginsServer> Close()
