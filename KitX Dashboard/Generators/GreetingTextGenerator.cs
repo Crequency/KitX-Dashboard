@@ -1,8 +1,9 @@
-﻿using System;
+﻿using KitX.Dashboard.Configuration;
+using System;
 
 namespace KitX.Dashboard.Generators;
 
-internal class GreetingTextGenerator
+internal class GreetingTextGenerator : ConfigFetcher
 {
     private static int PreviousIndex = 0;
 
@@ -59,31 +60,31 @@ internal class GreetingTextGenerator
                 case Step.Morning:
                     result = random.Next(
                         1,
-                        Instances.ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_Morning + 1
+                        AppConfig.Windows.MainWindow.GreetingTextCount_Morning + 1
                     );
                     break;
                 case Step.Noon:
                     result = random.Next(
                         1,
-                        Instances.ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_Noon + 1
+                        AppConfig.Windows.MainWindow.GreetingTextCount_Noon + 1
                     );
                     break;
                 case Step.AfterNoon:
                     result = random.Next(
                         1,
-                        Instances.ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_AfterNoon + 1
+                        AppConfig.Windows.MainWindow.GreetingTextCount_AfterNoon + 1
                     );
                     break;
                 case Step.Evening:
                     result = random.Next(
                         1,
-                        Instances.ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_Evening + 1
+                        AppConfig.Windows.MainWindow.GreetingTextCount_Evening + 1
                     );
                     break;
                 case Step.Night:
                     result = random.Next(
                         1,
-                        Instances.ConfigManager.AppConfig.Windows.MainWindow.GreetingTextCount_Night + 1
+                        AppConfig.Windows.MainWindow.GreetingTextCount_Night + 1
                     );
                     break;
             }

@@ -1,9 +1,8 @@
 ﻿using Avalonia.Data.Converters;
 using Common.Activity;
+using Material.Icons;
 using System;
 using System.Globalization;
-using Material.Icons;
-using Avalonia.Media;
 
 namespace KitX.Dashboard.Converters;
 

@@ -1,6 +1,8 @@
-﻿namespace KitX.Dashboard.Configuration;
+﻿using KitX.Dashboard.Managers;
+
+namespace KitX.Dashboard.Configuration;
 
 public class ConfigFetcher
 {
-    public static AppConfig AppConfig => Instances.ConfigManager.AppConfig;
+    public static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
 }

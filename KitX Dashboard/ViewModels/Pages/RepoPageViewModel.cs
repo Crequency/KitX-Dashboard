@@ -85,15 +85,15 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
             {
                 try
                 {
-                    var plugin = new Plugin()
+                    var plugin = new PluginInstallation()
                     {
                         InstallPath = item.InstallPath,
-                        PluginDetails = JsonSerializer.Deserialize<PluginInfo>(
+                        PluginInfo = JsonSerializer.Deserialize<PluginInfo>(
                             File.ReadAllText(
                                 Path.GetFullPath($"{item.InstallPath}/PluginInfo.json")
                             )
                         ),
-                        RequiredLoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
+                        LoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
                             File.ReadAllText(
                                 Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json")
                             )
@@ -121,7 +121,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     {
         EventService.AppConfigChanged += () =>
         {
-            ImportButtonVisibility = Instances.ConfigManager.AppConfig.App.DeveloperSetting;
+            ImportButtonVisibility = ConfigManager.Instance.AppConfig.App.DeveloperSetting;
         };
 
         PluginBars.CollectionChanged += (_, _) =>
@@ -167,10 +167,10 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal bool ImportButtonVisibility
     {
-        get => Instances.ConfigManager.AppConfig.App.DeveloperSetting;
+        get => ConfigManager.Instance.AppConfig.App.DeveloperSetting;
         set
         {
-            Instances.ConfigManager.AppConfig.App.DeveloperSetting = value;
+            ConfigManager.Instance.AppConfig.App.DeveloperSetting = value;
 
             PropertyChanged?.Invoke(
                 this,

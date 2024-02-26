@@ -2,6 +2,7 @@
 using Common.BasicHelper.Graphics.Screen;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Converters;
+using KitX.Dashboard.Managers;
 using KitX.Dashboard.Utils;
 using KitX.Dashboard.ViewModels;
 using System;
@@ -13,7 +14,7 @@ public partial class AnouncementsWindow : Window, IView
 {
     private readonly AnouncementsWindowViewModel viewModel = new();
 
-    private readonly AppConfig appConfig = Instances.ConfigManager.AppConfig;
+    private readonly AppConfig appConfig = ConfigManager.Instance.AppConfig;
 
     public AnouncementsWindow()
     {

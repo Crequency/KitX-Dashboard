@@ -61,7 +61,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
                         );
             });
 
-            Instances.ConfigManager.AppConfig.App.ThemeColor = themeColor.ToHexString();
+            ConfigManager.Instance.AppConfig.App.ThemeColor = themeColor.ToHexString();
 
             SaveAppConfigChanges();
         });
@@ -75,7 +75,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     {
         EventService.DevelopSettingsChanged += () =>
         {
-            MicaOpacityConfirmButtonVisibility = Instances.ConfigManager.AppConfig.App.DeveloperSetting;
+            MicaOpacityConfirmButtonVisibility = ConfigManager.Instance.AppConfig.App.DeveloperSetting;
         };
 
         EventService.LanguageChanged += () =>
@@ -84,7 +84,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
                 item.ThemeDisplayName = GetThemeDisplayText(item.ThemeName);
 
             _currentAppTheme = SupportedThemes.Find(
-                x => x.ThemeName.Equals(Instances.ConfigManager.AppConfig.App.Theme)
+                x => x.ThemeName.Equals(ConfigManager.Instance.AppConfig.App.Theme)
             );
 
             PropertyChanged?.Invoke(
@@ -98,7 +98,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     {
         SupportedLanguages.Clear();
 
-        foreach (var item in Instances.ConfigManager.AppConfig.App.SurpportLanguages)
+        foreach (var item in ConfigManager.Instance.AppConfig.App.SurpportLanguages)
             SupportedLanguages.Add(new SupportedLanguage()
             {
                 LanguageCode = item.Key,
@@ -106,7 +106,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
             });
 
         LanguageSelected = SupportedLanguages.FindIndex(
-            x => x.LanguageCode.Equals(Instances.ConfigManager.AppConfig.App.AppLanguage)
+            x => x.LanguageCode.Equals(ConfigManager.Instance.AppConfig.App.AppLanguage)
         );
     }
 
@@ -147,7 +147,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     ];
 
     private SupportedTheme? _currentAppTheme = SupportedThemes.Find(
-        x => x.ThemeName.Equals(Instances.ConfigManager.AppConfig.App.Theme)
+        x => x.ThemeName.Equals(ConfigManager.Instance.AppConfig.App.Theme)
     );
 
     internal SupportedTheme? CurrentAppTheme
@@ -159,7 +159,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
             if (value is null) return;
 
-            Instances.ConfigManager.AppConfig.App.Theme = value.ThemeName;
+            ConfigManager.Instance.AppConfig.App.Theme = value.ThemeName;
 
             if (Application.Current is null) return;
 
@@ -182,7 +182,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     {
         var location = $"{nameof(Settings_PersonaliseViewModel)}.{nameof(LoadLanguage)}";
 
-        var lang = Instances.ConfigManager.AppConfig.App.AppLanguage;
+        var lang = ConfigManager.Instance.AppConfig.App.AppLanguage;
 
         if (Application.Current is null) return;
 
@@ -219,7 +219,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         {
             try
             {
-                Instances.ConfigManager.AppConfig.App.AppLanguage = SupportedLanguages[value].LanguageCode;
+                ConfigManager.Instance.AppConfig.App.AppLanguage = SupportedLanguages[value].LanguageCode;
 
                 if (languageSelected != -1) LoadLanguage();
 
@@ -236,37 +236,37 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
     internal static bool MicaAreaExpanded
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.MicaAreaExpanded;
+        get => ConfigManager.Instance.AppConfig.Pages.Settings.MicaAreaExpanded;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.MicaAreaExpanded = value;
+            ConfigManager.Instance.AppConfig.Pages.Settings.MicaAreaExpanded = value;
             SaveAppConfigChanges();
         }
     }
 
     internal static int MicaStatus
     {
-        get => Instances.ConfigManager.AppConfig.Windows.MainWindow.EnabledMica ? 0 : 1;
+        get => ConfigManager.Instance.AppConfig.Windows.MainWindow.EnabledMica ? 0 : 1;
         set
         {
-            Instances.ConfigManager.AppConfig.Windows.MainWindow.EnabledMica = value != 1;
+            ConfigManager.Instance.AppConfig.Windows.MainWindow.EnabledMica = value != 1;
             SaveAppConfigChanges();
         }
     }
 
     internal static bool MicaToolTipIsOpen
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.MicaToolTipIsOpen;
+        get => ConfigManager.Instance.AppConfig.Pages.Settings.MicaToolTipIsOpen;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.MicaToolTipIsOpen = value;
+            ConfigManager.Instance.AppConfig.Pages.Settings.MicaToolTipIsOpen = value;
             SaveAppConfigChanges();
         }
     }
 
     internal bool MicaOpacityConfirmButtonVisibility
     {
-        get => Instances.ConfigManager.AppConfig.App.DeveloperSetting;
+        get => ConfigManager.Instance.AppConfig.App.DeveloperSetting;
         set => PropertyChanged?.Invoke(
             this,
             new(nameof(MicaOpacityConfirmButtonVisibility))
@@ -275,10 +275,10 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
     internal static bool PaletteAreaExpanded
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.PaletteAreaExpanded;
+        get => ConfigManager.Instance.AppConfig.Pages.Settings.PaletteAreaExpanded;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.PaletteAreaExpanded = value;
+            ConfigManager.Instance.AppConfig.Pages.Settings.PaletteAreaExpanded = value;
             SaveAppConfigChanges();
         }
     }

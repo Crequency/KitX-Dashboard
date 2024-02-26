@@ -1,6 +1,6 @@
 ﻿using Avalonia.Controls;
+using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
-using KitX.Dashboard.Views.Pages.Controls;
 using KitX.Shared.Plugin;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,9 +9,9 @@ namespace KitX.Dashboard.Views;
 
 public static class ViewInstances
 {
-    public static ObservableCollection<PluginInfo> PluginInfos { get; set; } = [];
+    public static ObservableCollection<DeviceCase> DeviceCases { get; set; } = [];
 
-    public static ObservableCollection<DeviceCard> DeviceCards { get; set; } = [];
+    public static ObservableCollection<PluginInfo> PluginInfos { get; set; } = [];
 
     public static MainWindow? MainWindow { get; set; }
 

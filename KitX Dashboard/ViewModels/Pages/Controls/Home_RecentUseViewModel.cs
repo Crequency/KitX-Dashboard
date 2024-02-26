@@ -13,7 +13,7 @@ internal class Home_RecentUseViewModel : ViewModelBase, IView
 
     public double NoRecent_TipHeight { get; set; } = 200;
 
-    public ObservableCollection<Plugin> RecentPlugins { get; } = [];
+    public ObservableCollection<PluginInstallation> RecentPlugins { get; } = [];
 
     public override void InitCommands() => throw new System.NotImplementedException();
 

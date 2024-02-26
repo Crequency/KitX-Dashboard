@@ -17,7 +17,7 @@ internal class AnouncementManager
 
         client.DefaultRequestHeaders.Accept.Clear();
 
-        var appConfig = Instances.ConfigManager.AppConfig;
+        var appConfig = ConfigManager.Instance.AppConfig;
 
         var linkBase = new StringBuilder()
             .Append("https://")
@@ -36,7 +36,7 @@ internal class AnouncementManager
 
         var list = JsonSerializer.Deserialize<List<string>>(msg);
 
-        var accepted = Instances.ConfigManager.AnnouncementConfig.Accepted;
+        var accepted = ConfigManager.Instance.AnnouncementConfig.Accepted;
 
         var unreads = new List<DateTime>();
 
@@ -53,7 +53,7 @@ internal class AnouncementManager
             var apiLink = new StringBuilder()
                 .Append($"{linkBase}{ConstantTable.Api_Get_Announcement}")
                 .Append('?')
-                .Append($"lang={Instances.ConfigManager.AppConfig.App.AppLanguage}")
+                .Append($"lang={ConfigManager.Instance.AppConfig.App.AppLanguage}")
                 .Append('&')
                 .Append($"date={item:yyyy-MM-dd HH-mm}")
                 .ToString()

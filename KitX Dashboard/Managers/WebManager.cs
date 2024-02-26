@@ -1,5 +1,4 @@
-﻿using KitX.Dashboard.Models.Network;
-using KitX.Dashboard.Network.DevicesNetwork;
+﻿using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Dashboard.Network.PluginsNetwork;
 using Serilog;
 using System;
@@ -9,14 +8,13 @@ using System.Threading.Tasks;
 
 namespace KitX.Dashboard.Managers;
 
-public class WebManager : IDisposable
+public class WebManager
 {
-    internal ObservableCollection<string>? NetworkInterfaceRegistered;
+    private static WebManager? _instance;
 
-    public WebManager()
-    {
-        NetworkInterfaceRegistered = [];
-    }
+    public static WebManager Instance => _instance ??= new();
+
+    internal readonly ObservableCollection<string> NetworkInterfaceRegistered = [];
 
     public async Task<WebManager> RunAsync(WebManagerOperationInfo info)
     {
@@ -33,7 +31,7 @@ public class WebManager : IDisposable
                     await DevicesDiscoveryServer.Instance.RunAsync();
 
                 if (info.RunAll || info.RunDevicesServer)
-                    DevicesManager.Start();
+                    await DevicesServer.Instance.RunAsync();
             }
             catch (Exception ex)
             {
@@ -51,20 +49,20 @@ public class WebManager : IDisposable
         try
         {
             if (info.CloseAll || info.CloseDevicesServer)
-                DevicesManager.Stop();
+                await DevicesServer.Instance.CloseAsync();
 
             if (info.CloseAll || info.CloseDevicesDiscoveryServer)
             {
                 await DevicesDiscoveryServer.Instance.CloseAsync().ContinueWith(
                     async server =>
                     {
-                        await Task.Delay(Instances.ConfigManager.AppConfig.Web.UdpSendFrequency + 500);
+                        await Task.Delay(ConfigManager.Instance.AppConfig.Web.UdpSendFrequency + 500);
 
                         server.Dispose();
                     }
                 );
 
-                while (DevicesDiscoveryServer.CloseDevicesDiscoveryServerRequest) { }
+                while (DevicesDiscoveryServer.Instance.CloseDevicesDiscoveryServerRequest) { }
             }
 
             if (info.CloseAll || info.ClosePluginsServer)
@@ -88,9 +86,46 @@ public class WebManager : IDisposable
 
         return this;
     }
+}
 
-    public void Dispose()
+public struct WebManagerOperationInfo
+{
+    public bool RunPluginsServer = true;
+
+    public bool RunDevicesServer = true;
+
+    public bool RunDevicesDiscoveryServer = true;
+
+    public bool RunAll
     {
-        GC.SuppressFinalize(this);
+        readonly get => RunPluginsServer && RunDevicesServer && RunDevicesDiscoveryServer;
+        set
+        {
+            RunPluginsServer = value;
+            RunDevicesServer = value;
+            RunDevicesDiscoveryServer = value;
+        }
+    }
+
+    public bool ClosePluginsServer = true;
+
+    public bool CloseDevicesServer = true;
+
+    public bool CloseDevicesDiscoveryServer = true;
+
+    public bool CloseAll
+    {
+        readonly get => ClosePluginsServer && CloseDevicesServer && CloseDevicesDiscoveryServer;
+        set
+        {
+            ClosePluginsServer = value;
+            CloseDevicesServer = value;
+            CloseDevicesDiscoveryServer = value;
+        }
+    }
+
+    public WebManagerOperationInfo()
+    {
+
     }
 }

@@ -1,17 +1,16 @@
-﻿using KitX.Dashboard.Views;
-using KitX.Dashboard.Views.Pages.Controls;
+﻿using KitX.Dashboard.Models;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.Views;
+using KitX.Shared.Device;
 using ReactiveUI;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Reactive;
 using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
+internal class DevicePageViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     public DevicePageViewModel()
     {
         InitCommands();
@@ -30,9 +29,11 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
                 new()
                 {
                     ClosePluginsServer = false,
-                    RunPluginsServer = false
+                    RunPluginsServer = false,
+                    CloseDevicesServer = false,
+                    RunDevicesServer = false,
                 },
-                actionBeforeStarting: () => DeviceCards.Clear()
+                actionBeforeStarting: () => DeviceCases.Clear()
             );
         });
 
@@ -45,60 +46,44 @@ internal class DevicePageViewModel : ViewModelBase, INotifyPropertyChanged
                 new()
                 {
                     ClosePluginsServer = false,
-                    RunPluginsServer = false
+                    CloseDevicesServer = false,
                 }
             );
 
-            await Task.Delay(Instances.ConfigManager.AppConfig.Web.UdpSendFrequency + 200);
+            await Task.Delay(AppConfig.Web.UdpSendFrequency + 200);
 
-            DeviceCards.Clear();
+            DeviceCases.Clear();
         });
     }
 
     public override void InitEvents()
     {
-        DeviceCards.CollectionChanged += (_, _) =>
+        DeviceCases.CollectionChanged += (_, _) =>
         {
-            NoDevice_TipHeight = DeviceCards.Count == 0 ? 300 : 0;
-            DevicesCount = DeviceCards.Count.ToString();
+            NoDevice_TipHeight = DeviceCases.Count == 0 ? 300 : 0;
+            DevicesCount = DeviceCases.Count.ToString();
         };
     }
 
     internal string? SearchingText { get; set; }
 
-    internal string devicesCount = DeviceCards.Count.ToString();
+    internal string devicesCount = DeviceCases.Count.ToString();
 
     internal string DevicesCount
     {
         get => devicesCount;
-        set
-        {
-            devicesCount = value;
-
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(DevicesCount))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref devicesCount, value);
     }
 
-    internal double noDevice_TipHeight = DeviceCards.Count == 0 ? 300 : 0;
+    internal double noDevice_TipHeight = DeviceCases.Count == 0 ? 300 : 0;
 
     internal double NoDevice_TipHeight
     {
         get => noDevice_TipHeight;
-        set
-        {
-            noDevice_TipHeight = value;
-
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(NoDevice_TipHeight))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref noDevice_TipHeight, value);
     }
 
-    internal static ObservableCollection<DeviceCard> DeviceCards => ViewInstances.DeviceCards;
+    internal static ObservableCollection<DeviceCase> DeviceCases => ViewInstances.DeviceCases;
 
     internal ReactiveCommand<Unit, Task>? RestartDevicesServerCommand { get; set; }
 

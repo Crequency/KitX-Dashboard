@@ -2,6 +2,7 @@
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -10,6 +11,13 @@
              d:DesignHeight="450"
              d:DesignWidth="800"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:StringOverLengthConverter x:Key="StringOverLengthConverter"/>
+        <converters:OperatingSystemToIconConverter x:Key="OperatingSystemToIconConverter"/>
+        <converters:PluginsServerAddressConverter x:Key="PluginsServerAddressConverter"/>
+        <converters:DevicesServerAddressConverter x:Key="DevicesServerAddressConverter"/>
+        <converters:DeviceLastOnLineTimeConverter x:Key="DeviceLastOnLineTimeConverter"/>
+    </UserControl.Resources>
     <DockPanel>
         <Grid Height="80" DockPanel.Dock="Top">
             <AutoCompleteBox Width="400"
@@ -53,12 +61,85 @@
                            Text="{DynamicResource Text_Device_No}"/>
             </Border>
             <ScrollViewer>
-                <ItemsControl ItemsSource="{Binding DeviceCards}">
+                <ItemsControl ItemsSource="{Binding DeviceCases}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Width="340" Margin="10">
+                                <StackPanel Margin="10">
+                                    <DockPanel Width="300">
+                                        <icon:MaterialIcon Width="45"
+                                                           Height="45"
+                                                           Margin="0,0,10,0"
+                                                           DockPanel.Dock="Left"
+                                                           Kind="{Binding DeviceInfo.DeviceOSType, Converter={StaticResource OperatingSystemToIconConverter}}"/>
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Top"
+                                                       FontSize="20"
+                                                       Text="{Binding DeviceInfo.Device.DeviceName, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=20}"
+                                                       ToolTip.Tip="{Binding DeviceInfo.Device.DeviceName}"/>
+                                            <TextBlock FontSize="14"
+                                                       Text="{Binding DeviceInfo.DeviceOSVersion, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=34}"
+                                                       ToolTip.Tip="{Binding DeviceInfo.DeviceOSVersion}"/>
+                                        </DockPanel>
+                                    </DockPanel>
+                                    <DockPanel Width="300" Margin="0,10,0,0">
+                                        <Grid Margin="25,0,0,0"
+                                              VerticalAlignment="Center"
+                                              DockPanel.Dock="Right">
+                                            <Button Content="{DynamicResource Text_Device_Type_Master}"
+                                                    FontSize="18"
+                                                    IsVisible="{Binding DeviceInfo.IsMainDevice}"
+                                                    ToolTip.Tip="{Binding DeviceInfo, Converter={StaticResource DevicesServerAddressConverter}}"/>
+                                            <Button Content="{DynamicResource Text_Device_Type_Slave}"
+                                                    FontSize="18"
+                                                    IsVisible="{Binding !DeviceInfo.IsMainDevice}"/>
+                                        </Grid>
+                                        <Grid Margin="5,0,0,0" VerticalAlignment="Center">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition/>
+                                                <RowDefinition/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Grid.Row="0"
+                                                       FontSize="12"
+                                                       Text="{Binding DeviceInfo.SendTime, Converter={StaticResource DeviceLastOnLineTimeConverter}}"/>
+                                            <DockPanel Grid.Row="1">
+                                                <TextBlock DockPanel.Dock="Left"
+                                                           FontSize="12"
+                                                           Text="{DynamicResource Text_Device_PluginsCount}"/>
+                                                <TextBlock Margin="10,0,0,0"
+                                                           DockPanel.Dock="Left"
+                                                           FontSize="12"
+                                                           Text="{Binding DeviceInfo.PluginsCount}"/>
+                                                <Border/>
+                                            </DockPanel>
+                                        </Grid>
+                                    </DockPanel>
+                                    <TextBlock Width="300"
+                                               Margin="5,0"
+                                               FontSize="12"
+                                               Text="{Binding DeviceInfo.Device.MacAddress}"
+                                               ToolTip.Tip="{Binding DeviceInfo.Device.MacAddress}"/>
+                                    <DockPanel Width="300" Margin="5,0">
+                                        <TextBlock DockPanel.Dock="Left"
+                                                   FontSize="12"
+                                                   Text="{Binding DeviceInfo, Converter={StaticResource PluginsServerAddressConverter}}"
+                                                   ToolTip.Tip="{Binding $self.Text}"/>
+                                        <TextBlock Margin="20,0,0,0"
+                                                   DockPanel.Dock="Right"
+                                                   FontSize="12"
+                                                   Text="{Binding DeviceInfo.Device.IPv6, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=28}"
+                                                   ToolTip.Tip="{Binding DeviceInfo.Device.IPv6}"/>
+                                        <Border/>
+                                    </DockPanel>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ScrollViewer>
         </DockPanel>

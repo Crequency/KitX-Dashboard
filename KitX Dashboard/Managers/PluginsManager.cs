@@ -14,7 +14,7 @@ namespace KitX.Dashboard.Managers;
 
 internal class PluginsManager
 {
-    internal static List<Plugin> Plugins => Instances.ConfigManager.PluginsConfig.Plugins;
+    internal static List<PluginInstallation> Plugins => ConfigManager.Instance.PluginsConfig.Plugins;
 
     internal static void ImportPlugin(string[] kxpfiles, bool inGraphic = false)
     {
@@ -36,7 +36,9 @@ internal class PluginsManager
 
                 var pluginInfo = JsonSerializer.Deserialize<PluginInfo>(rst.Item2);
 
-                var config = Instances.ConfigManager.AppConfig;
+                if (pluginInfo is null) continue;
+
+                var config = ConfigManager.Instance.AppConfig;
 
                 var pluginsavedir = config?.App?.LocalPluginsFileFolder.GetFullPath();
 

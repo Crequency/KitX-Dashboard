@@ -66,40 +66,40 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
 
     public static bool AboutAreaExpanded
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.AboutAreaExpanded;
+        get => ConfigManager.Instance.AppConfig.Pages.Settings.AboutAreaExpanded;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.AboutAreaExpanded = value;
+            ConfigManager.Instance.AppConfig.Pages.Settings.AboutAreaExpanded = value;
             SaveAppConfigChanges();
         }
     }
 
     public static bool AuthorsAreaExpanded
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.AuthorsAreaExpanded;
+        get => ConfigManager.Instance.AppConfig.Pages.Settings.AuthorsAreaExpanded;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.AuthorsAreaExpanded = value;
+            ConfigManager.Instance.AppConfig.Pages.Settings.AuthorsAreaExpanded = value;
             SaveAppConfigChanges();
         }
     }
 
     public static bool LinksAreaExpanded
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.LinksAreaExpanded;
+        get => ConfigManager.Instance.AppConfig.Pages.Settings.LinksAreaExpanded;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.LinksAreaExpanded = value;
+            ConfigManager.Instance.AppConfig.Pages.Settings.LinksAreaExpanded = value;
             SaveAppConfigChanges();
         }
     }
 
     public static bool ThirdPartyLicensesAreaExpanded
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded;
+        get => ConfigManager.Instance.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded = value;
+            ConfigManager.Instance.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded = value;
             SaveAppConfigChanges();
         }
     }

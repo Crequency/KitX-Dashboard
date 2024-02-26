@@ -180,6 +180,8 @@ public class AppConfig : ConfigBase
 
         public List<string>? AcceptedNetworkInterfaces { get; set; } = null;
 
+        public int? UserSpecifiedDevicesServerPort { get; set; } = null;
+
         public int? UserSpecifiedPluginsServerPort { get; set; } = null;
 
         public int UdpPortSend { get; set; } = 23404;

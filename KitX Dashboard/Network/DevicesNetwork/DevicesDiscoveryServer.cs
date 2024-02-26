@@ -1,6 +1,7 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
+using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Shared.Device;
 using Serilog;
@@ -20,33 +21,31 @@ public class DevicesDiscoveryServer
 {
     private static DevicesDiscoveryServer? _instance;
 
-    public static DevicesDiscoveryServer Instance => _instance ??= new DevicesDiscoveryServer();
+    public static DevicesDiscoveryServer Instance => _instance ??= new();
 
-    private static UdpClient? UdpSender = null;
+    private UdpClient? UdpSender = null;
 
-    private static UdpClient? UdpReceiver = null;
+    private UdpClient? UdpReceiver = null;
 
-    private static System.Timers.Timer? UdpSendTimer = null;
+    private System.Timers.Timer? UdpSendTimer = null;
 
-    private static int DeviceInfoUpdatedTimes = 0;
+    private int DeviceInfoUpdatedTimes = 0;
 
-    private static int LastTimeToOSVersionUpdated = 0;
+    private int LastTimeToOSVersionUpdated = 0;
 
-    private static readonly List<int> SupportedNetworkInterfacesIndexes = [];
+    private readonly List<int> SupportedNetworkInterfacesIndexes = [];
 
-    private static bool disposed = false;
+    private bool disposed = false;
 
-    private static Action<byte[], int?, string>? onReceive = null;
+    internal bool CloseDevicesDiscoveryServerRequest = false;
 
-    internal static bool CloseDevicesDiscoveryServerRequest = false;
+    internal readonly Queue<string> Messages2BroadCast = new();
 
-    internal static readonly Queue<string> Messages2BroadCast = new();
+    internal DeviceInfo DefaultDeviceInfo = NetworkHelper.GetDeviceInfo();
 
-    internal static DeviceInfo DefaultDeviceInfo = NetworkHelper.GetDeviceInfo();
+    private ServerStatus status = ServerStatus.Pending;
 
-    private static ServerStatus status = ServerStatus.Pending;
-
-    internal static ServerStatus Status
+    internal ServerStatus Status
     {
         get => status;
         set
@@ -55,7 +54,112 @@ public class DevicesDiscoveryServer
         }
     }
 
-    private static void FindSupportNetworkInterfaces(List<UdpClient> clients, IPAddress multicastAddress)
+    public DevicesDiscoveryServer()
+    {
+        Initialize();
+
+        DevicesOrganizer.Start();
+    }
+
+    private void Initialize()
+    {
+        disposed = false;
+
+        DeviceInfoUpdatedTimes = 0;
+
+        LastTimeToOSVersionUpdated = 0;
+
+        CloseDevicesDiscoveryServerRequest = false;
+
+        SupportedNetworkInterfacesIndexes.Clear();
+
+        Messages2BroadCast.Clear();
+
+        DefaultDeviceInfo = NetworkHelper.GetDeviceInfo();
+    }
+
+    public async Task<DevicesDiscoveryServer> RunAsync()
+    {
+        if (Status != ServerStatus.Pending) return this;
+
+        Status = ServerStatus.Starting;
+
+        Initialize();
+
+        UdpSender = new(
+            ConfigManager.Instance.AppConfig.Web.UdpPortSend,
+            AddressFamily.InterNetwork
+        )
+        {
+            EnableBroadcast = true,
+            MulticastLoopback = true
+        };
+
+        UdpReceiver = new(
+            new IPEndPoint(
+                IPAddress.Any,
+                ConfigManager.Instance.AppConfig.Web.UdpPortReceive
+            )
+        );
+
+        await TasksManager.RunTaskAsync(() =>
+        {
+            try
+            {
+                FindSupportNetworkInterfaces(
+                    [UdpSender, UdpReceiver],
+                    IPAddress.Parse(ConfigManager.Instance.AppConfig.Web.UdpBroadcastAddress)
+                ); // 寻找所有支持的网络适配器
+            }
+            catch (Exception ex)
+            {
+                var location = $"{nameof(DevicesServer)}.{nameof(RunAsync)}";
+                Log.Warning(ex, $"In {location}: {ex.Message}");
+            }
+        }, nameof(FindSupportNetworkInterfaces));
+
+        await TasksManager.RunTaskAsync(
+            MultiDevicesBroadCastSend,
+            nameof(MultiDevicesBroadCastSend)
+        );
+
+        await TasksManager.RunTaskAsync(
+            MultiDevicesBroadCastReceive,
+            nameof(MultiDevicesBroadCastReceive)
+        );
+
+        Status = ServerStatus.Running;
+
+        return this;
+    }
+
+    public async Task<DevicesDiscoveryServer> CloseAsync()
+    {
+        if (Status != ServerStatus.Running) return this;
+
+        await Task.Run(() =>
+        {
+            Status = ServerStatus.Stopping;
+
+            CloseDevicesDiscoveryServerRequest = true;
+        });
+
+        return this;
+    }
+
+    public async Task<DevicesDiscoveryServer> Restart()
+    {
+        await Task.Run(async () =>
+        {
+            await CloseAsync();
+
+            await RunAsync();
+        });
+
+        return this;
+    }
+
+    private void FindSupportNetworkInterfaces(List<UdpClient> clients, IPAddress multicastAddress)
     {
         var multicastGroupJoinedInterfacesCount = 0;
 
@@ -106,7 +210,7 @@ public class DevicesDiscoveryServer
         Log.Information($"Joined {multicastGroupJoinedInterfacesCount} multicast groups.");
     }
 
-    private static void UpdateDefaultDeviceInfo()
+    private void UpdateDefaultDeviceInfo()
     {
         DefaultDeviceInfo.IsMainDevice = ConstantTable.IsMainMachine;
         DefaultDeviceInfo.SendTime = DateTime.UtcNow;
@@ -120,7 +224,7 @@ public class DevicesDiscoveryServer
         DefaultDeviceInfo.DevicesServerPort = ConstantTable.DevicesServerPort;
         DefaultDeviceInfo.DevicesServerBuildTime = ConstantTable.ServerBuildTime;
 
-        if (LastTimeToOSVersionUpdated > Instances.ConfigManager.AppConfig.IO.OperatingSystemVersionUpdateInterval)
+        if (LastTimeToOSVersionUpdated > ConfigManager.Instance.AppConfig.IO.OperatingSystemVersionUpdateInterval)
         {
             LastTimeToOSVersionUpdated = 0;
             DefaultDeviceInfo.DeviceOSVersion = NetworkHelper.TryGetOSVersionString() ?? "";
@@ -136,10 +240,11 @@ public class DevicesDiscoveryServer
     {
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastSend)}";
 
-        IPEndPoint multicast = new(
-            IPAddress.Parse(Instances.ConfigManager.AppConfig.Web.UdpBroadcastAddress),
-            Instances.ConfigManager.AppConfig.Web.UdpPortReceive
+        var multicast = new IPEndPoint(
+            IPAddress.Parse(ConfigManager.Instance.AppConfig.Web.UdpBroadcastAddress),
+            ConfigManager.Instance.AppConfig.Web.UdpPortReceive
         );
+
         UdpSender?.Client.SetSocketOption(
             SocketOptionLevel.Socket,
             SocketOptionName.ReuseAddress,
@@ -151,7 +256,7 @@ public class DevicesDiscoveryServer
 
         UdpSendTimer = new()
         {
-            Interval = Instances.ConfigManager.AppConfig.Web.UdpSendFrequency,
+            Interval = ConfigManager.Instance.AppConfig.Web.UdpSendFrequency,
             AutoReset = true
         };
 
@@ -223,6 +328,7 @@ public class DevicesDiscoveryServer
                 CloseDevicesDiscoveryServerRequest = false;
             }
         };
+
         UdpSendTimer.Start();
     }
 
@@ -231,6 +337,7 @@ public class DevicesDiscoveryServer
         var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastReceive)}";
 
         var multicast = new IPEndPoint(IPAddress.Any, 0);
+
         UdpReceiver?.Client.SetSocketOption(
             SocketOptionLevel.Socket,
             SocketOptionName.ReuseAddress,
@@ -248,23 +355,27 @@ public class DevicesDiscoveryServer
 
                     if (bytes is null) continue;    //  null byte[] cause exception in next line.
 
-                    onReceive?.Invoke(bytes, null, client);
-
                     var result = bytes.ToUTF8();
 
                     Log.Information($"UDP From: {client,-21}, Receive: {result}");
 
                     try
                     {
-                        DevicesManager.Update(
-                            JsonSerializer.Deserialize<DeviceInfo>(result)
-                        );
+                        var info = JsonSerializer.Deserialize<DeviceInfo>(result);
+
+                        if (info is not null)
+                            EventService.Invoke(
+                                nameof(EventService.OnReceivingDeviceInfo),
+                                [info]
+                            );
                     }
                     catch (Exception ex)
                     {
                         Log.Warning(ex, $"When trying to deserialize `{result}`");
                     }
                 }
+
+                Status = ServerStatus.Pending;
             }
             catch (Exception e)
             {
@@ -276,134 +387,6 @@ public class DevicesDiscoveryServer
             await CloseAsync();
 
         }).Start();
-    }
-
-    private static void Init()
-    {
-        disposed = false;
-
-        DeviceInfoUpdatedTimes = 0;
-
-        LastTimeToOSVersionUpdated = 0;
-
-        CloseDevicesDiscoveryServerRequest = false;
-
-        SupportedNetworkInterfacesIndexes.Clear();
-
-        Messages2BroadCast.Clear();
-
-        DefaultDeviceInfo = NetworkHelper.GetDeviceInfo();
-    }
-
-    public async Task<DevicesDiscoveryServer> RunAsync()
-    {
-        if (Status != ServerStatus.Pending) return this;
-
-        Status = ServerStatus.Starting;
-
-        Init();
-
-        UdpSender = new(
-            Instances.ConfigManager.AppConfig.Web.UdpPortSend,
-            AddressFamily.InterNetwork
-        )
-        {
-            EnableBroadcast = true,
-            MulticastLoopback = true
-        };
-
-        UdpReceiver = new(
-            new IPEndPoint(
-                IPAddress.Any,
-                Instances.ConfigManager.AppConfig.Web.UdpPortReceive
-            )
-        );
-
-        await TasksManager.RunTaskAsync(() =>
-        {
-            try
-            {
-                FindSupportNetworkInterfaces(
-                    [UdpSender, UdpReceiver],
-                    IPAddress.Parse(Instances.ConfigManager.AppConfig.Web.UdpBroadcastAddress)
-                ); // 寻找所有支持的网络适配器
-            }
-            catch (Exception ex)
-            {
-                var location = $"{nameof(DevicesServer)}.{nameof(RunAsync)}";
-                Log.Warning(ex, $"In {location}: {ex.Message}");
-            }
-        }, nameof(FindSupportNetworkInterfaces));
-
-        await TasksManager.RunTaskAsync(
-            MultiDevicesBroadCastSend,
-            nameof(MultiDevicesBroadCastSend)
-        ); // 开始发送组播报文
-
-        await TasksManager.RunTaskAsync(
-            MultiDevicesBroadCastReceive,
-            nameof(MultiDevicesBroadCastReceive)
-        ); // 开始接收组播报文
-
-        Status = ServerStatus.Running;
-
-        return this;
-    }
-
-    public async Task<DevicesDiscoveryServer> CloseAsync()
-    {
-        if (Status != ServerStatus.Running) return this;
-
-        await Task.Run(() =>
-        {
-            Status = ServerStatus.Stopping;
-
-            CloseDevicesDiscoveryServerRequest = true;
-
-            Status = ServerStatus.Pending;
-        });
-
-        return this;
-    }
-
-    public async Task<DevicesDiscoveryServer> Restart()
-    {
-        await Task.Run(async () =>
-        {
-            await CloseAsync();
-
-            await RunAsync();
-        });
-
-        return this;
-    }
-
-    public async Task<DevicesDiscoveryServer> Send(byte[] content, string target)
-    {
-        await Task.Run(() => { });
-
-        return this;
-    }
-
-    public async Task<DevicesDiscoveryServer> Broadcast(byte[] content)
-    {
-        await Task.Run(() => { });
-
-        return this;
-    }
-
-    public async Task<DevicesDiscoveryServer> BroadCast(byte[] content, Func<TcpClient, bool>? pattern)
-    {
-        await Task.Run(() => { });
-
-        return this;
-    }
-
-    public DevicesDiscoveryServer OnReceive(Action<byte[], int?, string> action)
-    {
-        onReceive = action;
-
-        return this;
     }
 
     public void Dispose()
@@ -418,5 +401,51 @@ public class DevicesDiscoveryServer
         UdpReceiver?.Dispose();
 
         GC.Collect();
+    }
+}
+
+public static class DevicesDiscoveryServerExtensions
+{
+    public static bool IsOffline(this DeviceInfo info)
+        => DateTime.UtcNow - info.SendTime.ToUniversalTime() > new TimeSpan(
+            0, 0, ConfigManager.Instance.AppConfig.Web.DeviceInfoTTLSeconds
+        );
+
+    public static bool IsCurrentDevice(this DeviceInfo info)
+        => info.IsSameDevice(DevicesDiscoveryServer.Instance.DefaultDeviceInfo);
+
+    public static bool IsSameDevice(this DeviceInfo info, DeviceInfo target)
+        => info.Device.DeviceName.Equals(target.Device.DeviceName)
+        && info.Device.MacAddress.Equals(target.Device.MacAddress);
+
+    public static void UpdateTo(this DeviceInfo info, DeviceInfo target)
+    {
+        var type = typeof(DeviceInfo);
+
+        var fields = type.GetFields();
+
+        foreach (var field in fields)
+        {
+            var firstValue = field.GetValue(info);
+            var secondValue = field.GetValue(target);
+
+            if (firstValue?.Equals(secondValue) ?? false)
+                continue;
+
+            field.SetValue(info, secondValue);
+        }
+
+        var properties = type.GetProperties();
+
+        foreach (var property in properties)
+        {
+            object? firstValue = property.GetValue(info);
+            object? secondValue = property.GetValue(target);
+
+            if (firstValue?.Equals(secondValue) ?? false)
+                continue;
+
+            property.SetValue(info, secondValue);
+        }
     }
 }

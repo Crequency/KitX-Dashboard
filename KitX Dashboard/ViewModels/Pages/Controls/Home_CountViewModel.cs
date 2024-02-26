@@ -93,10 +93,10 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal bool UseAreaExpanded
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Home.UseAreaExpanded;
+        get => ConfigManager.Instance.AppConfig.Pages.Home.UseAreaExpanded;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Home.UseAreaExpanded = value;
+            ConfigManager.Instance.AppConfig.Pages.Home.UseAreaExpanded = value;
 
             PropertyChanged?.Invoke(
                 this,

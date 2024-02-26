@@ -11,6 +11,10 @@ namespace KitX.Dashboard.Managers;
 
 public class ConfigManager
 {
+    private static ConfigManager? _instance;
+
+    public static ConfigManager Instance => _instance ??= new ConfigManager().SetLocation("./Config/").Load();
+
     internal class ConfigManagerInfo
     {
         private string? _location;

@@ -6,17 +6,17 @@ using System.Text.Json.Serialization;
 
 namespace KitX.Dashboard.Models;
 
-public class Plugin
+public class PluginInstallation
 {
     [JsonInclude]
     public string? InstallPath { get; set; }
 
     [JsonIgnore]
-    public PluginInfo PluginDetails { get; set; }
+    public PluginInfo PluginInfo { get; set; } = new();
 
     [JsonIgnore]
-    public LoaderInfo RequiredLoaderInfo { get; set; }
+    public LoaderInfo LoaderInfo { get; set; } = new();
 
     [JsonIgnore]
-    public List<DeviceLocator>? InstalledDevices { get; set; }
+    public List<DeviceLocator> InstalledDevices { get; set; } = [];
 }

@@ -5,5 +5,5 @@ namespace KitX.Dashboard.Configuration;
 
 public class PluginsConfig : ConfigBase
 {
-    public List<Plugin> Plugins { get; set; } = [];
+    public List<PluginInstallation> Plugins { get; set; } = [];
 }

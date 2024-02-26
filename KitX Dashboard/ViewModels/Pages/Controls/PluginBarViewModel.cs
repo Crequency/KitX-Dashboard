@@ -2,7 +2,6 @@
 using Avalonia.Media.Imaging;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Models;
-using KitX.Dashboard.Network;
 using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
@@ -11,7 +10,6 @@ using ReactiveUI;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reactive;
@@ -19,10 +17,8 @@ using System.Threading;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
+internal class PluginBarViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     public PluginBarViewModel()
     {
         InitCommands();
@@ -33,18 +29,18 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
     {
         ViewDetailsCommand = ReactiveCommand.Create(() =>
         {
-            if (PluginDetail is not null && ViewInstances.MainWindow is not null)
+            if (Plugin is not null && ViewInstances.MainWindow is not null)
                 new PluginDetailWindow()
                 {
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 }
-                .SetPluginInfo(PluginDetail.PluginDetails)
+                .SetPluginInfo(Plugin.PluginInfo)
                 .Show(ViewInstances.MainWindow);
         });
 
         RemoveCommand = ReactiveCommand.Create(() =>
         {
-            if (PluginDetail is not null && PluginBar is not null)
+            if (Plugin is not null && PluginBar is not null)
             {
                 PluginBars?.Remove(PluginBar);
 
@@ -54,7 +50,7 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
 
         DeleteCommand = ReactiveCommand.Create(() =>
         {
-            if (PluginDetail is not null && PluginBar is not null)
+            if (Plugin is not null && PluginBar is not null)
             {
                 PluginBars?.Remove(PluginBar);
                 //PluginsNetwork.RequireDeletePlugin(PluginDetail);
@@ -65,28 +61,30 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
         {
             var location = $"{nameof(PluginBarViewModel)}.{nameof(LaunchCommand)}";
 
+            if (Plugin?.LoaderInfo is null) return;
+
             new Thread(() =>
             {
                 try
                 {
-                    var loaderName = PluginDetail?.RequiredLoaderInfo.LoaderName;
-                    var loaderVersion = PluginDetail?.RequiredLoaderInfo.LoaderVersion;
-                    var pd = PluginDetail?.PluginDetails;
+                    var loaderName = Plugin?.LoaderInfo.LoaderName;
+                    var loaderVersion = Plugin?.LoaderInfo.LoaderVersion;
+                    var pd = Plugin?.PluginInfo;
 
-                    var pluginPath = $"{PluginDetail?.InstallPath}/{pd?.RootStartupFileName}";
+                    var pluginPath = $"{Plugin?.InstallPath}/{pd?.RootStartupFileName}";
                     var pluginFile = pluginPath.GetFullPath();
                     var connectStr = "ws://" +
-                        $"{DevicesDiscoveryServer.DefaultDeviceInfo.Device.IPv4}" +
+                        $"{DevicesDiscoveryServer.Instance.DefaultDeviceInfo.Device.IPv4}" +
                         $":" +
                         $"{ConstantTable.PluginsServerPort}/";
 
-                    if (PluginDetail is null) return;
+                    if (Plugin is null) return;
 
-                    if (PluginDetail.RequiredLoaderInfo.SelfLoad)
+                    if (Plugin.LoaderInfo.SelfLoad)
                         Process.Start(pluginFile, $"--connect {connectStr}");
                     else
                     {
-                        var loaderFile = $"{Instances.ConfigManager.AppConfig.Loaders.InstallPath}/" +
+                        var loaderFile = $"{AppConfig.Loaders.InstallPath}/" +
                             $"{loaderName}/{loaderVersion}/{loaderName}";
 
                         if (OperatingSystem.IsWindows())
@@ -116,31 +114,28 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
 
     public override void InitEvents()
     {
-        EventService.LanguageChanged += () =>
-        {
-            PropertyChanged?.Invoke(this, new(nameof(DisplayName)));
-        };
+        EventService.LanguageChanged += () => this.RaisePropertyChanged(nameof(DisplayName));
     }
 
     internal PluginBar? PluginBar { get; set; }
 
-    internal Plugin? PluginDetail { get; set; }
+    internal PluginInstallation? Plugin { get; set; }
 
     internal string? DisplayName
     {
         get
         {
-            if (PluginDetail is null) return null;
+            if (Plugin is null) return null;
 
-            return PluginDetail.PluginDetails.DisplayName.TryGetValue(
-                Instances.ConfigManager.AppConfig.App.AppLanguage, out var lang
-            ) ? lang : PluginDetail.PluginDetails.DisplayName.Values.GetEnumerator().Current;
+            return Plugin.PluginInfo.DisplayName.TryGetValue(
+                AppConfig.App.AppLanguage, out var lang
+            ) ? lang : Plugin.PluginInfo.DisplayName.Values.GetEnumerator().Current;
         }
     }
 
-    internal string? AuthorName => PluginDetail?.PluginDetails.AuthorName;
+    internal string? AuthorName => Plugin?.PluginInfo.AuthorName;
 
-    internal string? Version => PluginDetail?.PluginDetails.Version;
+    internal string? Version => Plugin?.PluginInfo.Version;
 
     internal ObservableCollection<PluginBar>? PluginBars { get; set; }
 
@@ -152,9 +147,9 @@ internal class PluginBarViewModel : ViewModelBase, INotifyPropertyChanged
 
             try
             {
-                if (PluginDetail is null) return App.DefaultIcon;
+                if (Plugin is null) return App.DefaultIcon;
 
-                var src = Convert.FromBase64String(PluginDetail.PluginDetails.IconInBase64);
+                var src = Convert.FromBase64String(Plugin.PluginInfo.IconInBase64);
 
                 using var ms = new MemoryStream(src);
 

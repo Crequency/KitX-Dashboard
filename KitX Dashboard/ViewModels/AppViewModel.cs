@@ -34,7 +34,7 @@ internal class AppViewModel : ViewModelBase
 
             win?.Activate();
 
-            Instances.ConfigManager.AppConfig.Windows.MainWindow.IsHidden = false;
+            ConfigManager.Instance.AppConfig.Windows.MainWindow.IsHidden = false;
 
             SaveAppConfigChanges();
         });
@@ -64,7 +64,7 @@ internal class AppViewModel : ViewModelBase
 
         ExitCommand = ReactiveCommand.Create(() =>
         {
-            ViewInstances.DeviceCards.Clear();
+            ViewInstances.DeviceCases.Clear();
 
             ViewInstances.PluginInfos.Clear();
 
@@ -80,13 +80,13 @@ internal class AppViewModel : ViewModelBase
 
     public override void InitEvents()
     {
-        ViewInstances.DeviceCards.CollectionChanged += (_, _) => UpdateTrayIconText();
+        ViewInstances.DeviceCases.CollectionChanged += (_, _) => UpdateTrayIconText();
 
         ViewInstances.PluginInfos.CollectionChanged += (_, _) => UpdateTrayIconText();
 
-        EventService.DevicesServerPortChanged += UpdateTrayIconText;
+        EventService.DevicesServerPortChanged += _ => UpdateTrayIconText();
 
-        EventService.DevicesServerPortChanged += UpdateTrayIconText;
+        EventService.PluginsServerPortChanged += _ => UpdateTrayIconText();
     }
 
     private void UpdateTrayIconText()
@@ -100,7 +100,7 @@ internal class AppViewModel : ViewModelBase
             .Append(Translate("Text_Settings_Performence_Web_PluginsServerPort"))
             .AppendLine(": " + ConstantTable.PluginsServerPort)
             .AppendLine()
-            .Append(ViewInstances.DeviceCards.Count + " ")
+            .Append(ViewInstances.DeviceCases.Count + " ")
             .AppendLine(Translate("Text_Device_Tip_Detected"))
             .Append(ViewInstances.PluginInfos.Count + " ")
             .AppendLine(Translate("Text_Lib_Tip_Connected"))

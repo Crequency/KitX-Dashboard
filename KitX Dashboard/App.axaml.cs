@@ -23,7 +23,7 @@ namespace KitX.Dashboard;
 public partial class App : Application
 {
     public static readonly Bitmap DefaultIcon = new(
-        $"{ConstantTable.AssetsPath}{Instances.ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
+        $"{ConstantTable.AssetsPath}{ConfigManager.Instance.AppConfig.App.CoverIconFileName}".GetFullPath()
     );
 
     private AppViewModel? viewModel;
@@ -46,7 +46,7 @@ public partial class App : Application
 
     private void LoadLanguage()
     {
-        var config = Instances.ConfigManager.AppConfig;
+        var config = ConfigManager.Instance.AppConfig;
         var lang = config.App.AppLanguage;
         var backup_lang = config.App.SurpportLanguages.Keys.First();
         var path = $"{ConstantTable.LanguageFilePath}/{lang}.axaml".GetFullPath();
@@ -100,7 +100,7 @@ public partial class App : Application
 
     private static void CalculateThemeColor()
     {
-        Color c = Color.Parse(Instances.ConfigManager.AppConfig.App.ThemeColor);
+        Color c = Color.Parse(ConfigManager.Instance.AppConfig.App.ThemeColor);
 
         if (Current is not null)
         {
@@ -155,7 +155,7 @@ public partial class App : Application
             };
         }
 
-        if (Instances.ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
+        if (ConfigManager.Instance.AppConfig.App.ShowAnnouncementWhenStart)
             new Thread(async () =>
             {
                 try

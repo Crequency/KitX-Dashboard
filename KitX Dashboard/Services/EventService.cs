@@ -67,14 +67,14 @@ public static class EventService
     public static event UseStatisticsChangedHandler UseStatisticsChanged = new(() => { });
 
 
+    public delegate void DevicesServerPortChangedHandler(int port);
+
+    public static event DevicesServerPortChangedHandler DevicesServerPortChanged = new(port => ConstantTable.DevicesServerPort = port);
+
+
     public delegate void PluginsServerPortChangedHandler(int port);
 
     public static event PluginsServerPortChangedHandler PluginsServerPortChanged = new(port => ConstantTable.PluginsServerPort = port);
-
-
-    public delegate void DevicesServerPortChangedHandler();
-
-    public static event DevicesServerPortChangedHandler DevicesServerPortChanged = new(() => { });
 
 
     public delegate void OnActivitiesUpdatedHandler();

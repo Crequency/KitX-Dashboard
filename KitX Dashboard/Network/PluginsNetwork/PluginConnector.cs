@@ -111,7 +111,7 @@ public class PluginConnector
             try
             {
                 if (PluginInfo is not null)
-                    ViewInstances.PluginInfos.Remove(PluginInfo.Value);
+                    ViewInstances.PluginInfos.Remove(PluginInfo);
             }
             catch (Exception e)
             {
@@ -137,15 +137,15 @@ public class PluginConnector
 
                     ArgumentNullException.ThrowIfNull(PluginInfo, nameof(PluginInfo));
 
-                    ArgumentNullException.ThrowIfNull(PluginInfo.Value.Tags, nameof(PluginInfo.Value.Tags));
+                    ArgumentNullException.ThrowIfNull(PluginInfo.Tags, nameof(PluginInfo.Tags));
 
-                    PluginInfo.Value.Tags.Add(nameof(ConnectionId), ConnectionId ?? string.Empty);
-                    PluginInfo.Value.Tags.Add(
+                    PluginInfo.Tags.Add(nameof(ConnectionId), ConnectionId ?? string.Empty);
+                    PluginInfo.Tags.Add(
                         nameof(PluginTagsNames.JoinTime),
                         DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss(FF)")
                     );
 
-                    ViewInstances.PluginInfos.Add(PluginInfo.Value);
+                    ViewInstances.PluginInfos.Add(PluginInfo);
 
                     Log.Information($"In {location}: New plugin registered with {body.Replace("\r", "").Replace("\n", "")}");
 
@@ -167,7 +167,7 @@ public class PluginConnector
             try
             {
                 if (PluginInfo is not null)
-                    ViewInstances.PluginInfos.Remove(PluginInfo.Value);
+                    ViewInstances.PluginInfos.Remove(PluginInfo);
             }
             catch (Exception e)
             {

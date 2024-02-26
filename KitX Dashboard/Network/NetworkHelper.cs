@@ -1,6 +1,8 @@
 ﻿using Common.BasicHelper.Core.Shell;
 using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Converters;
+using KitX.Dashboard.Managers;
 using KitX.Dashboard.Views;
 using KitX.Shared.Device;
 using Serilog;
@@ -21,7 +23,7 @@ internal static class NetworkHelper
         IPInterfaceProperties adapterProperties
     )
     {
-        var userPointed = Instances.ConfigManager.AppConfig.Web.AcceptedNetworkInterfaces;
+        var userPointed = ConfigManager.Instance.AppConfig.Web.AcceptedNetworkInterfaces;
 
         if (userPointed is not null)
             if (userPointed.Contains(adapter.Name))
@@ -68,7 +70,7 @@ internal static class NetworkHelper
                 where ip.AddressFamily == AddressFamily.InterNetwork
                     && IsInterNetworkAddressV4(ip)
                     && !ip.ToString().Equals("127.0.0.1")
-                    && ip.ToString().StartsWith(Instances.ConfigManager.AppConfig.Web.IPFilter)
+                    && ip.ToString().StartsWith(ConfigManager.Instance.AppConfig.Web.IPFilter)
                 select ip;
 
             Log.Information($"IPv4 addresses: {search.Print(print: false)}");
@@ -145,7 +147,7 @@ internal static class NetworkHelper
 
         try
         {
-            switch (OperatingSystem2Enum.GetOSType())
+            switch (OperatingSystemUtils.GetOSType())
             {
                 case OperatingSystems.Linux:
 
@@ -216,7 +218,7 @@ internal static class NetworkHelper
         },
         IsMainDevice = ConstantTable.IsMainMachine,
         SendTime = DateTime.UtcNow,
-        DeviceOSType = OperatingSystem2Enum.GetOSType(),
+        DeviceOSType = OperatingSystemUtils.GetOSType(),
         DeviceOSVersion = TryGetOSVersionString() ?? "",
         PluginsServerPort = ConstantTable.PluginsServerPort,
         DevicesServerPort = ConstantTable.DevicesServerPort,
