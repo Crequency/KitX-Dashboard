@@ -142,10 +142,6 @@ public class AppConfig : ConfigBase
 
             public string SelectedViewName { get; set; } = "View_General";
 
-            public bool MicaAreaExpanded { get; set; } = true;
-
-            public bool MicaToolTipIsOpen { get; set; } = true;
-
             public bool PaletteAreaExpanded { get; set; } = false;
 
             public bool WebRelatedAreaExpanded { get; set; } = true;

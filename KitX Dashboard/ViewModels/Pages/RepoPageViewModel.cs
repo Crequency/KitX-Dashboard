@@ -10,7 +10,6 @@ using ReactiveUI;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -19,11 +18,9 @@ using System.Threading;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
+internal class RepoPageViewModel : ViewModelBase
 {
     private RepoPage? CurrentPage { get; set; }
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
 
     public RepoPageViewModel()
     {
@@ -142,10 +139,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             pluginsCount = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(PluginsCount))
-            );
+            this.RaisePropertyChanged(nameof(PluginsCount));
         }
     }
 
@@ -158,10 +152,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             noPlugins_tipHeight = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(NoPlugins_TipHeight))
-            );
+            this.RaisePropertyChanged(nameof(NoPlugins_TipHeight));
         }
     }
 
@@ -172,10 +163,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             ConfigManager.Instance.AppConfig.App.DeveloperSetting = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(ImportButtonVisibility))
-            );
+            this.RaisePropertyChanged(nameof(ImportButtonVisibility));
         }
     }
 

@@ -3,17 +3,18 @@ using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels;
 
-internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChanged
+internal class AnouncementsWindowViewModel : ViewModelBase
 {
     public AnouncementsWindowViewModel()
     {
         InitCommands();
+
+        InitEvents();
     }
 
     public override void InitCommands()

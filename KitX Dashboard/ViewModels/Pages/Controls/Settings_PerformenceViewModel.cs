@@ -1,16 +1,14 @@
-﻿using Avalonia;
-using Avalonia.Threading;
+﻿using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Services;
 using ReactiveUI;
 using Serilog;
+using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Reactive;
 using System.Text;
@@ -18,10 +16,8 @@ using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyChanged
+internal class Settings_PerformenceViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     internal Settings_PerformenceViewModel()
     {
         InitCommands();
@@ -38,7 +34,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             Task.Run(() =>
             {
                 var dir = new DirectoryInfo(
-                    ConfigManager.Instance.AppConfig.Log.LogFilePath.GetFullPath()
+                    AppConfig.Log.LogFilePath.GetFullPath()
                 );
 
                 foreach (var file in dir.GetFiles())
@@ -53,17 +49,12 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
                     }
                 }
 
-                PropertyChanged?.Invoke(this,
-                    new(nameof(LogFileSizeUsage))
-                );
+                this.RaisePropertyChanged(nameof(LogFileSizeUsage));
             });
         });
 
         RefreshLogsUsageCommand = ReactiveCommand.Create(
-            () => PropertyChanged?.Invoke(
-                this,
-                new(nameof(LogFileSizeUsage))
-            )
+            () => this.RaisePropertyChanged(nameof(LogFileSizeUsage))
         );
     }
 
@@ -71,24 +62,24 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     {
         EventService.LogConfigUpdated += () =>
         {
-            var logdir = ConfigManager.Instance.AppConfig.Log.LogFilePath.GetFullPath();
+            var logdir = AppConfig.Log.LogFilePath.GetFullPath();
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
                 .WriteTo.File(
                     $"{logdir}Log_.log",
-                    outputTemplate: ConfigManager.Instance.AppConfig.Log.LogTemplate,
+                    outputTemplate: AppConfig.Log.LogTemplate,
                     rollingInterval: RollingInterval.Hour,
-                    fileSizeLimitBytes: ConfigManager.Instance.AppConfig.Log.LogFileSingleMaxSize,
+                    fileSizeLimitBytes: AppConfig.Log.LogFileSingleMaxSize,
                     buffered: true,
                     flushToDiskInterval: new(
                         0,
                         0,
-                        ConfigManager.Instance.AppConfig.Log.LogFileFlushInterval
+                        AppConfig.Log.LogFileFlushInterval
                     ),
-                    restrictedToMinimumLevel: ConfigManager.Instance.AppConfig.Log.LogLevel,
+                    restrictedToMinimumLevel: AppConfig.Log.LogLevel,
                     rollOnFileSizeLimit: true,
-                    retainedFileCountLimit: ConfigManager.Instance.AppConfig.Log.LogFileMaxCount
+                    retainedFileCountLimit: AppConfig.Log.LogFileMaxCount
                 )
                 .CreateLogger();
         };
@@ -98,30 +89,18 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
             foreach (var item in SupportedLogLevels)
                 item.LogLevelDisplayName = GetLogLevelDisplayText(item.LogLevelName ?? "");
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(SupportedLogLevels))
-            );
+            this.RaisePropertyChanged(nameof(SupportedLogLevels));
         };
 
-        EventService.DevicesServerPortChanged += _ => PropertyChanged?.Invoke(
-            this,
-            new(nameof(DevicesServerPort))
-        );
+        EventService.DevicesServerPortChanged += _ => this.RaisePropertyChanged(nameof(DevicesServerPort));
 
-        EventService.PluginsServerPortChanged += _ => PropertyChanged?.Invoke(
-            this,
-            new(nameof(PluginsServerPort))
-        );
+        EventService.PluginsServerPortChanged += _ => this.RaisePropertyChanged(nameof(PluginsServerPort));
 
         Instances.SignalTasksManager?.SignalRun(
             nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal),
             () =>
             {
-                PropertyChanged?.Invoke(
-                    this,
-                    new(nameof(AvailableNetworkInterfaces))
-                );
+                this.RaisePropertyChanged(nameof(AvailableNetworkInterfaces));
 
                 Dispatcher.UIThread.Post(() =>
                 {
@@ -159,10 +138,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
                     AcceptedNetworkInterfacesNames = sb.ToString()[..^1];
                 }
 
-                PropertyChanged?.Invoke(
-                    this,
-                    new(nameof(AcceptedNetworkInterfacesNames))
-                );
+                this.RaisePropertyChanged(nameof(AcceptedNetworkInterfacesNames));
 
                 SaveAppConfigChanges();
             };
@@ -170,10 +146,10 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
     internal static double DelayedWebStartSeconds
     {
-        get => ConfigManager.Instance.AppConfig.Web.DelayStartSeconds;
+        get => AppConfig.Web.DelayStartSeconds;
         set
         {
-            ConfigManager.Instance.AppConfig.Web.DelayStartSeconds = value;
+            AppConfig.Web.DelayStartSeconds = value;
             SaveAppConfigChanges();
         }
     }
@@ -182,18 +158,15 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
     internal int PluginsServerPortType
     {
-        get => ConfigManager.Instance.AppConfig.Web.UserSpecifiedPluginsServerPort is null ? 0 : 1;
+        get => AppConfig.Web.UserSpecifiedPluginsServerPort is null ? 0 : 1;
         set
         {
             if (value == 0)
-                ConfigManager.Instance.AppConfig.Web.UserSpecifiedPluginsServerPort = null;
+                AppConfig.Web.UserSpecifiedPluginsServerPort = null;
             else
-                ConfigManager.Instance.AppConfig.Web.UserSpecifiedPluginsServerPort = PluginsServerPort;
+                AppConfig.Web.UserSpecifiedPluginsServerPort = PluginsServerPort;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(PluginsServerPortEditable))
-            );
+            this.RaisePropertyChanged(nameof(PluginsServerPortEditable));
 
             SaveAppConfigChanges();
         }
@@ -205,7 +178,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             if (value >= 0 && value <= 65535)
-                ConfigManager.Instance.AppConfig.Web.UserSpecifiedPluginsServerPort = value;
+                AppConfig.Web.UserSpecifiedPluginsServerPort = value;
         }
     }
 
@@ -213,10 +186,11 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
     internal static string LocalIPFilter
     {
-        get => ConfigManager.Instance.AppConfig.Web.IPFilter;
+        get => AppConfig.Web.IPFilter;
         set
         {
-            ConfigManager.Instance.AppConfig.Web.IPFilter = value;
+            AppConfig.Web.IPFilter = value;
+
             SaveAppConfigChanges();
         }
     }
@@ -225,7 +199,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     {
         get
         {
-            var userPointed = ConfigManager.Instance.AppConfig.Web.AcceptedNetworkInterfaces;
+            var userPointed = AppConfig.Web.AcceptedNetworkInterfaces;
 
             if (userPointed is null)
                 return "Auto";
@@ -235,12 +209,12 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
         set
         {
             if (value.ToLower().Equals("auto"))
-                ConfigManager.Instance.AppConfig.Web.AcceptedNetworkInterfaces = null;
+                AppConfig.Web.AcceptedNetworkInterfaces = null;
             else
             {
                 var userInput = value.Split(';');
 
-                ConfigManager.Instance.AppConfig.Web.AcceptedNetworkInterfaces = [.. userInput];
+                AppConfig.Web.AcceptedNetworkInterfaces = [.. userInput];
             }
         }
     }
@@ -251,107 +225,121 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
     internal static int DevicesListRefreshDelay
     {
-        get => ConfigManager.Instance.AppConfig.Web.DevicesViewRefreshDelay;
+        get => AppConfig.Web.DevicesViewRefreshDelay;
         set
         {
-            ConfigManager.Instance.AppConfig.Web.DevicesViewRefreshDelay = value;
+            AppConfig.Web.DevicesViewRefreshDelay = value;
+
             SaveAppConfigChanges();
         }
     }
 
     internal static int GreetingTextUpdateInterval
     {
-        get => ConfigManager.Instance.AppConfig.Windows.MainWindow.GreetingUpdateInterval;
+        get => AppConfig.Windows.MainWindow.GreetingUpdateInterval;
         set
         {
-            ConfigManager.Instance.AppConfig.Windows.MainWindow.GreetingUpdateInterval = value;
+            AppConfig.Windows.MainWindow.GreetingUpdateInterval = value;
+
             EventService.Invoke(nameof(EventService.GreetingTextIntervalUpdated));
+
             SaveAppConfigChanges();
         }
     }
 
     internal static bool WebRelatedAreaExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Settings.WebRelatedAreaExpanded;
+        get => AppConfig.Pages.Settings.WebRelatedAreaExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Settings.WebRelatedAreaExpanded = value;
+            AppConfig.Pages.Settings.WebRelatedAreaExpanded = value;
+
             SaveAppConfigChanges();
         }
     }
 
     internal static bool WebRelatedAreaOfNetworkInterfacesExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Settings.WebRelatedAreaOfNetworkInterfacesExpanded;
+        get => AppConfig.Pages.Settings.WebRelatedAreaOfNetworkInterfacesExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Settings.WebRelatedAreaOfNetworkInterfacesExpanded = value;
+            AppConfig.Pages.Settings.WebRelatedAreaOfNetworkInterfacesExpanded = value;
+
             SaveAppConfigChanges();
         }
     }
 
     internal static bool LogRelatedAreaExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Settings.LogRelatedAreaExpanded;
+        get => AppConfig.Pages.Settings.LogRelatedAreaExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Settings.LogRelatedAreaExpanded = value;
+            AppConfig.Pages.Settings.LogRelatedAreaExpanded = value;
+
             SaveAppConfigChanges();
         }
     }
 
     internal static bool UpdateRelatedAreaExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Settings.UpdateRelatedAreaExpanded;
+        get => AppConfig.Pages.Settings.UpdateRelatedAreaExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Settings.UpdateRelatedAreaExpanded = value;
+            AppConfig.Pages.Settings.UpdateRelatedAreaExpanded = value;
+
             SaveAppConfigChanges();
         }
     }
 
     internal static int LogFileSizeUsage
-        => (int)(ConfigManager.Instance.AppConfig.Log.LogFilePath.GetTotalSize() / 1000 / 1024);
+        => (int)(AppConfig.Log.LogFilePath.GetTotalSize() / 1000 / 1024);
 
     internal static int LogFileSizeLimit
     {
-        get => (int)(ConfigManager.Instance.AppConfig.Log.LogFileSingleMaxSize / 1024 / 1024);
+        get => (int)(AppConfig.Log.LogFileSingleMaxSize / 1024 / 1024);
         set
         {
-            ConfigManager.Instance.AppConfig.Log.LogFileSingleMaxSize = value * 1024 * 1024;
+            AppConfig.Log.LogFileSingleMaxSize = value * 1024 * 1024;
+
             EventService.Invoke(nameof(EventService.LogConfigUpdated));
+
             SaveAppConfigChanges();
         }
     }
 
     internal static int LogFileMaxCount
     {
-        get => ConfigManager.Instance.AppConfig.Log.LogFileMaxCount;
+        get => AppConfig.Log.LogFileMaxCount;
         set
         {
-            ConfigManager.Instance.AppConfig.Log.LogFileMaxCount = value;
+            AppConfig.Log.LogFileMaxCount = value;
+
             EventService.Invoke(nameof(EventService.LogConfigUpdated));
+
             SaveAppConfigChanges();
         }
     }
 
     internal static int LogFileFlushInterval
     {
-        get => ConfigManager.Instance.AppConfig.Log.LogFileFlushInterval;
+        get => AppConfig.Log.LogFileFlushInterval;
         set
         {
-            ConfigManager.Instance.AppConfig.Log.LogFileFlushInterval = value;
+            AppConfig.Log.LogFileFlushInterval = value;
+
             EventService.Invoke(nameof(EventService.LogConfigUpdated));
+
             SaveAppConfigChanges();
         }
     }
 
     internal static int CheckerPerThreadFilesCountLimit
     {
-        get => ConfigManager.Instance.AppConfig.IO.UpdatingCheckPerThreadFilesCount;
+        get => AppConfig.IO.UpdatingCheckPerThreadFilesCount;
         set
         {
-            ConfigManager.Instance.AppConfig.IO.UpdatingCheckPerThreadFilesCount = value;
+            AppConfig.IO.UpdatingCheckPerThreadFilesCount = value;
+
             SaveAppConfigChanges();
         }
     }
@@ -362,44 +350,44 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
     [
         new()
         {
-            LogEventLevel = Serilog.Events.LogEventLevel.Verbose,
+            LogEventLevel = LogEventLevel.Verbose,
             LogLevelName = "Verbose",
             LogLevelDisplayName = GetLogLevelDisplayText("Verbose")
         },
         new()
         {
-            LogEventLevel = Serilog.Events.LogEventLevel.Debug,
+            LogEventLevel = LogEventLevel.Debug,
             LogLevelName = "Debug",
             LogLevelDisplayName = GetLogLevelDisplayText("Debug")
         },
         new()
         {
-            LogEventLevel = Serilog.Events.LogEventLevel.Information,
+            LogEventLevel = LogEventLevel.Information,
             LogLevelName = "Information",
             LogLevelDisplayName = GetLogLevelDisplayText("Information")
         },
         new()
         {
-            LogEventLevel = Serilog.Events.LogEventLevel.Warning,
+            LogEventLevel = LogEventLevel.Warning,
             LogLevelName = "Warning",
             LogLevelDisplayName = GetLogLevelDisplayText("Warning")
         },
         new()
         {
-            LogEventLevel = Serilog.Events.LogEventLevel.Error,
+            LogEventLevel = LogEventLevel.Error,
             LogLevelName = "Error",
             LogLevelDisplayName = GetLogLevelDisplayText("Error")
         },
         new()
         {
-            LogEventLevel = Serilog.Events.LogEventLevel.Fatal,
+            LogEventLevel = LogEventLevel.Fatal,
             LogLevelName = "Fatal",
             LogLevelDisplayName = GetLogLevelDisplayText("Fatal")
         },
     ];
 
     private SupportedLogLevel? _currentLogLevel = SupportedLogLevels.Find(
-        x => x.LogEventLevel == ConfigManager.Instance.AppConfig.Log.LogLevel
+        x => x.LogEventLevel == AppConfig.Log.LogLevel
     );
 
     internal SupportedLogLevel? CurrentLogLevel
@@ -411,7 +399,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase, INotifyPropertyCha
 
             if (value is not null)
             {
-                ConfigManager.Instance.AppConfig.Log.LogLevel = value.LogEventLevel;
+                AppConfig.Log.LogLevel = value.LogEventLevel;
 
                 EventService.Invoke(nameof(EventService.LogConfigUpdated));
 

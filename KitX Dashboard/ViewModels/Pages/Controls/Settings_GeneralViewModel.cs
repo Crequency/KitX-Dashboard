@@ -4,16 +4,13 @@ using KitX.Dashboard.Views;
 using ReactiveUI;
 using Serilog;
 using System;
-using System.ComponentModel;
 using System.Reactive;
 using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
+internal class Settings_GeneralViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     internal Settings_GeneralViewModel()
     {
         InitCommands();
@@ -46,11 +43,8 @@ internal class Settings_GeneralViewModel : ViewModelBase, INotifyPropertyChanged
 
     public override void InitEvents()
     {
-        EventService.DevelopSettingsChanged += () => PropertyChanged?.Invoke(
-            this,
-            new(
-                nameof(DeveloperSettingEnabled)
-            )
+        EventService.DevelopSettingsChanged += () => this.RaisePropertyChanged(
+            nameof(DeveloperSettingEnabled)
         );
     }
 

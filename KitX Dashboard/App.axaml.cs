@@ -32,16 +32,29 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 
+        LoadTheme();
+
         LoadLanguage();
 
         CalculateThemeColor();
 
-        InitLiveCharts();
+        InitializeLiveCharts();
 
         // Must construct after `LoadLanguage()` function.
         viewModel = new();
 
         DataContext = viewModel;
+    }
+
+    private void LoadTheme()
+    {
+        RequestedThemeVariant = ConfigManager.Instance.AppConfig.App.Theme switch
+        {
+            "Light" => ThemeVariant.Light,
+            "Dark" => ThemeVariant.Dark,
+            "Follow" => ThemeVariant.Default,
+            _ => ThemeVariant.Default
+        };
     }
 
     private void LoadLanguage()
@@ -104,22 +117,24 @@ public partial class App : Application
 
         if (Current is not null)
         {
-            Current.Resources["ThemePrimaryAccent"] =
-                new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
+            Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
+
             for (char i = 'A'; i <= 'E'; ++i)
             {
-                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B));
+                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
+                    new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
+                );
             }
             for (int i = 1; i <= 9; ++i)
             {
-                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(new Color((byte)(i * 10 + i), c.R, c.G, c.B));
+                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
+                    new Color((byte)(i * 10 + i), c.R, c.G, c.B)
+                );
             }
         }
     }
 
-    private static void InitLiveCharts()
+    private static void InitializeLiveCharts()
     {
         {
             var usingLightTheme = Current?.ActualThemeVariant == ThemeVariant.Light;

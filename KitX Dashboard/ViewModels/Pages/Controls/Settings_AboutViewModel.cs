@@ -2,17 +2,14 @@
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Views.Pages.Controls;
 using ReactiveUI;
-using System.ComponentModel;
 using System.Reactive;
 using System.Reflection;
 using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
+internal class Settings_AboutViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     internal AppLogo? AppLogo { get; set; }
 
     internal Settings_AboutViewModel()
@@ -54,14 +51,7 @@ internal class Settings_AboutViewModel : ViewModelBase, INotifyPropertyChanged
     internal string ThirdPartyLicenseString
     {
         get => thirdPartyLicenseString;
-        set
-        {
-            thirdPartyLicenseString = value;
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(ThirdPartyLicenseString))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref thirdPartyLicenseString, value);
     }
 
     public static bool AboutAreaExpanded

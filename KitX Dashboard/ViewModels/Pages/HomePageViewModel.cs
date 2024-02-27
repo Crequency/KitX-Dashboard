@@ -1,17 +1,13 @@
 ﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Managers;
-using KitX.Dashboard.Services;
 using ReactiveUI;
-using System.ComponentModel;
 using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
+internal class HomePageViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     public HomePageViewModel()
     {
         InitCommands();
@@ -65,15 +61,9 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             ConfigManager.Instance.AppConfig.Pages.Home.NavigationViewPaneDisplayMode = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(NavigationViewPaneDisplayMode))
-            );
+            this.RaisePropertyChanged(nameof(NavigationViewPaneDisplayMode));
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(FirstItemMargin))
-            );
+            this.RaisePropertyChanged(nameof(FirstItemMargin));
 
             SaveAppConfigChanges();
         }

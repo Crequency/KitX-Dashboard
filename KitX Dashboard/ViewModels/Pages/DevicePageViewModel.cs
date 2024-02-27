@@ -1,7 +1,5 @@
 ﻿using KitX.Dashboard.Models;
-using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
-using KitX.Shared.Device;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;

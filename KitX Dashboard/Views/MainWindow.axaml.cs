@@ -83,14 +83,6 @@ public partial class MainWindow : Window, IView
     {
         MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
 
-        RequestedThemeVariant = AppConfig.App.Theme switch
-        {
-            "Light" => ThemeVariant.Light,
-            "Dark" => ThemeVariant.Dark,
-            "Follow" => ThemeVariant.Default,
-            _ => ThemeVariant.Default
-        };
-
         UpdateGreetingText();
 
         EventService.LanguageChanged += () => UpdateGreetingText();
