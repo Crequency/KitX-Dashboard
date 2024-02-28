@@ -1,20 +1,21 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
-using KitX.Shared.Loader;
-using KitX.Shared.Plugin;
+using KitX.Shared.CSharp.Loader;
+using KitX.Shared.CSharp.Plugin;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using Decoder = KitX.FileFormats.CSharp.ExtensionsPackage.Decoder;
 
 namespace KitX.Dashboard.Managers;
 
 internal class PluginsManager
 {
-    internal static List<Plugin> Plugins => Instances.ConfigManager.PluginsConfig.Plugins;
+    internal static List<PluginInstallation> Plugins => ConfigManager.Instance.PluginsConfig.Plugins;
 
     internal static void ImportPlugin(string[] kxpfiles, bool inGraphic = false)
     {
@@ -28,7 +29,7 @@ internal class PluginsManager
         {
             try
             {
-                var decoder = new FileFormats.ExtensionsPackage.Decoder(item);
+                var decoder = new Decoder(item);
 
                 var rst = decoder.GetLoaderAndPluginInfo();
 
@@ -36,7 +37,9 @@ internal class PluginsManager
 
                 var pluginInfo = JsonSerializer.Deserialize<PluginInfo>(rst.Item2);
 
-                var config = Instances.ConfigManager.AppConfig;
+                if (pluginInfo is null) continue;
+
+                var config = ConfigManager.Instance.AppConfig;
 
                 var pluginsavedir = config?.App?.LocalPluginsFileFolder.GetFullPath();
 

@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using KitX.Dashboard.Configuration;
+using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using ReactiveUI;
 
@@ -39,5 +40,7 @@ public abstract class ViewModelBase : ReactiveObject
 
     public abstract void InitEvents();
 
-    internal static AppConfig AppConfig => Instances.ConfigManager.AppConfig;
+    internal static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
+
+    internal static AnnouncementConfig AnnouncementConfig => ConfigManager.Instance.AnnouncementConfig;
 }

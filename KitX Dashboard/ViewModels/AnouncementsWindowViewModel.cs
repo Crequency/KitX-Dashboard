@@ -1,29 +1,27 @@
-﻿using Avalonia;
-using FluentAvalonia.UI.Controls;
+﻿using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels;
 
-internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChanged
+internal class AnouncementsWindowViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     public AnouncementsWindowViewModel()
     {
         InitCommands();
+
+        InitEvents();
     }
 
     public override void InitCommands()
     {
         ConfirmReceivedCommand = ReactiveCommand.Create(() =>
         {
-            var config = Instances.ConfigManager.AnnouncementConfig;
+            var config = AnnouncementConfig;
 
             var accepted = config.Accepted;
 
@@ -60,7 +58,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
         ConfirmReceivedAllCommand = ReactiveCommand.Create(() =>
         {
-            var config = Instances.ConfigManager.AnnouncementConfig;
+            var config = AnnouncementConfig;
 
             var accepted = config.Accepted;
 
@@ -119,10 +117,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
 
             Markdown = Sources[key];
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(SelectedMenuItem))
-            );
+            this.RaiseAndSetIfChanged(ref selectedMenuItem, value);
         }
     }
 
@@ -131,14 +126,7 @@ internal class AnouncementsWindowViewModel : ViewModelBase, INotifyPropertyChang
     internal string Markdown
     {
         get => markdown;
-        set
-        {
-            markdown = value;
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(Markdown))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref markdown, value);
     }
 
     private Dictionary<string, string> sources = [];

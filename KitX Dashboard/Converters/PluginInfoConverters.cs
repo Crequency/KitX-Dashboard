@@ -1,4 +1,5 @@
 ﻿using Avalonia.Data.Converters;
+using KitX.Dashboard.Managers;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,7 +16,7 @@ public class PluginMultiLanguagePropertyConverter : IValueConverter
         if (value is Dictionary<string, string> dict)
         {
             var result = dict.TryGetValue(
-                Instances.ConfigManager.AppConfig.App.AppLanguage,
+                ConfigManager.Instance.AppConfig.App.AppLanguage,
                 out var lang
             ) ? lang : dict.Values.First();
 

@@ -52,10 +52,10 @@ public partial class SettingsPage : UserControl, IView
 
     private static string SelectedViewName
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.SelectedViewName;
+        get => ConfigManager.Instance.AppConfig.Pages.Settings.SelectedViewName;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.SelectedViewName = value;
+            ConfigManager.Instance.AppConfig.Pages.Settings.SelectedViewName = value;
 
             IView.SaveAppConfigChanges();
         }

@@ -16,11 +16,7 @@ public static class Instances
 
     public static LiteDatabase? ActivitiesDataBase { get; set; }
 
-    public static CacheManager? CacheManager { get; set; }
-
     public static KeyHookManager? KeyHookManager { get; set; }
-
-    public static ConfigManager ConfigManager { get; set; } = new ConfigManager().SetLocation("./Config/").Load();
 
     internal static void Initialize()
     {
@@ -31,12 +27,6 @@ public static class Instances
             TasksManager.RunTask(
                 () => SignalTasksManager = new(),
                 location.Append("." + nameof(SignalTasksManager)),
-                catchException: true
-            );
-
-            TasksManager.RunTask(
-                () => CacheManager = new(),
-                location.Append("." + nameof(CacheManager)),
                 catchException: true
             );
 

@@ -1,7 +1,7 @@
 ﻿using Fleck;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Services;
-using KitX.Shared.Plugin;
+using KitX.Shared.CSharp.Plugin;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
@@ -13,7 +13,7 @@ public class PluginsServer : ConfigFetcher
 {
     private static PluginsServer? _pluginsServer;
 
-    public static PluginsServer Instance => _pluginsServer ??= new PluginsServer();
+    public static PluginsServer Instance => _pluginsServer ??= new();
 
     private WebSocketServer? _server;
 
@@ -54,7 +54,7 @@ public class PluginsServer : ConfigFetcher
     public PluginConnector? FindConnector(PluginInfo info)
     {
         var query = PluginConnectors.Where(
-            x => x.PluginInfo.HasValue && x.PluginInfo.Value.Equals(info)
+            x => x.PluginInfo is not null && x.PluginInfo.Equals(info)
         );
 
         if (query.Any())

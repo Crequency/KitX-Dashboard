@@ -23,7 +23,7 @@ namespace KitX.Dashboard;
 public partial class App : Application
 {
     public static readonly Bitmap DefaultIcon = new(
-        $"{ConstantTable.AssetsPath}{Instances.ConfigManager.AppConfig.App.CoverIconFileName}".GetFullPath()
+        $"{ConstantTable.AssetsPath}{ConfigManager.Instance.AppConfig.App.CoverIconFileName}".GetFullPath()
     );
 
     private AppViewModel? viewModel;
@@ -32,11 +32,13 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 
+        LoadTheme();
+
         LoadLanguage();
 
         CalculateThemeColor();
 
-        InitLiveCharts();
+        InitializeLiveCharts();
 
         // Must construct after `LoadLanguage()` function.
         viewModel = new();
@@ -44,9 +46,20 @@ public partial class App : Application
         DataContext = viewModel;
     }
 
+    private void LoadTheme()
+    {
+        RequestedThemeVariant = ConfigManager.Instance.AppConfig.App.Theme switch
+        {
+            "Light" => ThemeVariant.Light,
+            "Dark" => ThemeVariant.Dark,
+            "Follow" => ThemeVariant.Default,
+            _ => ThemeVariant.Default
+        };
+    }
+
     private void LoadLanguage()
     {
-        var config = Instances.ConfigManager.AppConfig;
+        var config = ConfigManager.Instance.AppConfig;
         var lang = config.App.AppLanguage;
         var backup_lang = config.App.SurpportLanguages.Keys.First();
         var path = $"{ConstantTable.LanguageFilePath}/{lang}.axaml".GetFullPath();
@@ -100,26 +113,28 @@ public partial class App : Application
 
     private static void CalculateThemeColor()
     {
-        Color c = Color.Parse(Instances.ConfigManager.AppConfig.App.ThemeColor);
+        Color c = Color.Parse(ConfigManager.Instance.AppConfig.App.ThemeColor);
 
         if (Current is not null)
         {
-            Current.Resources["ThemePrimaryAccent"] =
-                new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
+            Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
+
             for (char i = 'A'; i <= 'E'; ++i)
             {
-                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B));
+                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
+                    new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
+                );
             }
             for (int i = 1; i <= 9; ++i)
             {
-                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                    new SolidColorBrush(new Color((byte)(i * 10 + i), c.R, c.G, c.B));
+                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
+                    new Color((byte)(i * 10 + i), c.R, c.G, c.B)
+                );
             }
         }
     }
 
-    private static void InitLiveCharts()
+    private static void InitializeLiveCharts()
     {
         {
             var usingLightTheme = Current?.ActualThemeVariant == ThemeVariant.Light;
@@ -155,7 +170,7 @@ public partial class App : Application
             };
         }
 
-        if (Instances.ConfigManager.AppConfig.App.ShowAnnouncementWhenStart)
+        if (ConfigManager.Instance.AppConfig.App.ShowAnnouncementWhenStart)
             new Thread(async () =>
             {
                 try

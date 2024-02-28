@@ -1,15 +1,12 @@
 ﻿using Common.Activity;
 using KitX.Dashboard.Managers;
+using ReactiveUI;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class Home_ActivityLogViewModel : ViewModelBase, INotifyPropertyChanged
+internal class Home_ActivityLogViewModel : ViewModelBase
 {
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     internal static ObservableCollection<Activity> Activities { get; set; } = [];
 
     private double noActivityLog_TipHeight = Activities.Count == 0 ? 200 : 0;
@@ -21,10 +18,7 @@ internal class Home_ActivityLogViewModel : ViewModelBase, INotifyPropertyChanged
         {
             noActivityLog_TipHeight = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(NoActivityLog_TipHeight))
-            );
+            this.RaisePropertyChanged(nameof(NoActivityLog_TipHeight));
         }
     }
 

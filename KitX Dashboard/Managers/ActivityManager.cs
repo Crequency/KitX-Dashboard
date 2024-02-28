@@ -44,7 +44,7 @@ internal class ActivityManager
 
                     col?.EnsureIndex(keySelector);
 
-                    Instances.ConfigManager.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
+                    ConfigManager.Instance.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
 
                     db.Commit();
                 }
@@ -76,7 +76,7 @@ internal class ActivityManager
     {
         var activity = new Activity()
         {
-            Id = Instances.ConfigManager.AppConfig.Activity.TotalRecorded,
+            Id = ConfigManager.Instance.AppConfig.Activity.TotalRecorded,
             Name = nameof(ActivityNames.AppLifetime),
             Author = ConstantTable.AppFullName,
             Title = ActivityTitles.AppStart,

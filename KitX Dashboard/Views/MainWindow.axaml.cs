@@ -7,6 +7,7 @@ using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Converters;
 using KitX.Dashboard.Generators;
+using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
@@ -21,7 +22,7 @@ public partial class MainWindow : Window, IView
 {
     private readonly MainWindowViewModel viewModel = new();
 
-    private static AppConfig AppConfig => Instances.ConfigManager.AppConfig;
+    private static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
 
     public MainWindow()
     {
@@ -81,14 +82,6 @@ public partial class MainWindow : Window, IView
     private void InitMainWindow()
     {
         MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
-
-        RequestedThemeVariant = AppConfig.App.Theme switch
-        {
-            "Light" => ThemeVariant.Light,
-            "Dark" => ThemeVariant.Dark,
-            "Follow" => ThemeVariant.Default,
-            _ => ThemeVariant.Default
-        };
 
         UpdateGreetingText();
 

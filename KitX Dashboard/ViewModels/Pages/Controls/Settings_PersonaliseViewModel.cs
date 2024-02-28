@@ -6,7 +6,6 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Media;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using MsBox.Avalonia;
@@ -14,17 +13,14 @@ using ReactiveUI;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Reactive;
 using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyChanged
+internal class Settings_PersonaliseViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     internal Settings_PersonaliseViewModel()
     {
         InitCommands();
@@ -61,36 +57,26 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
                         );
             });
 
-            Instances.ConfigManager.AppConfig.App.ThemeColor = themeColor.ToHexString();
+            AppConfig.App.ThemeColor = themeColor.ToHexString();
 
             SaveAppConfigChanges();
         });
-
-        MicaOpacityConfirmedCommand = ReactiveCommand.Create(SaveAppConfigChanges);
-
-        MicaToolTipClosedCommand = ReactiveCommand.Create(() => MicaToolTipIsOpen = false);
     }
 
     public override void InitEvents()
     {
-        EventService.DevelopSettingsChanged += () =>
-        {
-            MicaOpacityConfirmButtonVisibility = Instances.ConfigManager.AppConfig.App.DeveloperSetting;
-        };
-
         EventService.LanguageChanged += () =>
         {
             foreach (var item in SupportedThemes)
                 item.ThemeDisplayName = GetThemeDisplayText(item.ThemeName);
 
             _currentAppTheme = SupportedThemes.Find(
-                x => x.ThemeName.Equals(Instances.ConfigManager.AppConfig.App.Theme)
+                x => x.ThemeName.Equals(AppConfig.App.Theme)
             );
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(CurrentAppTheme))
-            );
+            this.RaisePropertyChanged(nameof(CurrentAppTheme));
+
+            this.RaisePropertyChanged(nameof(SupportedThemes));
         };
     }
 
@@ -98,7 +84,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     {
         SupportedLanguages.Clear();
 
-        foreach (var item in Instances.ConfigManager.AppConfig.App.SurpportLanguages)
+        foreach (var item in AppConfig.App.SurpportLanguages)
             SupportedLanguages.Add(new SupportedLanguage()
             {
                 LanguageCode = item.Key,
@@ -106,7 +92,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
             });
 
         LanguageSelected = SupportedLanguages.FindIndex(
-            x => x.LanguageCode.Equals(Instances.ConfigManager.AppConfig.App.AppLanguage)
+            x => x.LanguageCode.Equals(AppConfig.App.AppLanguage)
         );
     }
 
@@ -127,7 +113,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
     private static string GetThemeDisplayText(string key) => Translate(key, prefix: "Text_Settings_Personalise_Theme_") ?? string.Empty;
 
-    internal static List<SupportedTheme> SupportedThemes { get; } =
+    internal static List<SupportedTheme> SupportedThemes =>
     [
         new()
         {
@@ -147,7 +133,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     ];
 
     private SupportedTheme? _currentAppTheme = SupportedThemes.Find(
-        x => x.ThemeName.Equals(Instances.ConfigManager.AppConfig.App.Theme)
+        x => x.ThemeName.Equals(AppConfig.App.Theme)
     );
 
     internal SupportedTheme? CurrentAppTheme
@@ -159,7 +145,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
 
             if (value is null) return;
 
-            Instances.ConfigManager.AppConfig.App.Theme = value.ThemeName;
+            AppConfig.App.Theme = value.ThemeName;
 
             if (Application.Current is null) return;
 
@@ -182,7 +168,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
     {
         var location = $"{nameof(Settings_PersonaliseViewModel)}.{nameof(LoadLanguage)}";
 
-        var lang = Instances.ConfigManager.AppConfig.App.AppLanguage;
+        var lang = AppConfig.App.AppLanguage;
 
         if (Application.Current is null) return;
 
@@ -219,7 +205,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         {
             try
             {
-                Instances.ConfigManager.AppConfig.App.AppLanguage = SupportedLanguages[value].LanguageCode;
+                AppConfig.App.AppLanguage = SupportedLanguages[value].LanguageCode;
 
                 if (languageSelected != -1) LoadLanguage();
 
@@ -234,58 +220,16 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, INotifyPropertyCha
         }
     }
 
-    internal static bool MicaAreaExpanded
-    {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.MicaAreaExpanded;
-        set
-        {
-            Instances.ConfigManager.AppConfig.Pages.Settings.MicaAreaExpanded = value;
-            SaveAppConfigChanges();
-        }
-    }
-
-    internal static int MicaStatus
-    {
-        get => Instances.ConfigManager.AppConfig.Windows.MainWindow.EnabledMica ? 0 : 1;
-        set
-        {
-            Instances.ConfigManager.AppConfig.Windows.MainWindow.EnabledMica = value != 1;
-            SaveAppConfigChanges();
-        }
-    }
-
-    internal static bool MicaToolTipIsOpen
-    {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.MicaToolTipIsOpen;
-        set
-        {
-            Instances.ConfigManager.AppConfig.Pages.Settings.MicaToolTipIsOpen = value;
-            SaveAppConfigChanges();
-        }
-    }
-
-    internal bool MicaOpacityConfirmButtonVisibility
-    {
-        get => Instances.ConfigManager.AppConfig.App.DeveloperSetting;
-        set => PropertyChanged?.Invoke(
-            this,
-            new(nameof(MicaOpacityConfirmButtonVisibility))
-        );
-    }
-
     internal static bool PaletteAreaExpanded
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.PaletteAreaExpanded;
+        get => AppConfig.Pages.Settings.PaletteAreaExpanded;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.PaletteAreaExpanded = value;
+            AppConfig.Pages.Settings.PaletteAreaExpanded = value;
+
             SaveAppConfigChanges();
         }
     }
 
     internal ReactiveCommand<Unit, Task>? ColorConfirmedCommand { get; set; }
-
-    internal ReactiveCommand<Unit, Unit>? MicaOpacityConfirmedCommand { get; set; }
-
-    internal ReactiveCommand<Unit, bool>? MicaToolTipClosedCommand { get; set; }
 }

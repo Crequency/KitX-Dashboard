@@ -29,6 +29,8 @@ internal static class ConstantTable
 
     internal static string ThirdPartLicenseFilePath => thirdPartLicenseFilePath.GetFullPath();
 
+    internal static int DevicesServerPort = -1;
+
     internal static int PluginsServerPort = -1;
 
     internal static bool Running = true;
@@ -37,9 +39,11 @@ internal static class ConstantTable
 
     internal static bool IsMainMachine = false;
 
-    internal static bool SkipNetworkSystemOnStartup = false;
+    internal static string? MainMachineAddress;
 
-    internal static int DevicesServerPort = -1;
+    internal static int MainMachinePort = -1;
+
+    internal static bool SkipNetworkSystemOnStartup = false;
 
     internal static DateTime ServerBuildTime = new();
 

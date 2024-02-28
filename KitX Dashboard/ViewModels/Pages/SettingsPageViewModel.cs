@@ -1,16 +1,12 @@
 ﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Services;
 using ReactiveUI;
-using System.ComponentModel;
 using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
+internal class SettingsPageViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     internal SettingsPageViewModel()
     {
         InitCommands();
@@ -38,10 +34,10 @@ internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal static bool IsPaneOpen
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.IsNavigationViewPaneOpened;
+        get => AppConfig.Pages.Settings.IsNavigationViewPaneOpened;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.IsNavigationViewPaneOpened = value;
+            AppConfig.Pages.Settings.IsNavigationViewPaneOpened = value;
 
             SaveAppConfigChanges();
         }
@@ -59,20 +55,14 @@ internal class SettingsPageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode;
+        get => AppConfig.Pages.Settings.NavigationViewPaneDisplayMode;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode = value;
+            AppConfig.Pages.Settings.NavigationViewPaneDisplayMode = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(NavigationViewPaneDisplayMode))
-            );
+            this.RaisePropertyChanged(nameof(NavigationViewPaneDisplayMode));
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(FirstItemMargin))
-            );
+            this.RaisePropertyChanged(nameof(FirstItemMargin));
 
             SaveAppConfigChanges();
         }

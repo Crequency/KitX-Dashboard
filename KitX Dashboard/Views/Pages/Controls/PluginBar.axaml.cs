@@ -16,11 +16,11 @@ public partial class PluginBar : UserControl
         DataContext = viewModel;
     }
 
-    public PluginBar(Plugin plugin, ref ObservableCollection<PluginBar> pluginBars)
+    public PluginBar(PluginInstallation plugin, ref ObservableCollection<PluginBar> pluginBars)
     {
         InitializeComponent();
 
-        viewModel.PluginDetail = plugin;
+        viewModel.Plugin = plugin;
         viewModel.PluginBars = pluginBars;
         viewModel.PluginBar = this;
 

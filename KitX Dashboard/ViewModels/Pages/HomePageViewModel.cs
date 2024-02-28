@@ -1,17 +1,13 @@
 ﻿using Avalonia;
 using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Managers;
-using KitX.Dashboard.Services;
 using ReactiveUI;
-using System.ComponentModel;
 using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
+internal class HomePageViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     public HomePageViewModel()
     {
         InitCommands();
@@ -39,10 +35,10 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal static bool IsPaneOpen
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Home.IsNavigationViewPaneOpened;
+        get => ConfigManager.Instance.AppConfig.Pages.Home.IsNavigationViewPaneOpened;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Home.IsNavigationViewPaneOpened = value;
+            ConfigManager.Instance.AppConfig.Pages.Home.IsNavigationViewPaneOpened = value;
 
             SaveAppConfigChanges();
         }
@@ -60,20 +56,14 @@ internal class HomePageViewModel : ViewModelBase, INotifyPropertyChanged
 
     internal NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Home.NavigationViewPaneDisplayMode;
+        get => ConfigManager.Instance.AppConfig.Pages.Home.NavigationViewPaneDisplayMode;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Home.NavigationViewPaneDisplayMode = value;
+            ConfigManager.Instance.AppConfig.Pages.Home.NavigationViewPaneDisplayMode = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(NavigationViewPaneDisplayMode))
-            );
+            this.RaisePropertyChanged(nameof(NavigationViewPaneDisplayMode));
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(FirstItemMargin))
-            );
+            this.RaisePropertyChanged(nameof(FirstItemMargin));
 
             SaveAppConfigChanges();
         }

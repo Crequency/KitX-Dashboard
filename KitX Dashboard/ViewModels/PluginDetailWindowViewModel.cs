@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
 using KitX.Dashboard.Services;
-using KitX.Shared.Plugin;
+using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
@@ -13,8 +13,6 @@ namespace KitX.Dashboard.ViewModels;
 
 internal class PluginDetailWindowViewModel : ViewModelBase
 {
-    private PluginInfo? pluginDetail;
-
     public PluginDetailWindowViewModel()
     {
         InitCommands();
@@ -34,23 +32,25 @@ internal class PluginDetailWindowViewModel : ViewModelBase
         EventService.ThemeConfigChanged += () => this.RaisePropertyChanged(nameof(TintColor));
     }
 
-    internal PluginInfo? PluginDetail { get => pluginDetail; set => pluginDetail = value; }
+    private PluginInfo? pluginDetail;
+
+    internal PluginInfo? PluginDetail
+    {
+        get => pluginDetail;
+        set => this.RaiseAndSetIfChanged(ref pluginDetail, value);
+    }
 
     internal string? PublishDate => PluginDetail?.PublishDate.ToLocalTime().ToString("yyyy.MM.dd");
 
     internal string? LastUpdateDate => PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-    internal static Color TintColor => Instances.ConfigManager.AppConfig.App.Theme switch
+    internal static Color TintColor => AppConfig.App.Theme switch
     {
         "Light" => Colors.WhiteSmoke,
         "Dark" => Colors.Black,
         "Follow" => Application.Current?.ActualThemeVariant == ThemeVariant.Light ? Colors.WhiteSmoke : Colors.Black,
-        _ => Color.Parse(Instances.ConfigManager.AppConfig.App.ThemeColor),
+        _ => Color.Parse(AppConfig.App.ThemeColor),
     };
-
-    private readonly ObservableCollection<string> functions = [];
-
-    private readonly ObservableCollection<string> tags = [];
 
     internal void InitFunctionsAndTags()
     {
@@ -60,7 +60,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase
 
         if (PluginDetail?.Tags is null) return;
 
-        foreach (var func in PluginDetail.Value.Functions)
+        foreach (var func in PluginDetail.Functions)
         {
             var sb = new StringBuilder()
                 .Append(func.ReturnValueType)
@@ -89,13 +89,13 @@ internal class PluginDetailWindowViewModel : ViewModelBase
             Functions.Add(sb.ToString());
         }
 
-        foreach (var tag in PluginDetail.Value.Tags)
+        foreach (var tag in PluginDetail.Tags)
             Tags.Add($"{{ {tag.Key}: {tag.Value} }}");
     }
 
-    internal ObservableCollection<string> Functions => functions;
+    internal ObservableCollection<string> Functions { get; set; } = [];
 
-    internal ObservableCollection<string> Tags => tags;
+    internal ObservableCollection<string> Tags { get; set; } = [];
 
     internal ReactiveCommand<object?, Unit>? FinishCommand { get; set; }
 }

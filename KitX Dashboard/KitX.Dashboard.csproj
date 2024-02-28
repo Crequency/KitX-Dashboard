@@ -92,18 +92,20 @@
         <PackageReference Include="Markdown.Avalonia" Version="11.0.2" />
         <PackageReference Include="Material.Icons.Avalonia" Version="2.1.0" />
         <PackageReference Include="MessageBox.Avalonia" Version="3.1.5.1" />
+        <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
         <PackageReference Include="nulastudio.NetBeauty" Version="2.1.2.1" Condition="$(Is2Publish) == 'True'" />
         <PackageReference Include="Serilog" Version="3.1.2-dev-02097" />
+        <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.1-dev-00972" />
         <PackageReference Include="SharpHook" Version="5.2.3" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\KitX Standard\KitX File Formats\KitX.FileFormats.CSharp\KitX.FileFormats.CSharp.csproj" />
+        <ProjectReference Include="..\..\..\KitX Standard\KitX Shared\KitX.Shared.CSharp\KitX.Shared.CSharp.csproj" />
         <ProjectReference Include="..\KitX Dashboard Assets\KitX.Dashboard.Assets.csproj" />
         <ProjectReference Include="..\KitX Dashboard Fonts\KitX.Dashboard.Fonts.csproj" />
-        <ProjectReference Include="..\..\..\KitX Standard\KitX.Shared\KitX.Shared.csproj" />
-        <ProjectReference Include="..\..\..\KitX Standard\KitX.FileFormats\KitX.FileFormats.csproj" />
         <ProjectReference Include="..\..\..\Reference\Common.Activity\Common.Activity\Common.Activity.csproj" />
         <ProjectReference Include="..\..\..\Reference\Common.BasicHelper\Common.BasicHelper\Common.BasicHelper.csproj" />
         <ProjectReference Include="..\..\..\Reference\Common.ExternalConsole\Common.ExternalConsole.ExternalConsole\Common.ExternalConsole.ExternalConsole.csproj" Condition="$(Is2Publish) == 'False'" />

@@ -1,6 +1,6 @@
 ﻿using Avalonia.Controls;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Services;
+using KitX.Dashboard.Managers;
 using KitX.Dashboard.ViewModels.Pages;
 using KitX.Dashboard.Views.Pages.Controls;
 using Serilog;
@@ -31,10 +31,10 @@ public partial class HomePage : UserControl, IView
 
     private static string SelectedViewName
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Home.SelectedViewName;
+        get => ConfigManager.Instance.AppConfig.Pages.Home.SelectedViewName;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Home.SelectedViewName = value;
+            ConfigManager.Instance.AppConfig.Pages.Home.SelectedViewName = value;
 
             IView.SaveAppConfigChanges();
         }

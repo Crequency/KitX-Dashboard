@@ -47,11 +47,9 @@ public static class AppFramework
         if (File.Exists("./dump.log".GetFullPath()))
             File.Delete("./dump.log".GetFullPath());
 
-        Instances.Initialize();
+        ConfigManager.Instance.AppConfig.App.RanTime++;
 
-        Instances.ConfigManager.AppConfig.App.RanTime++;
-
-        var config = Instances.ConfigManager.AppConfig;
+        var config = ConfigManager.Instance.AppConfig;
 
         ProcessStartupArguments();
 
@@ -93,6 +91,8 @@ public static class AppFramework
         Log.Information("KitX Dashboard Started.");
 
         #endregion
+
+        Instances.Initialize();
 
         #region Initialize global exception catching
 
@@ -237,20 +237,19 @@ public static class AppFramework
 
                 Instances.FileWatcherManager?.Clear();
 
-                Instances.ConfigManager.SaveAll();
+                ConfigManager.Instance.SaveAll();
 
                 Log.CloseAndFlush();
 
                 if (Instances.WebManager is not null)
                     await Instances.WebManager.CloseAsync(new());
-                Instances.WebManager?.Dispose();
 
                 Instances.ActivitiesDataBase?.Commit();
                 Instances.ActivitiesDataBase?.Dispose();
 
                 ConstantTable.Running = false;
 
-                Thread.Sleep(Instances.ConfigManager.AppConfig.App.LastBreakAfterExit);
+                Thread.Sleep(ConfigManager.Instance.AppConfig.App.LastBreakAfterExit);
 
                 Environment.Exit(0);
             }

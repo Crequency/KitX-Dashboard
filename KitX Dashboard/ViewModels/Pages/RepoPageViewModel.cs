@@ -4,13 +4,12 @@ using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views.Pages;
 using KitX.Dashboard.Views.Pages.Controls;
-using KitX.Shared.Loader;
-using KitX.Shared.Plugin;
+using KitX.Shared.CSharp.Loader;
+using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -19,11 +18,9 @@ using System.Threading;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
+internal class RepoPageViewModel : ViewModelBase
 {
     private RepoPage? CurrentPage { get; set; }
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
 
     public RepoPageViewModel()
     {
@@ -85,15 +82,15 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
             {
                 try
                 {
-                    var plugin = new Plugin()
+                    var plugin = new PluginInstallation()
                     {
                         InstallPath = item.InstallPath,
-                        PluginDetails = JsonSerializer.Deserialize<PluginInfo>(
+                        PluginInfo = JsonSerializer.Deserialize<PluginInfo>(
                             File.ReadAllText(
                                 Path.GetFullPath($"{item.InstallPath}/PluginInfo.json")
                             )
                         ),
-                        RequiredLoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
+                        LoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
                             File.ReadAllText(
                                 Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json")
                             )
@@ -121,7 +118,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
     {
         EventService.AppConfigChanged += () =>
         {
-            ImportButtonVisibility = Instances.ConfigManager.AppConfig.App.DeveloperSetting;
+            ImportButtonVisibility = ConfigManager.Instance.AppConfig.App.DeveloperSetting;
         };
 
         PluginBars.CollectionChanged += (_, _) =>
@@ -142,10 +139,7 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             pluginsCount = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(PluginsCount))
-            );
+            this.RaisePropertyChanged(nameof(PluginsCount));
         }
     }
 
@@ -158,24 +152,18 @@ internal class RepoPageViewModel : ViewModelBase, INotifyPropertyChanged
         {
             noPlugins_tipHeight = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(NoPlugins_TipHeight))
-            );
+            this.RaisePropertyChanged(nameof(NoPlugins_TipHeight));
         }
     }
 
     internal bool ImportButtonVisibility
     {
-        get => Instances.ConfigManager.AppConfig.App.DeveloperSetting;
+        get => ConfigManager.Instance.AppConfig.App.DeveloperSetting;
         set
         {
-            Instances.ConfigManager.AppConfig.App.DeveloperSetting = value;
+            ConfigManager.Instance.AppConfig.App.DeveloperSetting = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(ImportButtonVisibility))
-            );
+            this.RaisePropertyChanged(nameof(ImportButtonVisibility));
         }
     }
 

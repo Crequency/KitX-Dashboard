@@ -1,12 +1,11 @@
-﻿using Avalonia;
-using Avalonia.Metadata;
+﻿using Avalonia.Metadata;
 using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
 using Common.Update.Checker;
 using KitX.Dashboard.Converters;
+using KitX.Dashboard.Models;
 using KitX.Dashboard.Network.DevicesNetwork;
-using KitX.Dashboard.Services;
-using KitX.Shared.Device;
+using KitX.Shared.CSharp.Device;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
@@ -14,7 +13,6 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -22,15 +20,12 @@ using System.Reactive;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Component = KitX.Dashboard.Models.Component;
 using Timer = System.Timers.Timer;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
+internal class Settings_UpdateViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
     private bool _canUpdateDataGridView = true;
 
     internal Settings_UpdateViewModel()
@@ -54,7 +49,8 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
             if (_canUpdateDataGridView)
             {
                 CanUpdateCount = Components.Count(x => x.CanUpdate);
-                PropertyChanged?.Invoke(this, new(nameof(ComponentsCount)));
+
+                this.RaisePropertyChanged(nameof(ComponentsCount));
             }
         };
     }
@@ -64,15 +60,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     internal int CanUpdateCount
     {
         get => canUpdateCount;
-        set
-        {
-            canUpdateCount = value;
-
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(CanUpdateCount))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref canUpdateCount, value);
     }
 
     internal static int ComponentsCount { get => Components.Count; }
@@ -84,11 +72,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     internal string? Tip
     {
         get => tip;
-        set
-        {
-            tip = value;
-            PropertyChanged?.Invoke(this, new(nameof(Tip)));
-        }
+        set => this.RaiseAndSetIfChanged(ref tip, value);
     }
 
     private string diskUseStatus = string.Empty;
@@ -96,16 +80,12 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     internal string DiskUseStatus
     {
         get => diskUseStatus;
-        set
-        {
-            diskUseStatus = value;
-            PropertyChanged?.Invoke(this, new(nameof(DiskUseStatus)));
-        }
+        set => this.RaiseAndSetIfChanged(ref diskUseStatus, value);
     }
 
     public static int UpdateChannel
     {
-        get => Instances.ConfigManager.AppConfig.Web.UpdateChannel switch
+        get => AppConfig.Web.UpdateChannel switch
         {
             "stable" => 0,
             "beta" => 1,
@@ -114,7 +94,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         };
         set
         {
-            Instances.ConfigManager.AppConfig.Web.UpdateChannel = value switch
+            AppConfig.Web.UpdateChannel = value switch
             {
                 0 => "stable",
                 1 => "beta",
@@ -159,7 +139,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
         var checker = new Checker()
             .SetRootDirectory(wd)
-            .SetPerThreadFilesCount(Instances.ConfigManager.AppConfig.IO.UpdatingCheckPerThreadFilesCount)
+            .SetPerThreadFilesCount(AppConfig.IO.UpdatingCheckPerThreadFilesCount)
             .SetTransHash2String(true)
             .AppendIgnoreFolder("Config")
             .AppendIgnoreFolder("Core")
@@ -169,10 +149,10 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
             .AppendIgnoreFolder("Update")
             .AppendIgnoreFolder("Loaders")
             .AppendIgnoreFolder("Plugins")
-            .AppendIgnoreFolder(Instances.ConfigManager.AppConfig.App.LocalPluginsFileFolder)
-            .AppendIgnoreFolder(Instances.ConfigManager.AppConfig.App.LocalPluginsDataFolder);
+            .AppendIgnoreFolder(AppConfig.App.LocalPluginsFileFolder)
+            .AppendIgnoreFolder(AppConfig.App.LocalPluginsDataFolder);
 
-        foreach (var item in Instances.ConfigManager.AppConfig.App.SurpportLanguages)
+        foreach (var item in AppConfig.App.SurpportLanguages)
             _ = checker.AppendIncludeFile($"{ld}/{item.Key}.axaml");
 
         Tip = GetUpdateTip("Scan");
@@ -233,10 +213,10 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         client.DefaultRequestHeaders.Accept.Clear();    //  清除请求头部
 
         var link = "https://" +
-            Instances.ConfigManager.AppConfig.Web.UpdateServer +
-            Instances.ConfigManager.AppConfig.Web.UpdatePath.Replace(
+            AppConfig.Web.UpdateServer +
+            AppConfig.Web.UpdatePath.Replace(
                 "%platform%",
-                DevicesDiscoveryServer.DefaultDeviceInfo.DeviceOSType switch
+                DevicesDiscoveryServer.Instance.DefaultDeviceInfo.DeviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",
@@ -244,8 +224,8 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
                     _ => ""
                 }
             ) +
-            $"{Instances.ConfigManager.AppConfig.Web.UpdateChannel}/" +
-            Instances.ConfigManager.AppConfig.Web.UpdateSource;
+            $"{AppConfig.Web.UpdateChannel}/" +
+            AppConfig.Web.UpdateSource;
 
         var json = await client.GetStringAsync(link);
 
@@ -404,10 +384,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
         {
             CanUpdateCount = Components.Count(x => x.CanUpdate);
 
-            PropertyChanged?.Invoke(
-                this,
-                new PropertyChangedEventArgs(nameof(Components))
-            );
+            this.RaisePropertyChanged(nameof(Components));
         }
 
         while (Components.Count != result.Count + new2addComponents.Count) { }
@@ -431,17 +408,17 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
 
         //TODO: 下载有变更的文件
         var downloadLinkBase = "https://" +
-            Instances.ConfigManager.AppConfig.Web.UpdateServer +
-            Instances.ConfigManager.AppConfig.Web.UpdateDownloadPath.Replace(
+            AppConfig.Web.UpdateServer +
+            AppConfig.Web.UpdateDownloadPath.Replace(
                 "%platform%",
-                DevicesDiscoveryServer.DefaultDeviceInfo.DeviceOSType switch
+                DevicesDiscoveryServer.Instance.DefaultDeviceInfo.DeviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",
                     OperatingSystems.MacOS => "mac",
                     _ => ""
                 }) +
-            $"{Instances.ConfigManager.AppConfig.Web.UpdateChannel}/";
+            $"{AppConfig.Web.UpdateChannel}/";
 
         if (!Directory.Exists(ConstantTable.UpdateSavePath.GetFullPath()))
             Directory.CreateDirectory(ConstantTable.UpdateSavePath.GetFullPath());
@@ -459,15 +436,7 @@ internal class Settings_UpdateViewModel : ViewModelBase, INotifyPropertyChanged
     internal bool IsCheckingOrUpdating
     {
         get => isCheckingOrUpdating;
-        set
-        {
-            isCheckingOrUpdating = value;
-
-            PropertyChanged?.Invoke(
-                this,
-                new PropertyChangedEventArgs(nameof(IsCheckingOrUpdating))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref isCheckingOrUpdating, value);
     }
 
     public void CheckUpdate()

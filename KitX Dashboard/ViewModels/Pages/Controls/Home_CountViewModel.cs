@@ -2,43 +2,14 @@
 using KitX.Dashboard.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
+using ReactiveUI;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
+internal class Home_CountViewModel : ViewModelBase
 {
-    public new event PropertyChangedEventHandler? PropertyChanged;
-
-    private double noCount_TipHeight = 200;
-
-    private List<Axis> use_xAxes =
-    [
-        new Axis
-        {
-            Labeler = Labelers.Default
-        }
-    ];
-
-    private List<Axis> use_yAxes =
-    [
-        new Axis
-        {
-            Labeler = (value) => $"{value} h"
-        }
-    ];
-
-    private ISeries[] useSeries =
-    [
-        new LineSeries<double>
-        {
-            Values = new double[] { 2, 1, 3, 5, 3, 4, 6 },
-            Fill = null
-        }
-    ];
-
     public Home_CountViewModel()
     {
         RecoveryUseCount();
@@ -78,74 +49,67 @@ internal class Home_CountViewModel : ViewModelBase, INotifyPropertyChanged
         ];
     }
 
+    private double noCount_TipHeight = 200;
+
     internal double NoCount_TipHeight
     {
         get => noCount_TipHeight;
-        set
-        {
-            noCount_TipHeight = value;
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(NoCount_TipHeight))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref noCount_TipHeight, value);
     }
 
     internal bool UseAreaExpanded
     {
-        get => Instances.ConfigManager.AppConfig.Pages.Home.UseAreaExpanded;
+        get => ConfigManager.Instance.AppConfig.Pages.Home.UseAreaExpanded;
         set
         {
-            Instances.ConfigManager.AppConfig.Pages.Home.UseAreaExpanded = value;
+            ConfigManager.Instance.AppConfig.Pages.Home.UseAreaExpanded = value;
 
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(UseAreaExpanded))
-            );
+            this.RaisePropertyChanged(nameof(UseAreaExpanded));
 
             SaveAppConfigChanges();
         }
     }
 
+    private ISeries[] useSeries =
+    [
+        new LineSeries<double>
+        {
+            Values = new double[] { 2, 1, 3, 5, 3, 4, 6 },
+            Fill = null
+        }
+    ];
+
     public ISeries[] Use_Series
     {
         get => useSeries;
-        set
-        {
-            useSeries = value;
-
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(Use_Series))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref useSeries, value);
     }
+
+    private List<Axis> use_xAxes =
+    [
+        new Axis
+        {
+            Labeler = Labelers.Default
+        }
+    ];
 
     public List<Axis> Use_XAxes
     {
         get => use_xAxes;
-        set
-        {
-            use_xAxes = value;
-
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(Use_XAxes))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref use_xAxes, value);
     }
+
+    private List<Axis> use_yAxes =
+    [
+        new Axis
+        {
+            Labeler = (value) => $"{value} h"
+        }
+    ];
 
     public List<Axis> Use_YAxes
     {
         get => use_yAxes;
-        set
-        {
-            use_yAxes = value;
-
-            PropertyChanged?.Invoke(
-                this,
-                new(nameof(Use_YAxes))
-            );
-        }
+        set => this.RaiseAndSetIfChanged(ref use_yAxes, value);
     }
 }
