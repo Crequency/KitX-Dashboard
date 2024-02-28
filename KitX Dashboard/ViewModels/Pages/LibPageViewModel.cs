@@ -1,6 +1,6 @@
 ﻿using Avalonia.Controls;
 using KitX.Dashboard.Views;
-using KitX.Shared.Plugin;
+using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;

@@ -1,4 +1,4 @@
-﻿using KitX.Shared.Device;
+﻿using KitX.Shared.CSharp.Device;
 using System.Reflection;
 using System;
 

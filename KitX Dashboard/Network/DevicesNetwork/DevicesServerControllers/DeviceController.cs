@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using KitX.Shared.CSharp.Device;
+using Microsoft.AspNetCore.Mvc;
 
 namespace KitX.Dashboard.Network.DevicesNetwork.DevicesServerControllers;
 
@@ -8,9 +9,14 @@ namespace KitX.Dashboard.Network.DevicesNetwork.DevicesServerControllers;
 public class DeviceController : ControllerBase
 {
     [ApiExplorerSettings(GroupName = "V1")]
-    [HttpGet("{name}", Name = nameof(GreetingTest))]
-    public string GreetingTest(string name)
+    [HttpGet("", Name = nameof(GetDeviceInfo))]
+    public DeviceInfo GetDeviceInfo()
     {
-        return $"Hello, {name} !";
+        return DevicesDiscoveryServer.Instance.DefaultDeviceInfo;
+    }
+
+    public void ExchangeKey()
+    {
+
     }
 }

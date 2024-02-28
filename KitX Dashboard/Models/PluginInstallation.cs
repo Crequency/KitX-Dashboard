@@ -1,6 +1,6 @@
-﻿using KitX.Shared.Device;
-using KitX.Shared.Loader;
-using KitX.Shared.Plugin;
+﻿using KitX.Shared.CSharp.Device;
+using KitX.Shared.CSharp.Loader;
+using KitX.Shared.CSharp.Plugin;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 

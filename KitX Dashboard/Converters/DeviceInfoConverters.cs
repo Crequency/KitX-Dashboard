@@ -1,5 +1,5 @@
 ﻿using Avalonia.Data.Converters;
-using KitX.Shared.Device;
+using KitX.Shared.CSharp.Device;
 using System;
 using System.Globalization;
 

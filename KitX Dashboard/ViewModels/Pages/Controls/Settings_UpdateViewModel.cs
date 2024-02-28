@@ -5,7 +5,7 @@ using Common.Update.Checker;
 using KitX.Dashboard.Converters;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Network.DevicesNetwork;
-using KitX.Shared.Device;
+using KitX.Shared.CSharp.Device;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;

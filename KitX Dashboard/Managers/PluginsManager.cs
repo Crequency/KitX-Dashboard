@@ -1,14 +1,15 @@
 ﻿using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
-using KitX.Shared.Loader;
-using KitX.Shared.Plugin;
+using KitX.Shared.CSharp.Loader;
+using KitX.Shared.CSharp.Plugin;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using Decoder = KitX.FileFormats.CSharp.ExtensionsPackage.Decoder;
 
 namespace KitX.Dashboard.Managers;
 
@@ -28,7 +29,7 @@ internal class PluginsManager
         {
             try
             {
-                var decoder = new FileFormats.ExtensionsPackage.Decoder(item);
+                var decoder = new Decoder(item);
 
                 var rst = decoder.GetLoaderAndPluginInfo();
 

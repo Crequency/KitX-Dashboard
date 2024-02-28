@@ -2,8 +2,8 @@
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Network.PluginsNetwork;
 using KitX.Dashboard.Views;
-using KitX.Shared.Plugin;
-using KitX.Shared.WebCommand;
+using KitX.Shared.CSharp.Plugin;
+using KitX.Shared.CSharp.WebCommand;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;

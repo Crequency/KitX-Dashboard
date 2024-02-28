@@ -2,10 +2,10 @@
 using Fleck;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Views;
-using KitX.Shared.Plugin;
-using KitX.Shared.WebCommand;
-using KitX.Shared.WebCommand.Details;
-using KitX.Shared.WebCommand.Infos;
+using KitX.Shared.CSharp.Plugin;
+using KitX.Shared.CSharp.WebCommand;
+using KitX.Shared.CSharp.WebCommand.Details;
+using KitX.Shared.CSharp.WebCommand.Infos;
 using Serilog;
 using System;
 using System.Text.Json;

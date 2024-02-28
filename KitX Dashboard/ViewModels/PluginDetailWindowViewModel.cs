@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
 using KitX.Dashboard.Services;
-using KitX.Shared.Plugin;
+using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;

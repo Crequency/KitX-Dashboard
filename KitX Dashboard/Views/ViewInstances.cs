@@ -1,7 +1,7 @@
 ﻿using Avalonia.Controls;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
-using KitX.Shared.Plugin;
+using KitX.Shared.CSharp.Plugin;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 

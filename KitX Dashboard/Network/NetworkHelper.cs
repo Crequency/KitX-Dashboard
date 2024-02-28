@@ -4,7 +4,7 @@ using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Converters;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Views;
-using KitX.Shared.Device;
+using KitX.Shared.CSharp.Device;
 using Serilog;
 using System;
 using System.IO;

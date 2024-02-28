@@ -1,7 +1,7 @@
 ﻿using Fleck;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Services;
-using KitX.Shared.Plugin;
+using KitX.Shared.CSharp.Plugin;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;

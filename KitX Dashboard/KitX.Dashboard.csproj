@@ -102,10 +102,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\KitX Standard\KitX File Formats\KitX.FileFormats.CSharp\KitX.FileFormats.CSharp.csproj" />
+        <ProjectReference Include="..\..\..\KitX Standard\KitX Shared\KitX.Shared.CSharp\KitX.Shared.CSharp.csproj" />
         <ProjectReference Include="..\KitX Dashboard Assets\KitX.Dashboard.Assets.csproj" />
         <ProjectReference Include="..\KitX Dashboard Fonts\KitX.Dashboard.Fonts.csproj" />
-        <ProjectReference Include="..\..\..\KitX Standard\KitX.Shared\KitX.Shared.csproj" />
-        <ProjectReference Include="..\..\..\KitX Standard\KitX.FileFormats\KitX.FileFormats.csproj" />
         <ProjectReference Include="..\..\..\Reference\Common.Activity\Common.Activity\Common.Activity.csproj" />
         <ProjectReference Include="..\..\..\Reference\Common.BasicHelper\Common.BasicHelper\Common.BasicHelper.csproj" />
         <ProjectReference Include="..\..\..\Reference\Common.ExternalConsole\Common.ExternalConsole.ExternalConsole\Common.ExternalConsole.ExternalConsole.csproj" Condition="$(Is2Publish) == 'False'" />

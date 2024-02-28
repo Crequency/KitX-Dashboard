@@ -2,7 +2,7 @@
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
-using KitX.Shared.Device;
+using KitX.Shared.CSharp.Device;
 using Serilog;
 using System;
 using System.Collections.Generic;
