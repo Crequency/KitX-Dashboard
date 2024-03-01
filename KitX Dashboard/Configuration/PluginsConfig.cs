@@ -1,5 +1,5 @@
-﻿using KitX.Dashboard.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using KitX.Dashboard.Models;
 
 namespace KitX.Dashboard.Configuration;
 

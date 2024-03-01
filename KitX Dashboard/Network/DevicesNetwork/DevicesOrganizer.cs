@@ -1,13 +1,13 @@
-﻿using KitX.Dashboard.Configuration;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Device;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
 using Timer = System.Timers.Timer;
 
 namespace KitX.Dashboard.Network.DevicesNetwork;

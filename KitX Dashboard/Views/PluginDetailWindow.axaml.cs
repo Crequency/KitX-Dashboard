@@ -1,11 +1,11 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Common.BasicHelper.Graphics.Screen;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using KitX.Shared.CSharp.Plugin;
 using Serilog;
-using System;
 
 namespace KitX.Dashboard.Views;
 

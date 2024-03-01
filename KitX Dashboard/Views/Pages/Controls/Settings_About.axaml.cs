@@ -1,7 +1,5 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Input;
 using KitX.Dashboard.ViewModels.Pages.Controls;
-using System.Collections.Generic;
 
 namespace KitX.Dashboard.Views.Pages.Controls;
 

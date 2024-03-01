@@ -1,6 +1,6 @@
-﻿using Serilog;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace KitX.Dashboard.Managers;
 

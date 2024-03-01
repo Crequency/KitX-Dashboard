@@ -1,8 +1,8 @@
-﻿using KitX.Shared.CSharp.Device;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using KitX.Shared.CSharp.Device;
 using KitX.Shared.CSharp.Loader;
 using KitX.Shared.CSharp.Plugin;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace KitX.Dashboard.Models;
 

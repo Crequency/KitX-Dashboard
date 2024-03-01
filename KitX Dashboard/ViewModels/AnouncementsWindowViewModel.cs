@@ -1,10 +1,10 @@
-﻿using FluentAvalonia.UI.Controls;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Reactive;
+using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels;
 

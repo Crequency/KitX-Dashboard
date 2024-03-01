@@ -1,10 +1,10 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using SharpHook.Native;
-using System;
 
 namespace KitX.Dashboard.Views;
 

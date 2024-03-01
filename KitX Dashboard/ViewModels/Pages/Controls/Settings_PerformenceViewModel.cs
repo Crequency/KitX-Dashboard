@@ -1,4 +1,11 @@
-﻿using Avalonia.Threading;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Reactive;
+using System.Text;
+using System.Threading.Tasks;
+using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Names;
@@ -6,13 +13,6 @@ using KitX.Dashboard.Services;
 using ReactiveUI;
 using Serilog;
 using Serilog.Events;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Reactive;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 

@@ -1,6 +1,6 @@
-﻿using KitX.Dashboard.Models;
+﻿using System.Collections.ObjectModel;
+using KitX.Dashboard.Models;
 using KitX.Dashboard.Views;
-using System.Collections.ObjectModel;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 

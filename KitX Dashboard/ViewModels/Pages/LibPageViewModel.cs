@@ -1,9 +1,9 @@
-﻿using Avalonia.Controls;
+﻿using System.Collections.ObjectModel;
+using System.Reactive;
+using Avalonia.Controls;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
-using System.Collections.ObjectModel;
-using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 

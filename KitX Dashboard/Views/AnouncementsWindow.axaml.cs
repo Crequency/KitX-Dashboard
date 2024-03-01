@@ -1,12 +1,12 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using System.Collections.Generic;
+using Avalonia.Controls;
 using Common.BasicHelper.Graphics.Screen;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Converters;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Utils;
 using KitX.Dashboard.ViewModels;
-using System;
-using System.Collections.Generic;
 
 namespace KitX.Dashboard.Views;
 

@@ -1,9 +1,9 @@
-﻿using Avalonia.Data.Converters;
-using KitX.Dashboard.Managers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Avalonia.Data.Converters;
+using KitX.Dashboard.Managers;
 
 namespace KitX.Dashboard.Converters;
 

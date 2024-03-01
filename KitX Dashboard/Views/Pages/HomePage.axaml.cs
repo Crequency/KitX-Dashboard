@@ -1,10 +1,10 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using Avalonia.Controls;
 using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.ViewModels.Pages;
 using KitX.Dashboard.Views.Pages.Controls;
 using Serilog;
-using System;
 
 namespace KitX.Dashboard.Views.Pages;
 

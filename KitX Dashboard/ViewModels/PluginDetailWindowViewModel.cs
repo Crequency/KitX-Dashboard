@@ -1,13 +1,13 @@
-﻿using Avalonia;
+﻿using System.Collections.ObjectModel;
+using System.Reactive;
+using System.Text;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
-using System.Collections.ObjectModel;
-using System.Reactive;
-using System.Text;
 
 namespace KitX.Dashboard.ViewModels;
 

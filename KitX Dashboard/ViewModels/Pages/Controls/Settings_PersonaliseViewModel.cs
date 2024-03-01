@@ -1,4 +1,9 @@
-﻿using Avalonia;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Reactive;
+using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
@@ -11,11 +16,6 @@ using KitX.Dashboard.Services;
 using MsBox.Avalonia;
 using ReactiveUI;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reactive;
-using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 

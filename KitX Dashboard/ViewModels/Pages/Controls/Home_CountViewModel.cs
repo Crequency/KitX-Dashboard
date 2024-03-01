@@ -1,10 +1,10 @@
-﻿using KitX.Dashboard.Managers;
+﻿using System.Collections.Generic;
+using System.Linq;
+using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using ReactiveUI;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 

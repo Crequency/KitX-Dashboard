@@ -1,8 +1,8 @@
-﻿using Common.BasicHelper.Utils.Extensions;
+﻿using System;
+using System.Collections.Generic;
+using Common.BasicHelper.Utils.Extensions;
 using SharpHook;
 using SharpHook.Native;
-using System;
-using System.Collections.Generic;
 
 namespace KitX.Dashboard.Managers;
 

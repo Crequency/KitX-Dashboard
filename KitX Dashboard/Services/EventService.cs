@@ -1,6 +1,6 @@
-﻿using KitX.Shared.CSharp.Device;
+﻿using System;
 using System.Reflection;
-using System;
+using KitX.Shared.CSharp.Device;
 
 namespace KitX.Dashboard.Services;
 

@@ -1,9 +1,9 @@
-﻿using KitX.Dashboard.Models;
-using KitX.Dashboard.Views;
-using ReactiveUI;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Threading.Tasks;
+using KitX.Dashboard.Models;
+using KitX.Dashboard.Views;
+using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 

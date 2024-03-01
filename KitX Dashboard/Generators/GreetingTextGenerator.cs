@@ -1,5 +1,5 @@
-﻿using KitX.Dashboard.Configuration;
-using System;
+﻿using System;
+using KitX.Dashboard.Configuration;
 
 namespace KitX.Dashboard.Generators;
 

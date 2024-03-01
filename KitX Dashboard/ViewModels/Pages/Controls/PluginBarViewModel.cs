@@ -1,4 +1,10 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Reactive;
+using System.Threading;
+using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Models;
@@ -8,12 +14,6 @@ using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
 using ReactiveUI;
 using Serilog;
-using System;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Reactive;
-using System.Threading;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 

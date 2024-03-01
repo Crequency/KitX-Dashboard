@@ -1,10 +1,10 @@
-﻿using KitX.Dashboard.Network.DevicesNetwork;
-using KitX.Dashboard.Network.PluginsNetwork;
-using Serilog;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Threading.Tasks;
+using KitX.Dashboard.Network.DevicesNetwork;
+using KitX.Dashboard.Network.PluginsNetwork;
+using Serilog;
 
 namespace KitX.Dashboard.Managers;
 

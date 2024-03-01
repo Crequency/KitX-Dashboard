@@ -1,15 +1,15 @@
-﻿using Avalonia;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Text.Json;
+using Avalonia;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Network.PluginsNetwork;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Plugin;
 using KitX.Shared.CSharp.WebCommand;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text.Json;
 
 namespace KitX.Dashboard.ViewModels;
 

@@ -1,4 +1,8 @@
-﻿using Avalonia;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -13,10 +17,6 @@ using KitX.Dashboard.Views;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using Serilog;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading;
 
 namespace KitX.Dashboard;
 

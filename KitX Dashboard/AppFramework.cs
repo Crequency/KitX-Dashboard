@@ -1,22 +1,21 @@
-﻿using Avalonia.Threading;
-using CommandLine;
-using Common.BasicHelper.IO;
-using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Names;
-using KitX.Dashboard.Options;
-using KitX.Dashboard.Services;
-using KitX.Dashboard.Views;
-using LiteDB;
-using ReactiveUI;
-using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Threading;
+using CommandLine;
+using Common.BasicHelper.IO;
+using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Names;
+using KitX.Dashboard.Options;
+using KitX.Dashboard.Views;
+using LiteDB;
+using ReactiveUI;
+using Serilog;
 
 namespace KitX.Dashboard;
 

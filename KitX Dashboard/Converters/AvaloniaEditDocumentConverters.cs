@@ -1,9 +1,9 @@
-﻿using Avalonia.Data.Converters;
-using AvaloniaEdit.Document;
-using Common.Activity;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Avalonia.Data.Converters;
+using AvaloniaEdit.Document;
+using Common.Activity;
 
 namespace KitX.Dashboard.Converters;
 

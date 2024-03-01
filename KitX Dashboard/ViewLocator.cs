@@ -1,7 +1,7 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using KitX.Dashboard.ViewModels;
-using System;
 
 namespace KitX.Dashboard;
 

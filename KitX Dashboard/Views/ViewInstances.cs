@@ -1,9 +1,9 @@
-﻿using Avalonia.Controls;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using Avalonia.Controls;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace KitX.Dashboard.Views;
 

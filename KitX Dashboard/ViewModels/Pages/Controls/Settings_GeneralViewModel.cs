@@ -1,11 +1,11 @@
-﻿using KitX.Dashboard.Managers;
+﻿using System;
+using System.Reactive;
+using System.Threading.Tasks;
+using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 using Serilog;
-using System;
-using System.Reactive;
-using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 

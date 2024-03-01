@@ -1,12 +1,12 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using System.Linq;
+using System.Threading;
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.ViewModels.Pages;
 using Serilog;
-using System;
-using System.Linq;
-using System.Threading;
 
 namespace KitX.Dashboard.Views.Pages;
 

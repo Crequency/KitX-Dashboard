@@ -1,7 +1,7 @@
-﻿using Avalonia;
+﻿using System.Reactive;
+using Avalonia;
 using FluentAvalonia.UI.Controls;
 using ReactiveUI;
-using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 

@@ -1,4 +1,7 @@
-﻿using Common.BasicHelper.Utils.Extensions;
+﻿using System;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Common.BasicHelper.Utils.Extensions;
 using Fleck;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Views;
@@ -7,9 +10,6 @@ using KitX.Shared.CSharp.WebCommand;
 using KitX.Shared.CSharp.WebCommand.Details;
 using KitX.Shared.CSharp.WebCommand.Infos;
 using Serilog;
-using System;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace KitX.Dashboard.Network.PluginsNetwork;
 

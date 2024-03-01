@@ -1,7 +1,7 @@
-﻿using Avalonia.Data.Converters;
-using KitX.Shared.CSharp.Device;
-using System;
+﻿using System;
 using System.Globalization;
+using Avalonia.Data.Converters;
+using KitX.Shared.CSharp.Device;
 
 namespace KitX.Dashboard.Converters;
 

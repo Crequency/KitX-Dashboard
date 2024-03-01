@@ -1,11 +1,4 @@
-﻿using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Names;
-using KitX.Dashboard.Services;
-using KitX.Dashboard.Views;
-using KitX.Shared.CSharp.Device;
-using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -14,6 +7,13 @@ using System.Net.Sockets;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Common.BasicHelper.Utils.Extensions;
+using KitX.Dashboard.Managers;
+using KitX.Dashboard.Names;
+using KitX.Dashboard.Services;
+using KitX.Dashboard.Views;
+using KitX.Shared.CSharp.Device;
+using Serilog;
 
 namespace KitX.Dashboard.Network.DevicesNetwork;
 

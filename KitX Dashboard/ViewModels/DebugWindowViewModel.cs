@@ -1,10 +1,10 @@
-﻿using ReactiveUI;
-using System.Reactive;
-using AvaloniaEdit.Document;
-using KitX.Dashboard.Services;
+﻿using System.Reactive;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
-using System.Threading;
+using AvaloniaEdit.Document;
+using KitX.Dashboard.Services;
+using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 

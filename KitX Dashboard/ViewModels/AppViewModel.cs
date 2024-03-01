@@ -1,12 +1,12 @@
-﻿using Avalonia.Controls;
+﻿using System.Reactive;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using Avalonia.Controls;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using ReactiveUI;
-using System.Reactive;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KitX.Dashboard.ViewModels;
 

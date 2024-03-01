@@ -1,11 +1,11 @@
-﻿using Avalonia.Threading;
-using KitX.Dashboard.Views;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Avalonia.Threading;
+using KitX.Dashboard.Views;
 
 namespace KitX.Dashboard.Managers;
 

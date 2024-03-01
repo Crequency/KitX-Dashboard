@@ -1,7 +1,7 @@
-﻿using KitX.Dashboard.Configuration;
+﻿using System.Reactive;
+using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
-using System.Reactive;
 
 namespace KitX.Dashboard.ViewModels;
 

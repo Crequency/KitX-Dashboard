@@ -1,9 +1,9 @@
-﻿using Avalonia.Controls;
+﻿using System.Collections.Generic;
+using Avalonia.Controls;
 using Common.BasicHelper.Graphics.Screen;
 using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Configuration.Interfaces;
 using Serilog.Events;
-using System.Collections.Generic;
 
 namespace KitX.Dashboard.Configuration;
 

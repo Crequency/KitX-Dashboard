@@ -1,7 +1,7 @@
-﻿using Common.Activity;
+﻿using System.Collections.ObjectModel;
+using Common.Activity;
 using KitX.Dashboard.Managers;
 using ReactiveUI;
-using System.Collections.ObjectModel;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 

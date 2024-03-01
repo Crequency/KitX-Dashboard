@@ -1,6 +1,7 @@
-﻿using Avalonia;
+﻿using System;
+using System.Timers;
+using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Styling;
 using Avalonia.Threading;
 using Common.BasicHelper.Graphics.Screen;
 using FluentAvalonia.UI.Controls;
@@ -13,8 +14,6 @@ using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
 using KitX.Dashboard.ViewModels;
 using Serilog;
-using System;
-using System.Timers;
 
 namespace KitX.Dashboard.Views;
 

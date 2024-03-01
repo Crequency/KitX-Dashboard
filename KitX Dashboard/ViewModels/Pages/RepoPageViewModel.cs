@@ -1,4 +1,11 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Reactive;
+using System.Text.Json;
+using System.Threading;
+using Avalonia.Controls;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
@@ -8,13 +15,6 @@ using KitX.Shared.CSharp.Loader;
 using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
 using Serilog;
-using System;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
-using System.Reactive;
-using System.Text.Json;
-using System.Threading;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
