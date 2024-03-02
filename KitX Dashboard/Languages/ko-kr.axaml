@@ -100,8 +100,15 @@
     <sys:String x:Key="Text_Device_Resources_RAM">메모리</sys:String>
     <sys:String x:Key="Text_Device_Resources_NET">회로망</sys:String>
     <sys:String x:Key="Text_Device_Tip_Detected">발견된 장치</sys:String>
+    <x:String x:Key="Text_Device_Tip_Found">이 장치는 로컬 네트워크 장치의 자동 검색 시스템에 의해 발견되었습니다</x:String>
+    <x:String x:Key="Text_Device_Tip_Authorized">이 장치는 본 기기와 상호 권한이 부여되었습니다</x:String>
+    <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">로컬 키를 제거할 수 없습니다</x:String>
+    <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">보안 시스템 예기치 않은 오류</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">온라인 플러그인 수:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">MAC 주소를 얻지 못했습니다</sys:String>
+    <x:String x:Key="Text_Device_Context_Security">보안</x:String>
+    <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">장치를 권한을 부여하고 키를 교환하세요</x:String>
+    <x:String x:Key="Text_Device_Context_UnAuthorize">이 장치의 권한을 취소하고(새로운 로컬 키를 생성하여 다른 장치와 교환) 합니다</x:String>
     <sys:String x:Key="Text_Settings_General">만능인</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">로컬 플러그인 디렉토리</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">로컬 플러그인 데이터 디렉토리</sys:String>
@@ -166,6 +173,7 @@
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Title">장치 키 교환</sys:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Description">기기에 표시된 확인 코드는 키 교환에 필요합니다.
 이 작업이 자신이 아니라면, 기기의 보안을 점검해주세요</sys:String>
+    <x:String x:Key="Text_ExchangeDeviceKeyWindow_Description_Displaying">대상 장치에 다음과 같은 검증 코드를 입력하세요</x:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_YourInput">입력내용:</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_1">좋은 아침! ο(=•ω＜=)ρ⌒☆</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_2">매일 기분이 좋아OvO</sys:String>

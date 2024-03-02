@@ -35,7 +35,7 @@ public class SecurityManager : ManagerBase
             "It seems that you didn't run Devices Discovery System."
         );
 
-        LocalDeviceKey = SecurityConfig.DeviceKeys.FirstOrDefault(x => x.Device.Equals(device));
+        LocalDeviceKey = SecurityConfig.DeviceKeys.FirstOrDefault(x => x.Device.IsSameDevice(device));
 
         if (LocalDeviceKey is not null) return;
 
@@ -75,6 +75,8 @@ public class SecurityManager : ManagerBase
         return this;
     }
 
+    public static bool IsDeviceAuthorized(DeviceLocator device) => SecurityConfig.DeviceKeys.Any(x => x.Device.IsSameDevice(device));
+
     public string? EncryptString(string data)
     {
         if (RsaInstance is null) return null;
@@ -106,7 +108,7 @@ public class SecurityManager : ManagerBase
         return sb.ToString();
     }
 
-    private static string ExpandKey(string key, int length)
+    private static byte[] ExpandKey(string key, int length)
     {
         var expandedKey = key.Length <= length ? key : key[..length];
 
@@ -121,7 +123,7 @@ public class SecurityManager : ManagerBase
             expandIndex++;
         }
 
-        return expandedKey;
+        return expandedKey.FromASCII();
     }
 
     public static string AesEncrypt(string source, string key)
@@ -130,8 +132,8 @@ public class SecurityManager : ManagerBase
 
         var expandedKey = ExpandKey(key, 16);
 
-        var keyData = expandedKey.FromUTF8();
-        var iv = expandedKey.FromUTF8();
+        var keyData = expandedKey;
+        var iv = expandedKey;
 
         using var aes = Aes.Create();
 
@@ -149,8 +151,8 @@ public class SecurityManager : ManagerBase
 
         var expandedKey = ExpandKey(key, 16);
 
-        var keyData = expandedKey.FromUTF8();
-        var iv = expandedKey.FromUTF8();
+        var keyData = expandedKey;
+        var iv = expandedKey;
 
         using var aes = Aes.Create();
 

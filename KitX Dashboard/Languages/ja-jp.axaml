@@ -100,8 +100,15 @@
     <sys:String x:Key="Text_Device_Resources_RAM">メモリー</sys:String>
     <sys:String x:Key="Text_Device_Resources_NET">通信網</sys:String>
     <sys:String x:Key="Text_Device_Tip_Detected">台のデバイスが検出されました</sys:String>
+    <x:String x:Key="Text_Device_Tip_Found">このデバイスは、局域ネットワークのデバイス自己発見システムによって検出されました</x:String>
+    <x:String x:Key="Text_Device_Tip_Authorized">このデバイスは、このホストと相互に認証されました</x:String>
+    <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">ローカルキーを削除することはできません</x:String>
+    <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">セキュリティシステムの予期しないエラー</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">利用可能なプラグインの数:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">MACアドレスが取得できません</sys:String>
+    <x:String x:Key="Text_Device_Context_Security">Sekurity</x:String>
+    <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">デバイスを承認し、キーを交換する</x:String>
+    <x:String x:Key="Text_Device_Context_UnAuthorize">このデバイスの認可を取消し（新しいローカルキーを生成して他のデバイスと交換する）</x:String>
     <sys:String x:Key="Text_Settings_General">ユニバーサル</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">ローカル プラグイン ディレクトリ</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">ローカル プラグイン データ ディレクトリ</sys:String>
@@ -166,6 +173,7 @@
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Title">デバイスキーの交換</sys:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Description">デバイスに表示された認証コードが必要です。
 キーを交換する場合、これが自分でない場合は、デバイスのセキュリティを確認してください</sys:String>
+    <x:String x:Key="Text_ExchangeDeviceKeyWindow_Description_Displaying">ターゲットデバイス上で以下の認証コードを入力してください</x:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_YourInput">入力内容：</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_1">おはよう! ο(=•ω＜=)ρ⌒☆</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_2">毎日良い気分を OvO</sys:String>

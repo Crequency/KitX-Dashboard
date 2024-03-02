@@ -3,6 +3,7 @@ using System.Reactive;
 using System.Threading.Tasks;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Views;
+using KitX.Shared.CSharp.Device;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages;

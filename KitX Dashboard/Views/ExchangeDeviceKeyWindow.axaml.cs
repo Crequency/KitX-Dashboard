@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Timers;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
+using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using MsBox.Avalonia;
 
@@ -13,6 +16,8 @@ public partial class ExchangeDeviceKeyWindow : Window
     private readonly ExchangeDeviceKeyWindowViewModel viewModel = new();
 
     private Action<string>? OnVerificationCodeEnteredAction;
+
+    private Timer? waittingAcceptingDeviceKeyTimer;
 
     public ExchangeDeviceKeyWindow()
     {
@@ -38,17 +43,51 @@ public partial class ExchangeDeviceKeyWindow : Window
         return this;
     }
 
-    public async Task<ExchangeDeviceKeyWindow> OnErrorDecodeAsync()
+    public async Task<ExchangeDeviceKeyWindow> OnErrorDecodeAsync(string? message = null)
     {
         var box = MessageBoxManager.GetMessageBoxStandard(
             "",
-            "Verification code is incorrect.",
+            message ?? "Verification code is incorrect.",
             MsBox.Avalonia.Enums.ButtonEnum.Ok,
             MsBox.Avalonia.Enums.Icon.Error,
-            Avalonia.Controls.WindowStartupLocation.CenterScreen
+            WindowStartupLocation.CenterScreen
         );
 
         await box.ShowAsPopupAsync(this);
+
+        return this;
+    }
+
+    public ExchangeDeviceKeyWindow DisplayVerificationCode(string code)
+    {
+        viewModel.IsEditable = false;
+
+        viewModel.VerificationCodeString = code;
+
+        EventService.OnAcceptingDeviceKey += keyCode =>
+        {
+            if (code.Equals(keyCode))
+            {
+                ConstantTable.ExchangeDeviceKeyCode = null;
+
+                Dispatcher.UIThread.Post(Close);
+            }
+        };
+
+        waittingAcceptingDeviceKeyTimer = new()
+        {
+            Interval = 60 * 1000,
+            AutoReset = false
+        };
+
+        waittingAcceptingDeviceKeyTimer.Elapsed += (_, _) =>
+        {
+            ConstantTable.ExchangeDeviceKeyCode = null;
+
+            Dispatcher.UIThread.Post(Close);
+        };
+
+        waittingAcceptingDeviceKeyTimer.Start();
 
         return this;
     }
@@ -74,6 +113,25 @@ public partial class ExchangeDeviceKeyWindow : Window
         return this;
     }
 
+    public ExchangeDeviceKeyWindow Success()
+    {
+        viewModel.SuccessedPanelOpacity = 1.0;
+
+        var timer = new Timer(3 * 1000);
+
+        timer.Elapsed += (_, _) =>
+        {
+            Dispatcher.UIThread.Post(Close);
+
+            timer.Stop();
+            timer.Dispose();
+        };
+
+        timer.Start();
+
+        return this;
+    }
+
     protected override async void OnKeyDown(KeyEventArgs e)
     {
         if (e.PhysicalKey == PhysicalKey.Tab)
@@ -83,7 +141,7 @@ public partial class ExchangeDeviceKeyWindow : Window
             return;
         }
 
-        if (viewModel.IsVerifing) return;
+        if (viewModel.IsVerifing || (viewModel.IsEditable == false)) return;
 
         if (e.Key == Key.V && e.KeyModifiers == KeyModifiers.Control)
         {
@@ -140,5 +198,13 @@ public partial class ExchangeDeviceKeyWindow : Window
         BeginMoveDrag(e);
 
         base.OnPointerPressed(e);
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        waittingAcceptingDeviceKeyTimer?.Stop();
+        waittingAcceptingDeviceKeyTimer?.Dispose();
+
+        base.OnClosing(e);
     }
 }

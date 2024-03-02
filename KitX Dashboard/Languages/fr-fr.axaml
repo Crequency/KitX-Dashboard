@@ -100,8 +100,15 @@
     <sys:String x:Key="Text_Device_Resources_RAM">Mémoire</sys:String>
     <sys:String x:Key="Text_Device_Resources_NET">réseau</sys:String>
     <sys:String x:Key="Text_Device_Tip_Detected">appareils découverts</sys:String>
+    <x:String x:Key="Text_Device_Tip_Found">Le dispositif a été détecté par le système d'auto-découverte des appareils du réseau local</x:String>
+    <x:String x:Key="Text_Device_Tip_Authorized">Le dispositif a été mutuellement autorisé avec cet hôte</x:String>
+    <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">Vous ne pouvez pas supprimer la clé locale</x:String>
+    <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">Erreur Inattendue du Système de Sécurité</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">Nombre de plugins en ligne:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">Adresse MAC non obtenue</sys:String>
+    <x:String x:Key="Text_Device_Context_Security">Sécurité</x:String>
+    <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">Autoriser le dispositif et échanger les clés</x:String>
+    <x:String x:Key="Text_Device_Context_UnAuthorize">Révoquer l'autorisation de ce dispositif (générer une nouvelle clé locale et l'échanger avec d'autres appareils)</x:String>
     <sys:String x:Key="Text_Settings_General">Universel</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">répertoire local des plugins</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">Répertoire de données du plug-in local</sys:String>
@@ -166,6 +173,7 @@
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Title">Échange de clé de périphérique</sys:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Description">Un code de vérification affiché sur l'appareil est nécessaire pour échanger les clés.
 Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sys:String>
+    <x:String x:Key="Text_ExchangeDeviceKeyWindow_Description_Displaying">Veuillez saisir le code de vérification suivant sur l'appareil cible</x:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_YourInput">Votre saisie:</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_1">Bonjour! ο(=•ω＜=)ρ⌒☆</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_2">Ayez de la bonne humeur tous les joursOvO</sys:String>

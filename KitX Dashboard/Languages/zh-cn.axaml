@@ -100,8 +100,15 @@
     <sys:String x:Key="Text_Device_Resources_RAM">内存</sys:String>
     <sys:String x:Key="Text_Device_Resources_NET">网络</sys:String>
     <sys:String x:Key="Text_Device_Tip_Detected">个设备已发现</sys:String>
+    <x:String x:Key="Text_Device_Tip_Found">该设备已被局域网设备自发现系统发现</x:String>
+    <x:String x:Key="Text_Device_Tip_Authorized">该设备已和本机互相授权</x:String>
+    <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">你不能移除本机密钥</x:String>
+    <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">安全系统意外错误</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">在线插件数量:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">未获取到MAC地址</sys:String>
+    <x:String x:Key="Text_Device_Context_Security">安全</x:String>
+    <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">授权该设备并交换密钥</x:String>
+    <x:String x:Key="Text_Device_Context_UnAuthorize">取消授权该设备 (生成新的本机密钥并与其他设备交换)</x:String>
     <sys:String x:Key="Text_Settings_General">通用</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">本地插件程序目录</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">本地插件数据目录</sys:String>
@@ -166,6 +173,7 @@
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Title">交换设备密钥</sys:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Description">请输入另一个设备上显示的验证码来交换密钥。
 如果不是您在操作，请检查您的设备安全。</sys:String>
+    <x:String x:Key="Text_ExchangeDeviceKeyWindow_Description_Displaying">请在目标设备上输入如下验证码</x:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_YourInput">您的输入：</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_1">上午好! ο(=•ω＜=)ρ⌒☆</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_2">每天都要有好心情哟 OvO</sys:String>

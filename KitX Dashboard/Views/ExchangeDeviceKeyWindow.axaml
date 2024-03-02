@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="using:KitX.Dashboard.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:icon="using:Material.Icons.Avalonia"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:progRing="using:AvaloniaProgressRing"
         Title="[WARN] You're exchanging device key !"
@@ -43,8 +44,17 @@
                 <TextBlock Margin="30"
                            HorizontalAlignment="Center"
                            FontSize="16"
+                           IsVisible="{Binding !IsDisplayingVerificationCode}"
                            LineSpacing="10"
                            Text="{DynamicResource Text_ExchangeDeviceKeyWindow_Description}"
+                           TextAlignment="Center"
+                           TextWrapping="WrapWithOverflow"/>
+                <TextBlock Margin="30"
+                           HorizontalAlignment="Center"
+                           FontSize="16"
+                           IsVisible="{Binding IsDisplayingVerificationCode}"
+                           LineSpacing="10"
+                           Text="{DynamicResource Text_ExchangeDeviceKeyWindow_Description_Displaying}"
                            TextAlignment="Center"
                            TextWrapping="WrapWithOverflow"/>
             </StackPanel>
@@ -55,7 +65,8 @@
                         Spacing="10">
                 <Button Padding="20,5,20,6"
                         Command="{Binding CancelCommand}"
-                        Content="{DynamicResource Text_Public_Cancel}"/>
+                        Content="{DynamicResource Text_Public_Cancel}"
+                        IsVisible="{Binding !IsDisplayingVerificationCode}"/>
             </StackPanel>
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Top"
@@ -70,15 +81,18 @@
                             <Setter Property="Width" Value="35"/>
                             <Setter Property="FontSize" Value="26"/>
                         </Style>
+                        <Style Selector="TextBox.isDisplaying">
+                            <Setter Property="IsReadOnly" Value="True"/>
+                        </Style>
                     </StackPanel.Styles>
-                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=0}"/>
-                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=1}"/>
-                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=2}"/>
-                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=3}"/>
-                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=4}"/>
-                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=5}"/>
-                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=6}"/>
-                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=7}"/>
+                    <TextBox Classes.isDisplaying="{Binding IsDisplayingVerificationCode}" Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=0}"/>
+                    <TextBox Classes.isDisplaying="{Binding IsDisplayingVerificationCode}" Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=1}"/>
+                    <TextBox Classes.isDisplaying="{Binding IsDisplayingVerificationCode}" Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=2}"/>
+                    <TextBox Classes.isDisplaying="{Binding IsDisplayingVerificationCode}" Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=3}"/>
+                    <TextBox Classes.isDisplaying="{Binding IsDisplayingVerificationCode}" Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=4}"/>
+                    <TextBox Classes.isDisplaying="{Binding IsDisplayingVerificationCode}" Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=5}"/>
+                    <TextBox Classes.isDisplaying="{Binding IsDisplayingVerificationCode}" Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=6}"/>
+                    <TextBox Classes.isDisplaying="{Binding IsDisplayingVerificationCode}" Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=7}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="30">
                     <StackPanel.Styles>
@@ -86,6 +100,7 @@
                             <Setter Property="Width" Value="35"/>
                             <Setter Property="Height" Value="5"/>
                             <Setter Property="CornerRadius" Value="5"/>
+                            <Setter Property="IsVisible" Value="{Binding !IsDisplayingVerificationCode}"/>
                         </Style>
                         <Style Selector="Border.isCurrent">
                             <Setter Property="Background" Value="{DynamicResource ThemePrimaryAccent}"/>
@@ -116,6 +131,29 @@
                     <TextBlock FontSize="16" Text="{Binding VerificationCodeString}"/>
                 </StackPanel>
             </StackPanel>
+        </Grid>
+        <Grid Background="{DynamicResource ThemePrimaryAccent}" Opacity="{Binding SuccessedPanelOpacity}">
+            <Grid.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.3">
+                        <DoubleTransition.Easing>
+                            <CubicEaseInOut/>
+                        </DoubleTransition.Easing>
+                    </DoubleTransition>
+                </Transitions>
+            </Grid.Transitions>
+            <icon:MaterialIcon Width="50"
+                               Height="50"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Kind="CheckCircle">
+                <icon:MaterialIcon.Foreground>
+                    <LinearGradientBrush>
+                        <GradientStop Offset="0" Color="#79F1A4"/>
+                        <GradientStop Offset="1" Color="#0E5CAD"/>
+                    </LinearGradientBrush>
+                </icon:MaterialIcon.Foreground>
+            </icon:MaterialIcon>
         </Grid>
     </Grid>
 </Window>

@@ -69,74 +69,120 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Width="340" Margin="10">
-                                <StackPanel Margin="10">
-                                    <DockPanel Width="300">
-                                        <icon:MaterialIcon Width="45"
-                                                           Height="45"
-                                                           Margin="0,0,10,0"
-                                                           DockPanel.Dock="Left"
-                                                           Kind="{Binding DeviceInfo.DeviceOSType, Converter={StaticResource OperatingSystemToIconConverter}}"/>
-                                        <DockPanel>
-                                            <TextBlock DockPanel.Dock="Top"
-                                                       FontSize="20"
-                                                       Text="{Binding DeviceInfo.Device.DeviceName, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=20}"
-                                                       ToolTip.Tip="{Binding DeviceInfo.Device.DeviceName}"/>
-                                            <TextBlock FontSize="14"
-                                                       Text="{Binding DeviceInfo.DeviceOSVersion, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=34}"
-                                                       ToolTip.Tip="{Binding DeviceInfo.DeviceOSVersion}"/>
-                                        </DockPanel>
-                                    </DockPanel>
-                                    <DockPanel Width="300" Margin="0,10,0,0">
-                                        <Grid Margin="25,0,0,0"
-                                              VerticalAlignment="Center"
-                                              DockPanel.Dock="Right">
-                                            <Button Content="{DynamicResource Text_Device_Type_Master}"
-                                                    FontSize="18"
-                                                    IsVisible="{Binding DeviceInfo.IsMainDevice}"
-                                                    ToolTip.Tip="{Binding DeviceInfo, Converter={StaticResource DevicesServerAddressConverter}}"/>
-                                            <Button Content="{DynamicResource Text_Device_Type_Slave}"
-                                                    FontSize="18"
-                                                    IsVisible="{Binding !DeviceInfo.IsMainDevice}"/>
-                                        </Grid>
-                                        <Grid Margin="5,0,0,0" VerticalAlignment="Center">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition/>
-                                                <RowDefinition/>
-                                            </Grid.RowDefinitions>
-                                            <TextBlock Grid.Row="0"
-                                                       FontSize="12"
-                                                       Text="{Binding DeviceInfo.SendTime, Converter={StaticResource DeviceLastOnLineTimeConverter}}"/>
-                                            <DockPanel Grid.Row="1">
-                                                <TextBlock DockPanel.Dock="Left"
-                                                           FontSize="12"
-                                                           Text="{DynamicResource Text_Device_PluginsCount}"/>
-                                                <TextBlock Margin="10,0,0,0"
-                                                           DockPanel.Dock="Left"
-                                                           FontSize="12"
-                                                           Text="{Binding DeviceInfo.PluginsCount}"/>
-                                                <Border/>
+                            <Button Width="340"
+                                    Margin="10"
+                                    Classes.isCurrentDevice="{Binding IsCurrentDevice}">
+                                <Button.Styles>
+                                    <Style Selector="Button.isCurrentDevice">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+                                    </Style>
+                                </Button.Styles>
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="Pointer">
+                                        <MenuItem Header="{DynamicResource Text_Device_Context_Security}">
+                                            <MenuItem.Icon>
+                                                <icon:MaterialIcon Kind="Security"/>
+                                            </MenuItem.Icon>
+                                            <MenuItem Command="{Binding AuthorizeAndExchangeDeviceKeyCommand}"
+                                                      CommandParameter="{Binding DeviceInfo}"
+                                                      Header="{DynamicResource Text_Device_Context_AuthorizeAndExchangeDeviceKey}">
+                                                <MenuItem.Icon>
+                                                    <icon:MaterialIcon Kind="Secure"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Command="{Binding UnAuthorizeCommand}"
+                                                      CommandParameter="{Binding DeviceInfo}"
+                                                      Header="{DynamicResource Text_Device_Context_UnAuthorize}">
+                                                <MenuItem.Icon>
+                                                    <icon:MaterialIcon Kind="SecurityOff"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </MenuItem>
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                                <Grid>
+                                    <StackPanel Margin="10">
+                                        <DockPanel Width="300">
+                                            <icon:MaterialIcon Width="45"
+                                                               Height="45"
+                                                               Margin="0,0,10,0"
+                                                               DockPanel.Dock="Left"
+                                                               Kind="{Binding DeviceInfo.DeviceOSType, Converter={StaticResource OperatingSystemToIconConverter}}"/>
+                                            <DockPanel Margin="10,0,0,0">
+                                                <TextBlock DockPanel.Dock="Top"
+                                                           FontSize="20"
+                                                           Text="{Binding DeviceInfo.Device.DeviceName, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=20}"
+                                                           ToolTip.Tip="{Binding DeviceInfo.Device.DeviceName}"/>
+                                                <TextBlock FontSize="14"
+                                                           Text="{Binding DeviceInfo.DeviceOSVersion, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=34}"
+                                                           ToolTip.Tip="{Binding DeviceInfo.DeviceOSVersion}"/>
                                             </DockPanel>
-                                        </Grid>
-                                    </DockPanel>
-                                    <TextBlock Width="300"
-                                               Margin="5,0"
-                                               FontSize="12"
-                                               Text="{Binding DeviceInfo.Device.MacAddress}"
-                                               ToolTip.Tip="{Binding DeviceInfo.Device.MacAddress}"/>
-                                    <DockPanel Width="300" Margin="5,0">
-                                        <TextBlock DockPanel.Dock="Left"
+                                        </DockPanel>
+                                        <DockPanel Width="300" Margin="0,10,0,0">
+                                            <Grid Margin="25,0,0,0"
+                                                  VerticalAlignment="Center"
+                                                  DockPanel.Dock="Right">
+                                                <Button BorderBrush="{DynamicResource ThemePrimaryAccent}"
+                                                        Content="{DynamicResource Text_Device_Type_Master}"
+                                                        FontSize="18"
+                                                        IsVisible="{Binding DeviceInfo.IsMainDevice}"
+                                                        ToolTip.Tip="{Binding DeviceInfo, Converter={StaticResource DevicesServerAddressConverter}}"/>
+                                                <Button Content="{DynamicResource Text_Device_Type_Slave}"
+                                                        FontSize="18"
+                                                        IsVisible="{Binding !DeviceInfo.IsMainDevice}"/>
+                                            </Grid>
+                                            <Grid Margin="5,0,0,0" VerticalAlignment="Center">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition/>
+                                                    <RowDefinition/>
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Grid.Row="0"
+                                                           FontSize="12"
+                                                           Text="{Binding DeviceInfo.SendTime, Converter={StaticResource DeviceLastOnLineTimeConverter}}"/>
+                                                <DockPanel Grid.Row="1">
+                                                    <TextBlock DockPanel.Dock="Left"
+                                                               FontSize="12"
+                                                               Text="{DynamicResource Text_Device_PluginsCount}"/>
+                                                    <TextBlock Margin="10,0,0,0"
+                                                               DockPanel.Dock="Left"
+                                                               FontSize="12"
+                                                               Text="{Binding DeviceInfo.PluginsCount}"/>
+                                                    <Border/>
+                                                </DockPanel>
+                                            </Grid>
+                                        </DockPanel>
+                                        <TextBlock Width="300"
+                                                   Margin="5,0"
                                                    FontSize="12"
-                                                   Text="{Binding DeviceInfo, Converter={StaticResource PluginsServerAddressConverter}}"
-                                                   ToolTip.Tip="{Binding $self.Text}"/>
-                                        <TextBlock Margin="20,0,0,0"
-                                                   DockPanel.Dock="Right"
-                                                   FontSize="12"
-                                                   Text="{Binding DeviceInfo.Device.IPv6, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=28}"
-                                                   ToolTip.Tip="{Binding DeviceInfo.Device.IPv6}"/>
-                                        <Border/>
-                                    </DockPanel>
-                                </StackPanel>
+                                                   Text="{Binding DeviceInfo.Device.MacAddress}"
+                                                   ToolTip.Tip="{Binding DeviceInfo.Device.MacAddress}"/>
+                                        <DockPanel Width="300" Margin="5,0">
+                                            <TextBlock DockPanel.Dock="Left"
+                                                       FontSize="12"
+                                                       Text="{Binding DeviceInfo, Converter={StaticResource PluginsServerAddressConverter}}"
+                                                       ToolTip.Tip="{Binding $self.Text}"/>
+                                            <TextBlock Margin="20,0,0,0"
+                                                       DockPanel.Dock="Right"
+                                                       FontSize="12"
+                                                       Text="{Binding DeviceInfo.Device.IPv6, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=28}"
+                                                       ToolTip.Tip="{Binding DeviceInfo.Device.IPv6}"/>
+                                            <Border/>
+                                        </DockPanel>
+                                    </StackPanel>
+                                    <Grid Margin="0,5,0,0"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top">
+                                        <Grid.Styles>
+                                            <Style Selector="Border">
+                                                <Setter Property="Width" Value="15"/>
+                                                <Setter Property="Height" Value="15"/>
+                                                <Setter Property="CornerRadius" Value="15"/>
+                                            </Style>
+                                        </Grid.Styles>
+                                        <Border Background="{DynamicResource ThemePrimaryAccent}" IsVisible="{Binding IsAuthorized}"/>
+                                        <Border Background="Gray" IsVisible="{Binding !IsAuthorized}"/>
+                                    </Grid>
+                                </Grid>
                             </Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

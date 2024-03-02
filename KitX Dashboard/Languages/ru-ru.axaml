@@ -100,8 +100,15 @@
     <sys:String x:Key="Text_Device_Resources_RAM">Память</sys:String>
     <sys:String x:Key="Text_Device_Resources_NET">сеть</sys:String>
     <sys:String x:Key="Text_Device_Tip_Detected">устройства обнаружены</sys:String>
+    <x:String x:Key="Text_Device_Tip_Found">Устройство было обнаружено системой автоматического обнаружения устройств в локальной сети</x:String>
+    <x:String x:Key="Text_Device_Tip_Authorized">Устройство получило взаимное разрешение с данным узлом</x:String>
+    <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">Вы не можете удалить локальный ключ</x:String>
+    <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">Неожиданная ошибка системы безопасности</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">Количество онлайн-плагинов:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">MAC-адрес не получен</sys:String>
+    <x:String x:Key="Text_Device_Context_Security">Text_Device_Context_Authorization</x:String>
+    <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">Аутентифицируйте устройство и обменивайте ключи</x:String>
+    <x:String x:Key="Text_Device_Context_UnAuthorize">Отозвать авторизацию для этого устройства (сгенерировать новый локальный ключ и обменять его с другими устройствами)</x:String>
     <sys:String x:Key="Text_Settings_General">Универсальный</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">локальный каталог плагинов</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">Локальный каталог данных плагина</sys:String>
@@ -166,6 +173,7 @@
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Title">Обмен ключа устройства</sys:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Description">Для обмена ключами требуется код подтверждения, отображаемый на устройстве.
 Если это не были вы, проверьте безопасность вашего устройства</sys:String>
+    <x:String x:Key="Text_ExchangeDeviceKeyWindow_Description_Displaying">Пожалуйста, введите следующий код подтверждения на целевом устройстве</x:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_YourInput">Ваш ввод:</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_1">доброе утро! ο(=•ω＜=)ρ⌒☆</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_2">Хорошего настроения каждый деньOvO</sys:String>

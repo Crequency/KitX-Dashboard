@@ -56,7 +56,7 @@ public class DevicesDiscoveryServer
 
     public DevicesDiscoveryServer()
     {
-        _ = DevicesOrganizer.Instance;
+        DevicesOrganizer.Run();
 
         Initialize();
     }
@@ -414,9 +414,11 @@ public static class DevicesDiscoveryServerExtensions
     public static bool IsCurrentDevice(this DeviceInfo info)
         => info.IsSameDevice(DevicesDiscoveryServer.Instance.DefaultDeviceInfo);
 
-    public static bool IsSameDevice(this DeviceInfo info, DeviceInfo target)
-        => info.Device.DeviceName.Equals(target.Device.DeviceName)
-        && info.Device.MacAddress.Equals(target.Device.MacAddress);
+    public static bool IsSameDevice(this DeviceInfo info, DeviceInfo target) => info.Device.IsSameDevice(target.Device);
+
+    public static bool IsSameDevice(this DeviceLocator current, DeviceLocator target)
+        => current.DeviceName.Equals(target.DeviceName)
+        && current.MacAddress.Equals(target.MacAddress);
 
     public static void UpdateTo(this DeviceInfo info, DeviceInfo target)
     {

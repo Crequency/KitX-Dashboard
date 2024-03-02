@@ -100,8 +100,15 @@
     <sys:String x:Key="Text_Device_Resources_RAM">RAM</sys:String>
     <sys:String x:Key="Text_Device_Resources_NET">NET</sys:String>
     <sys:String x:Key="Text_Device_Tip_Detected">Devices Detected.</sys:String>
+    <x:String x:Key="Text_Device_Tip_Found">The device has been discovered by the devices discovery system</x:String>
+    <x:String x:Key="Text_Device_Tip_Authorized">The device has been mutually authorized with this host</x:String>
+    <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">You cannot remove the local device key</x:String>
+    <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">Security System Unexpected Error</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">Enabled Plugins Count:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">MAC address not obtained</sys:String>
+    <x:String x:Key="Text_Device_Context_Security">Security</x:String>
+    <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">Authorize the device and exchange device key</x:String>
+    <x:String x:Key="Text_Device_Context_UnAuthorize">Revoke the authorization for this device (generate a new local key and exchange it with other devices)</x:String>
     <sys:String x:Key="Text_Settings_General">General</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">Local Plugins Program Files Path</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">Local Plugins Program Data Path</sys:String>
@@ -166,6 +173,7 @@
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Title">Exchanging Device Key</sys:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Description">Verification code displayed on the device is needed for exchanging key.
 If this wasn't you, please check your device's security.</sys:String>
+    <x:String x:Key="Text_ExchangeDeviceKeyWindow_Description_Displaying">Please enter the following verification code on the target device</x:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_YourInput">Your input:</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_1">Good Morning! ο(=•ω＜=)ρ⌒☆</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_2">Have a good mood every day! OvO</sys:String>

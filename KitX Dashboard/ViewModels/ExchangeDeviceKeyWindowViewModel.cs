@@ -39,7 +39,42 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
 
     public bool IsVerifing => updatingIndex == VerificationCode.Length;
 
-    public string VerificationCodeString => string.Join(null, VerificationCode);
+    private bool isEditable = true;
+
+    public bool IsEditable
+    {
+        get => isEditable;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref isEditable, value);
+
+            Update();
+        }
+    }
+
+    public bool IsDisplayingVerificationCode => !IsEditable;
+
+    public string VerificationCodeString
+    {
+        get => string.Join(null, VerificationCode);
+        set
+        {
+            if (value.Length != verificationCode.Length) throw new InvalidCastException();
+
+            for (var i = 0; i < verificationCode.Length; ++i)
+                verificationCode[i] = value[i].ToString();
+
+            Update();
+        }
+    }
+
+    private double successedPanelOpacity = 0.0;
+
+    public double SuccessedPanelOpacity
+    {
+        get => successedPanelOpacity;
+        set => this.RaiseAndSetIfChanged(ref successedPanelOpacity, value);
+    }
 
     public string CurrentCodeIndex => updatingIndex.ToString();
 
@@ -51,6 +86,7 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
         this.RaisePropertyChanged(nameof(CurrentCodeIndex));
         this.RaisePropertyChanged(nameof(VerificationCodeString));
         this.RaisePropertyChanged(nameof(IsVerifing));
+        this.RaisePropertyChanged(nameof(IsDisplayingVerificationCode));
     }
 
     internal bool NextCode(char code)

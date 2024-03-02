@@ -120,8 +120,10 @@ internal static class NetworkHelper
         {
             var mac =
                 from nic in NetworkInterface.GetAllNetworkInterfaces()
-                where nic.OperationalStatus == OperationalStatus.Up
-                  && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback
+                where CheckNetworkInterface(nic, nic.GetIPProperties()) &&
+                nic.GetIPProperties().UnicastAddresses.Any(
+                    x => x.Address.ToString().Equals(GetInterNetworkIPv4())
+                )
                 select nic.GetPhysicalAddress().ToString();
 
             var result = mac.FirstOrDefault()?.SeparateGroup(

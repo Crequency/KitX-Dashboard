@@ -95,4 +95,9 @@ public static class EventService
     public delegate void OnConfigHotReloadedHandler();
 
     public static event OnConfigHotReloadedHandler OnConfigHotReloaded = new(() => { });
+
+
+    public delegate void OnAcceptingDeviceKeyHandler(string code);
+
+    public static event OnAcceptingDeviceKeyHandler OnAcceptingDeviceKey = new(_ => { });
 }

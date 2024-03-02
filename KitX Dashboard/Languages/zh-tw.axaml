@@ -100,8 +100,15 @@
     <sys:String x:Key="Text_Device_Resources_RAM">内存</sys:String>
     <sys:String x:Key="Text_Device_Resources_NET">網路</sys:String>
     <sys:String x:Key="Text_Device_Tip_Detected">個設備已發現</sys:String>
+    <x:String x:Key="Text_Device_Tip_Found">本裝置已遭局域網路設備自動探測系統發現</x:String>
+    <x:String x:Key="Text_Device_Tip_Authorized">本裝置已與本機互相授權</x:String>
+    <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">您無法移除本機的金鑰</x:String>
+    <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">安全系統意外錯誤</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">在綫插件數量:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">未獲取到MAC地址</sys:String>
+    <x:String x:Key="Text_Device_Context_Security">Text_Device_Context_Authorization</x:String>
+    <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">授權該裝置並交換金鑰</x:String>
+    <x:String x:Key="Text_Device_Context_UnAuthorize">取消此裝置的授權（產生新的本機金鑰並與其他裝置進行交換）</x:String>
     <sys:String x:Key="Text_Settings_General">通用</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">本機插件的程序路徑</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">本機插件的文件路徑</sys:String>
@@ -166,6 +173,7 @@
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Title">交換設備密鑰</sys:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_Description">請輸入另一個設備上顯示的驗證碼來交換金鑰。
 若非本人操作，請檢查您的裝置安全。</sys:String>
+    <x:String x:Key="Text_ExchangeDeviceKeyWindow_Description_Displaying">請在目標裝置上輸入以下驗證碼</x:String>
     <sys:String x:Key="Text_ExchangeDeviceKeyWindow_YourInput">您的輸入：</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_1">上午好! ο(=•ω＜=)ρ⌒☆</sys:String>
     <sys:String x:Key="Text_Greeting_Morning_2">每天都要有好心情哦 OvO</sys:String>

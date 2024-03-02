@@ -22,11 +22,16 @@ internal class DevicesOrganizer : ConfigFetcher
 
     internal List<DeviceInfo>? receivedDeviceInfo4Watch;
 
-    internal readonly Queue<DeviceInfo> deviceInfoStructs = new();
+    internal readonly Queue<DeviceInfo> deviceInfosQueue = new();
 
     private readonly object AddDeviceCard2ViewLock = new();
 
     private bool KeepCheckAndRemoveTaskRunning = false;
+
+    public static void Run()
+    {
+        _instance = Instance;
+    }
 
     public DevicesOrganizer()
     {
@@ -46,7 +51,7 @@ internal class DevicesOrganizer : ConfigFetcher
     {
         EventService.OnReceivingDeviceInfo += deviceInfo =>
         {
-            deviceInfoStructs.Enqueue(deviceInfo);
+            deviceInfosQueue.Enqueue(deviceInfo);
 
             lock (_receivedDeviceInfo4WatchLock)
             {
@@ -74,11 +79,11 @@ internal class DevicesOrganizer : ConfigFetcher
     {
         var thisTurnAdded = new List<int>();
 
-        while (deviceInfoStructs.Count > 0)
+        while (deviceInfosQueue.Count > 0)
         {
-            var deviceInfoStruct = deviceInfoStructs.Dequeue();
+            var info = deviceInfosQueue.Dequeue();
 
-            var hashCode = deviceInfoStruct.GetHashCode();
+            var hashCode = info.GetHashCode();
 
             var findThis = thisTurnAdded.Contains(hashCode);
 
@@ -86,9 +91,9 @@ internal class DevicesOrganizer : ConfigFetcher
 
             foreach (var item in ViewInstances.DeviceCases)
             {
-                if (item.DeviceInfo.IsSameDevice(deviceInfoStruct))
+                if (item.DeviceInfo.IsSameDevice(info))
                 {
-                    item.DeviceInfo = deviceInfoStruct;
+                    item.DeviceInfo = info;
                     findThis = true;
                     break;
                 }
@@ -98,7 +103,7 @@ internal class DevicesOrganizer : ConfigFetcher
             {
                 thisTurnAdded.Add(hashCode);
 
-                ViewInstances.DeviceCases.Add(new(deviceInfoStruct));
+                ViewInstances.DeviceCases.Add(new(info));
             }
         }
     }
