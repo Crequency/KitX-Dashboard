@@ -58,6 +58,11 @@
                         <NativeMenuItem Command="{Binding PluginLauncherCommand}" Header="{DynamicResource Text_Public_ShowLauncherWindow}"/>
                         <NativeMenuItemSeparator/>
                         <NativeMenuItem Command="{Binding ViewLatestAnnouncementsCommand}" Header="{DynamicResource Text_Public_ShowAnnouncements}"/>
+                        <NativeMenuItem Header="{DynamicResource Text_Public_More}">
+                            <NativeMenu>
+                                <NativeMenuItem Command="{Binding OpenDebugToolCommand}" Header="{DynamicResource Text_Settings_General_OpenDebugTool}"/>
+                            </NativeMenu>
+                        </NativeMenuItem>
                         <NativeMenuItemSeparator/>
                         <NativeMenuItem Command="{Binding ExitCommand}" Header="{DynamicResource Text_Public_Exit}"/>
                     </NativeMenu>

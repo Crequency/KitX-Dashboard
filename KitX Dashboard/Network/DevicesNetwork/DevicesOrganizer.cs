@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Avalonia.Threading;
 using KitX.Dashboard.Configuration;
+using KitX.Dashboard.Managers;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Device;
+using MsBox.Avalonia;
 using Serilog;
 using Timer = System.Timers.Timer;
 
@@ -14,17 +17,28 @@ namespace KitX.Dashboard.Network.DevicesNetwork;
 
 internal class DevicesOrganizer : ConfigFetcher
 {
-    private static readonly object _receivedDeviceInfo4WatchLock = new();
+    private static DevicesOrganizer? _instance;
 
-    internal static List<DeviceInfo>? receivedDeviceInfo4Watch;
+    public static DevicesOrganizer Instance => _instance ??= new();
 
-    internal static readonly Queue<DeviceInfo> deviceInfoStructs = new();
+    private readonly object _receivedDeviceInfo4WatchLock = new();
 
-    private static readonly object AddDeviceCard2ViewLock = new();
+    internal List<DeviceInfo>? receivedDeviceInfo4Watch;
 
-    private static bool KeepCheckAndRemoveTaskRunning = false;
+    internal readonly Queue<DeviceInfo> deviceInfoStructs = new();
 
-    public static void Start()
+    private readonly object AddDeviceCard2ViewLock = new();
+
+    private bool KeepCheckAndRemoveTaskRunning = false;
+
+    private List<string> SignedDeviceTokens { get; } = [];
+
+    public DevicesOrganizer()
+    {
+        Initialize();
+    }
+
+    public void Initialize()
     {
         InitEvents();
 
@@ -33,7 +47,7 @@ internal class DevicesOrganizer : ConfigFetcher
         Watch4MainDevice();
     }
 
-    private static void InitEvents()
+    private void InitEvents()
     {
         EventService.OnReceivingDeviceInfo += deviceInfo =>
         {
@@ -61,7 +75,7 @@ internal class DevicesOrganizer : ConfigFetcher
         };
     }
 
-    private static void UpdateSourceAndAddCards()
+    private void UpdateSourceAndAddCards()
     {
         var thisTurnAdded = new List<int>();
 
@@ -124,7 +138,7 @@ internal class DevicesOrganizer : ConfigFetcher
         }
     }
 
-    private static void KeepCheckAndRemove()
+    private void KeepCheckAndRemove()
     {
         var location = $"{nameof(DevicesOrganizer)}.{nameof(KeepCheckAndRemove)}";
 
@@ -168,7 +182,7 @@ internal class DevicesOrganizer : ConfigFetcher
         };
     }
 
-    internal static void Watch4MainDevice(CancellationToken token = default)
+    internal void Watch4MainDevice(CancellationToken token = default)
     {
         var location = $"{nameof(DevicesOrganizer)}.{nameof(Watch4MainDevice)}";
 
@@ -235,7 +249,7 @@ internal class DevicesOrganizer : ConfigFetcher
         }).Start();
     }
 
-    private static void WatchingOver(bool foundMainDevice, string serverAddress, int serverPort)
+    private void WatchingOver(bool foundMainDevice, string serverAddress, int serverPort)
     {
         var location = $"{nameof(DevicesOrganizer)}.{nameof(WatchingOver)}";
 
@@ -259,5 +273,39 @@ internal class DevicesOrganizer : ConfigFetcher
         {
             ConstantTable.IsMainMachine = true;
         }
+    }
+
+    internal bool IsDeviceTokenExist(string token) => SignedDeviceTokens.Contains(token);
+
+    internal void AddDeviceToken(string token) => SignedDeviceTokens.Add(token);
+
+    public void RequireAcceptDeviceKey
+    (
+        DeviceLocator locator,
+        string verifyCodeSHA1,
+        string deviceKey
+    )
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var window = new ExchangeDeviceKeyWindow();
+
+            ViewInstances.ShowWindow(
+                window.OnVerificationCodeEntered(async code =>
+                {
+                    if (verifyCodeSHA1.Equals(SecurityManager.GetSHA1(code)))
+                    {
+
+                    }
+                    else
+                    {
+                        await window.OnErrorDecodeAsync();
+                    }
+                }),
+                ViewInstances.MainWindow,
+                false,
+                true
+            );
+        });
     }
 }

@@ -1,0 +1,120 @@
+﻿<Window x:Class="KitX.Dashboard.Views.ExchangeDeviceKeyWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="using:KitX.Dashboard.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:progRing="using:AvaloniaProgressRing"
+        Title="[WARN] You're exchanging device key !"
+        Width="700"
+        Height="400"
+        MinWidth="700"
+        MinHeight="400"
+        d:DesignHeight="450"
+        d:DesignWidth="800"
+        Background="Transparent"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaToDecorationsHint="True"
+        TransparencyLevelHint="Mica"
+        WindowStartupLocation="CenterOwner"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <converters:GetEnumerableItemByIndexConverter x:Key="GetEnumerableItemByIndexConverter"/>
+        <converters:StringEqualConverter x:Key="StringEqualConverter"/>
+    </Window.Resources>
+    <Grid>
+        <DockPanel Margin="20" Classes.blured="{Binding IsVerifing}">
+            <DockPanel.Styles>
+                <Style Selector="DockPanel.blured">
+                    <Setter Property="IsEnabled" Value="False"/>
+                    <Setter Property="Effect" Value="blur(15)"/>
+                </Style>
+            </DockPanel.Styles>
+            <StackPanel Margin="0,20"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        DockPanel.Dock="Top"
+                        Spacing="10">
+                <TextBlock Padding="0,1"
+                           HorizontalAlignment="Center"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Text="Exchanging Device Key"/>
+                <TextBlock Margin="30"
+                           HorizontalAlignment="Center"
+                           FontSize="16"
+                           LineSpacing="10"
+                           Text="Verification code displayed on the device is needed for exchanging key. If this wasn't you, please check your device's security."
+                           TextWrapping="WrapWithOverflow"/>
+            </StackPanel>
+            <StackPanel HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        Spacing="10">
+                <Button Padding="20,5,20,6"
+                        Command="{Binding}"
+                        Content="Cancel"/>
+            </StackPanel>
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Spacing="10">
+                <StackPanel x:Name="VerifyCodeBoxes"
+                            Orientation="Horizontal"
+                            Spacing="30">
+                    <StackPanel.Styles>
+                        <Style Selector="TextBox">
+                            <Setter Property="MaxLength" Value="1"/>
+                            <Setter Property="MinWidth" Value="35"/>
+                            <Setter Property="Width" Value="35"/>
+                            <Setter Property="FontSize" Value="26"/>
+                        </Style>
+                    </StackPanel.Styles>
+                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=0}"/>
+                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=1}"/>
+                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=2}"/>
+                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=3}"/>
+                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=4}"/>
+                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=5}"/>
+                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=6}"/>
+                    <TextBox Text="{Binding VerificationCode, Converter={StaticResource GetEnumerableItemByIndexConverter}, ConverterParameter=7}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="30">
+                    <StackPanel.Styles>
+                        <Style Selector="Border">
+                            <Setter Property="Width" Value="35"/>
+                            <Setter Property="Height" Value="5"/>
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                        <Style Selector="Border.isCurrent">
+                            <Setter Property="Background" Value="{DynamicResource ThemePrimaryAccent}"/>
+                        </Style>
+                    </StackPanel.Styles>
+                    <Border Classes.isCurrent="{Binding CurrentCodeIndex, Converter={StaticResource StringEqualConverter}, ConverterParameter=0}"/>
+                    <Border Classes.isCurrent="{Binding CurrentCodeIndex, Converter={StaticResource StringEqualConverter}, ConverterParameter=1}"/>
+                    <Border Classes.isCurrent="{Binding CurrentCodeIndex, Converter={StaticResource StringEqualConverter}, ConverterParameter=2}"/>
+                    <Border Classes.isCurrent="{Binding CurrentCodeIndex, Converter={StaticResource StringEqualConverter}, ConverterParameter=3}"/>
+                    <Border Classes.isCurrent="{Binding CurrentCodeIndex, Converter={StaticResource StringEqualConverter}, ConverterParameter=4}"/>
+                    <Border Classes.isCurrent="{Binding CurrentCodeIndex, Converter={StaticResource StringEqualConverter}, ConverterParameter=5}"/>
+                    <Border Classes.isCurrent="{Binding CurrentCodeIndex, Converter={StaticResource StringEqualConverter}, ConverterParameter=6}"/>
+                    <Border Classes.isCurrent="{Binding CurrentCodeIndex, Converter={StaticResource StringEqualConverter}, ConverterParameter=7}"/>
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+        <Grid IsVisible="{Binding IsVerifing}">
+            <Border Background="{DynamicResource ThemePrimaryAccent}" Opacity="0.1"/>
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="30">
+                <progRing:ProgressRing Width="100"
+                                       Height="100"
+                                       HorizontalAlignment="Center"
+                                       IsActive="{Binding IsVerifing}"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontSize="16" Text="Your input: "/>
+                    <TextBlock FontSize="16" Text="{Binding VerificationCodeString}"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

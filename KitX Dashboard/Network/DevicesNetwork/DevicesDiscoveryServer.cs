@@ -56,9 +56,9 @@ public class DevicesDiscoveryServer
 
     public DevicesDiscoveryServer()
     {
-        Initialize();
+        _ = DevicesOrganizer.Instance;
 
-        DevicesOrganizer.Start();
+        Initialize();
     }
 
     private void Initialize()

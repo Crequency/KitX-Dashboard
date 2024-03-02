@@ -34,6 +34,7 @@
     <x:String x:Key="Text_Public_Fixed">固定</x:String>
     <x:String x:Key="Text_Public_Name">名称</x:String>
     <x:String x:Key="Text_Public_Author">作者</x:String>
+    <x:String x:Key="Text_Public_More">更多</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">信息</x:String>
@@ -111,7 +112,6 @@
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">显示语言</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">云母效果</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Enable">是否启用云母效果?</x:String>
-    <x:String x:Key="Text_Settings_Personalise_MicaEffect_EnableTip">此效果仅限 Windows 11 系统开启</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Opacity">透明度</x:String>
     <x:String x:Key="Text_Settings_Personalise_Palette">调色板</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme">主题</x:String>

@@ -6,8 +6,12 @@ using KitX.Dashboard.Names;
 
 namespace KitX.Dashboard.Managers;
 
-public class FileWatcherManager
+public class FileWatcherManager : ManagerBase
 {
+    private static FileWatcherManager? _instance;
+
+    public static FileWatcherManager Instance => _instance ??= new();
+
     private readonly Dictionary<string, FileWatcher> Watchers = [];
 
     public FileWatcherManager()

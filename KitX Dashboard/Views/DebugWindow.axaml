@@ -5,7 +5,7 @@
         xmlns:converters="using:KitX.Dashboard.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:progRing="clr-namespace:AvaloniaProgressRing;assembly=AvaloniaProgressRing"
+        xmlns:progRing="using:AvaloniaProgressRing"
         Title="Debug Window"
         Width="800"
         Height="600"

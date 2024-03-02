@@ -12,6 +12,7 @@ namespace KitX.Dashboard.Configuration;
 [JsonDerivedType(typeof(PluginsConfig), typeDiscriminator: nameof(PluginsConfig))]
 [JsonDerivedType(typeof(MarketConfig), typeDiscriminator: nameof(MarketConfig))]
 [JsonDerivedType(typeof(AnnouncementConfig), typeDiscriminator: nameof(AnnouncementConfig))]
+[JsonDerivedType(typeof(SecurityConfig), typeDiscriminator: nameof(SecurityConfig))]
 public class ConfigBase
 {
     public string? ConfigFileLocation { get; set; }

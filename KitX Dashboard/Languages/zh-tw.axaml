@@ -12,7 +12,7 @@
     <x:String x:Key="Text_Public_Exit">退出</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">顯示主窗口</x:String>
     <x:String x:Key="Text_Public_ShowAnnouncements">查看公告</x:String>
-    <x:String x:Key="Text_Public_ShowLauncherWindow">Text_Public_ShowLauncherWindow</x:String>
+    <x:String x:Key="Text_Public_ShowLauncherWindow">顯示啟動器</x:String>
     <x:String x:Key="Text_Public_Millisecond">毫秒</x:String>
     <x:String x:Key="Text_Public_Second">秒</x:String>
     <x:String x:Key="Text_Public_Minute">分鐘</x:String>
@@ -34,6 +34,7 @@
     <x:String x:Key="Text_Public_Fixed">固定</x:String>
     <x:String x:Key="Text_Public_Name">名稱</x:String>
     <x:String x:Key="Text_Public_Author">作者</x:String>
+    <x:String x:Key="Text_Public_More">更多</x:String>
     <x:String x:Key="Text_Log_Verbose">詳細</x:String>
     <x:String x:Key="Text_Log_Debug">調試</x:String>
     <x:String x:Key="Text_Log_Information">信息</x:String>
@@ -111,7 +112,6 @@
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">顯示語言</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">雲母效果</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Enable">是否啟用雲母效果?</x:String>
-    <x:String x:Key="Text_Settings_Personalise_MicaEffect_EnableTip">此效果僅限 Windows 11 系統開啟</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Opacity">透明度</x:String>
     <x:String x:Key="Text_Settings_Personalise_Palette">調色板</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme">主題</x:String>

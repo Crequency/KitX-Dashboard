@@ -12,7 +12,7 @@
     <x:String x:Key="Text_Public_Exit">終了する</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">メインウィンドウを表示</x:String>
     <x:String x:Key="Text_Public_ShowAnnouncements">お知らせを見る</x:String>
-    <x:String x:Key="Text_Public_ShowLauncherWindow">Text_Public_ShowLauncherWindow</x:String>
+    <x:String x:Key="Text_Public_ShowLauncherWindow">ランチャーを表示</x:String>
     <x:String x:Key="Text_Public_Millisecond">ミリ秒</x:String>
     <x:String x:Key="Text_Public_Second">2番目</x:String>
     <x:String x:Key="Text_Public_Minute">分</x:String>
@@ -34,6 +34,7 @@
     <x:String x:Key="Text_Public_Fixed">安定</x:String>
     <x:String x:Key="Text_Public_Name">名前</x:String>
     <x:String x:Key="Text_Public_Author">著者</x:String>
+    <x:String x:Key="Text_Public_More">もっと</x:String>
     <x:String x:Key="Text_Log_Verbose">详细</x:String>
     <x:String x:Key="Text_Log_Debug">调试</x:String>
     <x:String x:Key="Text_Log_Information">情報</x:String>
@@ -111,7 +112,6 @@
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">表示言語</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">Mica 効果</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Enable">Mica 効果を有効にするかどうか?</x:String>
-    <x:String x:Key="Text_Settings_Personalise_MicaEffect_EnableTip">この効果は、Windows11 システムでのみ有効になります</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Opacity">透明性</x:String>
     <x:String x:Key="Text_Settings_Personalise_Palette">パレット</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme">テーマ</x:String>

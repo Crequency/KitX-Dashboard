@@ -6,7 +6,7 @@ using SharpHook.Native;
 
 namespace KitX.Dashboard.Managers;
 
-public class KeyHookManager
+public class KeyHookManager : ManagerBase
 {
     private const int keysLimitation = 5;
 

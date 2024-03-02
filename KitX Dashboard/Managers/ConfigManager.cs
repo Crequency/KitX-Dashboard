@@ -144,6 +144,7 @@ public class ConfigManager
             LoadConfigFile<PluginsConfig>();
             LoadConfigFile<MarketConfig>();
             LoadConfigFile<AnnouncementConfig>();
+            LoadConfigFile<SecurityConfig>();
         }, location, catchException: false);
 
         return this;
@@ -179,4 +180,6 @@ public class ConfigManager
     public MarketConfig MarketConfig => GetConfig<MarketConfig>();
 
     public AnnouncementConfig AnnouncementConfig => GetConfig<AnnouncementConfig>();
+
+    public SecurityConfig SecurityConfig => GetConfig<SecurityConfig>();
 }

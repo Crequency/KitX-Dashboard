@@ -34,6 +34,7 @@
     <x:String x:Key="Text_Public_Fixed">Fixed</x:String>
     <x:String x:Key="Text_Public_Name">Name</x:String>
     <x:String x:Key="Text_Public_Author">Author</x:String>
+    <x:String x:Key="Text_Public_More">More</x:String>
     <x:String x:Key="Text_Log_Verbose">Verbose</x:String>
     <x:String x:Key="Text_Log_Debug">Debug</x:String>
     <x:String x:Key="Text_Log_Information">Infomation</x:String>
@@ -111,7 +112,6 @@
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">Display Language</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">Mica Effect</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Enable">Enable Mica Effect?</x:String>
-    <x:String x:Key="Text_Settings_Personalise_MicaEffect_EnableTip">Enable this effect only on Windows 11</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Opacity">Opacity</x:String>
     <x:String x:Key="Text_Settings_Personalise_Palette">Palette</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme">Theme</x:String>

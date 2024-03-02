@@ -12,7 +12,7 @@
     <x:String x:Key="Text_Public_Exit">покидать</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">Показать главное окно</x:String>
     <x:String x:Key="Text_Public_ShowAnnouncements">Посмотреть объявление</x:String>
-    <x:String x:Key="Text_Public_ShowLauncherWindow">Text_Public_ShowLauncherWindow</x:String>
+    <x:String x:Key="Text_Public_ShowLauncherWindow">шоу-пусковая установка</x:String>
     <x:String x:Key="Text_Public_Millisecond">миллисекунда</x:String>
     <x:String x:Key="Text_Public_Second">второй</x:String>
     <x:String x:Key="Text_Public_Minute">минута</x:String>
@@ -34,6 +34,7 @@
     <x:String x:Key="Text_Public_Fixed">стабильный</x:String>
     <x:String x:Key="Text_Public_Name">Имя</x:String>
     <x:String x:Key="Text_Public_Author">Автор</x:String>
+    <x:String x:Key="Text_Public_More">Более</x:String>
     <x:String x:Key="Text_Log_Verbose">подробный</x:String>
     <x:String x:Key="Text_Log_Debug">отладка</x:String>
     <x:String x:Key="Text_Log_Information">Информация</x:String>
@@ -111,7 +112,6 @@
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">язык отображения</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">Эффект слюды</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Enable">Включить ли эффект слюды?</x:String>
-    <x:String x:Key="Text_Settings_Personalise_MicaEffect_EnableTip">Этот эффект включен только в системах Windows 11.</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Opacity">прозрачность</x:String>
     <x:String x:Key="Text_Settings_Personalise_Palette">палитра</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme">тема</x:String>

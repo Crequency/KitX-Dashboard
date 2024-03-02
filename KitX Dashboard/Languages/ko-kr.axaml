@@ -12,7 +12,7 @@
     <x:String x:Key="Text_Public_Exit">그만두다</x:String>
     <x:String x:Key="Text_Public_ShowMainWindow">메인 창 표시</x:String>
     <x:String x:Key="Text_Public_ShowAnnouncements">공지사항 보기</x:String>
-    <x:String x:Key="Text_Public_ShowLauncherWindow">Text_Public_ShowLauncherWindow</x:String>
+    <x:String x:Key="Text_Public_ShowLauncherWindow">런처 표시</x:String>
     <x:String x:Key="Text_Public_Millisecond">밀리초</x:String>
     <x:String x:Key="Text_Public_Second">초</x:String>
     <x:String x:Key="Text_Public_Minute">분</x:String>
@@ -34,6 +34,7 @@
     <x:String x:Key="Text_Public_Fixed">결정된</x:String>
     <x:String x:Key="Text_Public_Name">이름</x:String>
     <x:String x:Key="Text_Public_Author">작가</x:String>
+    <x:String x:Key="Text_Public_More">더</x:String>
     <x:String x:Key="Text_Log_Verbose">상세한</x:String>
     <x:String x:Key="Text_Log_Debug">디버깅</x:String>
     <x:String x:Key="Text_Log_Information">정보</x:String>
@@ -111,7 +112,6 @@
     <x:String x:Key="Text_Settings_Personalise_DisplayLanguage">표시 언어</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect">운모 효과</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Enable">운모 효과 활성화 여부?</x:String>
-    <x:String x:Key="Text_Settings_Personalise_MicaEffect_EnableTip">이 효과는 Windows 11 시스템에서만 활성화됩니다.</x:String>
     <x:String x:Key="Text_Settings_Personalise_MicaEffect_Opacity">투명도</x:String>
     <x:String x:Key="Text_Settings_Personalise_Palette">팔레트</x:String>
     <x:String x:Key="Text_Settings_Personalise_Theme">주제</x:String>

@@ -44,6 +44,11 @@ internal class AppViewModel : ViewModelBase
             await AnouncementManager.CheckNewAnnouncements();
         });
 
+        OpenDebugToolCommand = ReactiveCommand.Create(() =>
+        {
+            ViewInstances.ShowWindow(new DebugWindow());
+        });
+
         PluginLauncherCommand = ReactiveCommand.Create(() =>
         {
             ViewInstances.PluginsLaunchWindow ??= new();
@@ -126,6 +131,8 @@ internal class AppViewModel : ViewModelBase
     internal ReactiveCommand<Unit, Unit>? TrayIconClickedCommand { get; set; }
 
     internal ReactiveCommand<Unit, Task>? ViewLatestAnnouncementsCommand { get; set; }
+
+    internal ReactiveCommand<Unit, Unit>? OpenDebugToolCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? ExitCommand { get; set; }
 
