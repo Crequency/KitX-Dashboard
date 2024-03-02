@@ -29,6 +29,8 @@ internal static class ConstantTable
 
     internal static string ThirdPartLicenseFilePath => thirdPartLicenseFilePath.GetFullPath();
 
+    internal static string? ExchangeDeviceKeyCode;
+
     internal static int DevicesServerPort = -1;
 
     internal static int PluginsServerPort = -1;

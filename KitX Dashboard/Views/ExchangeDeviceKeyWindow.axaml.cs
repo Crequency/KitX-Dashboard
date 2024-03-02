@@ -30,7 +30,10 @@ public partial class ExchangeDeviceKeyWindow : Window
 
     public ExchangeDeviceKeyWindow OnCancel(Action action)
     {
-        _ = viewModel.OnCancel(action);
+        _ = viewModel
+            .OnCancel(action)
+            .OnCancel(Close)
+            ;
 
         return this;
     }
@@ -45,7 +48,7 @@ public partial class ExchangeDeviceKeyWindow : Window
             Avalonia.Controls.WindowStartupLocation.CenterScreen
         );
 
-        await box.ShowWindowDialogAsync(this);
+        await box.ShowAsPopupAsync(this);
 
         return this;
     }
@@ -53,6 +56,20 @@ public partial class ExchangeDeviceKeyWindow : Window
     public ExchangeDeviceKeyWindow ReturnToEdit()
     {
         viewModel.Backspace(false);
+
+        return this;
+    }
+
+    public ExchangeDeviceKeyWindow Log(string info)
+    {
+        viewModel.Logs.Add(info);
+
+        return this;
+    }
+
+    public ExchangeDeviceKeyWindow ClearLogs()
+    {
+        viewModel.Logs.Clear();
 
         return this;
     }

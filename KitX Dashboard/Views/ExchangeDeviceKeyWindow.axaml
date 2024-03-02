@@ -39,12 +39,13 @@
                            HorizontalAlignment="Center"
                            FontSize="24"
                            FontWeight="Bold"
-                           Text="Exchanging Device Key"/>
+                           Text="{DynamicResource Text_ExchangeDeviceKeyWindow_Title}"/>
                 <TextBlock Margin="30"
                            HorizontalAlignment="Center"
                            FontSize="16"
                            LineSpacing="10"
-                           Text="Verification code displayed on the device is needed for exchanging key. If this wasn't you, please check your device's security."
+                           Text="{DynamicResource Text_ExchangeDeviceKeyWindow_Description}"
+                           TextAlignment="Center"
                            TextWrapping="WrapWithOverflow"/>
             </StackPanel>
             <StackPanel HorizontalAlignment="Right"
@@ -53,8 +54,8 @@
                         Orientation="Horizontal"
                         Spacing="10">
                 <Button Padding="20,5,20,6"
-                        Command="{Binding}"
-                        Content="Cancel"/>
+                        Command="{Binding CancelCommand}"
+                        Content="{DynamicResource Text_Public_Cancel}"/>
             </StackPanel>
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Top"
@@ -105,13 +106,13 @@
             <Border Background="{DynamicResource ThemePrimaryAccent}" Opacity="0.1"/>
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Spacing="30">
+                        Spacing="20">
                 <progRing:ProgressRing Width="100"
                                        Height="100"
                                        HorizontalAlignment="Center"
                                        IsActive="{Binding IsVerifing}"/>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock FontSize="16" Text="Your input: "/>
+                    <TextBlock FontSize="16" Text="{DynamicResource Text_ExchangeDeviceKeyWindow_YourInput}"/>
                     <TextBlock FontSize="16" Text="{Binding VerificationCodeString}"/>
                 </StackPanel>
             </StackPanel>

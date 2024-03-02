@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Reactive;
+using Common.BasicHelper.Utils.Extensions;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 
 internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
 {
-    private Action? OnCancelAction;
+    private readonly Queue<Action> OnCancelActions = [];
 
     public ExchangeDeviceKeyWindowViewModel()
     {
@@ -19,7 +22,7 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
     {
         CancelCommand = ReactiveCommand.Create(() =>
         {
-            OnCancelAction?.Invoke();
+            OnCancelActions.ForEach(x => x.Invoke());
         });
     }
 
@@ -39,6 +42,8 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
     public string VerificationCodeString => string.Join(null, VerificationCode);
 
     public string CurrentCodeIndex => updatingIndex.ToString();
+
+    public ObservableCollection<string> Logs { get; } = [];
 
     private void Update()
     {
@@ -90,7 +95,7 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
 
     internal ExchangeDeviceKeyWindowViewModel OnCancel(Action action)
     {
-        OnCancelAction = action;
+        OnCancelActions.Enqueue(action);
 
         return this;
     }

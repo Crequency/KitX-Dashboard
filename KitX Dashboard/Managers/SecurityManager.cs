@@ -105,4 +105,60 @@ public class SecurityManager : ManagerBase
 
         return sb.ToString();
     }
+
+    private static string ExpandKey(string key, int length)
+    {
+        var expandedKey = key.Length <= length ? key : key[..length];
+
+        var expandIndex = 0;
+
+        while (expandedKey.Length < length)
+        {
+            if (expandIndex == key.Length) expandIndex = 0;
+
+            expandedKey += key[expandIndex];
+
+            expandIndex++;
+        }
+
+        return expandedKey;
+    }
+
+    public static string AesEncrypt(string source, string key)
+    {
+        var data = source.FromUTF8();
+
+        var expandedKey = ExpandKey(key, 16);
+
+        var keyData = expandedKey.FromUTF8();
+        var iv = expandedKey.FromUTF8();
+
+        using var aes = Aes.Create();
+
+        aes.Key = keyData;
+        aes.IV = iv;
+
+        var result = aes.EncryptCbc(data, iv, PaddingMode.ISO10126);
+
+        return Convert.ToBase64String(result);
+    }
+
+    public static string AesDecrypt(string source, string key, bool isSourceInBase64 = true)
+    {
+        var data = isSourceInBase64 ? Convert.FromBase64String(source) : source.FromUTF8();
+
+        var expandedKey = ExpandKey(key, 16);
+
+        var keyData = expandedKey.FromUTF8();
+        var iv = expandedKey.FromUTF8();
+
+        using var aes = Aes.Create();
+
+        aes.Key = keyData;
+        aes.IV = iv;
+
+        var result = aes.DecryptCbc(data, iv, PaddingMode.ISO10126);
+
+        return result.ToUTF8();
+    }
 }

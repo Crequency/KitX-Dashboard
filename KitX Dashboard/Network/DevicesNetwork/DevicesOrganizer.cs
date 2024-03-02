@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
-using Avalonia.Threading;
 using KitX.Dashboard.Configuration;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Device;
-using MsBox.Avalonia;
 using Serilog;
 using Timer = System.Timers.Timer;
 
@@ -30,8 +27,6 @@ internal class DevicesOrganizer : ConfigFetcher
     private readonly object AddDeviceCard2ViewLock = new();
 
     private bool KeepCheckAndRemoveTaskRunning = false;
-
-    private List<string> SignedDeviceTokens { get; } = [];
 
     public DevicesOrganizer()
     {
@@ -273,39 +268,5 @@ internal class DevicesOrganizer : ConfigFetcher
         {
             ConstantTable.IsMainMachine = true;
         }
-    }
-
-    internal bool IsDeviceTokenExist(string token) => SignedDeviceTokens.Contains(token);
-
-    internal void AddDeviceToken(string token) => SignedDeviceTokens.Add(token);
-
-    public void RequireAcceptDeviceKey
-    (
-        DeviceLocator locator,
-        string verifyCodeSHA1,
-        string deviceKey
-    )
-    {
-        Dispatcher.UIThread.Post(() =>
-        {
-            var window = new ExchangeDeviceKeyWindow();
-
-            ViewInstances.ShowWindow(
-                window.OnVerificationCodeEntered(async code =>
-                {
-                    if (verifyCodeSHA1.Equals(SecurityManager.GetSHA1(code)))
-                    {
-
-                    }
-                    else
-                    {
-                        await window.OnErrorDecodeAsync();
-                    }
-                }),
-                ViewInstances.MainWindow,
-                false,
-                true
-            );
-        });
     }
 }
