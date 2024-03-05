@@ -7,11 +7,12 @@ using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Device;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
-namespace KitX.Dashboard.Network.DevicesNetwork.DevicesServerControllers;
+namespace KitX.Dashboard.Network.DevicesNetwork.DevicesServerControllers.V1;
 
 [ApiController]
-[Route("Api/[controller]")]
+[Route("Api/V1/[controller]")]
 [ApiExplorerSettings(GroupName = "V1")]
 public class DeviceController : ControllerBase
 {
@@ -26,14 +27,20 @@ public class DeviceController : ControllerBase
     }
 
     [ApiExplorerSettings(GroupName = "V1")]
-    [HttpPost("ExchangeKey", Name = nameof(ExchangeKey))]
-    public IActionResult ExchangeKey([FromQuery] string verifyCodeSHA1, [FromQuery] int port, [FromBody] string deviceKey)
+    [HttpPost(nameof(ExchangeKey), Name = nameof(ExchangeKey))]
+    public IActionResult ExchangeKey([FromQuery] string verifyCodeSHA1, [FromQuery] string address, [FromBody] string deviceKey)
     {
+        if (ConstantTable.IsExchangingDeviceKey) return BadRequest("Remote device is exchanging device key.");
+
         if (SecurityManager.Instance.LocalDeviceKey is null) return BadRequest("Remote device didn't set up device key.");
+
+        ConstantTable.IsExchangingDeviceKey = true;
 
         Dispatcher.UIThread.Post(() =>
         {
             var window = new ExchangeDeviceKeyWindow();
+
+            EventService.OnReceiveCancelExchangingDeviceKey += () => Dispatcher.UIThread.Post(window.Close);
 
             ViewInstances.ShowWindow(
                 window.OnVerificationCodeEntered(async code =>
@@ -47,13 +54,13 @@ public class DeviceController : ControllerBase
                         if (deviceKeyInstance is null) await window.OnErrorDecodeAsync();
                         else
                         {
-                            var sender = deviceKeyInstance.Device;
-
-                            var url = $"http://{sender.IPv4}:{port}/Api/Device/ExchangeKeyBack";
+                            var url = $"http://{address}/Api/V1/Device/{nameof(ExchangeKeyBack)}";
 
                             if (SecurityManager.Instance.LocalDeviceKey is null)
                             {
                                 await window.OnErrorDecodeAsync();
+
+                                ConstantTable.IsExchangingDeviceKey = false;
 
                                 return;
                             }
@@ -68,6 +75,8 @@ public class DeviceController : ControllerBase
                             if (currentKey is null)
                             {
                                 await window.OnErrorDecodeAsync();
+
+                                ConstantTable.IsExchangingDeviceKey = false;
 
                                 return;
                             }
@@ -92,6 +101,8 @@ public class DeviceController : ControllerBase
                                 SecurityManager.Instance.AddDeviceKey(deviceKeyInstance);
 
                                 window.Success();
+
+                                ConstantTable.IsExchangingDeviceKey = false;
                             }
                             else await window.OnErrorDecodeAsync(
                                 new StringBuilder()
@@ -106,10 +117,22 @@ public class DeviceController : ControllerBase
                     {
                         await window.OnErrorDecodeAsync();
                     }
+                }).OnCancel(async () =>
+                {
+                    window.Close();
+
+                    ConstantTable.IsExchangingDeviceKey = false;
+
+                    var url = $"http://{address}/Api/V1/Device/{nameof(CancelExchangingKey)}";
+
+                    using var http = new HttpClient();
+
+                    var response = await http.PostAsync(url, null);
+
+                    Log.Information($"In {nameof(DeviceController)}: Requested {url} with responsed {response.StatusCode} - {response}");
                 }),
                 ViewInstances.MainWindow,
-                false,
-                true
+                false
             );
         });
 
@@ -117,7 +140,7 @@ public class DeviceController : ControllerBase
     }
 
     [ApiExplorerSettings(GroupName = "V1")]
-    [HttpPost("ExchangeKeyBack", Name = nameof(ExchangeKeyBack))]
+    [HttpPost(nameof(ExchangeKeyBack), Name = nameof(ExchangeKeyBack))]
     public IActionResult ExchangeKeyBack([FromBody] string deviceKey)
     {
         if (ConstantTable.ExchangeDeviceKeyCode is null) return BadRequest();
@@ -131,6 +154,19 @@ public class DeviceController : ControllerBase
         SecurityManager.Instance.AddDeviceKey(deviceKeyInstance);
 
         EventService.Invoke(nameof(EventService.OnAcceptingDeviceKey), [ConstantTable.ExchangeDeviceKeyCode]);
+
+        return Ok();
+    }
+
+    [ApiExplorerSettings(GroupName = "V1")]
+    [HttpPost(nameof(CancelExchangingKey), Name = nameof(CancelExchangingKey))]
+    public IActionResult CancelExchangingKey()
+    {
+        if (ConstantTable.IsExchangingDeviceKey == false) return BadRequest("Remote device isn't exchanging device key.");
+
+        EventService.Invoke(nameof(EventService.OnReceiveCancelExchangingDeviceKey));
+
+        ConstantTable.IsExchangingDeviceKey = false;
 
         return Ok();
     }

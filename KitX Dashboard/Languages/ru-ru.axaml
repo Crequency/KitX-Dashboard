@@ -104,6 +104,7 @@
     <x:String x:Key="Text_Device_Tip_Authorized">Устройство получило взаимное разрешение с данным узлом</x:String>
     <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">Вы не можете удалить локальный ключ</x:String>
     <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">Неожиданная ошибка системы безопасности</x:String>
+    <x:String x:Key="Text_Device_Tip_ExchangingDeviceKey">У вас есть текущий обмен ключами</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">Количество онлайн-плагинов:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">MAC-адрес не получен</sys:String>
     <x:String x:Key="Text_Device_Context_Security">Text_Device_Context_Authorization</x:String>

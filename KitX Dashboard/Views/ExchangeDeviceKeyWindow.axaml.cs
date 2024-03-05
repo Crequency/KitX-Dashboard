@@ -24,6 +24,8 @@ public partial class ExchangeDeviceKeyWindow : Window
         InitializeComponent();
 
         DataContext = viewModel;
+
+        EventService.OnExiting += Close;
     }
 
     public ExchangeDeviceKeyWindow OnVerificationCodeEntered(Action<string> action)

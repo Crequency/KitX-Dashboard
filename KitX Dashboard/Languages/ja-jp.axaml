@@ -104,6 +104,7 @@
     <x:String x:Key="Text_Device_Tip_Authorized">このデバイスは、このホストと相互に認証されました</x:String>
     <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">ローカルキーを削除することはできません</x:String>
     <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">セキュリティシステムの予期しないエラー</x:String>
+    <x:String x:Key="Text_Device_Tip_ExchangingDeviceKey">現在、キー交換が進行中です</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">利用可能なプラグインの数:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">MACアドレスが取得できません</sys:String>
     <x:String x:Key="Text_Device_Context_Security">Sekurity</x:String>

@@ -65,8 +65,7 @@
                         Spacing="10">
                 <Button Padding="20,5,20,6"
                         Command="{Binding CancelCommand}"
-                        Content="{DynamicResource Text_Public_Cancel}"
-                        IsVisible="{Binding !IsDisplayingVerificationCode}"/>
+                        Content="{DynamicResource Text_Public_Cancel}"/>
             </StackPanel>
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Top"
@@ -132,7 +131,9 @@
                 </StackPanel>
             </StackPanel>
         </Grid>
-        <Grid Background="{DynamicResource ThemePrimaryAccent}" Opacity="{Binding SuccessedPanelOpacity}">
+        <Grid Background="{DynamicResource ThemePrimaryAccent}"
+              IsHitTestVisible="False"
+              Opacity="{Binding SuccessedPanelOpacity}">
             <Grid.Transitions>
                 <Transitions>
                     <DoubleTransition Property="Opacity" Duration="0:0:0.3">

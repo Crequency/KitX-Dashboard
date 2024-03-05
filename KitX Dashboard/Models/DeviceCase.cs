@@ -1,18 +1,21 @@
 ﻿using System;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Reactive;
 using System.Text;
 using System.Text.Json;
+using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Network.DevicesNetwork;
+using KitX.Dashboard.Network.DevicesNetwork.DevicesServerControllers.V1;
+using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Device;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
+using Serilog;
 
 namespace KitX.Dashboard.Models;
 
@@ -32,6 +35,20 @@ public class DeviceCase : ViewModelBase
         AuthorizeAndExchangeDeviceKeyCommand = ReactiveCommand.Create<DeviceInfo>(
             async info =>
             {
+                if (ConstantTable.IsExchangingDeviceKey)
+                {
+                    var box = MessageBoxManager.GetMessageBoxStandard(
+                        Translate("Text_Log_Warning"),
+                        Translate("Text_Device_Tip_ExchangingDeviceKey"),
+                        ButtonEnum.Ok,
+                        Icon.Warning
+                    );
+
+                    return;
+                }
+
+                ConstantTable.IsExchangingDeviceKey = true;
+
                 var keyData = new byte[8];
 
                 var random = new Random();
@@ -52,6 +69,8 @@ public class DeviceCase : ViewModelBase
 
                     await box.ShowWindowAsync();
 
+                    ConstantTable.IsExchangingDeviceKey = false;
+
                     return;
                 }
 
@@ -62,21 +81,42 @@ public class DeviceCase : ViewModelBase
                     RsaPrivateKeyModulus = SecurityManager.Instance.LocalDeviceKey.RsaPrivateKeyModulus
                 };
 
-                var window = new ExchangeDeviceKeyWindow().DisplayVerificationCode(key);
-
-                window.Show();
-
                 var localKeyJson = JsonSerializer.Serialize(localKey);
 
                 var localKeyEncrypted = SecurityManager.AesEncrypt(localKeyJson, key);
 
-                var port = DevicesDiscoveryServer.Instance.DefaultDeviceInfo.DevicesServerPort;
+                var sender = DevicesDiscoveryServer.Instance.DefaultDeviceInfo;
+
+                var address = $"{sender.Device.IPv4}:{sender.DevicesServerPort}";
+
+                var target = $"{info.Device.IPv4}:{info.DevicesServerPort}";
 
                 var sha1 = SecurityManager.GetSHA1(key);
 
-                var url = $"http://{info.Device.IPv4}:{info.DevicesServerPort}/Api/Device/ExchangeKey?verifyCodeSHA1={sha1}&port={port}";
+                var url = $"http://{target}/Api/V1/Device/{nameof(DeviceController.ExchangeKey)}?verifyCodeSHA1={sha1}&address={address}";
 
                 ConstantTable.ExchangeDeviceKeyCode = key;
+
+                var window = new ExchangeDeviceKeyWindow().DisplayVerificationCode(key);
+
+                window.OnCancel(async () =>
+                {
+                    window.Close();
+
+                    ConstantTable.IsExchangingDeviceKey = false;
+
+                    var url = $"http://{target}/Api/V1/Device/{nameof(DeviceController.CancelExchangingKey)}";
+
+                    using var http = new HttpClient();
+
+                    var response = await http.PostAsync(url, null);
+
+                    Log.Information($"In {nameof(DeviceController)}: Requested {url} with responsed {response.StatusCode} - {response}");
+                });
+
+                ViewInstances.ShowWindow(window);
+
+                EventService.OnReceiveCancelExchangingDeviceKey += () => Dispatcher.UIThread.Post(window.Close);
 
                 using var http = new HttpClient();
 
@@ -109,6 +149,8 @@ public class DeviceCase : ViewModelBase
                     await box.ShowWindowAsync();
 
                     window.Close();
+
+                    ConstantTable.IsExchangingDeviceKey = false;
                 }
             },
             this.WhenAnyValue(x => x.IsAuthorized, y => y == false)

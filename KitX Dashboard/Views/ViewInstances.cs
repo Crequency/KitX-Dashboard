@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Controls;
+using DynamicData;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
@@ -28,6 +29,8 @@ public static class ViewInstances
         EventService.OnExiting += window.Close;
 
         Windows.Add(window);
+
+        window.Closed += (_, _) => Windows.Remove(window);
 
         if (showDialog && owner is not null)
             window.ShowDialog(owner);

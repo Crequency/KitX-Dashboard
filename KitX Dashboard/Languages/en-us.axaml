@@ -104,6 +104,7 @@
     <x:String x:Key="Text_Device_Tip_Authorized">The device has been mutually authorized with this host</x:String>
     <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">You cannot remove the local device key</x:String>
     <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">Security System Unexpected Error</x:String>
+    <x:String x:Key="Text_Device_Tip_ExchangingDeviceKey">You have an ongoing key exchange</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">Enabled Plugins Count:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">MAC address not obtained</sys:String>
     <x:String x:Key="Text_Device_Context_Security">Security</x:String>

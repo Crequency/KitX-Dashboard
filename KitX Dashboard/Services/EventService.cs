@@ -82,6 +82,11 @@ public static class EventService
     public static event OnActivitiesUpdatedHandler OnActivitiesUpdated = new(() => { });
 
 
+    public delegate void OnReceiveCancelExchangingDeviceKeyHandler();
+
+    public static event OnReceiveCancelExchangingDeviceKeyHandler OnReceiveCancelExchangingDeviceKey = new(() => ConstantTable.IsExchangingDeviceKey = false);
+
+
     public delegate void OnExitingHandler();
 
     public static event OnExitingHandler OnExiting = new(() => { });

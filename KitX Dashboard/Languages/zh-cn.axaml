@@ -104,6 +104,7 @@
     <x:String x:Key="Text_Device_Tip_Authorized">该设备已和本机互相授权</x:String>
     <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">你不能移除本机密钥</x:String>
     <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">安全系统意外错误</x:String>
+    <x:String x:Key="Text_Device_Tip_ExchangingDeviceKey">您有一个正在进行中的交换</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">在线插件数量:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">未获取到MAC地址</sys:String>
     <x:String x:Key="Text_Device_Context_Security">安全</x:String>

@@ -104,6 +104,7 @@
     <x:String x:Key="Text_Device_Tip_Authorized">이 장치는 본 기기와 상호 권한이 부여되었습니다</x:String>
     <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">로컬 키를 제거할 수 없습니다</x:String>
     <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">보안 시스템 예기치 않은 오류</x:String>
+    <x:String x:Key="Text_Device_Tip_ExchangingDeviceKey">진행 중인 키 교환이 있습니다</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">온라인 플러그인 수:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">MAC 주소를 얻지 못했습니다</sys:String>
     <x:String x:Key="Text_Device_Context_Security">보안</x:String>

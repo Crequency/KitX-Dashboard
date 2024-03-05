@@ -104,6 +104,7 @@
     <x:String x:Key="Text_Device_Tip_Authorized">Le dispositif a été mutuellement autorisé avec cet hôte</x:String>
     <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">Vous ne pouvez pas supprimer la clé locale</x:String>
     <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">Erreur Inattendue du Système de Sécurité</x:String>
+    <x:String x:Key="Text_Device_Tip_ExchangingDeviceKey">Vous avez un échange de clés en cours</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">Nombre de plugins en ligne:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">Adresse MAC non obtenue</sys:String>
     <x:String x:Key="Text_Device_Context_Security">Sécurité</x:String>

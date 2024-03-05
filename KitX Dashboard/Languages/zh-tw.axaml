@@ -104,6 +104,7 @@
     <x:String x:Key="Text_Device_Tip_Authorized">本裝置已與本機互相授權</x:String>
     <x:String x:Key="Text_Device_Tip_DeleteYourSelfError">您無法移除本機的金鑰</x:String>
     <x:String x:Key="Text_Device_Tip_SecuritySystemFailed">安全系統意外錯誤</x:String>
+    <x:String x:Key="Text_Device_Tip_ExchangingDeviceKey">您有一個正在進行中的金鑰交換</x:String>
     <sys:String x:Key="Text_Device_PluginsCount">在綫插件數量:</sys:String>
     <sys:String x:Key="Text_Device_NoMacAddress">未獲取到MAC地址</sys:String>
     <x:String x:Key="Text_Device_Context_Security">Text_Device_Context_Authorization</x:String>
