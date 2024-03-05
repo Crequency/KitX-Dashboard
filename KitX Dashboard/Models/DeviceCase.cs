@@ -101,7 +101,7 @@ public class DeviceCase : ViewModelBase
 
                 window.OnCancel(async () =>
                 {
-                    window.Close();
+                    window.Canceled();
 
                     ConstantTable.IsExchangingDeviceKey = false;
 
@@ -116,7 +116,7 @@ public class DeviceCase : ViewModelBase
 
                 ViewInstances.ShowWindow(window);
 
-                EventService.OnReceiveCancelExchangingDeviceKey += () => Dispatcher.UIThread.Post(window.Close);
+                EventService.OnReceiveCancelExchangingDeviceKey += () => Dispatcher.UIThread.Post(() => window.Canceled());
 
                 using var http = new HttpClient();
 

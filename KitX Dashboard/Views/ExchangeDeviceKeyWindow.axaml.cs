@@ -115,11 +115,30 @@ public partial class ExchangeDeviceKeyWindow : Window
         return this;
     }
 
+    public ExchangeDeviceKeyWindow Canceled()
+    {
+        viewModel.CanceledPanelOpacity = 1.0;
+
+        var timer = new Timer(2 * 1000);
+
+        timer.Elapsed += (_, _) =>
+        {
+            Dispatcher.UIThread.Post(Close);
+
+            timer.Stop();
+            timer.Dispose();
+        };
+
+        timer.Start();
+
+        return this;
+    }
+
     public ExchangeDeviceKeyWindow Success()
     {
         viewModel.SuccessedPanelOpacity = 1.0;
 
-        var timer = new Timer(3 * 1000);
+        var timer = new Timer(2 * 1000);
 
         timer.Elapsed += (_, _) =>
         {

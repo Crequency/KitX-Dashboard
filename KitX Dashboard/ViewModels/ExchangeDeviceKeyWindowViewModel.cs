@@ -76,6 +76,14 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref successedPanelOpacity, value);
     }
 
+    private double canceledPanelOpacity = 0.0;
+
+    public double CanceledPanelOpacity
+    {
+        get => canceledPanelOpacity;
+        set => this.RaiseAndSetIfChanged(ref canceledPanelOpacity, value);
+    }
+
     public string CurrentCodeIndex => updatingIndex.ToString();
 
     public ObservableCollection<string> Logs { get; } = [];

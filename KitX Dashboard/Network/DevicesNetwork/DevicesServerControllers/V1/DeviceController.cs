@@ -40,7 +40,7 @@ public class DeviceController : ControllerBase
         {
             var window = new ExchangeDeviceKeyWindow();
 
-            EventService.OnReceiveCancelExchangingDeviceKey += () => Dispatcher.UIThread.Post(window.Close);
+            EventService.OnReceiveCancelExchangingDeviceKey += () => Dispatcher.UIThread.Post(() => window.Canceled());
 
             ViewInstances.ShowWindow(
                 window.OnVerificationCodeEntered(async code =>
@@ -119,7 +119,7 @@ public class DeviceController : ControllerBase
                     }
                 }).OnCancel(async () =>
                 {
-                    window.Close();
+                    window.Canceled();
 
                     ConstantTable.IsExchangingDeviceKey = false;
 

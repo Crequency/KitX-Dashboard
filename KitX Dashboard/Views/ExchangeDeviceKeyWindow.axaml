@@ -143,8 +143,8 @@
                     </DoubleTransition>
                 </Transitions>
             </Grid.Transitions>
-            <icon:MaterialIcon Width="50"
-                               Height="50"
+            <icon:MaterialIcon Width="70"
+                               Height="70"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                Kind="CheckCircle">
@@ -152,6 +152,31 @@
                     <LinearGradientBrush>
                         <GradientStop Offset="0" Color="#79F1A4"/>
                         <GradientStop Offset="1" Color="#0E5CAD"/>
+                    </LinearGradientBrush>
+                </icon:MaterialIcon.Foreground>
+            </icon:MaterialIcon>
+        </Grid>
+        <Grid Background="{DynamicResource ThemePrimaryAccent}"
+              IsHitTestVisible="False"
+              Opacity="{Binding CanceledPanelOpacity}">
+            <Grid.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.3">
+                        <DoubleTransition.Easing>
+                            <CubicEaseInOut/>
+                        </DoubleTransition.Easing>
+                    </DoubleTransition>
+                </Transitions>
+            </Grid.Transitions>
+            <icon:MaterialIcon Width="70"
+                               Height="70"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Kind="CloseCircle">
+                <icon:MaterialIcon.Foreground>
+                    <LinearGradientBrush>
+                        <GradientStop Offset="0" Color="#F05F57"/>
+                        <GradientStop Offset="1" Color="#360940"/>
                     </LinearGradientBrush>
                 </icon:MaterialIcon.Foreground>
             </icon:MaterialIcon>
