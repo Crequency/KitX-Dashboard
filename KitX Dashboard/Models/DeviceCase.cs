@@ -172,6 +172,8 @@ public class DeviceCase : ViewModelBase
 
                     return;
                 }
+
+                SecurityManager.Instance.RemoveDeviceKey(info);
             },
             this.WhenAnyValue(x => x.IsAuthorized)
         );

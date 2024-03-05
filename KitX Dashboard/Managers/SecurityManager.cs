@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Common.BasicHelper.Utils.Extensions;
+using DynamicData;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Shared.CSharp.Device;
@@ -69,6 +70,19 @@ public class SecurityManager : ManagerBase
     public SecurityManager AddDeviceKey(DeviceKey deviceKey)
     {
         SecurityConfig.DeviceKeys.Add(deviceKey);
+
+        SecurityConfig.Save(SecurityConfig.ConfigFileLocation!);
+
+        return this;
+    }
+
+    public SecurityManager RemoveDeviceKey(DeviceInfo deviceInfo)
+    {
+        SecurityConfig.DeviceKeys.RemoveMany(
+            SecurityConfig.DeviceKeys.Where(
+                x => x.Device.IsSameDevice(deviceInfo.Device)
+            )
+        );
 
         SecurityConfig.Save(SecurityConfig.ConfigFileLocation!);
 
