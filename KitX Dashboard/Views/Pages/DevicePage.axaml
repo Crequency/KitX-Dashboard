@@ -109,12 +109,16 @@
                                                                DockPanel.Dock="Left"
                                                                Kind="{Binding DeviceInfo.DeviceOSType, Converter={StaticResource OperatingSystemToIconConverter}}"/>
                                             <DockPanel Margin="10,0,0,0">
-                                                <TextBlock DockPanel.Dock="Top"
+                                                <TextBlock MaxWidth="220"
+                                                           HorizontalAlignment="Left"
+                                                           DockPanel.Dock="Top"
                                                            FontSize="20"
-                                                           Text="{Binding DeviceInfo.Device.DeviceName, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=18}"
+                                                           Text="{Binding DeviceInfo.Device.DeviceName}"
                                                            ToolTip.Tip="{Binding DeviceInfo.Device.DeviceName}"/>
-                                                <TextBlock FontSize="14"
-                                                           Text="{Binding DeviceInfo.DeviceOSVersion, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=34}"
+                                                <TextBlock MaxHeight="220"
+                                                           HorizontalAlignment="Left"
+                                                           FontSize="14"
+                                                           Text="{Binding DeviceInfo.DeviceOSVersion}"
                                                            ToolTip.Tip="{Binding DeviceInfo.DeviceOSVersion}"/>
                                             </DockPanel>
                                         </DockPanel>
@@ -181,47 +185,35 @@
                                                 <Setter Property="VerticalAlignment" Value="Center"/>
                                             </Style>
                                         </StackPanel.Styles>
-                                        <Grid Width="20"
-                                              Height="20"
-                                              ToolTip.Tip="{Binding ConnectionToken}">
-                                            <Border Width="20"
-                                                    Height="20"
-                                                    BorderThickness="2"
-                                                    Classes.authorized="{Binding IsAuthorized}">
-                                                <Border.Styles>
-                                                    <Style Selector="Border.authorized">
-                                                        <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
-                                                    </Style>
-                                                </Border.Styles>
-                                                <Border.Transitions>
-                                                    <Transitions>
-                                                        <BrushTransition Property="BorderBrush" Duration="0:0:0.2">
-                                                            <BrushTransition.Easing>
-                                                                <CubicEaseInOut/>
-                                                            </BrushTransition.Easing>
-                                                        </BrushTransition>
-                                                    </Transitions>
-                                                </Border.Transitions>
-                                            </Border>
-                                            <Border Width="10"
-                                                    Height="10"
-                                                    Classes.connected="{Binding IsConnected}">
-                                                <Border.Styles>
-                                                    <Style Selector="Border.connected">
-                                                        <Setter Property="Background" Value="{DynamicResource ThemePrimaryAccent}"/>
-                                                    </Style>
-                                                </Border.Styles>
-                                                <Border.Transitions>
-                                                    <Transitions>
-                                                        <BrushTransition Property="Background" Duration="0:0:0.2">
-                                                            <BrushTransition.Easing>
-                                                                <CubicEaseInOut/>
-                                                            </BrushTransition.Easing>
-                                                        </BrushTransition>
-                                                    </Transitions>
-                                                </Border.Transitions>
-                                            </Border>
-                                        </Grid>
+                                        <Border Width="15"
+                                                Height="15"
+                                                BorderThickness="2"
+                                                Classes.authorized="{Binding IsAuthorized}"
+                                                Classes.connected="{Binding IsConnected}"
+                                                ToolTip.Tip="{Binding ConnectionToken}">
+                                            <Border.Styles>
+                                                <Style Selector="Border.authorized">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+                                                </Style>
+                                                <Style Selector="Border.connected">
+                                                    <Setter Property="Background" Value="{DynamicResource ThemePrimaryAccent}"/>
+                                                </Style>
+                                            </Border.Styles>
+                                            <Border.Transitions>
+                                                <Transitions>
+                                                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2">
+                                                        <BrushTransition.Easing>
+                                                            <CubicEaseInOut/>
+                                                        </BrushTransition.Easing>
+                                                    </BrushTransition>
+                                                    <BrushTransition Property="Background" Duration="0:0:0.2">
+                                                        <BrushTransition.Easing>
+                                                            <CubicEaseInOut/>
+                                                        </BrushTransition.Easing>
+                                                    </BrushTransition>
+                                                </Transitions>
+                                            </Border.Transitions>
+                                        </Border>
                                     </StackPanel>
                                 </Grid>
                             </Button>
