@@ -30,10 +30,8 @@
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
-                <TextBlock Classes="Font" Text="{Binding DevicesCount}"/>
-                <TextBlock Margin="5,0,0,0"
-                           Classes="Font"
-                           Text="{DynamicResource Text_Device_Tip_Detected}"/>
+                <TextBlock Text="{Binding DevicesCount}"/>
+                <TextBlock Margin="5,0,0,0" Text="{DynamicResource Text_Device_Tip_Detected}"/>
             </StackPanel>
 
             <StackPanel Margin="0,0,20,0"
@@ -71,6 +69,7 @@
                         <DataTemplate>
                             <Button Width="340"
                                     Margin="10"
+                                    BorderThickness="3"
                                     Classes.isCurrentDevice="{Binding IsCurrentDevice}">
                                 <Button.Styles>
                                     <Style Selector="Button.isCurrentDevice">
@@ -127,6 +126,7 @@
                                                   VerticalAlignment="Center"
                                                   DockPanel.Dock="Right">
                                                 <Button BorderBrush="{DynamicResource ThemePrimaryAccent}"
+                                                        BorderThickness="2"
                                                         Content="{DynamicResource Text_Device_Type_Master}"
                                                         FontSize="18"
                                                         IsVisible="{Binding DeviceInfo.IsMainDevice}"

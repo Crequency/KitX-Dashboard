@@ -268,7 +268,7 @@ public class DeviceCase : ViewModelBase
 
     public bool IsAuthorized => SecurityManager.IsDeviceAuthorized(DeviceInfo.Device);
 
-    public bool IsConnected => IsCurrentDevice || DevicesServer.Instance.IsDeviceSignedIn(DeviceInfo.Device) || ConnectionToken is not null;
+    public bool IsConnected => DevicesServer.Instance.IsDeviceSignedIn(DeviceInfo.Device) || ConnectionToken is not null;
 
     public bool IsCurrentDevice => DeviceInfo.IsCurrentDevice();
 
