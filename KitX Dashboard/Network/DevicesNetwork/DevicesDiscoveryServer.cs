@@ -416,10 +416,6 @@ public static class DevicesDiscoveryServerExtensions
 
     public static bool IsSameDevice(this DeviceInfo info, DeviceInfo target) => info.Device.IsSameDevice(target.Device);
 
-    public static bool IsSameDevice(this DeviceLocator current, DeviceLocator target)
-        => current.DeviceName.Equals(target.DeviceName)
-        && current.MacAddress.Equals(target.MacAddress);
-
     public static void UpdateTo(this DeviceInfo info, DeviceInfo target)
     {
         var type = typeof(DeviceInfo);

@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Avalonia.Threading;
@@ -65,12 +66,7 @@ public class DeviceController : ControllerBase
                                 return;
                             }
 
-                            var currentKey = new DeviceKey()
-                            {
-                                Device = SecurityManager.Instance.LocalDeviceKey.Device,
-                                RsaPrivateKeyD = SecurityManager.Instance.LocalDeviceKey.RsaPrivateKeyD,
-                                RsaPrivateKeyModulus = SecurityManager.Instance.LocalDeviceKey.RsaPrivateKeyModulus,
-                            };
+                            var currentKey = SecurityManager.Instance.GetPrivateDeviceKey();
 
                             if (currentKey is null)
                             {
@@ -169,5 +165,29 @@ public class DeviceController : ControllerBase
         ConstantTable.IsExchangingDeviceKey = false;
 
         return Ok();
+    }
+
+    [ApiExplorerSettings(GroupName = "V1")]
+    [HttpPost(nameof(Connect), Name = nameof(Connect))]
+    public IActionResult Connect([FromQuery] DeviceLocator device, [FromBody] string deviceKeyEncrypted)
+    {
+        var key = SecurityManager.SearchDeviceKey(device);
+
+        if (key is null) return BadRequest("You are not authorized by remote device.");
+
+        var deviceKeyDecrypted = SecurityManager.Instance.DecryptString(deviceKeyEncrypted);
+
+        if (deviceKeyDecrypted is null) return StatusCode(500, "Remote crashed when decrypting device key.");
+
+        var deviceKey = JsonSerializer.Deserialize<DeviceKey>(deviceKeyDecrypted);
+
+        if (deviceKey is null) return StatusCode(500, "Remote crashed when deserializing device key.");
+
+        if (SecurityManager.IsDeviceKeyCorrect(device, deviceKey) == false)
+            return BadRequest("You provided incorrect device key.");
+
+        var token = DevicesServer.Instance.SignInDevice(device);
+
+        return Ok(SecurityManager.Instance.EncryptString(token));
     }
 }

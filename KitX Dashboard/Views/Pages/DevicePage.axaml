@@ -169,19 +169,50 @@
                                             <Border/>
                                         </DockPanel>
                                     </StackPanel>
-                                    <Grid Margin="0,5,0,0"
-                                          HorizontalAlignment="Right"
-                                          VerticalAlignment="Top">
-                                        <Grid.Styles>
+                                    <StackPanel Margin="0,5,0,0"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Top"
+                                                Orientation="Horizontal"
+                                                Spacing="10">
+                                        <StackPanel.Styles>
                                             <Style Selector="Border">
                                                 <Setter Property="Width" Value="15"/>
                                                 <Setter Property="Height" Value="15"/>
                                                 <Setter Property="CornerRadius" Value="15"/>
                                             </Style>
-                                        </Grid.Styles>
-                                        <Border Background="{DynamicResource ThemePrimaryAccent}" IsVisible="{Binding IsAuthorized}"/>
-                                        <Border Background="Gray" IsVisible="{Binding !IsAuthorized}"/>
-                                    </Grid>
+                                        </StackPanel.Styles>
+                                        <Border Classes.authorized="{Binding IsAuthorized}" ToolTip.Tip="{Binding ConnectionToken}">
+                                            <Border.Styles>
+                                                <Style Selector="Border.authorized">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+                                                </Style>
+                                            </Border.Styles>
+                                            <Border.Transitions>
+                                                <ColorTransition Property="BorderBrush" Duration="0:0:0.2">
+                                                    <ColorTransition.Easing>
+                                                        <CubicEaseInOut/>
+                                                    </ColorTransition.Easing>
+                                                </ColorTransition>
+                                            </Border.Transitions>
+
+                                            <Border Margin="3" Classes.connected="{Binding IsConnected}">
+                                                <Border.Styles>
+                                                    <Style Selector="Border.connected">
+                                                        <Setter Property="Background" Value="{DynamicResource ThemePrimaryAccent}"/>
+                                                    </Style>
+                                                </Border.Styles>
+                                                <Border.Transitions>
+                                                    <ColorTransition Property="Background" Duration="0:0:0.2">
+                                                        <ColorTransition.Easing>
+                                                            <CubicEaseInOut/>
+                                                        </ColorTransition.Easing>
+                                                    </ColorTransition>
+                                                </Border.Transitions>
+
+                                            </Border>
+
+                                        </Border>
+                                    </StackPanel>
                                 </Grid>
                             </Button>
                         </DataTemplate>

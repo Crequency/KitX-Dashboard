@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
+using Fizzler;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Dashboard.Network.DevicesNetwork.DevicesServerControllers.V1;
@@ -74,12 +75,7 @@ public class DeviceCase : ViewModelBase
                     return;
                 }
 
-                var localKey = new DeviceKey()
-                {
-                    Device = SecurityManager.Instance.LocalDeviceKey.Device,
-                    RsaPrivateKeyD = SecurityManager.Instance.LocalDeviceKey.RsaPrivateKeyD,
-                    RsaPrivateKeyModulus = SecurityManager.Instance.LocalDeviceKey.RsaPrivateKeyModulus
-                };
+                var localKey = SecurityManager.Instance.GetPrivateDeviceKey();
 
                 var localKeyJson = JsonSerializer.Serialize(localKey);
 
@@ -194,21 +190,90 @@ public class DeviceCase : ViewModelBase
             this.RaiseAndSetIfChanged(ref deviceInfo, value);
 
             Update();
+
+            if (IsAuthorized && (IsConnected == false))
+                Connect();
         }
     }
 
     private void Update()
     {
         this.RaisePropertyChanged(nameof(IsAuthorized));
+        this.RaisePropertyChanged(nameof(IsConnected));
         this.RaisePropertyChanged(nameof(IsCurrentDevice));
         this.RaisePropertyChanged(nameof(IsMainDevice));
     }
 
+    private void Connect()
+    {
+        TasksManager.RunTask(async () =>
+        {
+            using var http = new HttpClient();
+
+            var targetKey = SecurityManager.SearchDeviceKey(DeviceInfo.Device);
+
+            if (targetKey is null) return;
+
+            var localKey = SecurityManager.Instance.GetPrivateDeviceKey();
+
+            var localKeyJson = JsonSerializer.Serialize(localKey);
+
+            var localKeyEncrypted = SecurityManager.RsaEncryptString(targetKey, localKeyJson);
+
+            var address = $"{DeviceInfo.Device.IPv4}:{DeviceInfo.DevicesServerPort}";
+
+            var url = $"http://{address}/Api/V1/Device/{nameof(DeviceController.Connect)}";
+
+            var response = await http.PostAsync(
+                url,
+                new StringContent(
+                    JsonSerializer.Serialize(localKeyEncrypted),
+                    Encoding.UTF8,
+                    "application/json"
+                )
+            );
+
+            if (response.IsSuccessStatusCode)
+            {
+                Log.Information($"Connected to {DeviceInfo.Device.DeviceName} with response {response}");
+
+                var body = response.Content.ToString();
+
+                if (body is null) return;
+
+                ConnectionToken = SecurityManager.RsaDecryptString(targetKey, body);
+
+                Update();
+            }
+            else
+            {
+                Log.Warning(
+                    new StringBuilder()
+                        .AppendLine($"Requested: {url}")
+                        .AppendLine($"Responsed: {response.StatusCode} - {response.ReasonPhrase}")
+                        .AppendLine(response.RequestMessage?.ToString())
+                        .ToString()
+                );
+            }
+
+        }, $"Connecting {DeviceInfo.Device.DeviceName}");
+    }
+
     public bool IsAuthorized => SecurityManager.IsDeviceAuthorized(DeviceInfo.Device);
+
+    public bool IsConnected => DevicesServer.Instance.IsDeviceSignedIn(DeviceInfo.Device) || ConnectionToken is not null;
 
     public bool IsCurrentDevice => DeviceInfo.IsCurrentDevice();
 
     public bool IsMainDevice => DeviceInfo.IsMainDevice;
+
+    private string? connectionToken;
+
+    public string? ConnectionToken
+    {
+        get => connectionToken;
+        set => this.RaiseAndSetIfChanged(ref connectionToken, value);
+    }
 
     internal ReactiveCommand<DeviceInfo, Unit>? AuthorizeAndExchangeDeviceKeyCommand { get; set; }
 

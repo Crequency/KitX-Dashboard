@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Services;
+using KitX.Shared.CSharp.Device;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -26,7 +27,7 @@ public class DevicesServer : ConfigFetcher
 
     private IHost? _host;
 
-    private List<string> SignedDeviceTokens { get; } = [];
+    private Dictionary<DeviceLocator, string> SignedDeviceTokens { get; } = [];
 
     public async Task<DevicesServer> RunAsync()
     {
@@ -72,9 +73,24 @@ public class DevicesServer : ConfigFetcher
             })
             ;
 
-    internal bool IsDeviceTokenExist(string token) => SignedDeviceTokens.Contains(token);
+    internal bool IsDeviceTokenExist(string token) => SignedDeviceTokens.ContainsValue(token);
 
-    internal void AddDeviceToken(string token) => SignedDeviceTokens.Add(token);
+    internal bool IsDeviceSignedIn(DeviceLocator locator) => SignedDeviceTokens.ContainsKey(locator);
+
+    internal void AddDeviceToken(DeviceLocator locator, string token) => SignedDeviceTokens.Add(locator, token);
+
+    internal string SignInDevice(DeviceLocator locator)
+    {
+        var token = Guid.NewGuid().ToString();
+
+        while (SignedDeviceTokens.ContainsValue(token))
+            token = Guid.NewGuid().ToString();
+
+        if (SignedDeviceTokens.TryAdd(locator, token) == false)
+            SignedDeviceTokens[locator] = token;
+
+        return token;
+    }
 }
 
 public class Startup
