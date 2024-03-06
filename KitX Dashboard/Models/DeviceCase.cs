@@ -191,7 +191,7 @@ public class DeviceCase : ViewModelBase
 
             Update();
 
-            if (IsAuthorized && (IsConnected == false))
+            if (IsAuthorized && (IsConnected == false) && (IsCurrentDevice == false))
                 Connect();
         }
     }
@@ -218,7 +218,7 @@ public class DeviceCase : ViewModelBase
 
             var localKeyJson = JsonSerializer.Serialize(localKey);
 
-            var localKeyEncrypted = SecurityManager.RsaEncryptString(targetKey, localKeyJson);
+            var localKeyEncrypted = SecurityManager.Instance.EncryptString(localKeyJson);
 
             var address = $"{DeviceInfo.Device.IPv4}:{DeviceInfo.DevicesServerPort}";
 
@@ -261,7 +261,7 @@ public class DeviceCase : ViewModelBase
 
     public bool IsAuthorized => SecurityManager.IsDeviceAuthorized(DeviceInfo.Device);
 
-    public bool IsConnected => DevicesServer.Instance.IsDeviceSignedIn(DeviceInfo.Device) || ConnectionToken is not null;
+    public bool IsConnected => IsCurrentDevice || DevicesServer.Instance.IsDeviceSignedIn(DeviceInfo.Device) || ConnectionToken is not null;
 
     public bool IsCurrentDevice => DeviceInfo.IsCurrentDevice();
 

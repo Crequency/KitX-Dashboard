@@ -10,7 +10,7 @@ using KitX.Shared.CSharp.Device;
 
 namespace KitX.Dashboard.Managers;
 
-public class SecurityManager : ManagerBase
+public class SecurityManager : ManagerBase, IDisposable
 {
     private static SecurityManager? _instance;
 
@@ -40,24 +40,12 @@ public class SecurityManager : ManagerBase
 
         if (LocalDeviceKey is not null)
         {
-            var isPublicKeyNotExists = LocalDeviceKey.RsaPublicKeyModulus is null || LocalDeviceKey.RsaPublicKeyExponent is null;
+            if (LocalDeviceKey.RsaPublicKeyPem is null || LocalDeviceKey.RsaPrivateKeyPem is null) AddLocalDevice(device);
 
-            var isPrivateKeyNotExists = LocalDeviceKey.RsaPrivateKeyModulus is null || LocalDeviceKey.RsaPrivateKeyD is null;
+            RsaInstance = RSA.Create(2048);
 
-            if (isPrivateKeyNotExists || isPublicKeyNotExists) AddLocalDevice(device);
-
-            var rsaParams = new RSAParameters
-            {
-                Modulus = Convert.FromBase64String(LocalDeviceKey.RsaPublicKeyModulus!),
-                Exponent = Convert.FromBase64String(LocalDeviceKey.RsaPublicKeyExponent!),
-                D = Convert.FromBase64String(LocalDeviceKey.RsaPrivateKeyD!),
-            };
-
-            RsaInstance = RSA.Create();
-
-            RsaInstance.KeySize = 2048;
-
-            RsaInstance.ImportParameters(rsaParams);
+            RsaInstance.ImportFromPem(LocalDeviceKey.RsaPublicKeyPem);
+            RsaInstance.ImportFromPem(LocalDeviceKey.RsaPrivateKeyPem);
 
             return;
         }
@@ -67,25 +55,15 @@ public class SecurityManager : ManagerBase
 
     private void AddLocalDevice(DeviceLocator device)
     {
-        var rsa = RSA.Create();
-
-        rsa.KeySize = 2048;
-
-        var privateKey = rsa.ExportParameters(true);
-        var publicKey = rsa.ExportParameters(false);
-
-        if (privateKey.Modulus is null || privateKey.D is null || publicKey.Modulus is null || publicKey.Exponent is null)
-            throw new InvalidOperationException("Couldn't generate RSA keys.");
+        var rsa = RSA.Create(2048);
 
         RsaInstance = rsa;
 
         AddDeviceKey(new()
         {
             Device = device,
-            RsaPrivateKeyModulus = Convert.ToBase64String(privateKey.Modulus),
-            RsaPrivateKeyD = Convert.ToBase64String(privateKey.D),
-            RsaPublicKeyModulus = Convert.ToBase64String(publicKey.Modulus),
-            RsaPublicKeyExponent = Convert.ToBase64String(publicKey.Exponent),
+            RsaPrivateKeyPem = rsa.ExportRSAPrivateKeyPem(),
+            RsaPublicKeyPem = rsa.ExportRSAPublicKeyPem(),
         });
     }
 
@@ -130,9 +108,9 @@ public class SecurityManager : ManagerBase
 
         var dataBytes = data.FromUTF8();
 
-        return Convert.ToBase64String(
-            RsaInstance.Encrypt(dataBytes, RSAEncryptionPadding.OaepSHA256)
-        );
+        var encrypted = RsaInstance.Encrypt(dataBytes, RSAEncryptionPadding.OaepSHA256);
+
+        return Convert.ToBase64String(encrypted);
     }
 
     public string? DecryptString(string encryptedData)
@@ -147,44 +125,27 @@ public class SecurityManager : ManagerBase
     public DeviceKey? GetPrivateDeviceKey() => LocalDeviceKey is null ? null : new DeviceKey()
     {
         Device = LocalDeviceKey.Device,
-        RsaPrivateKeyD = LocalDeviceKey.RsaPrivateKeyD,
-        RsaPrivateKeyModulus = LocalDeviceKey.RsaPrivateKeyModulus,
+        RsaPrivateKeyPem = LocalDeviceKey.RsaPrivateKeyPem,
     };
 
     public static string? RsaEncryptString(DeviceKey key, string data)
     {
-        using var rsa = RSA.Create();
+        using var rsa = RSA.Create(2048);
 
-        rsa.KeySize = 2048;
-
-        var rsaParams = new RSAParameters
-        {
-            Modulus = Convert.FromBase64String(key.RsaPublicKeyModulus!),
-            Exponent = Convert.FromBase64String(key.RsaPublicKeyExponent!),
-        };
-
-        rsa.ImportParameters(rsaParams);
+        rsa.ImportFromPem(key.RsaPublicKeyPem);
 
         var dataBytes = data.FromUTF8();
 
-        return Convert.ToBase64String(
-            rsa.Encrypt(dataBytes, RSAEncryptionPadding.OaepSHA256)
-        );
+        var encrypted = rsa.Encrypt(dataBytes, RSAEncryptionPadding.OaepSHA256);
+
+        return Convert.ToBase64String(encrypted);
     }
 
     public static string? RsaDecryptString(DeviceKey key, string encryptedData)
     {
-        using var rsa = RSA.Create();
+        using var rsa = RSA.Create(2048);
 
-        rsa.KeySize = 2048;
-
-        var rsaParams = new RSAParameters
-        {
-            Modulus = Convert.FromBase64String(key.RsaPrivateKeyModulus!),
-            D = Convert.FromBase64String(key.RsaPrivateKeyD!),
-        };
-
-        rsa.ImportParameters(rsaParams);
+        rsa.ImportFromPem(key.RsaPrivateKeyPem);
 
         var dataBytes = Convert.FromBase64String(encryptedData);
 
@@ -256,5 +217,10 @@ public class SecurityManager : ManagerBase
         var result = aes.DecryptCbc(data, iv, PaddingMode.ISO10126);
 
         return result.ToUTF8();
+    }
+
+    public void Dispose()
+    {
+        RsaInstance?.Dispose();
     }
 }

@@ -18,6 +18,8 @@ public static class Instances
 
     public static KeyHookManager? KeyHookManager { get; set; }
 
+    public static SecurityManager? SecurityManager { get; set; }
+
     internal static void Initialize()
     {
         var location = $"{nameof(Instances)}.{nameof(Initialize)}";
@@ -35,6 +37,12 @@ public static class Instances
             //    location.Append("." + nameof(KeyHookManager)),
             //    catchException: true
             //);
+
+            TasksManager.RunTask(
+                () => SecurityManager = SecurityManager.Instance,
+                location.Append("." + nameof(SecurityManager)),
+                catchException: true
+            );
 
             TasksManager.RunTask(() =>
             {

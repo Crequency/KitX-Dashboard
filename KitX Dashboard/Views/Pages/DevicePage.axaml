@@ -111,7 +111,7 @@
                                             <DockPanel Margin="10,0,0,0">
                                                 <TextBlock DockPanel.Dock="Top"
                                                            FontSize="20"
-                                                           Text="{Binding DeviceInfo.Device.DeviceName, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=20}"
+                                                           Text="{Binding DeviceInfo.Device.DeviceName, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=18}"
                                                            ToolTip.Tip="{Binding DeviceInfo.Device.DeviceName}"/>
                                                 <TextBlock FontSize="14"
                                                            Text="{Binding DeviceInfo.DeviceOSVersion, Converter={StaticResource StringOverLengthConverter}, ConverterParameter=34}"
@@ -176,42 +176,52 @@
                                                 Spacing="10">
                                         <StackPanel.Styles>
                                             <Style Selector="Border">
-                                                <Setter Property="Width" Value="15"/>
-                                                <Setter Property="Height" Value="15"/>
                                                 <Setter Property="CornerRadius" Value="15"/>
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
                                             </Style>
                                         </StackPanel.Styles>
-                                        <Border Classes.authorized="{Binding IsAuthorized}" ToolTip.Tip="{Binding ConnectionToken}">
-                                            <Border.Styles>
-                                                <Style Selector="Border.authorized">
-                                                    <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
-                                                </Style>
-                                            </Border.Styles>
-                                            <Border.Transitions>
-                                                <ColorTransition Property="BorderBrush" Duration="0:0:0.2">
-                                                    <ColorTransition.Easing>
-                                                        <CubicEaseInOut/>
-                                                    </ColorTransition.Easing>
-                                                </ColorTransition>
-                                            </Border.Transitions>
-
-                                            <Border Margin="3" Classes.connected="{Binding IsConnected}">
+                                        <Grid Width="20"
+                                              Height="20"
+                                              ToolTip.Tip="{Binding ConnectionToken}">
+                                            <Border Width="20"
+                                                    Height="20"
+                                                    BorderThickness="2"
+                                                    Classes.authorized="{Binding IsAuthorized}">
+                                                <Border.Styles>
+                                                    <Style Selector="Border.authorized">
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+                                                    </Style>
+                                                </Border.Styles>
+                                                <Border.Transitions>
+                                                    <Transitions>
+                                                        <BrushTransition Property="BorderBrush" Duration="0:0:0.2">
+                                                            <BrushTransition.Easing>
+                                                                <CubicEaseInOut/>
+                                                            </BrushTransition.Easing>
+                                                        </BrushTransition>
+                                                    </Transitions>
+                                                </Border.Transitions>
+                                            </Border>
+                                            <Border Width="10"
+                                                    Height="10"
+                                                    Classes.connected="{Binding IsConnected}">
                                                 <Border.Styles>
                                                     <Style Selector="Border.connected">
                                                         <Setter Property="Background" Value="{DynamicResource ThemePrimaryAccent}"/>
                                                     </Style>
                                                 </Border.Styles>
                                                 <Border.Transitions>
-                                                    <ColorTransition Property="Background" Duration="0:0:0.2">
-                                                        <ColorTransition.Easing>
-                                                            <CubicEaseInOut/>
-                                                        </ColorTransition.Easing>
-                                                    </ColorTransition>
+                                                    <Transitions>
+                                                        <BrushTransition Property="Background" Duration="0:0:0.2">
+                                                            <BrushTransition.Easing>
+                                                                <CubicEaseInOut/>
+                                                            </BrushTransition.Easing>
+                                                        </BrushTransition>
+                                                    </Transitions>
                                                 </Border.Transitions>
-
                                             </Border>
-
-                                        </Border>
+                                        </Grid>
                                     </StackPanel>
                                 </Grid>
                             </Button>

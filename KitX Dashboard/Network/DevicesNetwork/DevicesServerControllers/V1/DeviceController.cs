@@ -175,7 +175,7 @@ public class DeviceController : ControllerBase
 
         if (key is null) return BadRequest("You are not authorized by remote device.");
 
-        var deviceKeyDecrypted = SecurityManager.Instance.DecryptString(deviceKeyEncrypted);
+        var deviceKeyDecrypted = SecurityManager.RsaDecryptString(key, deviceKeyEncrypted);
 
         if (deviceKeyDecrypted is null) return StatusCode(500, "Remote crashed when decrypting device key.");
 
