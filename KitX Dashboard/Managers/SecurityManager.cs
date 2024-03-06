@@ -7,6 +7,7 @@ using DynamicData;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Shared.CSharp.Device;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace KitX.Dashboard.Managers;
 
@@ -106,6 +107,8 @@ public class SecurityManager : ManagerBase, IDisposable
     {
         if (RsaInstance is null) return null;
 
+        if (data.Length >= 90) { /* ToDo: Split data */ }
+
         var dataBytes = data.FromUTF8();
 
         var encrypted = RsaInstance.Encrypt(dataBytes, RSAEncryptionPadding.OaepSHA256);
@@ -116,6 +119,8 @@ public class SecurityManager : ManagerBase, IDisposable
     public string? DecryptString(string encryptedData)
     {
         if (RsaInstance is null) return null;
+
+        if (encryptedData.Length >= 90) { /* ToDo: Split data */ }
 
         var encryptedDataBytes = Convert.FromBase64String(encryptedData);
 
@@ -130,6 +135,8 @@ public class SecurityManager : ManagerBase, IDisposable
 
     public static string? RsaEncryptString(DeviceKey key, string data)
     {
+        if (data.Length >= 90) { /* ToDo: Split data */ }
+
         using var rsa = RSA.Create(2048);
 
         rsa.ImportFromPem(key.RsaPublicKeyPem);
@@ -143,6 +150,8 @@ public class SecurityManager : ManagerBase, IDisposable
 
     public static string? RsaDecryptString(DeviceKey key, string encryptedData)
     {
+        if (encryptedData.Length >= 90) { /* ToDo: Split data */ }
+
         using var rsa = RSA.Create(2048);
 
         rsa.ImportFromPem(key.RsaPrivateKeyPem);

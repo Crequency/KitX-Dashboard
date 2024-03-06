@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Reactive;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
@@ -214,20 +215,26 @@ public class DeviceCase : ViewModelBase
 
             if (targetKey is null) return;
 
-            var localKey = SecurityManager.Instance.GetPrivateDeviceKey();
+            var local = SecurityManager.Instance.GetPrivateDeviceKey();
 
-            var localKeyJson = JsonSerializer.Serialize(localKey);
+            if (local is null) return;
 
-            var localKeyEncrypted = SecurityManager.Instance.EncryptString(localKeyJson);
+            var deviceName = local.Device.DeviceName;
+
+            var deviceNameEncrypted = SecurityManager.Instance.EncryptString(deviceName);
 
             var address = $"{DeviceInfo.Device.IPv4}:{DeviceInfo.DevicesServerPort}";
 
-            var url = $"http://{address}/Api/V1/Device/{nameof(DeviceController.Connect)}";
+            var deviceJson = JsonSerializer.Serialize(local.Device);
+
+            deviceJson = Convert.ToBase64String(deviceJson.FromUTF8());
+
+            var url = $"http://{address}/Api/V1/Device/{nameof(DeviceController.Connect)}?deviceBase64={deviceJson}";
 
             var response = await http.PostAsync(
                 url,
                 new StringContent(
-                    JsonSerializer.Serialize(localKeyEncrypted),
+                    JsonSerializer.Serialize(deviceNameEncrypted),
                     Encoding.UTF8,
                     "application/json"
                 )
@@ -237,7 +244,7 @@ public class DeviceCase : ViewModelBase
             {
                 Log.Information($"Connected to {DeviceInfo.Device.DeviceName} with response {response}");
 
-                var body = response.Content.ToString();
+                var body = await response.Content.ReadAsStringAsync();
 
                 if (body is null) return;
 

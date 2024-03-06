@@ -1,8 +1,9 @@
-﻿using System.Net;
+﻿using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Avalonia.Threading;
+using Common.BasicHelper.Utils.Extensions;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
@@ -169,22 +170,22 @@ public class DeviceController : ControllerBase
 
     [ApiExplorerSettings(GroupName = "V1")]
     [HttpPost(nameof(Connect), Name = nameof(Connect))]
-    public IActionResult Connect([FromQuery] DeviceLocator device, [FromBody] string deviceKeyEncrypted)
+    public IActionResult Connect([FromQuery] string deviceBase64, [FromBody] string deviceNameEncrypted)
     {
+        var device = JsonSerializer.Deserialize<DeviceLocator>(Convert.FromBase64String(deviceBase64).ToUTF8());
+
+        if (device is null) return BadRequest($"You provided wrong {nameof(deviceBase64)} which is not a type of `{nameof(DeviceLocator)}`.");
+
         var key = SecurityManager.SearchDeviceKey(device);
 
         if (key is null) return BadRequest("You are not authorized by remote device.");
 
-        var deviceKeyDecrypted = SecurityManager.RsaDecryptString(key, deviceKeyEncrypted);
+        var deviceNameDecrypted = SecurityManager.RsaDecryptString(key, deviceNameEncrypted);
 
-        if (deviceKeyDecrypted is null) return StatusCode(500, "Remote crashed when decrypting device key.");
+        if (deviceNameDecrypted is null) return StatusCode(500, "Remote crashed when decrypting device name.");
 
-        var deviceKey = JsonSerializer.Deserialize<DeviceKey>(deviceKeyDecrypted);
-
-        if (deviceKey is null) return StatusCode(500, "Remote crashed when deserializing device key.");
-
-        if (SecurityManager.IsDeviceKeyCorrect(device, deviceKey) == false)
-            return BadRequest("You provided incorrect device key.");
+        if (device.DeviceName.Equals(deviceNameDecrypted) == false)
+            return BadRequest("You provided incorrect encrypted device name.");
 
         var token = DevicesServer.Instance.SignInDevice(device);
 
