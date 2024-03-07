@@ -113,29 +113,21 @@
                 <StackPanel Margin="10">
                     <WrapPanel Margin="5">
                         <ui:HyperlinkButton Margin="4"
-                                            Content="调皮豆干"
+                                            Content="Dynesshely"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://blog.catrol.cn"/>
+                                            NavigateUri="https://github.com/Dynesshely"/>
                         <ui:HyperlinkButton Margin="4"
-                                            Content="LYF"
+                                            Content="StardustSeemsInk"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://github.com/LYF511"/>
+                                            NavigateUri="https://github.com/StardustSeemsInk"/>
                         <ui:HyperlinkButton Margin="4"
-                                            Content="白学森"
+                                            Content="orzMaster"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://github.com/MrBBBaiXue"/>
+                                            NavigateUri="https://github.com/orzMaster"/>
                         <ui:HyperlinkButton Margin="4"
-                                            Content="truebigsand"
+                                            Content="Cranyozen"
                                             Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://github.com/truebigsand"/>
-                        <ui:HyperlinkButton Margin="4"
-                                            Content="felixonmars"
-                                            Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://github.com/felixonmars"/>
-                        <ui:HyperlinkButton Margin="4"
-                                            Content="SpaceTimee"
-                                            Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://github.com/SpaceTimee"/>
+                                            NavigateUri="https://github.com/Cranyozen"/>
                     </WrapPanel>
 
                 </StackPanel>
