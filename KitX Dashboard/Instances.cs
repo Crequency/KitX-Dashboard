@@ -32,11 +32,11 @@ public static class Instances
                 catchException: true
             );
 
-            //TasksManager.RunTask(
-            //    () => KeyHookManager = new KeyHookManager().Hook(),
-            //    location.Append("." + nameof(KeyHookManager)),
-            //    catchException: true
-            //);
+            TasksManager.RunTask(
+                () => KeyHookManager = new KeyHookManager().Hook(),
+                location.Append("." + nameof(KeyHookManager)),
+                catchException: true
+            );
 
             TasksManager.RunTask(
                 () => SecurityManager = SecurityManager.Instance,

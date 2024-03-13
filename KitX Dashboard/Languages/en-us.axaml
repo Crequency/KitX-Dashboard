@@ -14,6 +14,7 @@
     <sys:String x:Key="Text_Public_ShowMainWindow">Show Main Window</sys:String>
     <sys:String x:Key="Text_Public_ShowAnnouncements">View Announcements</sys:String>
     <sys:String x:Key="Text_Public_ShowLauncherWindow">Show Launcher Window</sys:String>
+    <x:String x:Key="Text_Public_Restart">Restart</x:String>
     <sys:String x:Key="Text_Public_Millisecond">Millisecond</sys:String>
     <sys:String x:Key="Text_Public_Second">s</sys:String>
     <sys:String x:Key="Text_Public_Minute">minute</sys:String>

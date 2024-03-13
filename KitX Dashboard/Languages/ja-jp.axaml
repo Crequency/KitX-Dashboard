@@ -14,6 +14,7 @@
     <sys:String x:Key="Text_Public_ShowMainWindow">メインウィンドウを表示</sys:String>
     <sys:String x:Key="Text_Public_ShowAnnouncements">お知らせを見る</sys:String>
     <sys:String x:Key="Text_Public_ShowLauncherWindow">ランチャーを表示</sys:String>
+    <x:String x:Key="Text_Public_Restart">再起動</x:String>
     <sys:String x:Key="Text_Public_Millisecond">ミリ秒</sys:String>
     <sys:String x:Key="Text_Public_Second">2番目</sys:String>
     <sys:String x:Key="Text_Public_Minute">分</sys:String>

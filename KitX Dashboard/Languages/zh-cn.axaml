@@ -14,6 +14,7 @@
     <sys:String x:Key="Text_Public_ShowMainWindow">显示主窗口</sys:String>
     <sys:String x:Key="Text_Public_ShowAnnouncements">查看公告</sys:String>
     <sys:String x:Key="Text_Public_ShowLauncherWindow">显示启动器</sys:String>
+    <x:String x:Key="Text_Public_Restart">重启</x:String>
     <sys:String x:Key="Text_Public_Millisecond">毫秒</sys:String>
     <sys:String x:Key="Text_Public_Second">秒</sys:String>
     <sys:String x:Key="Text_Public_Minute">分钟</sys:String>

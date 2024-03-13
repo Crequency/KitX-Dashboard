@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,6 +46,22 @@ public static class AppFramework
         // If dump file exists, delete it.
         if (File.Exists("./dump.log".GetFullPath()))
             File.Delete("./dump.log".GetFullPath());
+
+        if (File.Exists("restart.lock"))
+        {
+            var waitCount = 0;
+
+            while (Process.GetProcesses().Count(x => x.ProcessName.StartsWith("KitX.Dashboard")) >= 2)
+            {
+                if (waitCount > 10) Environment.Exit(ExitCodes.WaitRestartingLockFileTooLong);
+
+                ++waitCount;
+
+                Thread.Sleep(1000);
+            }
+
+            File.Delete("restart.lock");
+        }
 
         ConfigManager.Instance.AppConfig.App.RanTime++;
 
@@ -228,6 +245,8 @@ public static class AppFramework
     {
         var location = $"{nameof(AppFramework)}.{nameof(EnsureExit)}";
 
+        ConstantTable.EnsureExiting = true;
+
         new Thread(async () =>
         {
             try
@@ -248,14 +267,27 @@ public static class AppFramework
 
                 ConstantTable.Running = false;
 
+                if (ConstantTable.Restarting)
+                {
+                    File.WriteAllText("restart.lock", "Program is restarting, please stand by ...");
+
+                    var path = Process.GetCurrentProcess().MainModule?.FileName;
+
+                    if (path is not null) Process.Start(path);
+                }
+
                 Thread.Sleep(ConfigManager.Instance.AppConfig.App.LastBreakAfterExit);
 
-                Environment.Exit(0);
+                ConstantTable.EnsureExiting = false;
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, $"In {location}: {ex.Message}");
+                Log.Error(ex, $"In {location}: {ex.Message}");
             }
         }).Start();
+
+        while (ConstantTable.EnsureExiting) ;
+
+        Environment.Exit(0);
     }
 }

@@ -67,20 +67,14 @@ internal class AppViewModel : ViewModelBase
             win.Activate();
         });
 
-        ExitCommand = ReactiveCommand.Create(() =>
+        RestartCommand = ReactiveCommand.Create(() =>
         {
-            ViewInstances.DeviceCases.Clear();
+            ConstantTable.Restarting = true;
 
-            ViewInstances.PluginInfos.Clear();
-
-            ConstantTable.Exiting = true;
-
-            EventService.Invoke(nameof(EventService.OnExiting));
-
-            var win = ViewInstances.MainWindow;
-
-            win?.Close();
+            Exit();
         });
+
+        ExitCommand = ReactiveCommand.Create(Exit);
     }
 
     public override void InitEvents()
@@ -116,6 +110,21 @@ internal class AppViewModel : ViewModelBase
         TrayIconText = sb.ToString();
     }
 
+    public static void Exit()
+    {
+        ViewInstances.DeviceCases.Clear();
+
+        ViewInstances.PluginInfos.Clear();
+
+        ConstantTable.Exiting = true;
+
+        EventService.Invoke(nameof(EventService.OnExiting));
+
+        var win = ViewInstances.MainWindow;
+
+        win?.Close();
+    }
+
     internal string trayIconText = "";
 
     internal string TrayIconText
@@ -133,6 +142,8 @@ internal class AppViewModel : ViewModelBase
     internal ReactiveCommand<Unit, Task>? ViewLatestAnnouncementsCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? OpenDebugToolCommand { get; set; }
+
+    internal ReactiveCommand<Unit, Unit>? RestartCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? ExitCommand { get; set; }
 

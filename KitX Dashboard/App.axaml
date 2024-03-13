@@ -61,6 +61,8 @@
                         <NativeMenuItem Header="{DynamicResource Text_Public_More}">
                             <NativeMenu>
                                 <NativeMenuItem Command="{Binding OpenDebugToolCommand}" Header="{DynamicResource Text_Settings_General_OpenDebugTool}"/>
+                                <NativeMenuItemSeparator/>
+                                <NativeMenuItem Command="{Binding RestartCommand}" Header="{DynamicResource Text_Public_Restart}"/>
                             </NativeMenu>
                         </NativeMenuItem>
                         <NativeMenuItemSeparator/>

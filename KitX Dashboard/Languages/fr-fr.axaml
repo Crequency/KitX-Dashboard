@@ -14,6 +14,7 @@
     <sys:String x:Key="Text_Public_ShowMainWindow">Afficher la fenêtre principale</sys:String>
     <sys:String x:Key="Text_Public_ShowAnnouncements">Voir l'annonce</sys:String>
     <sys:String x:Key="Text_Public_ShowLauncherWindow">afficher le lanceur</sys:String>
+    <x:String x:Key="Text_Public_Restart">Redémarrer</x:String>
     <sys:String x:Key="Text_Public_Millisecond">milliseconde</sys:String>
     <sys:String x:Key="Text_Public_Second">deuxième</sys:String>
     <sys:String x:Key="Text_Public_Minute">minute</sys:String>

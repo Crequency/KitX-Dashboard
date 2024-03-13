@@ -41,6 +41,10 @@ internal static class ConstantTable
 
     internal static bool Exiting = false;
 
+    internal static bool Restarting = false;
+
+    internal static bool EnsureExiting = false;
+
     internal static bool IsMainMachine = false;
 
     internal static string? MainMachineAddress;
