@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Fleck;
 using KitX.Dashboard.Configuration;
@@ -9,7 +10,7 @@ using KitX.Shared.CSharp.Plugin;
 
 namespace KitX.Dashboard.Network.PluginsNetwork;
 
-public class PluginsServer : ConfigFetcher
+public partial class PluginsServer : ConfigFetcher
 {
     private static PluginsServer? _pluginsServer;
 
@@ -41,6 +42,15 @@ public class PluginsServer : ConfigFetcher
 
         _server!.Start(socket =>
         {
+            if (RegexToVerifyConnectionId().IsMatch(socket.ConnectionInfo.Path.Trim('/')) == false)
+            {
+                socket.Send("Invalid connection id.");
+
+                socket.Close();
+
+                return;
+            }
+
             var connector = new PluginConnector(socket).Run();
 
             _connectors.Add(connector);
@@ -63,6 +73,10 @@ public class PluginsServer : ConfigFetcher
             return null;
     }
 
+    public PluginConnector? FindConnector(string connectionId) => PluginConnectors.FirstOrDefault(
+        x => x.ConnectionId?.Equals(connectionId) ?? false
+    );
+
     public async Task<PluginsServer> Close()
     {
         await Task.Run(() =>
@@ -82,4 +96,7 @@ public class PluginsServer : ConfigFetcher
 
         return this;
     }
+
+    [GeneratedRegex(@"^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$")]
+    private static partial Regex RegexToVerifyConnectionId();
 }

@@ -2,11 +2,9 @@
 using System.Net.Http;
 using System.Reactive;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
-using Fizzler;
 using KitX.Dashboard.Managers;
 using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Dashboard.Network.DevicesNetwork.DevicesServerControllers.V1;

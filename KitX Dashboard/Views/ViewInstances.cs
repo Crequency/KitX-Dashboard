@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Controls;
-using DynamicData;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;

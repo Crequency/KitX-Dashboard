@@ -105,6 +105,7 @@ public class DeviceController : ControllerBase
                                 new StringBuilder()
                                     .AppendLine($"Requested: {url}")
                                     .AppendLine($"Responsed: {response.StatusCode} - {response.ReasonPhrase}")
+                                    .AppendLine($"Content: {await response.Content.ReadAsStringAsync()}")
                                     .AppendLine(response.RequestMessage?.ToString())
                                     .ToString()
                             );
@@ -191,4 +192,9 @@ public class DeviceController : ControllerBase
 
         return Ok(SecurityManager.Instance.EncryptString(token));
     }
+}
+
+public static class DeviceControllerExtensions
+{
+
 }

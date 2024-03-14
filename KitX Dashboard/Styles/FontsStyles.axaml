@@ -1,7 +1,7 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="using:FluentAvalonia.UI.Controls">
-    <Style Selector="Window">
+    <!--<Style Selector="Window">
         <Setter Property="FontFamily" Value="{DynamicResource SourceHanSans}"/>
         <Setter Property="FontWeight" Value="Normal"/>
     </Style>
@@ -11,5 +11,5 @@
     </Style>
     <Style Selector="ui|InfoBar">
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-    </Style>
+    </Style>-->
 </Styles>

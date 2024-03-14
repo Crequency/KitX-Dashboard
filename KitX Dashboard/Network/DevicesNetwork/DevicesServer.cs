@@ -75,6 +75,13 @@ public class DevicesServer : ConfigFetcher
 
     internal bool IsDeviceTokenExist(string token) => SignedDeviceTokens.ContainsValue(token);
 
+    internal DeviceLocator? SearchDeviceByToken(string token)
+    {
+        if (IsDeviceTokenExist(token) == false) return null;
+
+        return SignedDeviceTokens.First(x => x.Value.Equals(token)).Key;
+    }
+
     internal bool IsDeviceSignedIn(DeviceLocator locator) => SignedDeviceTokens.ContainsKey(locator);
 
     internal void AddDeviceToken(DeviceLocator locator, string token) => SignedDeviceTokens.Add(locator, token);

@@ -2,12 +2,13 @@
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Common.BasicHelper.Utils;
 using Common.BasicHelper.Utils.Extensions;
 using DynamicData;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Shared.CSharp.Device;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using KitX.Shared.CSharp.Security;
 
 namespace KitX.Dashboard.Managers;
 
@@ -135,7 +136,7 @@ public class SecurityManager : ManagerBase, IDisposable
 
     public static string? RsaEncryptString(DeviceKey key, string data)
     {
-        if (data.Length >= 90) { /* ToDo: Split data */ }
+        if (data.Length >= 90) throw new ArgumentOutOfRangeException(nameof(data), "Data length is too long.");
 
         using var rsa = RSA.Create(2048);
 
@@ -150,8 +151,6 @@ public class SecurityManager : ManagerBase, IDisposable
 
     public static string? RsaDecryptString(DeviceKey key, string encryptedData)
     {
-        if (encryptedData.Length >= 90) { /* ToDo: Split data */ }
-
         using var rsa = RSA.Create(2048);
 
         rsa.ImportFromPem(key.RsaPrivateKeyPem);
@@ -159,6 +158,33 @@ public class SecurityManager : ManagerBase, IDisposable
         var dataBytes = Convert.FromBase64String(encryptedData);
 
         return rsa.Decrypt(dataBytes, RSAEncryptionPadding.OaepSHA256).ToUTF8();
+    }
+
+    public static EncryptedContent RsaEncryptContent(DeviceKey key, string content)
+    {
+        var aesKey = Password.GeneratePassword(length: 16);
+
+        var encryptedAesKey = RsaEncryptString(key, aesKey);
+
+        var encryptedContent = AesEncrypt(content, aesKey);
+
+        return new EncryptedContent
+        {
+            Device = key.Device,
+            RsaEncryptedAesKeyBase64 = encryptedAesKey,
+            AesEncryptedContentBase64 = encryptedContent,
+        };
+    }
+
+    public static string RsaDecryptContent(DeviceKey key, EncryptedContent content)
+    {
+        ArgumentNullException.ThrowIfNull(content.RsaEncryptedAesKeyBase64, nameof(content.RsaEncryptedAesKeyBase64));
+
+        ArgumentNullException.ThrowIfNull(content.AesEncryptedContentBase64, nameof(content.AesEncryptedContentBase64));
+
+        var aesKey = RsaDecryptString(key, content.RsaEncryptedAesKeyBase64);
+
+        return AesDecrypt(content.AesEncryptedContentBase64, aesKey!);
     }
 
     public static string GetSHA1(string data)
@@ -231,5 +257,7 @@ public class SecurityManager : ManagerBase, IDisposable
     public void Dispose()
     {
         RsaInstance?.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }
