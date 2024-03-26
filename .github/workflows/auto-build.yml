@@ -46,7 +46,7 @@ jobs:
             - name: Initialize References
               run: |
                   dotnet tool install --global Cheese
-                  cheese reference --setup
+                  cheese reference --setup --convert-ssl-link-to-https-link
 
             - uses: actions/setup-python@v4
               with:
