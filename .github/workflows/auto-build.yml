@@ -43,6 +43,11 @@ jobs:
                   dotnet-version: |
                       8.0.x
 
+            - name: Initialize References
+              run: |
+                  dotnet tool install --global Cheese
+                  cheese reference --setup
+
             - uses: actions/setup-python@v4
               with:
                   python-version: "3.11"
