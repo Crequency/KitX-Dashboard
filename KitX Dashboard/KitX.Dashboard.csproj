@@ -16,28 +16,28 @@
         <Version>3.24.10.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2020-10-01"))).TotalDays)</Version>
     </PropertyGroup>
 
-    <!--用于将依赖移动到 Libraries 目录, 使根目录更加整洁-->
+    <!-- Used to move dependencies to the `Libraries` directory to make the root directory tidier -->
     <PropertyGroup>
         <BeautySharedRuntimeMode>False</BeautySharedRuntimeMode>
-        <!-- beauty into sub-directory, default is libs, quote with "" if contains space  -->
+        <!-- Beauty into sub-directory, default is libs, quote with "" if contains space -->
         <BeautyLibsDir Condition="$(BeautySharedRuntimeMode) == 'True'">../Libraries</BeautyLibsDir>
         <BeautyLibsDir Condition="$(BeautySharedRuntimeMode) != 'True'">./Libraries</BeautyLibsDir>
-        <!-- dlls that you don't want to be moved or can not be moved -->
+        <!-- Dlls that you don't want to be moved or can not be moved -->
         <!-- <BeautyExcludes>dll1.dll;lib*;...</BeautyExcludes> -->
-        <!-- dlls that end users never needed, so hide them -->
+        <!-- Dlls that end users never needed, so hide them -->
         <!-- <BeautyHiddens>hostfxr;hostpolicy;*.deps.json;*.runtimeconfig*.json</BeautyHiddens> -->
-        <!-- set to True if you want to disable -->
+        <!-- Set to True if you want to disable -->
         <DisableBeauty>False</DisableBeauty>
-        <!-- set to True if you want to allow 3rd debuggers(like dnSpy) debugs the app -->
+        <!-- Set to True if you want to allow 3rd debuggers (like dnSpy) debugs the app -->
         <BeautyEnableDebugging>False</BeautyEnableDebugging>
-        <!-- the patch can reduce the file count -->
-        <!-- set to False if you want to disable -->
+        <!-- The patch can reduce the file count -->
+        <!-- Set to False if you want to disable -->
         <!-- SCD Mode Feature Only -->
         <BeautyUsePatch>True</BeautyUsePatch>
         <!-- <BeautyAfterTasks></BeautyAfterTasks> -->
-        <!-- valid values: Error|Detail|Info -->
+        <!-- Valid values: Error|Detail|Info -->
         <BeautyLogLevel>Info</BeautyLogLevel>
-        <!-- set to a repo mirror if you have troble in connecting github -->
+        <!-- Set to a repo mirror if you have troble in connecting github -->
         <!-- <BeautyGitCDN>https://gitee.com/liesauer/HostFXRPatcher</BeautyGitCDN> -->
         <!-- <BeautyGitTree>master</BeautyGitTree> -->
     </PropertyGroup>
