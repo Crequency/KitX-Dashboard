@@ -6,16 +6,16 @@
 
 Based on `.NET 8` platform.
 
-Using [Avalonia UI](https://avaloniaui.net) as UI framework, using `Avalonia 11.0` .
+Using [Avalonia UI](https://avaloniaui.net) as UI framework, version `Avalonia 11.0` .
 
 # Clone
 
-We strongly suggest you to develop `KitX Dashboard` in `KitX Project` folder structure, visit [dependencies](#dependencies) for more.
+We strongly suggest you to develop `KitX Dashboard` in `KitX Project` main repo, visit [dependencies](#dependencies) for more.
 
 Instead of cloning almost total `KitX Project`, you can only clone `KitX Dashboard`.
 
 ```shell
-git clone git@github.com:Crequency/KitX=Dashboard.git
+git clone git@github.com:Crequency/KitX-Dashboard.git
 # or
 git clone https://github.com/Crequency/KitX-Dashboard.git
 ```
@@ -61,14 +61,11 @@ git clone git@github.com:Crequency/KitX.git
 cd KitX
 
 # Init submodules
-git submodule init
+git submodule update --init --recursive
 
-# Update submodules
-# If you are developing on Windows OS, replace `start.sh` with `start.ps1`
-# which requires powershell installed
-# WARN: We're developing new `cheese` program to replace `start.sh` and `start.ps1`
-./ToolKits/start.sh dashboard
-./ToolKits/start.sh reference
+# Install cheese via `dotnet tool install --global Crequency.Cheese`
+# If you have no ssh key for github, you can use https style link by append `--convert-ssl-link-to-https-link`
+cheese reference --setup
 ```
 
 Local dependencies are located at `KitX/Reference/` folder.
