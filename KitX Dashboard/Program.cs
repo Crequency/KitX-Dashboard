@@ -31,7 +31,7 @@ class Program
         }
         catch (Exception e)
         {
-            // Any unhandled exception will be catched here!
+            // Any unhandled exception will be caught here!
             File.AppendAllText(
                 "./dump.log".GetFullPath(),
                 $"""

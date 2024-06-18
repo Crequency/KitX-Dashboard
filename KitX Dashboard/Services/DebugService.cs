@@ -12,9 +12,13 @@ namespace KitX.Dashboard.Services;
 
 public static class DebugService
 {
-    private static readonly CSharpScriptEngine Engine = new();
+    private static CSharpScriptEngine Engine => new();
 
-    public static async Task<string?> ExecuteCodesAsync(string code, CancellationToken cancellationToken = default)
+    public static async Task<string?> ExecuteCodesAsync(
+        string code,
+        bool includeTimestamp = true,
+        CancellationToken cancellationToken = default
+    )
     {
         var sw = new Stopwatch();
 
@@ -24,43 +28,50 @@ public static class DebugService
 
         try
         {
-            var result = (await Engine.ExecuteAsync(
-                code,
-                options =>
-                {
-                    options = options
-                        .WithReferences(Assembly.GetExecutingAssembly())
-                        .WithImports("KitX", "KitX.Dashboard")
-                        .WithLanguageVersion(LanguageVersion.Preview)
-                        ;
+            var result = (
+                await Engine.ExecuteAsync(
+                    code,
+                    options =>
+                    {
+                        options = options
+                            .WithReferences(Assembly.GetExecutingAssembly())
+                            .WithImports("KitX", "KitX.Dashboard")
+                            .WithLanguageVersion(LanguageVersion.Preview);
 
-                    return options;
-
-                },
-                addDefaultImports: true,
-                runInReplMode: false,
-                cancellationToken: cancellationToken
-            ))?.ToString();
+                        return options;
+                    },
+                    addDefaultImports: true,
+                    runInReplMode: false,
+                    cancellationToken: cancellationToken
+                )
+            )?.ToString();
 
             sw.Stop();
 
-            return new StringBuilder()
-                .AppendLine($"[{begin:yyyy-MM-dd HH:mm:ss}] [I] Posted.")
-                .AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [I] Ended, took {sw.ElapsedMilliseconds} ms.")
-                .AppendLine(result)
-                .ToString()
-                ;
+            return includeTimestamp
+                ? new StringBuilder()
+                    .AppendLine($"[{begin:yyyy-MM-dd HH:mm:ss}] [I] Posted.")
+                    .AppendLine(
+                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [I] Ended, took {sw.ElapsedMilliseconds} ms."
+                    )
+                    .AppendLine(result)
+                    .ToString()
+                : result;
         }
         catch (Exception e)
         {
             sw.Stop();
 
-            return new StringBuilder()
-                .AppendLine($"[{begin:yyyy-MM-dd HH:mm:ss}] [I] Posted.")
-                .AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [E] Exception caught after {sw.ElapsedMilliseconds} ms, Message: {e.Message}")
-                .AppendLine(e.StackTrace)
-                .ToString()
-                ;
-        };
+            return includeTimestamp
+                ? new StringBuilder()
+                    .AppendLine($"[{begin:yyyy-MM-dd HH:mm:ss}] [I] Posted.")
+                    .AppendLine(
+                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [E] Exception caught after {sw.ElapsedMilliseconds} ms, Message: {e.Message}"
+                    )
+                    .AppendLine(e.StackTrace)
+                    .ToString()
+                : e.StackTrace;
+        }
+        ;
     }
 }
