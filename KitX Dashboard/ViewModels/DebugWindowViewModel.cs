@@ -19,17 +19,14 @@ internal class DebugWindowViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         SubmitCodesCommand = ReactiveCommand.Create<IDocument>(SubmitCodes);
 
         CancelExecutionCommand = ReactiveCommand.Create(() => _cancellationTokenSource?.Cancel());
     }
 
-    public override void InitEvents()
-    {
-
-    }
+    public sealed override void InitEvents() { }
 
     internal void SubmitCodes(IDocument doc)
     {
@@ -41,21 +38,27 @@ internal class DebugWindowViewModel : ViewModelBase
 
         _cancellationTokenSource = tokenSource;
 
-        Task.Run(async () =>
-        {
-            var result = await DebugService.ExecuteCodesAsync(code, tokenSource.Token);
-
-            tokenSource.Dispose();
-
-            _cancellationTokenSource = null;
-
-            Dispatcher.UIThread.Invoke(() =>
+        Task.Run(
+            async () =>
             {
-                ExecutionResult = result ?? string.Empty;
+                var result = await DebugService.ExecuteCodesAsync(
+                    code,
+                    cancellationToken: tokenSource.Token
+                );
 
-                IsExecuting = false;
-            });
-        });
+                tokenSource.Dispose();
+
+                _cancellationTokenSource = null;
+
+                Dispatcher.UIThread.Invoke(() =>
+                {
+                    ExecutionResult = result ?? string.Empty;
+
+                    IsExecuting = false;
+                });
+            },
+            tokenSource.Token
+        );
     }
 
     private string _executionResult = string.Empty;
