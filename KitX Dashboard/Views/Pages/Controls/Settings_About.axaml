@@ -59,32 +59,32 @@
                         HorizontalAlignment="Center"
                         Orientation="Horizontal">
 
-                <ui:HyperlinkButton Margin="5,0"
-                                    NavigateUri="https://github.com/Crequency/KitX/"
-                                    ToolTip.Tip="{Binding $self.NavigateUri}">
+                <HyperlinkButton Margin="5,0"
+                                 NavigateUri="https://github.com/Crequency/KitX/"
+                                 ToolTip.Tip="{Binding $self.NavigateUri}">
                     <StackPanel Orientation="Horizontal">
                         <icon:MaterialIcon Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Kind="Github"/>
                         <TextBlock Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Text=" GitHub Repo "/>
                     </StackPanel>
-                </ui:HyperlinkButton>
+                </HyperlinkButton>
 
-                <ui:HyperlinkButton Margin="5,0"
-                                    NavigateUri="https://kitx.apps.catrol.cn"
-                                    ToolTip.Tip="{Binding $self.NavigateUri}">
+                <HyperlinkButton Margin="5,0"
+                                 NavigateUri="https://kitx.apps.catrol.cn"
+                                 ToolTip.Tip="{Binding $self.NavigateUri}">
                     <StackPanel Orientation="Horizontal">
                         <icon:MaterialIcon Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Kind="OfficeBuilding"/>
                         <TextBlock Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Text=" Official Website "/>
                     </StackPanel>
-                </ui:HyperlinkButton>
+                </HyperlinkButton>
 
-                <ui:HyperlinkButton Margin="5,0"
-                                    NavigateUri="https://blog.catrol.cn"
-                                    ToolTip.Tip="{Binding $self.NavigateUri}">
+                <HyperlinkButton Margin="5,0"
+                                 NavigateUri="https://blog.catrol.cn"
+                                 ToolTip.Tip="{Binding $self.NavigateUri}">
                     <StackPanel Orientation="Horizontal">
                         <icon:MaterialIcon Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Kind="BlogOutline"/>
                         <TextBlock Foreground="{DynamicResource ThemePrimaryAccentTransparentDD}" Text=" Author Blog "/>
                     </StackPanel>
-                </ui:HyperlinkButton>
+                </HyperlinkButton>
 
             </StackPanel>
 
@@ -112,22 +112,22 @@
 
                 <StackPanel Margin="10">
                     <WrapPanel Margin="5">
-                        <ui:HyperlinkButton Margin="4"
-                                            Content="Dynesshely"
-                                            Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://github.com/Dynesshely"/>
-                        <ui:HyperlinkButton Margin="4"
-                                            Content="StardustSeemsInk"
-                                            Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://github.com/StardustSeemsInk"/>
-                        <ui:HyperlinkButton Margin="4"
-                                            Content="orzMaster"
-                                            Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://github.com/orzMaster"/>
-                        <ui:HyperlinkButton Margin="4"
-                                            Content="Cranyozen"
-                                            Foreground="{DynamicResource ThemePrimaryAccent}"
-                                            NavigateUri="https://github.com/Cranyozen"/>
+                        <HyperlinkButton Margin="4"
+                                         Content="Dynesshely"
+                                         Foreground="{DynamicResource ThemePrimaryAccent}"
+                                         NavigateUri="https://github.com/Dynesshely"/>
+                        <HyperlinkButton Margin="4"
+                                         Content="StardustSeemsInk"
+                                         Foreground="{DynamicResource ThemePrimaryAccent}"
+                                         NavigateUri="https://github.com/StardustSeemsInk"/>
+                        <HyperlinkButton Margin="4"
+                                         Content="orzMaster"
+                                         Foreground="{DynamicResource ThemePrimaryAccent}"
+                                         NavigateUri="https://github.com/orzMaster"/>
+                        <HyperlinkButton Margin="4"
+                                         Content="Cranyozen"
+                                         Foreground="{DynamicResource ThemePrimaryAccent}"
+                                         NavigateUri="https://github.com/Cranyozen"/>
                     </WrapPanel>
 
                 </StackPanel>

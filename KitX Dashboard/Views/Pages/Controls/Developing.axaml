@@ -14,9 +14,9 @@
                    HorizontalAlignment="Center"
                    FontSize="24"
                    Text="{DynamicResource Text_Public_Developing}"/>
-        <ui:HyperlinkButton HorizontalAlignment="Center"
-                            Content="github.com/Crequency/KitX"
-                            FontSize="14"
-                            NavigateUri="https://github.com/Crequency/KitX"/>
+        <HyperlinkButton HorizontalAlignment="Center"
+                         Content="github.com/Crequency/KitX"
+                         FontSize="14"
+                         NavigateUri="https://github.com/Crequency/KitX"/>
     </StackPanel>
 </UserControl>

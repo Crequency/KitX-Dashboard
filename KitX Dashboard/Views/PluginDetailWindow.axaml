@@ -70,19 +70,19 @@
                         </ExperimentalAcrylicBorder>
                         <StackPanel Margin="10">
                             <DockPanel Margin="0,5,0,0">
-                                <ui:HyperlinkButton Margin="10,0,0,0"
-                                                    Content="{Binding PluginDetail.AuthorName}"
-                                                    DockPanel.Dock="Right"
-                                                    NavigateUri="{Binding PluginDetail.AuthorLink}"
-                                                    ToolTip.Tip="{Binding PluginDetail.AuthorLink}"/>
+                                <HyperlinkButton Margin="10,0,0,0"
+                                                 Content="{Binding PluginDetail.AuthorName}"
+                                                 DockPanel.Dock="Right"
+                                                 NavigateUri="{Binding PluginDetail.AuthorLink}"
+                                                 ToolTip.Tip="{Binding PluginDetail.AuthorLink}"/>
                                 <TextBlock VerticalAlignment="Center"
                                            DockPanel.Dock="Right"
                                            Text="{DynamicResource Text_Plugin_AuthorName}"/>
                                 <TextBlock VerticalAlignment="Center" Text="{DynamicResource Text_Plugin_PublisherName}"/>
-                                <ui:HyperlinkButton Margin="10,0,0,0"
-                                                    Content="{Binding PluginDetail.PublisherName}"
-                                                    NavigateUri="{Binding PluginDetail.PublisherLink}"
-                                                    ToolTip.Tip="{Binding PluginDetail.PublisherLink}"/>
+                                <HyperlinkButton Margin="10,0,0,0"
+                                                 Content="{Binding PluginDetail.PublisherName}"
+                                                 NavigateUri="{Binding PluginDetail.PublisherLink}"
+                                                 ToolTip.Tip="{Binding PluginDetail.PublisherLink}"/>
                                 <Border/>
                             </DockPanel>
                             <DockPanel Margin="0,5,0,0">
