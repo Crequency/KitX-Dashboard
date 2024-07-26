@@ -31,7 +31,7 @@
                         Background="{DynamicResource ThemePrimaryAccentTransparentDD}"
                         Command="{Binding AppNameButtonClickedCommand}"
                         Content="KitX"
-                        CornerRadius="45"
+                        CornerRadius="25"
                         FontSize="30"
                         FontWeight="SemiBold"/>
 
