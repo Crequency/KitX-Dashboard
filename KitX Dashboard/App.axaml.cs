@@ -22,9 +22,22 @@ namespace KitX.Dashboard;
 
 public partial class App : Application
 {
-    public static readonly Bitmap DefaultIcon = new(
-        $"{ConstantTable.AssetsPath}{ConfigManager.Instance.AppConfig.App.CoverIconFileName}".GetFullPath()
-    );
+    public static Bitmap? DefaultIcon
+    {
+        get
+        {
+            var path = Path.Combine(
+                    ConstantTable.AssetsPath,
+                    ConfigManager.Instance.AppConfig.App.CoverIconFileName
+                )
+                .GetFullPath();
+
+            if (Design.IsDesignMode)
+                return null;
+
+            return new(path);
+        }
+    }
 
     private AppViewModel? viewModel;
 
@@ -53,7 +66,7 @@ public partial class App : Application
             "Light" => ThemeVariant.Light,
             "Dark" => ThemeVariant.Dark,
             "Follow" => ThemeVariant.Default,
-            _ => ThemeVariant.Default
+            _ => ThemeVariant.Default,
         };
     }
 
@@ -70,9 +83,7 @@ public partial class App : Application
             Resources.MergedDictionaries.Clear();
 
             Resources.MergedDictionaries.Add(
-                AvaloniaRuntimeXamlLoader.Load(
-                    File.ReadAllText(path)
-                ) as ResourceDictionary ?? []
+                AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(path)) as ResourceDictionary ?? []
             );
         }
         catch (Exception ex)
@@ -84,9 +95,9 @@ public partial class App : Application
             try
             {
                 Resources.MergedDictionaries.Add(
-                    AvaloniaRuntimeXamlLoader.Load(
-                        File.ReadAllText(backup_langPath)
-                    ) as ResourceDictionary ?? []
+                    AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(backup_langPath))
+                        as ResourceDictionary
+                        ?? []
                 );
 
                 config.App.AppLanguage = backup_lang;
@@ -117,7 +128,9 @@ public partial class App : Application
 
         if (Current is not null)
         {
-            Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
+            Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(
+                new Color(c.A, c.R, c.G, c.B)
+            );
 
             for (char i = 'A'; i <= 'E'; ++i)
             {
@@ -139,9 +152,8 @@ public partial class App : Application
         {
             var usingLightTheme = Current?.ActualThemeVariant == ThemeVariant.Light;
 
-            LiveCharts.Configure(
-                config =>
-                    (usingLightTheme ? config.AddLightTheme() : config.AddDarkTheme())
+            LiveCharts.Configure(config =>
+                (usingLightTheme ? config.AddLightTheme() : config.AddDarkTheme())
                     .AddSkiaSharp()
                     .AddDefaultMappers()
             );
@@ -164,10 +176,7 @@ public partial class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainWindowViewModel(),
-            };
+            desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel() };
         }
 
         if (ConfigManager.Instance.AppConfig.App.ShowAnnouncementWhenStart)

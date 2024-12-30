@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Threading;
 using CommandLine;
 using Common.BasicHelper.IO;
@@ -43,6 +44,9 @@ public static class AppFramework
 
     public static void RunFramework()
     {
+        if (Design.IsDesignMode)
+            return;
+
         // If dump file exists, delete it.
         if (File.Exists("./dump.log".GetFullPath()))
             File.Delete("./dump.log".GetFullPath());
@@ -243,6 +247,10 @@ public static class AppFramework
 
     public static void EnsureExit()
     {
+
+        if (Design.IsDesignMode)
+            return;
+
         var location = $"{nameof(AppFramework)}.{nameof(EnsureExit)}";
 
         ConstantTable.EnsureExiting = true;
