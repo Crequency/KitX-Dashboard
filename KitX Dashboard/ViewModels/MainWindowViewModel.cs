@@ -14,7 +14,7 @@ internal class MainWindowViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         RefreshGreetingCommand = ReactiveCommand.Create<object?>(mainWindow =>
         {
@@ -24,22 +24,7 @@ internal class MainWindowViewModel : ViewModelBase
         });
     }
 
-    public override void InitEvents()
-    {
-
-    }
-
-    internal static double Window_Width
-    {
-        get => AppConfig.Windows.MainWindow.Size.Width!.Value;
-        set => AppConfig.Windows.MainWindow.Size.Width = value;
-    }
-
-    internal static double Window_Height
-    {
-        get => AppConfig.Windows.MainWindow.Size.Height!.Value;
-        set => AppConfig.Windows.MainWindow.Size.Height = value;
-    }
+    public sealed override void InitEvents() { }
 
     internal ReactiveCommand<object?, Unit>? RefreshGreetingCommand { get; set; }
 }

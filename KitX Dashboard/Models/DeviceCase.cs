@@ -30,7 +30,7 @@ public class DeviceCase : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         AuthorizeAndExchangeDeviceKeyCommand = ReactiveCommand.Create<DeviceInfo>(
             async info =>
@@ -38,8 +38,8 @@ public class DeviceCase : ViewModelBase
                 if (ConstantTable.IsExchangingDeviceKey)
                 {
                     var box = MessageBoxManager.GetMessageBoxStandard(
-                        Translate("Text_Log_Warning"),
-                        Translate("Text_Device_Tip_ExchangingDeviceKey"),
+                        Translate("Text_Log_Warning") ?? "Null",
+                        Translate("Text_Device_Tip_ExchangingDeviceKey") ?? "Null",
                         ButtonEnum.Ok,
                         Icon.Warning
                     );
@@ -61,8 +61,8 @@ public class DeviceCase : ViewModelBase
                 if (SecurityManager.Instance.LocalDeviceKey is null)
                 {
                     var box = MessageBoxManager.GetMessageBoxStandard(
-                        Translate("Text_Log_Error"),
-                        Translate("Text_Device_Tip_SecuritySystemFailed"),
+                        Translate("Text_Log_Error") ?? "Null",
+                        Translate("Text_Device_Tip_SecuritySystemFailed") ?? "Null",
                         ButtonEnum.Ok,
                         Icon.Error
                     );
@@ -88,7 +88,8 @@ public class DeviceCase : ViewModelBase
 
                 var sha1 = SecurityManager.GetSHA1(key);
 
-                var url = $"http://{target}/Api/V1/Device/{nameof(DeviceController.ExchangeKey)}?verifyCodeSHA1={sha1}&address={address}";
+                var url =
+                    $"http://{target}/Api/V1/Device/{nameof(DeviceController.ExchangeKey)}?verifyCodeSHA1={sha1}&address={address}";
 
                 ConstantTable.ExchangeDeviceKeyCode = key;
 
@@ -100,18 +101,22 @@ public class DeviceCase : ViewModelBase
 
                     ConstantTable.IsExchangingDeviceKey = false;
 
-                    var url = $"http://{target}/Api/V1/Device/{nameof(DeviceController.CancelExchangingKey)}";
+                    var url =
+                        $"http://{target}/Api/V1/Device/{nameof(DeviceController.CancelExchangingKey)}";
 
                     using var http = new HttpClient();
 
                     var response = await http.PostAsync(url, null);
 
-                    Log.Information($"In {nameof(DeviceController)}: Requested {url} with responsed {response.StatusCode} - {response}");
+                    Log.Information(
+                        $"In {nameof(DeviceController)}: Requested {url} with responsed {response.StatusCode} - {response}"
+                    );
                 });
 
                 ViewInstances.ShowWindow(window);
 
-                EventService.OnReceiveCancelExchangingDeviceKey += () => Dispatcher.UIThread.Post(() => window.Canceled());
+                EventService.OnReceiveCancelExchangingDeviceKey += () =>
+                    Dispatcher.UIThread.Post(() => window.Canceled());
 
                 using var http = new HttpClient();
 
@@ -124,19 +129,17 @@ public class DeviceCase : ViewModelBase
                     )
                 );
 
-                if (response.IsSuccessStatusCode)
-                {
-
-                }
+                if (response.IsSuccessStatusCode) { }
                 else
                 {
                     var box = MessageBoxManager.GetMessageBoxStandard(
-                        Translate("Text_Log_Error"),
+                        Translate("Text_Log_Error") ?? "Null",
                         new StringBuilder()
                             .AppendLine($"Requested: {url}")
-                            .AppendLine($"Responsed: {response.StatusCode} - {response.RequestMessage}")
-                            .ToString()
-                        ,
+                            .AppendLine(
+                                $"Responsed: {response.StatusCode} - {response.RequestMessage}"
+                            )
+                            .ToString(),
                         ButtonEnum.Ok,
                         Icon.Error
                     );
@@ -157,8 +160,8 @@ public class DeviceCase : ViewModelBase
                 if (info.IsCurrentDevice())
                 {
                     var box = MessageBoxManager.GetMessageBoxStandard(
-                        Translate("Text_Log_Error"),
-                        Translate("Text_Device_Tip_DeleteYourSelfError"),
+                        Translate("Text_Log_Error") ?? "Null",
+                        Translate("Text_Device_Tip_DeleteYourSelfError") ?? "Null",
                         ButtonEnum.Ok,
                         Icon.Forbidden
                     );
@@ -174,10 +177,7 @@ public class DeviceCase : ViewModelBase
         );
     }
 
-    public override void InitEvents()
-    {
-
-    }
+    public sealed override void InitEvents() { }
 
     private DeviceInfo deviceInfo;
 
@@ -205,68 +205,79 @@ public class DeviceCase : ViewModelBase
 
     private void Connect()
     {
-        TasksManager.RunTask(async () =>
-        {
-            using var http = new HttpClient();
-
-            var targetKey = SecurityManager.SearchDeviceKey(DeviceInfo.Device);
-
-            if (targetKey is null) return;
-
-            var local = SecurityManager.Instance.GetPrivateDeviceKey();
-
-            if (local is null) return;
-
-            var deviceName = local.Device.DeviceName;
-
-            var deviceNameEncrypted = SecurityManager.Instance.EncryptString(deviceName);
-
-            var address = $"{DeviceInfo.Device.IPv4}:{DeviceInfo.DevicesServerPort}";
-
-            var deviceJson = JsonSerializer.Serialize(local.Device);
-
-            deviceJson = Convert.ToBase64String(deviceJson.FromUTF8());
-
-            var url = $"http://{address}/Api/V1/Device/{nameof(DeviceController.Connect)}?deviceBase64={deviceJson}";
-
-            var response = await http.PostAsync(
-                url,
-                new StringContent(
-                    JsonSerializer.Serialize(deviceNameEncrypted),
-                    Encoding.UTF8,
-                    "application/json"
-                )
-            );
-
-            if (response.IsSuccessStatusCode)
+        TasksManager.RunTask(
+            async () =>
             {
-                Log.Information($"Connected to {DeviceInfo.Device.DeviceName} with response {response}");
+                using var http = new HttpClient();
 
-                var body = await response.Content.ReadAsStringAsync();
+                var targetKey = SecurityManager.SearchDeviceKey(DeviceInfo.Device);
 
-                if (body is null) return;
+                if (targetKey is null)
+                    return;
 
-                ConnectionToken = SecurityManager.RsaDecryptString(targetKey, body);
+                var local = SecurityManager.Instance.GetPrivateDeviceKey();
 
-                Update();
-            }
-            else
-            {
-                Log.Warning(
-                    new StringBuilder()
-                        .AppendLine($"Requested: {url}")
-                        .AppendLine($"Responsed: {response.StatusCode} - {response.ReasonPhrase}")
-                        .AppendLine(response.RequestMessage?.ToString())
-                        .ToString()
+                if (local is null)
+                    return;
+
+                var deviceName = local.Device.DeviceName;
+
+                var deviceNameEncrypted = SecurityManager.Instance.EncryptString(deviceName);
+
+                var address = $"{DeviceInfo.Device.IPv4}:{DeviceInfo.DevicesServerPort}";
+
+                var deviceJson = JsonSerializer.Serialize(local.Device);
+
+                deviceJson = Convert.ToBase64String(deviceJson.FromUTF8());
+
+                var url =
+                    $"http://{address}/Api/V1/Device/{nameof(DeviceController.Connect)}?deviceBase64={deviceJson}";
+
+                var response = await http.PostAsync(
+                    url,
+                    new StringContent(
+                        JsonSerializer.Serialize(deviceNameEncrypted),
+                        Encoding.UTF8,
+                        "application/json"
+                    )
                 );
-            }
 
-        }, $"Connecting {DeviceInfo.Device.DeviceName}");
+                if (response.IsSuccessStatusCode)
+                {
+                    Log.Information(
+                        $"Connected to {DeviceInfo.Device.DeviceName} with response {response}"
+                    );
+
+                    var body = await response.Content.ReadAsStringAsync();
+
+                    if (body is null)
+                        return;
+
+                    ConnectionToken = SecurityManager.RsaDecryptString(targetKey, body);
+
+                    Update();
+                }
+                else
+                {
+                    Log.Warning(
+                        new StringBuilder()
+                            .AppendLine($"Requested: {url}")
+                            .AppendLine(
+                                $"Responsed: {response.StatusCode} - {response.ReasonPhrase}"
+                            )
+                            .AppendLine(response.RequestMessage?.ToString())
+                            .ToString()
+                    );
+                }
+            },
+            $"Connecting {DeviceInfo.Device.DeviceName}"
+        );
     }
 
     public bool IsAuthorized => SecurityManager.IsDeviceAuthorized(DeviceInfo.Device);
 
-    public bool IsConnected => DevicesServer.Instance.IsDeviceSignedIn(DeviceInfo.Device) || ConnectionToken is not null;
+    public bool IsConnected =>
+        DevicesServer.Instance.IsDeviceSignedIn(DeviceInfo.Device) || ConnectionToken is not null;
 
     public bool IsCurrentDevice => DeviceInfo.IsCurrentDevice();
 

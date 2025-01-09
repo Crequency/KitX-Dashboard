@@ -22,12 +22,9 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
-    {
+    public sealed override void InitCommands() { }
 
-    }
-
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         PluginInfos.CollectionChanged += (_, _) =>
         {
@@ -73,7 +70,8 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         get => PluginIndexInRange(SelectedPluginIndex) ? PluginInfos[SelectedPluginIndex] : null;
         set
         {
-            if (value is null) return;
+            if (value is null)
+                return;
 
             var index = PluginInfos.IndexOf(value);
 
@@ -87,11 +85,11 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
     {
         get
         {
-            if (SelectedPluginInfo is null) selectedFunction = null;
+            if (SelectedPluginInfo is null)
+                selectedFunction = null;
 
             return selectedFunction;
         }
-
         set
         {
             this.RaiseAndSetIfChanged(ref selectedFunction, value);
@@ -135,7 +133,6 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
             this.RaiseAndSetIfChanged(ref isSelectingFunction, value);
 
-
             if (value)
             {
                 SearchingText = SelectedFunction?.Name;
@@ -149,7 +146,8 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
     {
         get
         {
-            if (SelectedFunction is null) return false;
+            if (SelectedFunction is null)
+                return false;
 
             return SelectedFunction.Value.Parameters.Count != 0;
         }
@@ -167,7 +165,8 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
             {
                 return SelectedPluginInfo?.Functions.Select(f => f.Name) ?? [];
             }
-            else return [];
+            else
+                return [];
         }
     }
 
@@ -176,10 +175,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
     public string? SearchingText
     {
         get => searchingText;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref searchingText, value);
-        }
+        set { this.RaiseAndSetIfChanged(ref searchingText, value); }
     }
 
     private Vector scrollViewerOffset = new(0, 0);
@@ -198,7 +194,11 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref isInDirectSelectingMode, value);
     }
 
-    private void BringSelectedButtonIntoView(int perLineButtonsCount, double scrollviewerHeight, double scrollviewerOffsetY)
+    private void BringSelectedButtonIntoView(
+        int perLineButtonsCount,
+        double scrollviewerHeight,
+        double scrollviewerOffsetY
+    )
     {
         var viewerHeight = (int)Math.Floor(scrollviewerHeight);
 
@@ -233,7 +233,11 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    internal void SelectLeftOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
+    internal void SelectLeftOne(
+        int perLineCount,
+        double scrollviewerHeight,
+        double scrollviewerOffsetY
+    )
     {
         if (PluginIndexInRange(selectedPluginIndex - 1))
         {
@@ -243,7 +247,11 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    internal void SelectRightOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
+    internal void SelectRightOne(
+        int perLineCount,
+        double scrollviewerHeight,
+        double scrollviewerOffsetY
+    )
     {
         if (PluginIndexInRange(SelectedPluginIndex + 1))
         {
@@ -253,7 +261,11 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    internal void SelectUpOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
+    internal void SelectUpOne(
+        int perLineCount,
+        double scrollviewerHeight,
+        double scrollviewerOffsetY
+    )
     {
         var targetIndex = SelectedPluginIndex - perLineCount;
 
@@ -265,7 +277,11 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    internal void SelectDownOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
+    internal void SelectDownOne(
+        int perLineCount,
+        double scrollviewerHeight,
+        double scrollviewerOffsetY
+    )
     {
         var targetIndex = SelectedPluginIndex + perLineCount;
 
@@ -326,7 +342,8 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
             {
                 SelectedPluginIndex = index;
 
-                if (SelectedFunction is not null) SelectedFunction = null;
+                if (SelectedFunction is not null)
+                    SelectedFunction = null;
 
                 IsSelectingFunction = true;
             }
@@ -342,7 +359,11 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
                         break;
                     }
 
-            if (SelectedPluginInfo is not null && SelectedFunction is not null && (HavingParameters == false))
+            if (
+                SelectedPluginInfo is not null
+                && SelectedFunction is not null
+                && (HavingParameters == false)
+            )
             {
                 var plugConnector = PluginsServer.Instance.FindConnector(SelectedPluginInfo);
 
@@ -350,10 +371,10 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
                 {
                     var connector = new Connector()
                         .SetSerializer(x => JsonSerializer.Serialize(x))
-                        .SetSender(plugConnector.Request)
-                        ;
+                        .SetSender(plugConnector.Request);
 
-                    var request = connector.Request()
+                    var request = connector
+                        .Request()
                         .ReceiveCommand()
                         .UpdateCommand(cmd =>
                         {
@@ -361,14 +382,10 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
                             return cmd;
                         })
-                        .Send()
-                        ;
+                        .Send();
                 }
             }
         }
-        else
-        {
-
-        }
+        else { }
     }
 }

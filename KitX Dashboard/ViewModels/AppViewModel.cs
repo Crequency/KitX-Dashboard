@@ -21,7 +21,7 @@ internal class AppViewModel : ViewModelBase
         UpdateTrayIconText();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         TrayIconClickedCommand = ReactiveCommand.Create(() =>
         {
@@ -41,7 +41,7 @@ internal class AppViewModel : ViewModelBase
 
         ViewLatestAnnouncementsCommand = ReactiveCommand.Create(async () =>
         {
-            await AnouncementManager.CheckNewAnnouncements();
+            await AnnouncementManager.CheckNewAnnouncements();
         });
 
         OpenDebugToolCommand = ReactiveCommand.Create(() =>
@@ -77,7 +77,7 @@ internal class AppViewModel : ViewModelBase
         ExitCommand = ReactiveCommand.Create(Exit);
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         ViewInstances.DeviceCases.CollectionChanged += (_, _) => UpdateTrayIconText();
 
@@ -104,8 +104,7 @@ internal class AppViewModel : ViewModelBase
             .Append(ViewInstances.PluginInfos.Count + " ")
             .AppendLine(Translate("Text_Lib_Tip_Connected"))
             .AppendLine()
-            .Append("Hello, World!")
-            ;
+            .Append("Hello, World!");
 
         TrayIconText = sb.ToString();
     }
@@ -130,11 +129,7 @@ internal class AppViewModel : ViewModelBase
     internal string TrayIconText
     {
         get => trayIconText;
-        set => this.RaiseAndSetIfChanged(
-            ref trayIconText,
-            value,
-            nameof(TrayIconText)
-        );
+        set => this.RaiseAndSetIfChanged(ref trayIconText, value, nameof(TrayIconText));
     }
 
     internal ReactiveCommand<Unit, Unit>? TrayIconClickedCommand { get; set; }

@@ -100,7 +100,7 @@ public class PluginConnector
         if (_initialized == false)
             Initialize();
 
-        var location = $"{nameof(PluginConnector)}.{nameof(Run)}";
+        const string location = $"{nameof(PluginConnector)}.{nameof(Run)}";
 
         _connection!.OnOpen = () =>
         {

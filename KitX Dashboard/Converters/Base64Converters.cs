@@ -11,7 +11,7 @@ public class Base64ToIconConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var location = $"{nameof(Base64ToIconConverter)}.{nameof(Convert)}";
+        const string location = $"{nameof(Base64ToIconConverter)}.{nameof(Convert)}";
 
         try
         {

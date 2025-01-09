@@ -30,7 +30,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         InitData();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         ColorConfirmedCommand = ReactiveCommand.Create(async () =>
         {
@@ -38,7 +38,8 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                if (Application.Current is null) return;
+                if (Application.Current is null)
+                    return;
 
                 Application.Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(
                     new Color(c.A, c.R, c.G, c.B)
@@ -46,15 +47,11 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
 
                 for (char i = 'A'; i <= 'E'; ++i)
                     Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                        new SolidColorBrush(
-                            new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
-                        );
+                        new SolidColorBrush(new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B));
 
                 for (int i = 1; i <= 9; ++i)
                     Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                        new SolidColorBrush(
-                            new Color((byte)(i * 10 + i), c.R, c.G, c.B)
-                        );
+                        new SolidColorBrush(new Color((byte)(i * 10 + i), c.R, c.G, c.B));
             });
 
             AppConfig.App.ThemeColor = themeColor.ToHexString();
@@ -63,16 +60,14 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         });
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         EventService.LanguageChanged += () =>
         {
             foreach (var item in SupportedThemes)
                 item.ThemeDisplayName = GetThemeDisplayText(item.ThemeName);
 
-            _currentAppTheme = SupportedThemes.Find(
-                x => x.ThemeName.Equals(AppConfig.App.Theme)
-            );
+            _currentAppTheme = SupportedThemes.Find(x => x.ThemeName.Equals(AppConfig.App.Theme));
 
             this.RaisePropertyChanged(nameof(CurrentAppTheme));
 
@@ -85,14 +80,12 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         SupportedLanguages.Clear();
 
         foreach (var item in AppConfig.App.SurpportLanguages)
-            SupportedLanguages.Add(new SupportedLanguage()
-            {
-                LanguageCode = item.Key,
-                LanguageName = item.Value
-            });
+            SupportedLanguages.Add(
+                new SupportedLanguage() { LanguageCode = item.Key, LanguageName = item.Value }
+            );
 
-        LanguageSelected = SupportedLanguages.FindIndex(
-            x => x.LanguageCode.Equals(AppConfig.App.AppLanguage)
+        LanguageSelected = SupportedLanguages.FindIndex(x =>
+            x.LanguageCode.Equals(AppConfig.App.AppLanguage)
         );
     }
 
@@ -104,36 +97,34 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         {
             var obj = Application.Current?.Resources["ThemePrimaryAccent"];
 
-            if (obj is not SolidColorBrush brush) return new();
+            if (obj is not SolidColorBrush brush)
+                return new();
 
             return new(brush.Color);
         }
         set => themeColor = value;
     }
 
-    private static string GetThemeDisplayText(string key) => Translate(key, prefix: "Text_Settings_Personalise_Theme_") ?? string.Empty;
+    private static string GetThemeDisplayText(string key) =>
+        Translate(key, prefix: "Text_Settings_Personalise_Theme_") ?? string.Empty;
 
     internal static List<SupportedTheme> SupportedThemes =>
-    [
-        new()
-        {
-            ThemeName = FluentAvaloniaTheme.LightModeString,
-            ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.LightModeString),
-        },
-        new()
-        {
-            ThemeName = FluentAvaloniaTheme.DarkModeString,
-            ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.DarkModeString),
-        },
-        new()
-        {
-            ThemeName = "Follow",
-            ThemeDisplayName = GetThemeDisplayText("Follow"),
-        }
-    ];
+        [
+            new()
+            {
+                ThemeName = FluentAvaloniaTheme.LightModeString,
+                ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.LightModeString),
+            },
+            new()
+            {
+                ThemeName = FluentAvaloniaTheme.DarkModeString,
+                ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.DarkModeString),
+            },
+            new() { ThemeName = "Follow", ThemeDisplayName = GetThemeDisplayText("Follow") },
+        ];
 
-    private SupportedTheme? _currentAppTheme = SupportedThemes.Find(
-        x => x.ThemeName.Equals(AppConfig.App.Theme)
+    private SupportedTheme? _currentAppTheme = SupportedThemes.Find(x =>
+        x.ThemeName.Equals(AppConfig.App.Theme)
     );
 
     internal SupportedTheme? CurrentAppTheme
@@ -143,11 +134,13 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         {
             _currentAppTheme = value;
 
-            if (value is null) return;
+            if (value is null)
+                return;
 
             AppConfig.App.Theme = value.ThemeName;
 
-            if (Application.Current is null) return;
+            if (Application.Current is null)
+                return;
 
             Application.Current.RequestedThemeVariant = value.ThemeName switch
             {
@@ -166,11 +159,12 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
 
     internal static void LoadLanguage()
     {
-        var location = $"{nameof(Settings_PersonaliseViewModel)}.{nameof(LoadLanguage)}";
+        const string location = $"{nameof(Settings_PersonaliseViewModel)}.{nameof(LoadLanguage)}";
 
         var lang = AppConfig.App.AppLanguage;
 
-        if (Application.Current is null) return;
+        if (Application.Current is null)
+            return;
 
         try
         {
@@ -179,16 +173,19 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
             Application.Current.Resources.MergedDictionaries.Add(
                 AvaloniaRuntimeXamlLoader.Load(
                     File.ReadAllText($"{ConstantTable.LanguageFilePath}/{lang}.axaml")
-                ) as ResourceDictionary ?? []
+                ) as ResourceDictionary
+                    ?? []
             );
         }
         catch (Exception ex)
         {
-            MessageBoxManager.GetMessageBoxStandard(
-                "Error",
-                "No this language file.",
-                icon: MsBox.Avalonia.Enums.Icon.Error
-            ).ShowWindowAsync();
+            MessageBoxManager
+                .GetMessageBoxStandard(
+                    "Error",
+                    "No this language file.",
+                    icon: MsBox.Avalonia.Enums.Icon.Error
+                )
+                .ShowWindowAsync();
 
             Log.Warning(ex, $"In {location}: Language File {lang}.axaml not found.");
         }
@@ -207,7 +204,8 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
             {
                 AppConfig.App.AppLanguage = SupportedLanguages[value].LanguageCode;
 
-                if (languageSelected != -1) LoadLanguage();
+                if (languageSelected != -1)
+                    LoadLanguage();
 
                 languageSelected = value;
 

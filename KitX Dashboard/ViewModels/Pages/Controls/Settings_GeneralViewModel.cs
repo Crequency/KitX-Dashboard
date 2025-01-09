@@ -18,21 +18,11 @@ internal class Settings_GeneralViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         ShowAnnouncementsInstantlyCommand = ReactiveCommand.Create(() =>
         {
-            Task.Run(async () =>
-            {
-                try
-                {
-                    await AnouncementManager.CheckNewAnnouncements();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, $"辣鸡公告系统又双叒叕崩了 ! {ex.Message}");
-                }
-            });
+            Task.Run(async () => await AnnouncementManager.CheckNewAnnouncements());
         });
 
         OpenDebugToolCommand = ReactiveCommand.Create(() =>
@@ -41,11 +31,10 @@ internal class Settings_GeneralViewModel : ViewModelBase
         });
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
-        EventService.DevelopSettingsChanged += () => this.RaisePropertyChanged(
-            nameof(DeveloperSettingEnabled)
-        );
+        EventService.DevelopSettingsChanged += () =>
+            this.RaisePropertyChanged(nameof(DeveloperSettingEnabled));
     }
 
     internal static string LocalPluginsFileDirectory

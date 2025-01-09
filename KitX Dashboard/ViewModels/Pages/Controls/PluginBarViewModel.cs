@@ -25,17 +25,17 @@ internal class PluginBarViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         ViewDetailsCommand = ReactiveCommand.Create(() =>
         {
             if (Plugin is not null && ViewInstances.MainWindow is not null)
                 new PluginDetailWindow()
                 {
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 }
-                .SetPluginInfo(Plugin.PluginInfo)
-                .Show(ViewInstances.MainWindow);
+                    .SetPluginInfo(Plugin.PluginInfo)
+                    .Show(ViewInstances.MainWindow);
         });
 
         RemoveCommand = ReactiveCommand.Create(() =>
@@ -59,9 +59,10 @@ internal class PluginBarViewModel : ViewModelBase
 
         LaunchCommand = ReactiveCommand.Create(() =>
         {
-            var location = $"{nameof(PluginBarViewModel)}.{nameof(LaunchCommand)}";
+            const string location = $"{nameof(PluginBarViewModel)}.{nameof(LaunchCommand)}";
 
-            if (Plugin?.LoaderInfo is null) return;
+            if (Plugin?.LoaderInfo is null)
+                return;
 
             new Thread(() =>
             {
@@ -73,19 +74,22 @@ internal class PluginBarViewModel : ViewModelBase
 
                     var pluginPath = $"{Plugin?.InstallPath}/{pd?.RootStartupFileName}";
                     var pluginFile = pluginPath.GetFullPath();
-                    var connectStr = "ws://" +
-                        $"{DevicesDiscoveryServer.Instance.DefaultDeviceInfo.Device.IPv4}" +
-                        $":" +
-                        $"{ConstantTable.PluginsServerPort}/";
+                    var connectStr =
+                        "ws://"
+                        + $"{DevicesDiscoveryServer.Instance.DefaultDeviceInfo.Device.IPv4}"
+                        + $":"
+                        + $"{ConstantTable.PluginsServerPort}/";
 
-                    if (Plugin is null) return;
+                    if (Plugin is null)
+                        return;
 
                     if (Plugin.LoaderInfo.SelfLoad)
                         Process.Start(pluginFile, $"--connect {connectStr}");
                     else
                     {
-                        var loaderFile = $"{AppConfig.Loaders.InstallPath}/" +
-                            $"{loaderName}/{loaderVersion}/{loaderName}";
+                        var loaderFile =
+                            $"{AppConfig.Loaders.InstallPath}/"
+                            + $"{loaderName}/{loaderVersion}/{loaderName}";
 
                         if (OperatingSystem.IsWindows())
                             loaderFile += ".exe";
@@ -112,7 +116,7 @@ internal class PluginBarViewModel : ViewModelBase
         });
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         EventService.LanguageChanged += () => this.RaisePropertyChanged(nameof(DisplayName));
     }
@@ -125,11 +129,15 @@ internal class PluginBarViewModel : ViewModelBase
     {
         get
         {
-            if (Plugin is null) return null;
+            if (Plugin is null)
+                return null;
 
             return Plugin.PluginInfo.DisplayName.TryGetValue(
-                AppConfig.App.AppLanguage, out var lang
-            ) ? lang : Plugin.PluginInfo.DisplayName.Values.GetEnumerator().Current;
+                AppConfig.App.AppLanguage,
+                out var lang
+            )
+                ? lang
+                : Plugin.PluginInfo.DisplayName.Values.GetEnumerator().Current;
         }
     }
 
@@ -143,11 +151,12 @@ internal class PluginBarViewModel : ViewModelBase
     {
         get
         {
-            var location = $"{nameof(PluginBarViewModel)}.{nameof(IconDisplay)}.getter";
+            const string location = $"{nameof(PluginBarViewModel)}.{nameof(IconDisplay)}.getter";
 
             try
             {
-                if (Plugin is null) return App.DefaultIcon;
+                if (Plugin is null)
+                    return App.DefaultIcon;
 
                 var src = Convert.FromBase64String(Plugin.PluginInfo.IconInBase64);
 
@@ -159,9 +168,9 @@ internal class PluginBarViewModel : ViewModelBase
             {
                 Log.Warning(
                     e,
-                    $"In {location}: " +
-                        $"Failed to transform icon from base64 to byte[] " +
-                        $"or create bitmap from `MemoryStream`. {e.Message}"
+                    $"In {location}: "
+                        + $"Failed to transform icon from base64 to byte[] "
+                        + $"or create bitmap from `MemoryStream`. {e.Message}"
                 );
 
                 return App.DefaultIcon;

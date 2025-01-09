@@ -8,16 +8,16 @@ using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 
-internal class AnouncementsWindowViewModel : ViewModelBase
+internal class AnnouncementsWindowViewModel : ViewModelBase
 {
-    public AnouncementsWindowViewModel()
+    public AnnouncementsWindowViewModel()
     {
         InitCommands();
 
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         ConfirmReceivedCommand = ReactiveCommand.Create(() =>
         {
@@ -25,34 +25,36 @@ internal class AnouncementsWindowViewModel : ViewModelBase
 
             var accepted = config.Accepted;
 
-            if (SelectedMenuItem is null || accepted is null) return;
+            if (SelectedMenuItem is null)
+                return;
 
             var key = SelectedMenuItem.Content!.ToString();
 
-            if (key is null) return;
+            if (key is null)
+                return;
 
             if (!accepted.Contains(key))
                 accepted.Add(key);
 
             config.Save(config.ConfigFileLocation!);
 
-            var finded = false;
+            var found = false;
 
             var navView = Window?.AnouncementsNavigationView;
 
-            if (navView is not null)
-            {
-                foreach (NavigationViewItem item in navView.MenuItems.Cast<NavigationViewItem>())
-                {
-                    if (finded)
-                    {
-                        SelectedMenuItem = item;
-                        break;
-                    }
+            if (navView is null)
+                return;
 
-                    if (item == SelectedMenuItem)
-                        finded = true;
+            foreach (NavigationViewItem item in navView.MenuItems.Cast<NavigationViewItem>())
+            {
+                if (found)
+                {
+                    SelectedMenuItem = item;
+                    break;
                 }
+
+                if (item == SelectedMenuItem)
+                    found = true;
             }
         });
 
@@ -64,29 +66,27 @@ internal class AnouncementsWindowViewModel : ViewModelBase
 
             var navView = Window?.AnouncementsNavigationView;
 
-            if (navView is not null)
+            if (navView is null)
+                return;
+
+            foreach (NavigationViewItem item in navView.MenuItems.Cast<NavigationViewItem>())
             {
-                foreach (NavigationViewItem item in navView.MenuItems.Cast<NavigationViewItem>())
-                {
-                    var key = item.Content?.ToString();
+                var key = item.Content?.ToString();
 
-                    if (key is null) continue;
+                if (key is null)
+                    continue;
 
-                    if (!accepted.Contains(key))
-                        accepted.Add(key);
-                }
-
-                config.Save(config.ConfigFileLocation!);
-
-                Window?.Close();
+                if (!accepted.Contains(key))
+                    accepted.Add(key);
             }
+
+            config.Save(config.ConfigFileLocation!);
+
+            Window?.Close();
         });
     }
 
-    public override void InitEvents()
-    {
-
-    }
+    public sealed override void InitEvents() { }
 
     internal static double Window_Width
     {
@@ -100,43 +100,45 @@ internal class AnouncementsWindowViewModel : ViewModelBase
         set => AppConfig.Windows.AnnouncementWindow.Size.Height = value;
     }
 
-    private NavigationViewItem? selectedMenuItem;
+    private NavigationViewItem? _selectedMenuItem;
 
     internal NavigationViewItem? SelectedMenuItem
     {
-        get => selectedMenuItem;
+        get => _selectedMenuItem;
         set
         {
-            selectedMenuItem = value;
+            _selectedMenuItem = value;
 
-            if (SelectedMenuItem is null) return;
+            if (_selectedMenuItem is null)
+                return;
 
-            var key = SelectedMenuItem.Content?.ToString();
+            var key = SelectedMenuItem!.Content?.ToString();
 
-            if (key is null) return;
+            if (key is null)
+                return;
 
             Markdown = Sources[key];
 
-            this.RaiseAndSetIfChanged(ref selectedMenuItem, value);
+            this.RaiseAndSetIfChanged(ref _selectedMenuItem, value);
         }
     }
 
-    private string markdown = string.Empty;
+    private string _markdown = string.Empty;
 
     internal string Markdown
     {
-        get => markdown;
-        set => this.RaiseAndSetIfChanged(ref markdown, value);
+        get => _markdown;
+        set => this.RaiseAndSetIfChanged(ref _markdown, value);
     }
 
-    private Dictionary<string, string> sources = [];
+    private Dictionary<string, string> _sources = [];
 
     internal Dictionary<string, string> Sources
     {
-        get => sources;
+        get => _sources;
         set
         {
-            sources = value;
+            _sources = value;
 
             var navView = Window?.AnouncementsNavigationView;
 
@@ -144,18 +146,15 @@ internal class AnouncementsWindowViewModel : ViewModelBase
 
             foreach (var item in Sources.Reverse())
             {
-                navView?.MenuItems?.Add(new NavigationViewItem()
-                {
-                    Content = item.Key
-                });
+                navView?.MenuItems?.Add(new NavigationViewItem() { Content = item.Key });
             }
 
             if (navView is not null)
-                SelectedMenuItem = navView.MenuItems.First() as NavigationViewItem;
+                SelectedMenuItem = navView.MenuItems?.First() as NavigationViewItem;
         }
     }
 
-    internal AnouncementsWindow? Window { get; set; }
+    internal AnnouncementsWindow? Window { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? ConfirmReceivedCommand { get; set; }
 

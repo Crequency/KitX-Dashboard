@@ -13,7 +13,8 @@ public class ConfigManager
 {
     private static ConfigManager? _instance;
 
-    public static ConfigManager Instance => _instance ??= new ConfigManager().SetLocation("./Config/").Load();
+    public static ConfigManager Instance =>
+        _instance ??= new ConfigManager().SetLocation("./Config/").Load();
 
     internal class ConfigManagerInfo
     {
@@ -49,26 +50,31 @@ public class ConfigManager
 
     private void InitEvents()
     {
-        var location = $"{nameof(ConfigManager)}.{nameof(InitEvents)}";
+        const string location = $"{nameof(ConfigManager)}.{nameof(InitEvents)}";
 
-        TasksManager.RunTask(() =>
-        {
-
-            EventService.AppConfigChanged += () =>
+        TasksManager.RunTask(
+            () =>
             {
-                Instances.FileWatcherManager!.IncreaseExceptCount(AppConfig.ConfigFileWatcherName!);
+                EventService.AppConfigChanged += () =>
+                {
+                    Instances.FileWatcherManager!.IncreaseExceptCount(
+                        AppConfig.ConfigFileWatcherName!
+                    );
 
-                AppConfig.Save(AppConfig.ConfigFileLocation!);
-            };
+                    AppConfig.Save(AppConfig.ConfigFileLocation!);
+                };
 
-            EventService.PluginsConfigChanged += () =>
-            {
-                Instances.FileWatcherManager!.IncreaseExceptCount(PluginsConfig.ConfigFileWatcherName!);
+                EventService.PluginsConfigChanged += () =>
+                {
+                    Instances.FileWatcherManager!.IncreaseExceptCount(
+                        PluginsConfig.ConfigFileWatcherName!
+                    );
 
-                PluginsConfig.Save(PluginsConfig.ConfigFileLocation!);
-            };
-
-        }, location);
+                    PluginsConfig.Save(PluginsConfig.ConfigFileLocation!);
+                };
+            },
+            location
+        );
     }
 
     public ConfigManager SetLocation(string location)
@@ -79,7 +85,8 @@ public class ConfigManager
         return this;
     }
 
-    private void RegisterFileWatcher<T>(T config) where T : ConfigBase, new()
+    private void RegisterFileWatcher<T>(T config)
+        where T : ConfigBase, new()
     {
         var name = "ConfigFileWatcher".Append(typeof(T).Name);
 
@@ -94,7 +101,7 @@ public class ConfigManager
             path,
             (_, y) =>
             {
-                var location = $"{nameof(ConfigManager)}.{nameof(RegisterFileWatcher)}";
+                const string location = $"{nameof(ConfigManager)}.{nameof(RegisterFileWatcher)}";
 
                 Log.Information($"FileChanged: {name} | {y.Name}, {y.ChangeType}");
 
@@ -110,7 +117,8 @@ public class ConfigManager
         );
     }
 
-    public ConfigManager LoadConfigFile<T>() where T : ConfigBase, new()
+    public ConfigManager LoadConfigFile<T>()
+        where T : ConfigBase, new()
     {
         var name = typeof(T).Name;
 
@@ -136,37 +144,48 @@ public class ConfigManager
 
     public ConfigManager Load()
     {
-        var location = $"{nameof(ConfigManager)}.{nameof(Load)}";
+        const string location = $"{nameof(ConfigManager)}.{nameof(Load)}";
 
-        TasksManager.RunTask(() =>
-        {
-            LoadConfigFile<AppConfig>();
-            LoadConfigFile<PluginsConfig>();
-            LoadConfigFile<MarketConfig>();
-            LoadConfigFile<AnnouncementConfig>();
-            LoadConfigFile<SecurityConfig>();
-        }, location, catchException: false);
+        TasksManager.RunTask(
+            () =>
+            {
+                LoadConfigFile<AppConfig>();
+                LoadConfigFile<PluginsConfig>();
+                LoadConfigFile<MarketConfig>();
+                LoadConfigFile<AnnouncementConfig>();
+                LoadConfigFile<SecurityConfig>();
+            },
+            location,
+            catchException: false
+        );
 
         return this;
     }
 
     public ConfigManager SaveAll()
     {
-        var location = $"{nameof(ConfigManager)}.{nameof(SaveAll)}";
+        const string location = $"{nameof(ConfigManager)}.{nameof(SaveAll)}";
 
-        TasksManager.RunTask(() =>
-        {
-            foreach (var config in _configs.Values)
-                config.Save(config.ConfigFileLocation ?? throw new InvalidOperationException(
-                    $"Saving config requires `{nameof(ConfigBase.ConfigFileLocation)}` property not null."
-                ));
-
-        }, location, catchException: true);
+        TasksManager.RunTask(
+            () =>
+            {
+                foreach (var config in _configs.Values)
+                    config.Save(
+                        config.ConfigFileLocation
+                            ?? throw new InvalidOperationException(
+                                $"Saving config requires `{nameof(ConfigBase.ConfigFileLocation)}` property not null."
+                            )
+                    );
+            },
+            location,
+            catchException: true
+        );
 
         return this;
     }
 
-    private T GetConfig<T>() where T : ConfigBase
+    private T GetConfig<T>()
+        where T : ConfigBase
     {
         var name = typeof(T).Name;
 

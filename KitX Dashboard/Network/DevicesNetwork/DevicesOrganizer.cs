@@ -44,7 +44,7 @@ internal class DevicesOrganizer : ConfigFetcher
 
         KeepCheckAndRemove();
 
-        Watch4MainDevice();
+        ObserveMainDevice();
     }
 
     private void InitEvents()
@@ -58,16 +58,21 @@ internal class DevicesOrganizer : ConfigFetcher
                 receivedDeviceInfo4Watch?.Add(deviceInfo);
             }
 
-            if (deviceInfo.IsMainDevice && deviceInfo.DevicesServerBuildTime < ConstantTable.ServerBuildTime)
+            if (
+                deviceInfo.IsMainDevice
+                && deviceInfo.DevicesServerBuildTime < ConstantTable.ServerBuildTime
+            )
             {
                 ConstantTable.IsMainMachine = false;
 
-                Watch4MainDevice();
+                ObserveMainDevice();
 
                 Log.Information(
                     new StringBuilder()
                         .AppendLine("Watched earlier built server.")
-                        .AppendLine($"DevicesServerAddress: {deviceInfo.Device.IPv4}:{deviceInfo.DevicesServerPort} ")
+                        .AppendLine(
+                            $"DevicesServerAddress: {deviceInfo.Device.IPv4}:{deviceInfo.DevicesServerPort} "
+                        )
                         .AppendLine($"DevicesServerBuildTime: {deviceInfo.DevicesServerBuildTime}")
                         .ToString()
                 );
@@ -87,7 +92,8 @@ internal class DevicesOrganizer : ConfigFetcher
 
             var findThis = thisTurnAdded.Contains(hashCode);
 
-            if (findThis) continue;
+            if (findThis)
+                continue;
 
             foreach (var item in ViewInstances.DeviceCases)
             {
@@ -140,12 +146,12 @@ internal class DevicesOrganizer : ConfigFetcher
 
     private void KeepCheckAndRemove()
     {
-        var location = $"{nameof(DevicesOrganizer)}.{nameof(KeepCheckAndRemove)}";
+        const string location = $"{nameof(DevicesOrganizer)}.{nameof(KeepCheckAndRemove)}";
 
         var timer = new Timer()
         {
             Interval = AppConfig.Web.DevicesViewRefreshDelay,
-            AutoReset = true
+            AutoReset = true,
         };
 
         timer.Elapsed += (_, _) =>
@@ -182,9 +188,9 @@ internal class DevicesOrganizer : ConfigFetcher
         };
     }
 
-    internal void Watch4MainDevice(CancellationToken token = default)
+    internal void ObserveMainDevice(CancellationToken token = default)
     {
-        var location = $"{nameof(DevicesOrganizer)}.{nameof(Watch4MainDevice)}";
+        const string location = $"{nameof(DevicesOrganizer)}.{nameof(ObserveMainDevice)}";
 
         new Thread(() =>
         {
@@ -200,7 +206,8 @@ internal class DevicesOrganizer : ConfigFetcher
             {
                 try
                 {
-                    if (receivedDeviceInfo4Watch is null) continue;
+                    if (receivedDeviceInfo4Watch is null)
+                        continue;
 
                     lock (_receivedDeviceInfo4WatchLock)
                     {
@@ -208,7 +215,10 @@ internal class DevicesOrganizer : ConfigFetcher
                         {
                             if (item.IsMainDevice)
                             {
-                                if (item.DevicesServerBuildTime.ToUniversalTime() < earliestBuiltServerTime)
+                                if (
+                                    item.DevicesServerBuildTime.ToUniversalTime()
+                                    < earliestBuiltServerTime
+                                )
                                 {
                                     serverPort = item.DevicesServerPort;
                                     serverAddress = item.Device.IPv4;
@@ -241,7 +251,7 @@ internal class DevicesOrganizer : ConfigFetcher
                     Log.Error(e, $"In {location}: {e.Message} Rewatch.");
 
                     if (token.IsCancellationRequested == false)
-                        Watch4MainDevice();
+                        ObserveMainDevice();
 
                     break;
                 }
@@ -251,7 +261,7 @@ internal class DevicesOrganizer : ConfigFetcher
 
     private void WatchingOver(bool foundMainDevice, string serverAddress, int serverPort)
     {
-        var location = $"{nameof(DevicesOrganizer)}.{nameof(WatchingOver)}";
+        const string location = $"{nameof(DevicesOrganizer)}.{nameof(WatchingOver)}";
 
         Log.Information(
             new StringBuilder()

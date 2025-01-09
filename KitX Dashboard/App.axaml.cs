@@ -172,7 +172,7 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        var location = $"{nameof(App)}.{nameof(OnFrameworkInitializationCompleted)}";
+        const string location = $"{nameof(App)}.{nameof(OnFrameworkInitializationCompleted)}";
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -180,17 +180,7 @@ public partial class App : Application
         }
 
         if (ConfigManager.Instance.AppConfig.App.ShowAnnouncementWhenStart)
-            new Thread(async () =>
-            {
-                try
-                {
-                    await AnouncementManager.CheckNewAnnouncements();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, $"In {location}: {ex.Message}");
-                }
-            }).Start();
+            new Thread(async () => await AnnouncementManager.CheckNewAnnouncements()).Start();
 
         base.OnFrameworkInitializationCompleted();
     }

@@ -91,7 +91,7 @@ internal class StatisticsManager
 
     internal static void BeginRecord()
     {
-        var location = $"{nameof(StatisticsManager)}.{nameof(BeginRecord)}";
+        const string location = $"{nameof(StatisticsManager)}.{nameof(BeginRecord)}";
 
         var use_timer = new Timer()
         {

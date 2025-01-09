@@ -16,8 +16,7 @@ namespace KitX.Dashboard.Network;
 
 internal static class NetworkHelper
 {
-    internal static bool CheckNetworkInterface
-    (
+    internal static bool CheckNetworkInterface(
         NetworkInterface adapter,
         IPInterfaceProperties adapterProperties
     )
@@ -25,24 +24,25 @@ internal static class NetworkHelper
         var userPointed = ConfigManager.Instance.AppConfig.Web.AcceptedNetworkInterfaces;
 
         if (userPointed is not null)
-            if (userPointed.Contains(adapter.Name))
-                return true;
-            else return false;
+            return userPointed.Contains(adapter.Name);
 
-        if (adapter.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
-            adapter.NetworkInterfaceType != NetworkInterfaceType.Wireless80211
-            &&
-            (
-                adapterProperties.MulticastAddresses.Count == 0 ||
+        var noNetworkConnection =
+            adapter.NetworkInterfaceType != NetworkInterfaceType.Ethernet
+            && adapter.NetworkInterfaceType != NetworkInterfaceType.Wireless80211
+            && (
+                adapterProperties.MulticastAddresses.Count == 0
+                ||
                 // most of VPN adapters will be skipped
-                !adapter.SupportsMulticast ||
+                !adapter.SupportsMulticast
+                ||
                 // multicast is meaningless for this type of connection
-                OperationalStatus.Up != adapter.OperationalStatus ||
+                OperationalStatus.Up != adapter.OperationalStatus
+                ||
                 // this adapter is off or not connected
                 !adapter.Supports(NetworkInterfaceComponent.IPv4)
-            )
-            ) return false;
-        return true;
+            );
+
+        return !noNetworkConnection;
     }
 
     internal static bool IsInterNetworkAddressV4(IPAddress address)
@@ -60,19 +60,22 @@ internal static class NetworkHelper
 
     internal static string GetInterNetworkIPv4()
     {
-        var location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv4)}";
+        const string location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv4)}";
 
         try
         {
             var search =
                 from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                where ip.AddressFamily == AddressFamily.InterNetwork
+                where
+                    ip.AddressFamily == AddressFamily.InterNetwork
                     && IsInterNetworkAddressV4(ip)
                     && !ip.ToString().Equals("127.0.0.1")
                     && ip.ToString().StartsWith(ConfigManager.Instance.AppConfig.Web.IPFilter)
                 select ip;
 
-            Log.Information($"IPv4 addresses: {search.Print(print: false)}");
+            Log.Information(
+                $"IPv4 addresses: {search.Print(print: false, separateWithNewLine: false)}"
+            );
 
             var result = search.FirstOrDefault()?.ToString();
 
@@ -88,17 +91,19 @@ internal static class NetworkHelper
 
     internal static string GetInterNetworkIPv6()
     {
-        var location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv6)}";
+        const string location = $"{nameof(NetworkHelper)}.{nameof(GetInterNetworkIPv6)}";
 
         try
         {
             var search =
                 from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                where ip.AddressFamily == AddressFamily.InterNetworkV6
-                    && !ip.ToString().Equals("::1")
+                where
+                    ip.AddressFamily == AddressFamily.InterNetworkV6 && !ip.ToString().Equals("::1")
                 select ip;
 
-            Log.Information($"IPv6 addresses: {search.Print(print: false)}");
+            Log.Information(
+                $"IPv6 addresses: {search.Print(print: false, separateWithNewLine: false)}"
+            );
 
             var result = search.FirstOrDefault()?.ToString();
 
@@ -114,21 +119,21 @@ internal static class NetworkHelper
 
     internal static string? TryGetDeviceMacAddress()
     {
-        var location = $"{nameof(NetworkHelper)}.{nameof(TryGetDeviceMacAddress)}";
+        const string location = $"{nameof(NetworkHelper)}.{nameof(TryGetDeviceMacAddress)}";
 
         try
         {
             var mac =
                 from nic in NetworkInterface.GetAllNetworkInterfaces()
-                where CheckNetworkInterface(nic, nic.GetIPProperties()) &&
-                nic.GetIPProperties().UnicastAddresses.Any(
-                    x => x.Address.ToString().Equals(GetInterNetworkIPv4())
-                )
+                where
+                    CheckNetworkInterface(nic, nic.GetIPProperties())
+                    && nic.GetIPProperties()
+                        .UnicastAddresses.Any(x =>
+                            x.Address.ToString().Equals(GetInterNetworkIPv4())
+                        )
                 select nic.GetPhysicalAddress().ToString();
 
-            var result = mac.FirstOrDefault()?.SeparateGroup(
-                2, sb => sb.Append(':')
-            );
+            var result = mac.FirstOrDefault()?.SeparateGroup(2, sb => sb.Append(':'));
 
             return result;
         }
@@ -140,9 +145,9 @@ internal static class NetworkHelper
         }
     }
 
-    internal static string? TryGetOSVersionString()
+    internal static string? TryGetOsVersionString()
     {
-        var location = $"{nameof(NetworkHelper)}.{nameof(TryGetOSVersionString)}";
+        const string location = $"{nameof(NetworkHelper)}.{nameof(TryGetOsVersionString)}";
 
         var result = Environment.OSVersion.VersionString;
 
@@ -152,28 +157,27 @@ internal static class NetworkHelper
             {
                 case OperatingSystems.Linux:
 
-                    var versionFilePath = "/etc/os-release";
-                    var versionSegament = "PRETTY_NAME";
+                    const string versionFilePath = "/etc/os-release";
+                    const string versionSegment = "PRETTY_NAME";
+
                     var needFindInIssue = false;
 
                     if (File.Exists(versionFilePath))
                     {
                         var osRelease = File.ReadAllLines(versionFilePath)
                             .Select(line => line.Split('='))
-                            .ToDictionary
-                            (
-                                parts => parts[0],
-                                parts => parts[1].Trim('"')
-                            );
+                            .ToDictionary(parts => parts[0], parts => parts[1].Trim('"'));
 
-                        if (osRelease.TryGetValue(versionSegament, out var version))
+                        if (osRelease.TryGetValue(versionSegment, out var version))
                             result = version;
-                        else needFindInIssue = true;
+                        else
+                            needFindInIssue = true;
                     }
 
                     if (needFindInIssue)
                     {
-                        var issueFilePath = "/etc/issue";
+                        const string issueFilePath = "/etc/issue";
+
                         if (File.Exists(issueFilePath))
                         {
                             var issue = File.ReadAllText(issueFilePath);
@@ -185,17 +189,13 @@ internal static class NetworkHelper
                     break;
 
                 case OperatingSystems.MacOS:
-                    var command = "sw_vers";
+                    const string command = "sw_vers";
 
                     var productName = command.ExecuteAsCommand("-productName");
                     var productVersion = command.ExecuteAsCommand("-productVersion");
                     var buildVersion = command.ExecuteAsCommand("-buildVersion");
 
-                    if (productName is null || productVersion is null || buildVersion is null)
-                        break;
-
-                    result = $"{productName} {productVersion} {buildVersion}"
-                        .Replace("\n", "");
+                    result = $"{productName} {productVersion} {buildVersion}".Replace("\n", "");
 
                     break;
             }
@@ -208,22 +208,23 @@ internal static class NetworkHelper
         return result;
     }
 
-    internal static DeviceInfo GetDeviceInfo() => new()
-    {
-        Device = new()
+    internal static DeviceInfo GetDeviceInfo() =>
+        new()
         {
-            DeviceName = Environment.MachineName,
-            MacAddress = TryGetDeviceMacAddress() ?? "",
-            IPv4 = GetInterNetworkIPv4(),
-            IPv6 = GetInterNetworkIPv6(),
-        },
-        IsMainDevice = ConstantTable.IsMainMachine,
-        SendTime = DateTime.UtcNow,
-        DeviceOSType = OperatingSystemUtils.GetOSType(),
-        DeviceOSVersion = TryGetOSVersionString() ?? "",
-        PluginsServerPort = ConstantTable.PluginsServerPort,
-        DevicesServerPort = ConstantTable.DevicesServerPort,
-        DevicesServerBuildTime = new(),
-        PluginsCount = ViewInstances.PluginInfos.Count,
-    };
+            Device = new()
+            {
+                DeviceName = Environment.MachineName,
+                MacAddress = TryGetDeviceMacAddress() ?? "",
+                IPv4 = GetInterNetworkIPv4(),
+                IPv6 = GetInterNetworkIPv6(),
+            },
+            IsMainDevice = ConstantTable.IsMainMachine,
+            SendTime = DateTime.UtcNow,
+            DeviceOSType = OperatingSystemUtils.GetOSType(),
+            DeviceOSVersion = TryGetOsVersionString() ?? "",
+            PluginsServerPort = ConstantTable.PluginsServerPort,
+            DevicesServerPort = ConstantTable.DevicesServerPort,
+            DevicesServerBuildTime = new(),
+            PluginsCount = ViewInstances.PluginInfos.Count,
+        };
 }

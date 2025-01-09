@@ -9,8 +9,6 @@
         xmlns:vm="using:KitX.Dashboard.ViewModels"
         x:Name="MainWindowInstance"
         Title="{DynamicResource Text_MainWindow_Title}"
-        Width="{Binding Window_Width}"
-        Height="{Binding Window_Height}"
         MinWidth="800"
         MinHeight="600"
         d:DesignHeight="450"

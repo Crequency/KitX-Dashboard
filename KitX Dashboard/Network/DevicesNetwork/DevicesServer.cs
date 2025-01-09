@@ -37,13 +37,19 @@ public class DevicesServer : ConfigFetcher
 
         new Thread(host.Run).Start();
 
-        var addresses = host.Services.GetService<IServer>()?.Features.Get<IServerAddressesFeature>()?.Addresses;
+        var addresses = host
+            .Services.GetService<IServer>()
+            ?.Features.Get<IServerAddressesFeature>()
+            ?.Addresses;
 
         while (addresses is null || addresses.Count == 0)
         {
             await Task.Delay(500);
 
-            addresses = host.Services.GetService<IServer>()?.Features.Get<IServerAddressesFeature>()?.Addresses;
+            addresses = host
+                .Services.GetService<IServer>()
+                ?.Features.Get<IServerAddressesFeature>()
+                ?.Addresses;
         }
 
         if (addresses is not null && addresses.Count != 0)
@@ -70,21 +76,23 @@ public class DevicesServer : ConfigFetcher
             {
                 webBuilder.UseStartup<Startup>();
                 webBuilder.UseUrls($"http://0.0.0.0:{port}");
-            })
-            ;
+            });
 
     internal bool IsDeviceTokenExist(string token) => SignedDeviceTokens.ContainsValue(token);
 
     internal DeviceLocator? SearchDeviceByToken(string token)
     {
-        if (IsDeviceTokenExist(token) == false) return null;
+        if (IsDeviceTokenExist(token) == false)
+            return null;
 
         return SignedDeviceTokens.First(x => x.Value.Equals(token)).Key;
     }
 
-    internal bool IsDeviceSignedIn(DeviceLocator locator) => SignedDeviceTokens.ContainsKey(locator);
+    internal bool IsDeviceSignedIn(DeviceLocator locator) =>
+        SignedDeviceTokens.ContainsKey(locator);
 
-    internal void AddDeviceToken(DeviceLocator locator, string token) => SignedDeviceTokens.Add(locator, token);
+    internal void AddDeviceToken(DeviceLocator locator, string token) =>
+        SignedDeviceTokens.Add(locator, token);
 
     internal string SignInDevice(DeviceLocator locator)
     {
@@ -102,7 +110,10 @@ public class DevicesServer : ConfigFetcher
 
 public class Startup
 {
-    private readonly List<string> apiVersions = [.. typeof(DevicesServerApiVersions).GetEnumNames()];
+    private readonly List<string> apiVersions =
+    [
+        .. typeof(DevicesServerApiVersions).GetEnumNames(),
+    ];
 
     public void ConfigureServices(IServiceCollection services)
     {
@@ -114,12 +125,15 @@ public class Startup
         {
             apiVersions.ForEach(version =>
             {
-                options.SwaggerDoc(version, new OpenApiInfo
-                {
-                    Title = "KitX Dashboard DevicesServer API",
-                    Version = version,
-                    Description = $"Version: {version}"
-                });
+                options.SwaggerDoc(
+                    version,
+                    new OpenApiInfo
+                    {
+                        Title = "KitX Dashboard DevicesServer API",
+                        Version = version,
+                        Description = $"Version: {version}",
+                    }
+                );
             });
         });
     }

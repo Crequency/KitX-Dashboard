@@ -13,7 +13,7 @@ internal class HomePageViewModel : ViewModelBase
         InitCommands();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         ResetToAutoCommand = ReactiveCommand.Create(() =>
         {
@@ -44,15 +44,16 @@ internal class HomePageViewModel : ViewModelBase
         }
     }
 
-    internal Thickness FirstItemMargin => NavigationViewPaneDisplayMode switch
-    {
-        NavigationViewPaneDisplayMode.Auto => new(0, 5, 0, 0),
-        NavigationViewPaneDisplayMode.Left => new(0, 5, 0, 0),
-        NavigationViewPaneDisplayMode.LeftCompact => new(0, 5, 0, 0),
-        NavigationViewPaneDisplayMode.LeftMinimal => new(0, 5, 0, 0),
-        NavigationViewPaneDisplayMode.Top => new(0, 0, 0, 0),
-        _ => new(0, 0, 0, 0)
-    };
+    internal Thickness FirstItemMargin =>
+        NavigationViewPaneDisplayMode switch
+        {
+            NavigationViewPaneDisplayMode.Auto => new(0, 5, 0, 0),
+            NavigationViewPaneDisplayMode.Left => new(0, 5, 0, 0),
+            NavigationViewPaneDisplayMode.LeftCompact => new(0, 5, 0, 0),
+            NavigationViewPaneDisplayMode.LeftMinimal => new(0, 5, 0, 0),
+            NavigationViewPaneDisplayMode.Top => new(0, 0, 0, 0),
+            _ => new(0, 0, 0, 0),
+        };
 
     internal NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
     {

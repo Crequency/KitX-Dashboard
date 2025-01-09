@@ -63,8 +63,8 @@ public partial class PluginsServer : ConfigFetcher
 
     public PluginConnector? FindConnector(PluginInfo info)
     {
-        var query = PluginConnectors.Where(
-            x => x.PluginInfo is not null && x.PluginInfo.Equals(info)
+        var query = PluginConnectors.Where(x =>
+            x.PluginInfo is not null && x.PluginInfo.Equals(info)
         );
 
         if (query.Any())
@@ -73,19 +73,14 @@ public partial class PluginsServer : ConfigFetcher
             return null;
     }
 
-    public PluginConnector? FindConnector(string connectionId) => PluginConnectors.FirstOrDefault(
-        x => x.ConnectionId?.Equals(connectionId) ?? false
-    );
+    public PluginConnector? FindConnector(string connectionId) =>
+        PluginConnectors.FirstOrDefault(x => x.ConnectionId?.Equals(connectionId) ?? false);
 
     public async Task<PluginsServer> Close()
     {
         await Task.Run(() =>
         {
-            Task.WaitAll(
-                _connectors.Select<PluginConnector, Task>(
-                    c => c.CloseAsync()
-                ).ToArray()
-            );
+            Task.WaitAll(_connectors.Select<PluginConnector, Task>(c => c.CloseAsync()).ToArray());
 
             _connectors.Clear();
 

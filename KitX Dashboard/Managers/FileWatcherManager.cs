@@ -27,7 +27,7 @@ public class FileWatcherManager : ManagerBase
         string filePath,
         Action<object, FileSystemEventArgs> onchange)
     {
-        var location = $"{nameof(FileWatcherManager)}.{nameof(RegisterWatcher)}";
+        const string location = $"{nameof(FileWatcherManager)}.{nameof(RegisterWatcher)}";
 
         if (!Watchers.ContainsKey(name))
         {
@@ -89,7 +89,7 @@ internal class FileWatcher : IDisposable
         Action<object, FileSystemEventArgs> onchanged,
         NotifyFilters? notifyFilters = NotifyFilters.LastWrite)
     {
-        var location = $"{nameof(FileWatcherManager)}.{nameof(FileWatcher)}";
+        const string location = $"{nameof(FileWatcherManager)}.{nameof(FileWatcher)}";
 
         var filepath = filename.GetFullPath();
 

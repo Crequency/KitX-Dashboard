@@ -17,26 +17,22 @@ internal class Settings_AboutViewModel : ViewModelBase
         InitCommands();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
-        AppNameButtonClickedCommand = ReactiveCommand.Create(
-            () =>
-            {
-                if (AppLogo is not null)
-                {
-                    if (AppLogo.IsAnimating)
-                        AppLogo.StopAnimations();
-                    else
-                        AppLogo.InitAnimations();
-                }
-            }
-        );
+        AppNameButtonClickedCommand = ReactiveCommand.Create(() =>
+        {
+            if (AppLogo is null)
+                return;
+
+            if (AppLogo.IsAnimating)
+                AppLogo.StopAnimations();
+            else
+                AppLogo.InitAnimations();
+        });
 
         LoadThirdPartyLicenseCommand = ReactiveCommand.Create(async () =>
         {
-            var license = await FileHelper.ReadAllAsync(
-                ConstantTable.ThirdPartLicenseFilePath
-            );
+            var license = await FileHelper.ReadAllAsync(ConstantTable.ThirdPartLicenseFilePath);
 
             ThirdPartyLicenseString = license;
         });

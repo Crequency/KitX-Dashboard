@@ -14,7 +14,10 @@ public static class EventService
 
         if (eventField is null || !typeof(Delegate).IsAssignableFrom(eventField.FieldType))
         {
-            throw new ArgumentException($"No event found with the name '{eventName}'.", nameof(eventName));
+            throw new ArgumentException(
+                $"No event found with the name '{eventName}'.",
+                nameof(eventName)
+            );
         }
 
         var @delegate = eventField.GetValue(null) as Delegate;
@@ -22,87 +25,78 @@ public static class EventService
         @delegate?.DynamicInvoke(objects);
     }
 
+#pragma warning disable CS0067 // Event is never used
+
     public delegate void LanguageChangedHandler();
 
-    public static event LanguageChangedHandler LanguageChanged = new(() => { });
-
+    public static event LanguageChangedHandler LanguageChanged = () => { };
 
     public delegate void GreetingTextIntervalUpdatedHandler();
 
-    public static event GreetingTextIntervalUpdatedHandler GreetingTextIntervalUpdated = new(() => { });
-
+    public static event GreetingTextIntervalUpdatedHandler GreetingTextIntervalUpdated = () => { };
 
     public delegate void AppConfigChangedHandler();
 
-    public static event AppConfigChangedHandler AppConfigChanged = new(() => { });
-
+    public static event AppConfigChangedHandler AppConfigChanged = () => { };
 
     public delegate void PluginsConfigChangedHandler();
 
-    public static event PluginsConfigChangedHandler PluginsConfigChanged = new(() => { });
-
+    public static event PluginsConfigChangedHandler PluginsConfigChanged = () => { };
 
     public delegate void MicaOpacityChangedHandler();
 
-    public static event MicaOpacityChangedHandler MicaOpacityChanged = new(() => { });
-
+    public static event MicaOpacityChangedHandler MicaOpacityChanged = () => { };
 
     public delegate void DevelopSettingsChangedHandler();
 
-    public static event DevelopSettingsChangedHandler DevelopSettingsChanged = new(() => { });
-
+    public static event DevelopSettingsChangedHandler DevelopSettingsChanged = () => { };
 
     public delegate void LogConfigUpdatedHandler();
 
-    public static event LogConfigUpdatedHandler LogConfigUpdated = new(() => { });
-
+    public static event LogConfigUpdatedHandler LogConfigUpdated = () => { };
 
     public delegate void ThemeConfigChangedHandler();
 
-    public static event ThemeConfigChangedHandler ThemeConfigChanged = new(() => { });
-
+    public static event ThemeConfigChangedHandler ThemeConfigChanged = () => { };
 
     public delegate void UseStatisticsChangedHandler();
 
-    public static event UseStatisticsChangedHandler UseStatisticsChanged = new(() => { });
-
+    public static event UseStatisticsChangedHandler UseStatisticsChanged = () => { };
 
     public delegate void DevicesServerPortChangedHandler(int port);
 
-    public static event DevicesServerPortChangedHandler DevicesServerPortChanged = new(port => ConstantTable.DevicesServerPort = port);
-
+    public static event DevicesServerPortChangedHandler DevicesServerPortChanged = port =>
+        ConstantTable.DevicesServerPort = port;
 
     public delegate void PluginsServerPortChangedHandler(int port);
 
-    public static event PluginsServerPortChangedHandler PluginsServerPortChanged = new(port => ConstantTable.PluginsServerPort = port);
-
+    public static event PluginsServerPortChangedHandler PluginsServerPortChanged = port =>
+        ConstantTable.PluginsServerPort = port;
 
     public delegate void OnActivitiesUpdatedHandler();
 
-    public static event OnActivitiesUpdatedHandler OnActivitiesUpdated = new(() => { });
-
+    public static event OnActivitiesUpdatedHandler OnActivitiesUpdated = () => { };
 
     public delegate void OnReceiveCancelExchangingDeviceKeyHandler();
 
-    public static event OnReceiveCancelExchangingDeviceKeyHandler OnReceiveCancelExchangingDeviceKey = new(() => ConstantTable.IsExchangingDeviceKey = false);
-
+    public static event OnReceiveCancelExchangingDeviceKeyHandler OnReceiveCancelExchangingDeviceKey =
+        () => ConstantTable.IsExchangingDeviceKey = false;
 
     public delegate void OnExitingHandler();
 
-    public static event OnExitingHandler OnExiting = new(() => { });
-
+    public static event OnExitingHandler OnExiting = () => { };
 
     public delegate void OnReceivingDeviceInfoHandler(DeviceInfo dis);
 
-    public static event OnReceivingDeviceInfoHandler OnReceivingDeviceInfo = new(_ => { });
-
+    public static event OnReceivingDeviceInfoHandler OnReceivingDeviceInfo = _ => { };
 
     public delegate void OnConfigHotReloadedHandler();
 
-    public static event OnConfigHotReloadedHandler OnConfigHotReloaded = new(() => { });
-
+    public static event OnConfigHotReloadedHandler OnConfigHotReloaded = () => { };
 
     public delegate void OnAcceptingDeviceKeyHandler(string code);
 
-    public static event OnAcceptingDeviceKeyHandler OnAcceptingDeviceKey = new(_ => { });
+    public static event OnAcceptingDeviceKeyHandler OnAcceptingDeviceKey = _ => { };
+
+#pragma warning restore CS0067 // Event is never used
 }

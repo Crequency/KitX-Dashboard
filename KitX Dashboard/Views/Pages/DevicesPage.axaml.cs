@@ -3,11 +3,11 @@ using KitX.Dashboard.ViewModels.Pages;
 
 namespace KitX.Dashboard.Views.Pages;
 
-public partial class DevicePage : UserControl
+public partial class DevicesPage : UserControl
 {
-    private readonly DevicePageViewModel viewModel = new();
+    private readonly DevicesPageViewModel viewModel = new();
 
-    public DevicePage()
+    public DevicesPage()
     {
         InitializeComponent();
 

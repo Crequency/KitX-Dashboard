@@ -15,7 +15,7 @@ public partial class PluginDetailWindow : Window
 
     public PluginDetailWindow()
     {
-        var location = $"{nameof(PluginDetailWindow)}.ctor";
+        const string location = $"{nameof(PluginDetailWindow)}.ctor";
 
         InitializeComponent();
 

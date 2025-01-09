@@ -19,7 +19,7 @@ internal class PluginsManager
 
     internal static void ImportPlugin(string[] kxpfiles, bool inGraphic = false)
     {
-        var location = $"{nameof(PluginsManager)}.{nameof(ImportPlugin)}";
+        const string location = $"{nameof(PluginsManager)}.{nameof(ImportPlugin)}";
 
         var processPath = Environment.ProcessPath ?? throw new Exception("Can not get path of `KitX.Dashboard` process.");
 

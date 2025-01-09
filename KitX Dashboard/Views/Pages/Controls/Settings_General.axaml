@@ -108,6 +108,14 @@
                             IsVisible="{Binding DeveloperSettingEnabled}"/>
 
                     <Border/>
+
+                    <Button Margin="0,0,10,0"
+                            Command="{Binding ShowAnnouncementsInstantlyCommand}"
+                            Content="{DynamicResource Text_Settings_General_ShowAnnouncementNow}"
+                            DockPanel.Dock="Right"
+                            IsVisible="{Binding DeveloperSettingEnabled}"/>
+
+                    <Border/>
                 </DockPanel>
             </ui:InfoBar>
 

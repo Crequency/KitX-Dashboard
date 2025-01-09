@@ -35,14 +35,14 @@ internal class Settings_UpdateViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         CheckUpdateCommand = ReactiveCommand.Create(CheckUpdate);
 
         UpdateCommand = ReactiveCommand.Create(Update);
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         Components.CollectionChanged += (_, _) =>
         {
@@ -63,7 +63,10 @@ internal class Settings_UpdateViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref canUpdateCount, value);
     }
 
-    internal static int ComponentsCount { get => Components.Count; }
+    internal static int ComponentsCount
+    {
+        get => Components.Count;
+    }
 
     internal static ObservableCollection<Component> Components { get; } = [];
 
@@ -85,13 +88,14 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
     public static int UpdateChannel
     {
-        get => AppConfig.Web.UpdateChannel switch
-        {
-            "stable" => 0,
-            "beta" => 1,
-            "alpha" => 2,
-            _ => 0
-        };
+        get =>
+            AppConfig.Web.UpdateChannel switch
+            {
+                "stable" => 0,
+                "beta" => 1,
+                "alpha" => 2,
+                _ => 0,
+            };
         set
         {
             AppConfig.Web.UpdateChannel = value switch
@@ -99,14 +103,15 @@ internal class Settings_UpdateViewModel : ViewModelBase
                 0 => "stable",
                 1 => "beta",
                 2 => "alpha",
-                _ => "stable"
+                _ => "stable",
             };
 
             SaveAppConfigChanges();
         }
     }
 
-    private static string GetUpdateTip(string key) => Translate(key, prefix: "Text_Settings_Update_Tip_") ?? string.Empty;
+    private static string GetUpdateTip(string key) =>
+        Translate(key, prefix: "Text_Settings_Update_Tip_") ?? string.Empty;
 
     private static async void DownloadNewComponent(string url, string to, HttpClient client)
     {
@@ -127,9 +132,12 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
     private static string GetDisplaySize(long size)
     {
-        if (size / (1024 * 1024) > 2000) return $"{size / (1024 * 1024 * 1024)} GB";
-        else if (size / 1024 > 1200) return $"{size / (1024 * 1024)} MB";
-        else return $"{size / 1024} KB";
+        if (size / (1024 * 1024) > 2000)
+            return $"{size / (1024 * 1024 * 1024)} GB";
+        else if (size / 1024 > 1200)
+            return $"{size / (1024 * 1024)} MB";
+        else
+            return $"{size / 1024} KB";
     }
 
     private Checker ScanComponents(string workbase)
@@ -164,27 +172,23 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
     private void CalculateComponentsHash(Checker checker)
     {
-        var location = $"{nameof(Settings_UpdateViewModel)}.{nameof(CalculateComponentsHash)}";
+        const string location =
+            $"{nameof(Settings_UpdateViewModel)}.{nameof(CalculateComponentsHash)}";
 
         var _calculateFinished = false;
 
-        var timer = new Timer()
-        {
-            Interval = 10,
-            AutoReset = true
-        };
+        var timer = new Timer() { Interval = 10, AutoReset = true };
         timer.Elapsed += (_, _) =>
         {
             try
             {
                 var progress = checker.GetProgress();
 
-                Tip = GetUpdateTip("Calculate").Replace(
-                    "%Progress%",
-                    $"({progress.Item1}/{progress.Item2})"
-                );
+                Tip = GetUpdateTip("Calculate")
+                    .Replace("%Progress%", $"({progress.Item1}/{progress.Item2})");
 
-                if (_calculateFinished) timer.Stop();
+                if (_calculateFinished)
+                    timer.Stop();
             }
             catch (Exception e)
             {
@@ -205,41 +209,38 @@ internal class Settings_UpdateViewModel : ViewModelBase
         PropertyNamingPolicy = new UpdateHashNamePolicy(),
     };
 
-    private static async Task<Dictionary<string, (string, string, long)>?> GetLatestComponentsAsync
-    (
+    private static async Task<Dictionary<string, (string, string, long)>?> GetLatestComponentsAsync(
         HttpClient client
     )
     {
-        client.DefaultRequestHeaders.Accept.Clear();    //  清除请求头部
+        client.DefaultRequestHeaders.Accept.Clear(); //  清除请求头部
 
-        var link = "https://" +
-            AppConfig.Web.UpdateServer +
-            AppConfig.Web.UpdatePath.Replace(
+        var link =
+            "https://"
+            + AppConfig.Web.UpdateServer
+            + AppConfig.Web.UpdatePath.Replace(
                 "%platform%",
                 DevicesDiscoveryServer.Instance.DefaultDeviceInfo.DeviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",
                     OperatingSystems.MacOS => "mac",
-                    _ => ""
+                    _ => "",
                 }
-            ) +
-            $"{AppConfig.Web.UpdateChannel}/" +
-            AppConfig.Web.UpdateSource;
+            )
+            + $"{AppConfig.Web.UpdateChannel}/"
+            + AppConfig.Web.UpdateSource;
 
         var json = await client.GetStringAsync(link);
 
-        var latestComponents = JsonSerializer
-            .Deserialize<Dictionary<string, (string, string, long)>>(
-                json,
-                JsonSerializerOptions
-            );
+        var latestComponents = JsonSerializer.Deserialize<
+            Dictionary<string, (string, string, long)>
+        >(json, JsonSerializerOptions);
 
         return latestComponents;
     }
 
-    private void AddLocalComponentsToView
-    (
+    private void AddLocalComponentsToView(
         Dictionary<string, (string, string)> result,
         string wd,
         ref long localComponentsTotalSize
@@ -253,14 +254,16 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
             localComponentsTotalSize += size;
 
-            localComponents.Add(new()
-            {
-                CanUpdate = false,
-                Name = item.Key,
-                MD5 = item.Value.Item1.ToUpper(),
-                SHA1 = item.Value.Item2.ToUpper(),
-                Size = GetDisplaySize(size),
-            });
+            localComponents.Add(
+                new()
+                {
+                    CanUpdate = false,
+                    Name = item.Key,
+                    MD5 = item.Value.Item1.ToUpper(),
+                    SHA1 = item.Value.Item2.ToUpper(),
+                    Size = GetDisplaySize(size),
+                }
+            );
         }
 
         Dispatcher.UIThread.Post(() =>
@@ -271,7 +274,8 @@ internal class Settings_UpdateViewModel : ViewModelBase
             {
                 ++index;
 
-                if (index == localComponents.Count) _canUpdateDataGridView = true;
+                if (index == localComponents.Count)
+                    _canUpdateDataGridView = true;
 
                 Components.Add(item);
             }
@@ -279,11 +283,10 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
         Tip = GetUpdateTip("Compare");
 
-        while (Components.Count != result.Count) { }    //  阻塞直到前台加载完毕
+        while (Components.Count != result.Count) { } //  阻塞直到前台加载完毕
     }
 
-    private static object CompareDifferentComponents
-    (
+    private static object CompareDifferentComponents(
         ref string wd,
         ref Dictionary<string, (string, string, long)> latestComponents,
         ref Dictionary<string, (string, string)> result,
@@ -298,8 +301,10 @@ internal class Settings_UpdateViewModel : ViewModelBase
         {
             if (result.TryGetValue(component.Key, out var current))
             {
-                if (!current.Item1.ToUpper().Equals(component.Value.Item1.ToUpper()) ||
-                    !current.Item2.ToUpper().Equals(component.Value.Item2.ToUpper()))
+                if (
+                    !current.Item1.ToUpper().Equals(component.Value.Item1.ToUpper())
+                    || !current.Item2.ToUpper().Equals(component.Value.Item2.ToUpper())
+                )
                     updatedComponents.Add(component.Key, component.Value.Item3);
             }
             else
@@ -314,16 +319,13 @@ internal class Settings_UpdateViewModel : ViewModelBase
             if (!latestComponents.ContainsKey(item.Key))
                 tdeleteComponents.Add(
                     item.Key,
-                    new FileInfo(
-                        $"{wd}/{item.Key}".GetFullPath()
-                    ).Length
+                    new FileInfo($"{wd}/{item.Key}".GetFullPath()).Length
                 );
 
         return (updatedComponents, new2addComponents, tdeleteComponents);
     }
 
-    private void UpdateFrontendViewAfterCompare
-    (
+    private void UpdateFrontendViewAfterCompare(
         Dictionary<string, long> updatedComponents,
         Dictionary<string, long> new2addComponents,
         Dictionary<string, long> tdeleteComponents,
@@ -337,7 +339,8 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
         foreach (var item in Components)
         {
-            if (item.Name is null) continue;
+            if (item.Name is null)
+                continue;
 
             if (updatedComponents.ContainsKey(item.Name))
             {
@@ -355,15 +358,17 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
         foreach (var item in new2addComponents)
         {
-            newComponents.Add(new Component()
-            {
-                Name = item.Key,
-                CanUpdate = true,
-                MD5 = latestComponents[item.Key].Item1,
-                SHA1 = latestComponents[item.Key].Item2,
-                Task = Translate("Text_Public_Add"),
-                Size = GetDisplaySize(item.Value)
-            });
+            newComponents.Add(
+                new Component()
+                {
+                    Name = item.Key,
+                    CanUpdate = true,
+                    MD5 = latestComponents[item.Key].Item1,
+                    SHA1 = latestComponents[item.Key].Item2,
+                    Task = Translate("Text_Public_Add"),
+                    Size = GetDisplaySize(item.Value),
+                }
+            );
         }
 
         Dispatcher.UIThread.Post(() =>
@@ -374,7 +379,8 @@ internal class Settings_UpdateViewModel : ViewModelBase
             {
                 ++index;
 
-                if (index == new2addComponents.Count) _canUpdateDataGridView = true;
+                if (index == new2addComponents.Count)
+                    _canUpdateDataGridView = true;
 
                 Components.Add(item);
             }
@@ -391,15 +397,11 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
         DiskUseStatus =
             localComponentsTotalSize > latestComponentsTotalSize
-            ?
-            $"- {GetDisplaySize(localComponentsTotalSize - latestComponentsTotalSize)}"
-            :
-            $"+ {GetDisplaySize(latestComponentsTotalSize - localComponentsTotalSize)}"
-        ;
+                ? $"- {GetDisplaySize(localComponentsTotalSize - latestComponentsTotalSize)}"
+                : $"+ {GetDisplaySize(latestComponentsTotalSize - localComponentsTotalSize)}";
     }
 
-    private void DownloadNewComponents
-    (
+    private void DownloadNewComponents(
         ref Dictionary<string, long> updatedComponents,
         ref HttpClient client
     )
@@ -407,18 +409,20 @@ internal class Settings_UpdateViewModel : ViewModelBase
         Tip = GetUpdateTip("Download");
 
         //TODO: 下载有变更的文件
-        var downloadLinkBase = "https://" +
-            AppConfig.Web.UpdateServer +
-            AppConfig.Web.UpdateDownloadPath.Replace(
+        var downloadLinkBase =
+            "https://"
+            + AppConfig.Web.UpdateServer
+            + AppConfig.Web.UpdateDownloadPath.Replace(
                 "%platform%",
                 DevicesDiscoveryServer.Instance.DefaultDeviceInfo.DeviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",
                     OperatingSystems.MacOS => "mac",
-                    _ => ""
-                }) +
-            $"{AppConfig.Web.UpdateChannel}/";
+                    _ => "",
+                }
+            )
+            + $"{AppConfig.Web.UpdateChannel}/";
 
         if (!Directory.Exists(ConstantTable.UpdateSavePath.GetFullPath()))
             Directory.CreateDirectory(ConstantTable.UpdateSavePath.GetFullPath());
@@ -441,7 +445,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
     public void CheckUpdate()
     {
-        var location = $"{nameof(Settings_UpdateViewModel)}.{nameof(CheckUpdate)}";
+        const string location = $"{nameof(Settings_UpdateViewModel)}.{nameof(CheckUpdate)}";
 
         Components.Clear();
 
@@ -461,12 +465,14 @@ internal class Settings_UpdateViewModel : ViewModelBase
                 {
                     Dispatcher.UIThread.Post(async () =>
                     {
-                        await MessageBoxManager.GetMessageBoxStandard(
-                            "Error",
-                            "Can't get working directory!",
-                            ButtonEnum.Ok,
-                            Icon.Warning
-                        ).ShowAsync();
+                        await MessageBoxManager
+                            .GetMessageBoxStandard(
+                                "Error",
+                                "Can't get working directory!",
+                                ButtonEnum.Ok,
+                                Icon.Warning
+                            )
+                            .ShowAsync();
                     });
 
                     IsCheckingOrUpdating = false;
@@ -478,15 +484,10 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
                 CalculateComponentsHash(checker);
 
-                var result = checker.GetCalculateResult()
-                    .OrderBy(
-                        x =>
-                            x.Key.Contains('/') ||
-                            x.Key.Contains('\\') ? $"0{x.Key}" : x.Key
-                    ).ToDictionary(
-                        x => x.Key,
-                        x => x.Value
-                    );
+                var result = checker
+                    .GetCalculateResult()
+                    .OrderBy(x => x.Key.Contains('/') || x.Key.Contains('\\') ? $"0{x.Key}" : x.Key)
+                    .ToDictionary(x => x.Key, x => x.Value);
 
                 checker.CleanMemoryUsage();
 
@@ -497,20 +498,18 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
                 var client = new HttpClient();
 
-                var latestComponents
-                    = await GetLatestComponentsAsync(client);
+                var latestComponents = await GetLatestComponentsAsync(client);
 
                 if (latestComponents is not null)
                 {
-                    var difference =
-                    ((
+                    var difference = ((
                         Dictionary<string, long>,
                         Dictionary<string, long>,
                         Dictionary<string, long>
-                    ))
-                    CompareDifferentComponents
-                    (
-                        ref wd, ref latestComponents, ref result,
+                    ))CompareDifferentComponents(
+                        ref wd,
+                        ref latestComponents,
+                        ref result,
                         ref latestComponentsTotalSize
                     );
 
@@ -518,8 +517,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
                     var new2addComponents = difference.Item2;
                     var tdeleteComponents = difference.Item3;
 
-                    UpdateFrontendViewAfterCompare
-                    (
+                    UpdateFrontendViewAfterCompare(
                         updatedComponents,
                         new2addComponents,
                         tdeleteComponents,
@@ -548,12 +546,14 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
                 Dispatcher.UIThread.Post(async () =>
                 {
-                    await MessageBoxManager.GetMessageBoxStandard(
-                        GetUpdateTip("Failed"),
-                        e.Message,
-                        ButtonEnum.Ok,
-                        Icon.Error
-                    ).ShowAsync();
+                    await MessageBoxManager
+                        .GetMessageBoxStandard(
+                            GetUpdateTip("Failed"),
+                            e.Message,
+                            ButtonEnum.Ok,
+                            Icon.Error
+                        )
+                        .ShowAsync();
                 });
 
                 Log.Error(e, $"In {location}: {e.Message}");
@@ -564,9 +564,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
     [DependsOn(nameof(IsCheckingOrUpdating))]
     internal bool CanCheckUpdate(object _) => !IsCheckingOrUpdating;
 
-    public void Update()
-    {
-    }
+    public void Update() { }
 
     [DependsOn(nameof(CanUpdateCount))]
     [DependsOn(nameof(IsCheckingOrUpdating))]

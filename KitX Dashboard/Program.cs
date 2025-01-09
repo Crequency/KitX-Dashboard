@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.ReactiveUI;
 using Common.BasicHelper.Utils.Extensions;
 
@@ -51,22 +50,13 @@ class Program
     /// </summary>
     /// <returns>Avalonia AppBuilder</returns>
     /// Do not remove this, it also used by visual designer.
-    public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    public static AppBuilder BuildAvaloniaApp() =>
+        AppBuilder
+            .Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace()
             .UseReactiveUI()
-            .With(
-                new MacOSPlatformOptions
-                {
-                    ShowInDock = true,
-                }
-            )
-            .With(
-                new X11PlatformOptions
-                {
-                    EnableMultiTouch = true,
-                }
-            );
+            .With(new MacOSPlatformOptions { ShowInDock = true })
+            .With(new X11PlatformOptions { EnableMultiTouch = true });
 }

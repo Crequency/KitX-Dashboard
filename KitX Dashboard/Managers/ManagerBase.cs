@@ -2,6 +2,4 @@
 
 namespace KitX.Dashboard.Managers;
 
-public class ManagerBase : ConfigFetcher
-{
-}
+public class ManagerBase : ConfigFetcher { }

@@ -18,7 +18,7 @@ public class WebManager
 
     public async Task<WebManager> RunAsync(WebManagerOperationInfo info)
     {
-        var location = $"{nameof(WebManager)}.{nameof(RunAsync)}";
+        const string location = $"{nameof(WebManager)}.{nameof(RunAsync)}";
 
         await TasksManager.RunTaskAsync(async () =>
         {
@@ -44,7 +44,7 @@ public class WebManager
 
     public async Task<WebManager> CloseAsync(WebManagerOperationInfo info)
     {
-        var location = $"{nameof(WebManager)}.{nameof(CloseAsync)}";
+        const string location = $"{nameof(WebManager)}.{nameof(CloseAsync)}";
 
         try
         {

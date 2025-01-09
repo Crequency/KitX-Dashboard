@@ -113,7 +113,7 @@ public class DevicesDiscoveryServer
             }
             catch (Exception ex)
             {
-                var location = $"{nameof(DevicesServer)}.{nameof(RunAsync)}";
+                const string location = $"{nameof(DevicesServer)}.{nameof(RunAsync)}";
                 Log.Warning(ex, $"In {location}: {ex.Message}");
             }
         }, nameof(FindSupportNetworkInterfaces));
@@ -196,7 +196,7 @@ public class DevicesDiscoveryServer
                 }
                 catch (Exception ex)
                 {
-                    var location = $"{nameof(DevicesServer)}.{nameof(FindSupportNetworkInterfaces)}";
+                    const string location = $"{nameof(DevicesServer)}.{nameof(FindSupportNetworkInterfaces)}";
 
                     Log.Error(ex, $"In {location}: {ex.Message}");
                 }
@@ -227,7 +227,7 @@ public class DevicesDiscoveryServer
         if (LastTimeToOSVersionUpdated > ConfigManager.Instance.AppConfig.IO.OperatingSystemVersionUpdateInterval)
         {
             LastTimeToOSVersionUpdated = 0;
-            DefaultDeviceInfo.DeviceOSVersion = NetworkHelper.TryGetOSVersionString() ?? "";
+            DefaultDeviceInfo.DeviceOSVersion = NetworkHelper.TryGetOsVersionString() ?? "";
         }
 
         ++DeviceInfoUpdatedTimes;
@@ -238,7 +238,7 @@ public class DevicesDiscoveryServer
 
     private void MultiDevicesBroadCastSend()
     {
-        var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastSend)}";
+        const string location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastSend)}";
 
         var multicast = new IPEndPoint(
             IPAddress.Parse(ConfigManager.Instance.AppConfig.Web.UdpBroadcastAddress),
@@ -334,7 +334,7 @@ public class DevicesDiscoveryServer
 
     private void MultiDevicesBroadCastReceive()
     {
-        var location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastReceive)}";
+        const string location = $"{nameof(DevicesDiscoveryServer)}.{nameof(MultiDevicesBroadCastReceive)}";
 
         var multicast = new IPEndPoint(IPAddress.Any, 0);
 

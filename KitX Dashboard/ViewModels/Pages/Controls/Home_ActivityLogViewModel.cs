@@ -34,12 +34,9 @@ internal class Home_ActivityLogViewModel : ViewModelBase
             Activities.Add(item);
     }
 
-    public override void InitCommands()
-    {
+    public sealed override void InitCommands() { }
 
-    }
-
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         Activities.CollectionChanged += (_, _) =>
         {

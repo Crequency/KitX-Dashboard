@@ -23,22 +23,27 @@ namespace KitX.Dashboard;
 
 public static class AppFramework
 {
-    private readonly static Queue<Action> actionsInInitialization = [];
+    private static readonly Queue<Action> actionsInInitialization = [];
 
     public static void ProcessStartupArguments()
     {
-        Parser.Default.ParseArguments<StartupOptions>(Environment.GetCommandLineArgs())
+        Parser
+            .Default.ParseArguments<StartupOptions>(Environment.GetCommandLineArgs())
             .WithParsed(opt =>
             {
                 ConstantTable.IsSingleProcessStartMode = !opt.DisableSingleProcessCheck;
                 ConstantTable.EnabledConfigFileHotReload = !opt.DisableConfigHotReload;
                 ConstantTable.SkipNetworkSystemOnStartup = opt.DisableNetworkSystemOnStartup;
 
-                TasksManager.RunTask(() =>
-                {
-                    if (opt.PluginPath is not null)
-                        ImportPlugin(opt.PluginPath);
-                }, $"{nameof(ImportPlugin)}", catchException: true);
+                TasksManager.RunTask(
+                    () =>
+                    {
+                        if (opt.PluginPath is not null)
+                            ImportPlugin(opt.PluginPath);
+                    },
+                    $"{nameof(ImportPlugin)}",
+                    catchException: true
+                );
             });
     }
 
@@ -55,9 +60,12 @@ public static class AppFramework
         {
             var waitCount = 0;
 
-            while (Process.GetProcesses().Count(x => x.ProcessName.StartsWith("KitX.Dashboard")) >= 2)
+            while (
+                Process.GetProcesses().Count(x => x.ProcessName.StartsWith("KitX.Dashboard")) >= 2
+            )
             {
-                if (waitCount > 10) Environment.Exit(ExitCodes.WaitRestartingLockFileTooLong);
+                if (waitCount > 10)
+                    Environment.Exit(ExitCodes.WaitRestartingLockFileTooLong);
 
                 ++waitCount;
 
@@ -74,11 +82,13 @@ public static class AppFramework
         ProcessStartupArguments();
 
         if (ConstantTable.IsSingleProcessStartMode)
-            Process.GetProcesses().WhenCount(
-                count => count >= 2,
-                item => item.ProcessName.StartsWith("KitX.Dashboard"),
-                _ => Environment.Exit(ExitCodes.MultiProcessesStarted)
-            );
+            Process
+                .GetProcesses()
+                .WhenCount(
+                    count => count >= 2,
+                    item => item.ProcessName.StartsWith("KitX.Dashboard"),
+                    _ => Environment.Exit(ExitCodes.MultiProcessesStarted)
+                );
 
         LoadResource();
 
@@ -97,11 +107,7 @@ public static class AppFramework
                 rollingInterval: RollingInterval.Hour,
                 fileSizeLimitBytes: config.Log.LogFileSingleMaxSize,
                 buffered: true,
-                flushToDiskInterval: new(
-                    0,
-                    0,
-                    config.Log.LogFileFlushInterval
-                ),
+                flushToDiskInterval: new(0, 0, config.Log.LogFileFlushInterval),
                 restrictedToMinimumLevel: config.Log.LogLevel,
                 rollOnFileSizeLimit: true,
                 retainedFileCountLimit: config.Log.LogFileMaxCount
@@ -142,20 +148,21 @@ public static class AppFramework
 
         #region Initialize WebManager
 
-        Instances.SignalTasksManager!.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
-        {
-            new Thread(async () =>
+        Instances.SignalTasksManager!.SignalRun(
+            nameof(SignalsNames.MainWindowInitSignal),
+            () =>
             {
-                Thread.Sleep(
-                    Convert.ToInt32(config.Web.DelayStartSeconds * 1000)
-                );
+                new Thread(async () =>
+                {
+                    Thread.Sleep(Convert.ToInt32(config.Web.DelayStartSeconds * 1000));
 
-                if (ConstantTable.SkipNetworkSystemOnStartup)
-                    Instances.WebManager = new();
-                else
-                    Instances.WebManager = await new WebManager().RunAsync(new());
-            }).Start();
-        });
+                    if (ConstantTable.SkipNetworkSystemOnStartup)
+                        Instances.WebManager = new();
+                    else
+                        Instances.WebManager = await new WebManager().RunAsync(new());
+                }).Start();
+            }
+        );
 
         #endregion
 
@@ -167,13 +174,16 @@ public static class AppFramework
 
         #region Initialize persistent windows
 
-        Instances.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowInitSignal), () =>
-        {
-            Dispatcher.UIThread.Post(() =>
+        Instances.SignalTasksManager.SignalRun(
+            nameof(SignalsNames.MainWindowInitSignal),
+            () =>
             {
-                ViewInstances.PluginsLaunchWindow = new();
-            });
-        });
+                Dispatcher.UIThread.Post(() =>
+                {
+                    ViewInstances.PluginsLaunchWindow = new();
+                });
+            }
+        );
 
         #endregion
 
@@ -182,13 +192,14 @@ public static class AppFramework
 
     private static void InitDataBase()
     {
-        var location = $"{nameof(AppFramework)}.{nameof(InitDataBase)}";
+        const string location = $"{nameof(AppFramework)}.{nameof(InitDataBase)}";
 
         try
         {
             var dir = ConstantTable.DataPath.GetFullPath();
 
-            if (!Directory.Exists(dir)) _ = Directory.CreateDirectory(dir);
+            if (!Directory.Exists(dir))
+                _ = Directory.CreateDirectory(dir);
 
             var dbfile = ConstantTable.ActivitiesDataBaseFilePath.GetFullPath();
 
@@ -206,7 +217,7 @@ public static class AppFramework
 
     private static async void LoadResource()
     {
-        var location = $"{nameof(AppFramework)}.{nameof(LoadResource)}";
+        const string location = $"{nameof(AppFramework)}.{nameof(LoadResource)}";
 
         try
         {
@@ -220,11 +231,12 @@ public static class AppFramework
         }
     }
 
-    public static void AfterInitailization(Action action) => actionsInInitialization.Enqueue(action);
+    public static void AfterInitailization(Action action) =>
+        actionsInInitialization.Enqueue(action);
 
     private static void ImportPlugin(string kxpPath)
     {
-        var location = $"{nameof(AppFramework)}.{nameof(ImportPlugin)}";
+        const string location = $"{nameof(AppFramework)}.{nameof(ImportPlugin)}";
 
         try
         {
@@ -247,11 +259,10 @@ public static class AppFramework
 
     public static void EnsureExit()
     {
-
         if (Design.IsDesignMode)
             return;
 
-        var location = $"{nameof(AppFramework)}.{nameof(EnsureExit)}";
+        const string location = $"{nameof(AppFramework)}.{nameof(EnsureExit)}";
 
         ConstantTable.EnsureExiting = true;
 
@@ -281,7 +292,8 @@ public static class AppFramework
 
                     var path = Process.GetCurrentProcess().MainModule?.FileName;
 
-                    if (path is not null) Process.Start(path);
+                    if (path is not null)
+                        Process.Start(path);
                 }
 
                 Thread.Sleep(ConfigManager.Instance.AppConfig.App.LastBreakAfterExit);
@@ -294,7 +306,8 @@ public static class AppFramework
             }
         }).Start();
 
-        while (ConstantTable.EnsureExiting) ;
+        while (ConstantTable.EnsureExiting)
+            ;
 
         Environment.Exit(0);
     }

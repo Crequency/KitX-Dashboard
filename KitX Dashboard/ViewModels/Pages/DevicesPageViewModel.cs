@@ -7,16 +7,16 @@ using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class DevicePageViewModel : ViewModelBase
+internal class DevicesPageViewModel : ViewModelBase
 {
-    public DevicePageViewModel()
+    public DevicesPageViewModel()
     {
         InitCommands();
 
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         RestartDevicesServerCommand = ReactiveCommand.Create(async () =>
         {
@@ -54,7 +54,7 @@ internal class DevicePageViewModel : ViewModelBase
         });
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         DeviceCases.CollectionChanged += (_, _) =>
         {

@@ -16,37 +16,31 @@ internal class GreetingTextGenerator : ConfigFetcher
         var time = DateTime.Now.Hour;
 
         if (time >= 6 && time < 12)
-            key = key.Replace("%Step%", "Morning").Replace(
-                "%Index%",
-                GenerateRandomIndex(Step.Morning).ToString()
-            );
+            key = key.Replace("%Step%", "Morning")
+                .Replace("%Index%", GenerateRandomIndex(Step.Morning).ToString());
         else if (time >= 12 && time < 14)
-            key = key.Replace("%Step%", "Noon").Replace(
-                "%Index%",
-                GenerateRandomIndex(Step.Noon).ToString()
-            );
+            key = key.Replace("%Step%", "Noon")
+                .Replace("%Index%", GenerateRandomIndex(Step.Noon).ToString());
         else if (time >= 14 && time < 18)
-            key = key.Replace("%Step%", "AfterNoon").Replace(
-                "%Index%",
-                GenerateRandomIndex(Step.AfterNoon).ToString()
-            );
+            key = key.Replace("%Step%", "AfterNoon")
+                .Replace("%Index%", GenerateRandomIndex(Step.AfterNoon).ToString());
         else if (time >= 18 && time < 24)
-            key = key.Replace("%Step%", "Evening").Replace(
-                "%Index%",
-                GenerateRandomIndex(Step.Evening).ToString()
-            );
+            key = key.Replace("%Step%", "Evening")
+                .Replace("%Index%", GenerateRandomIndex(Step.Evening).ToString());
         else
-            key = key.Replace("%Step%", "Night").Replace(
-                "%Index%",
-                GenerateRandomIndex(Step.Night).ToString()
-            );
+            key = key.Replace("%Step%", "Night")
+                .Replace("%Index%", GenerateRandomIndex(Step.Night).ToString());
 
         return key;
     }
 
     internal enum Step
     {
-        Morning, Noon, AfterNoon, Evening, Night
+        Morning,
+        Noon,
+        AfterNoon,
+        Evening,
+        Night,
     }
 
     internal static int GenerateRandomIndex(Step step)

@@ -7,11 +7,14 @@ internal class WindowAttributesConverter
 {
     internal static Distances PositionCameCenter(Distances location, Screen? screen, Resolution win)
     {
-        if (location.Left == -1)
-            location.Left = ((screen?.WorkingArea.Width ?? 2560) - (int)win.Width!) / 2;
+        if (screen is null)
+            return location;
 
-        if (location.Top == -1)
-            location.Top = (screen?.WorkingArea.Height ?? 1440 - (int)win.Height!) / 2;
+        if (location.Left - -1.0 < 0.1)
+            location.Left = (double)((screen.WorkingArea.Width - win.Width!) / 2.0);
+
+        if (location.Top - -1.0 < 0.1)
+            location.Top = (double)((screen.WorkingArea.Height - win.Height!) / 2.0);
 
         return location;
     }

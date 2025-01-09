@@ -30,7 +30,7 @@ internal class ActivityManager
 
     public static void Record(Activity activity, Expression<Func<Activity, int>> keySelector)
     {
-        var location = $"{nameof(ActivityManager)}.{nameof(Record)}";
+        const string location = $"{nameof(ActivityManager)}.{nameof(Record)}";
 
         TasksManager.RunTask(() =>
         {
@@ -54,7 +54,7 @@ internal class ActivityManager
 
     public static void Update(Activity activity)
     {
-        var location = $"{nameof(ActivityManager)}.{nameof(Update)}";
+        const string location = $"{nameof(ActivityManager)}.{nameof(Update)}";
 
         TasksManager.RunTask(() =>
         {

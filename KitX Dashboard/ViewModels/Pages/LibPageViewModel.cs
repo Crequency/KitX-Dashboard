@@ -16,21 +16,21 @@ internal class LibPageViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         ViewDetailsCommand = ReactiveCommand.Create<PluginInfo>(info =>
         {
             if (ViewInstances.MainWindow is not null)
                 new PluginDetailWindow()
                 {
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 }
-                .SetPluginInfo(info)
-                .Show(ViewInstances.MainWindow);
+                    .SetPluginInfo(info)
+                    .Show(ViewInstances.MainWindow);
         });
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         PluginInfos.CollectionChanged += (_, args) =>
         {

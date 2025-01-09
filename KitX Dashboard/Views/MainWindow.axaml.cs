@@ -3,7 +3,6 @@ using System.Timers;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using Common.BasicHelper.Graphics.Screen;
 using FluentAvalonia.UI.Controls;
 using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Converters;
@@ -25,7 +24,7 @@ public partial class MainWindow : Window, IView
 
     public MainWindow()
     {
-        var location = $"{nameof(MainWindow)}";
+        const string location = $"{nameof(MainWindow)}";
 
         InitializeComponent();
 
@@ -33,47 +32,71 @@ public partial class MainWindow : Window, IView
 
         DataContext = viewModel;
 
-        var config = AppConfig.Windows.MainWindow;
+        Instances.SignalTasksManager?.SignalRun(
+            nameof(SignalsNames.MainWindowOpenedSignal),
+            () =>
+            {
+                var config = AppConfig.Windows.MainWindow;
 
-        var screen = Screens.ScreenFromWindow(this);
+                var screen = Screens.ScreenFromWindow(this);
 
-        var nowRes = config.Size.SuggestResolution(screen);
+                config.Size = config.Size.SuggestResolution(screen, out var notScaled);
 
-        var centerPos = config.Location.BringToCenter(screen, nowRes);
+                var centerPos = config.Location.BringToCenter(screen, notScaled ?? config.Size);
 
-        ClientSize = new(nowRes.Width!.Value, nowRes.Height!.Value);
+                try
+                {
+                    Instances.SignalTasksManager.SignalRun(
+                        nameof(SignalsNames.MainWindowOpenedSignal),
+                        () => WindowState = config.WindowState
+                    );
 
-        Position = new((int)centerPos.Left, (int)centerPos.Top);
+                    if (config.IsHidden)
+                        Instances.SignalTasksManager.SignalRun(
+                            nameof(SignalsNames.MainWindowOpenedSignal),
+                            Hide
+                        );
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, $"In {location}: {e.Message}");
+                }
 
-        try
-        {
-            Instances.SignalTasksManager?.SignalRun(
-                nameof(SignalsNames.MainWindowOpenedSignal),
-                () => WindowState = config.WindowState
-            );
+                SizeChanged += (_, _) =>
+                {
+                    if (WindowState == WindowState.Maximized)
+                        return;
 
-            if (config.IsHidden)
-                Instances.SignalTasksManager?.SignalRun(
-                    nameof(SignalsNames.MainWindowOpenedSignal),
-                    Hide
-                );
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, $"In {location}: {e.Message}");
-        }
+                    config.Size.Width = ClientSize.Width;
+                    config.Size.Height = ClientSize.Height;
+                };
 
-        ClientSizeProperty.Changed.Subscribe(size =>
-        {
-            if (WindowState != WindowState.Maximized)
-                config.Size = new Resolution(ClientSize.Width, ClientSize.Height);
-        });
+                //ClientSizeProperty.Changed.Subscribe(_ =>
+                //{
+                //    if (WindowState == WindowState.Maximized)
+                //        return;
 
-        PositionChanged += (_, args) =>
-        {
-            if (WindowState == WindowState.Normal)
-                config.Location = new(left: Position.X, top: Position.Y);
-        };
+                //    config.Size.Width = ClientSize.Width;
+                //    config.Size.Height = ClientSize.Height;
+                //});
+
+                PositionChanged += (_, _) =>
+                {
+                    if (WindowState != WindowState.Normal)
+                        return;
+
+                    config.Location.Left = Position.X;
+                    config.Location.Top = Position.Y;
+                };
+
+                if (WindowState != WindowState.Normal)
+                    return;
+
+                ClientSize = new(config.Size.Width!.Value, config.Size.Height!.Value);
+
+                Position = new((int)centerPos.Left, (int)centerPos.Top);
+            }
+        );
 
         InitMainWindow();
     }
@@ -84,14 +107,14 @@ public partial class MainWindow : Window, IView
 
         UpdateGreetingText();
 
-        EventService.LanguageChanged += () => UpdateGreetingText();
+        EventService.LanguageChanged += UpdateGreetingText;
 
-        EventService.GreetingTextIntervalUpdated += () => UpdateGreetingText();
+        EventService.GreetingTextIntervalUpdated += UpdateGreetingText;
 
         var timer = new Timer()
         {
             AutoReset = true,
-            Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval
+            Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval,
         };
 
         timer.Elapsed += (_, _) => UpdateGreetingText();
@@ -105,15 +128,21 @@ public partial class MainWindow : Window, IView
     {
         try
         {
-            if (Application.Current is null) return;
+            if (Application.Current is null)
+                return;
 
             Dispatcher.UIThread.Invoke(() =>
             {
-                Application.Current.Resources.MergedDictionaries[0].TryGetResource(
-                    GreetingTextGenerator.GetKey(), ActualThemeVariant, out object? text
-                );
+                Application
+                    .Current.Resources.MergedDictionaries[0]
+                    .TryGetResource(
+                        GreetingTextGenerator.GetKey(),
+                        ActualThemeVariant,
+                        out object? text
+                    );
 
-                if (text is null) return;
+                if (text is null)
+                    return;
 
                 Dispatcher.UIThread.Post(() =>
                 {
@@ -127,17 +156,18 @@ public partial class MainWindow : Window, IView
         }
     }
 
-    private static Type GetPageTypeFromName(string name) => name switch
-    {
-        "Page_Home" => typeof(Pages.HomePage),
-        "Page_Lib" => typeof(Pages.LibPage),
-        "Page_Repo" => typeof(Pages.RepoPage),
-        "Page_Account" => typeof(Pages.AccountPage),
-        "Page_Settings" => typeof(Pages.SettingsPage),
-        "Page_Market" => typeof(Pages.MarketPage),
-        "Page_Device" => typeof(Pages.DevicePage),
-        _ => typeof(Pages.HomePage),
-    };
+    private static Type GetPageTypeFromName(string name) =>
+        name switch
+        {
+            "Page_Home" => typeof(Pages.HomePage),
+            "Page_Lib" => typeof(Pages.LibPage),
+            "Page_Repo" => typeof(Pages.RepoPage),
+            "Page_Account" => typeof(Pages.AccountPage),
+            "Page_Settings" => typeof(Pages.SettingsPage),
+            "Page_Market" => typeof(Pages.MarketPage),
+            "Page_Device" => typeof(Pages.DevicesPage),
+            _ => typeof(Pages.HomePage),
+        };
 
     private static string SelectedPageName
     {
@@ -157,15 +187,18 @@ public partial class MainWindow : Window, IView
     {
         try
         {
-            if (sender is null) return;
+            if (sender is null)
+                return;
 
             var navView = sender as NavigationView;
 
-            if (navView?.SelectedItem is not Control control || control.Tag is null) return;
+            if (navView?.SelectedItem is not Control control || control.Tag is null)
+                return;
 
             var pageName = control.Tag.ToString();
 
-            if (pageName is null) return;
+            if (pageName is null)
+                return;
 
             SelectedPageName = pageName;
 
@@ -177,26 +210,26 @@ public partial class MainWindow : Window, IView
         }
     }
 
-    protected override void OnClosing(WindowClosingEventArgs e)
-    {
-        base.OnClosing(e);
-
-        if (!ConstantTable.Exiting)
-        {
-            e.Cancel = true;
-
-            Hide();
-
-            AppConfig.Windows.MainWindow.IsHidden = true;
-
-            IView.SaveAppConfigChanges();
-        }
-    }
-
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
 
         Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        if (ConstantTable.Exiting)
+            return;
+
+        e.Cancel = true;
+
+        Hide();
+
+        AppConfig.Windows.MainWindow.IsHidden = true;
+
+        IView.SaveAppConfigChanges();
+
+        base.OnClosing(e);
     }
 }

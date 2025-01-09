@@ -20,14 +20,12 @@ internal class PluginDetailWindowViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
-        FinishCommand = ReactiveCommand.Create<object?>(
-            parent => (parent as Window)?.Close()
-        );
+        FinishCommand = ReactiveCommand.Create<object?>(parent => (parent as Window)?.Close());
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         EventService.ThemeConfigChanged += () => this.RaisePropertyChanged(nameof(TintColor));
     }
@@ -42,23 +40,30 @@ internal class PluginDetailWindowViewModel : ViewModelBase
 
     internal string? PublishDate => PluginDetail?.PublishDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-    internal string? LastUpdateDate => PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
+    internal string? LastUpdateDate =>
+        PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-    internal static Color TintColor => AppConfig.App.Theme switch
-    {
-        "Light" => Colors.WhiteSmoke,
-        "Dark" => Colors.Black,
-        "Follow" => Application.Current?.ActualThemeVariant == ThemeVariant.Light ? Colors.WhiteSmoke : Colors.Black,
-        _ => Color.Parse(AppConfig.App.ThemeColor),
-    };
+    internal static Color TintColor =>
+        AppConfig.App.Theme switch
+        {
+            "Light" => Colors.WhiteSmoke,
+            "Dark" => Colors.Black,
+            "Follow" => Application.Current?.ActualThemeVariant == ThemeVariant.Light
+                ? Colors.WhiteSmoke
+                : Colors.Black,
+            _ => Color.Parse(AppConfig.App.ThemeColor),
+        };
 
     internal void InitFunctionsAndTags()
     {
-        if (PluginDetail is null) return;
+        if (PluginDetail is null)
+            return;
 
-        if (PluginDetail?.Functions is null) return;
+        if (PluginDetail?.Functions is null)
+            return;
 
-        if (PluginDetail?.Tags is null) return;
+        if (PluginDetail?.Tags is null)
+            return;
 
         foreach (var func in PluginDetail.Functions)
         {
@@ -66,17 +71,13 @@ internal class PluginDetailWindowViewModel : ViewModelBase
                 .Append(func.ReturnValueType)
                 .Append(' ')
                 .Append(func.Name)
-                .Append('(')
-                ;
+                .Append('(');
 
             var index = 0;
 
             foreach (var param in func.Parameters)
             {
-                sb.Append(param.Type)
-                    .Append(' ')
-                    .Append(param.Name)
-                    ;
+                sb.Append(param.Type).Append(' ').Append(param.Name);
 
                 if (index != func.Parameters.Count - 1)
                     sb.Append(", ");

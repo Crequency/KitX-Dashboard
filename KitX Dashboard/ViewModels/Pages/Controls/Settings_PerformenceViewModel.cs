@@ -25,17 +25,16 @@ internal class Settings_PerformenceViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         EmptyLogsCommand = ReactiveCommand.Create(() =>
         {
-            var location = $"{nameof(Settings_PerformenceViewModel)}.{nameof(EmptyLogsCommand)}";
+            const string location =
+                $"{nameof(Settings_PerformenceViewModel)}.{nameof(EmptyLogsCommand)}";
 
             Task.Run(() =>
             {
-                var dir = new DirectoryInfo(
-                    AppConfig.Log.LogFilePath.GetFullPath()
-                );
+                var dir = new DirectoryInfo(AppConfig.Log.LogFilePath.GetFullPath());
 
                 foreach (var file in dir.GetFiles())
                 {
@@ -58,7 +57,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
         );
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         EventService.LogConfigUpdated += () =>
         {
@@ -72,11 +71,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
                     rollingInterval: RollingInterval.Hour,
                     fileSizeLimitBytes: AppConfig.Log.LogFileSingleMaxSize,
                     buffered: true,
-                    flushToDiskInterval: new(
-                        0,
-                        0,
-                        AppConfig.Log.LogFileFlushInterval
-                    ),
+                    flushToDiskInterval: new(0, 0, AppConfig.Log.LogFileFlushInterval),
                     restrictedToMinimumLevel: AppConfig.Log.LogLevel,
                     rollOnFileSizeLimit: true,
                     retainedFileCountLimit: AppConfig.Log.LogFileMaxCount
@@ -92,9 +87,11 @@ internal class Settings_PerformenceViewModel : ViewModelBase
             this.RaisePropertyChanged(nameof(SupportedLogLevels));
         };
 
-        EventService.DevicesServerPortChanged += _ => this.RaisePropertyChanged(nameof(DevicesServerPort));
+        EventService.DevicesServerPortChanged += _ =>
+            this.RaisePropertyChanged(nameof(DevicesServerPort));
 
-        EventService.PluginsServerPortChanged += _ => this.RaisePropertyChanged(nameof(PluginsServerPort));
+        EventService.PluginsServerPortChanged += _ =>
+            this.RaisePropertyChanged(nameof(PluginsServerPort));
 
         Instances.SignalTasksManager?.SignalRun(
             nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal),
@@ -108,9 +105,11 @@ internal class Settings_PerformenceViewModel : ViewModelBase
 
                     var anin = AcceptedNetworkInterfacesNames;
 
-                    if (anin is null || anin.Equals("Auto")) return;
+                    if (anin is null || anin.Equals("Auto"))
+                        return;
 
-                    if (AvailableNetworkInterfaces is null) return;
+                    if (AvailableNetworkInterfaces is null)
+                        return;
 
                     foreach (var item in anin.Split(';'))
                         if (AvailableNetworkInterfaces.Contains(item))
@@ -219,7 +218,8 @@ internal class Settings_PerformenceViewModel : ViewModelBase
         }
     }
 
-    internal static ObservableCollection<string>? AvailableNetworkInterfaces => Instances.WebManager?.NetworkInterfaceRegistered;
+    internal static ObservableCollection<string>? AvailableNetworkInterfaces =>
+        Instances.WebManager?.NetworkInterfaceRegistered;
 
     internal static ObservableCollection<string>? SelectedNetworkInterfaces { get; } = [];
 
@@ -291,8 +291,8 @@ internal class Settings_PerformenceViewModel : ViewModelBase
         }
     }
 
-    internal static int LogFileSizeUsage
-        => (int)(AppConfig.Log.LogFilePath.GetTotalSize() / 1000 / 1024);
+    internal static int LogFileSizeUsage =>
+        (int)(AppConfig.Log.LogFilePath.GetTotalSize() / 1000 / 1024);
 
     internal static int LogFileSizeLimit
     {
@@ -344,50 +344,51 @@ internal class Settings_PerformenceViewModel : ViewModelBase
         }
     }
 
-    private static string GetLogLevelDisplayText(string key) => Translate(key, prefix: "Text_Log_") ?? string.Empty;
+    private static string GetLogLevelDisplayText(string key) =>
+        Translate(key, prefix: "Text_Log_") ?? string.Empty;
 
     internal static List<SupportedLogLevel> SupportedLogLevels { get; } =
-    [
-        new()
-        {
-            LogEventLevel = LogEventLevel.Verbose,
-            LogLevelName = "Verbose",
-            LogLevelDisplayName = GetLogLevelDisplayText("Verbose")
-        },
-        new()
-        {
-            LogEventLevel = LogEventLevel.Debug,
-            LogLevelName = "Debug",
-            LogLevelDisplayName = GetLogLevelDisplayText("Debug")
-        },
-        new()
-        {
-            LogEventLevel = LogEventLevel.Information,
-            LogLevelName = "Information",
-            LogLevelDisplayName = GetLogLevelDisplayText("Information")
-        },
-        new()
-        {
-            LogEventLevel = LogEventLevel.Warning,
-            LogLevelName = "Warning",
-            LogLevelDisplayName = GetLogLevelDisplayText("Warning")
-        },
-        new()
-        {
-            LogEventLevel = LogEventLevel.Error,
-            LogLevelName = "Error",
-            LogLevelDisplayName = GetLogLevelDisplayText("Error")
-        },
-        new()
-        {
-            LogEventLevel = LogEventLevel.Fatal,
-            LogLevelName = "Fatal",
-            LogLevelDisplayName = GetLogLevelDisplayText("Fatal")
-        },
-    ];
+        [
+            new()
+            {
+                LogEventLevel = LogEventLevel.Verbose,
+                LogLevelName = "Verbose",
+                LogLevelDisplayName = GetLogLevelDisplayText("Verbose"),
+            },
+            new()
+            {
+                LogEventLevel = LogEventLevel.Debug,
+                LogLevelName = "Debug",
+                LogLevelDisplayName = GetLogLevelDisplayText("Debug"),
+            },
+            new()
+            {
+                LogEventLevel = LogEventLevel.Information,
+                LogLevelName = "Information",
+                LogLevelDisplayName = GetLogLevelDisplayText("Information"),
+            },
+            new()
+            {
+                LogEventLevel = LogEventLevel.Warning,
+                LogLevelName = "Warning",
+                LogLevelDisplayName = GetLogLevelDisplayText("Warning"),
+            },
+            new()
+            {
+                LogEventLevel = LogEventLevel.Error,
+                LogLevelName = "Error",
+                LogLevelDisplayName = GetLogLevelDisplayText("Error"),
+            },
+            new()
+            {
+                LogEventLevel = LogEventLevel.Fatal,
+                LogLevelName = "Fatal",
+                LogLevelDisplayName = GetLogLevelDisplayText("Fatal"),
+            },
+        ];
 
-    private SupportedLogLevel? _currentLogLevel = SupportedLogLevels.Find(
-        x => x.LogEventLevel == AppConfig.Log.LogLevel
+    private SupportedLogLevel? _currentLogLevel = SupportedLogLevels.Find(x =>
+        x.LogEventLevel == AppConfig.Log.LogLevel
     );
 
     internal SupportedLogLevel? CurrentLogLevel

@@ -44,7 +44,7 @@ public partial class HomePage : UserControl, IView
         object? sender,
         NavigationViewSelectionChangedEventArgs e)
     {
-        var location = $"{nameof(HomePage)}.{nameof(HomeNavigationView_SelectionChanged)}";
+        const string location = $"{nameof(HomePage)}.{nameof(HomeNavigationView_SelectionChanged)}";
 
         try
         {

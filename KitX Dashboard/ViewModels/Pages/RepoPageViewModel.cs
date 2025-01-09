@@ -35,21 +35,26 @@ internal class RepoPageViewModel : ViewModelBase
         RefreshPluginsCommand?.Execute(new());
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         ImportPluginCommand = ReactiveCommand.Create<object?>(async win =>
         {
-            if (win is not Window window) return;
+            if (win is not Window window)
+                return;
 
             var topLevel = TopLevel.GetTopLevel(CurrentPage!);
 
-            if (topLevel is null) return;
+            if (topLevel is null)
+                return;
 
-            var files = (await topLevel.StorageProvider.OpenFilePickerAsync(new()
-            {
-                Title = "Open KitX Extensions Package File",
-                AllowMultiple = true,
-            })).Select(x => x.Path.LocalPath).ToList().ToArray();
+            var files = (
+                await topLevel.StorageProvider.OpenFilePickerAsync(
+                    new() { Title = "Open KitX Extensions Package File", AllowMultiple = true }
+                )
+            )
+                .Select(x => x.Path.LocalPath)
+                .ToList()
+                .ToArray();
 
             if (files is not null && files?.Length > 0)
             {
@@ -95,7 +100,7 @@ internal class RepoPageViewModel : ViewModelBase
                                 Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json")
                             )
                         ),
-                        InstalledDevices = []
+                        InstalledDevices = [],
                     };
 
                     PluginBars.Add(new(plugin, ref pluginBars));
@@ -114,12 +119,10 @@ internal class RepoPageViewModel : ViewModelBase
         return this;
     }
 
-    public override void InitEvents()
+    public sealed override void InitEvents()
     {
         EventService.AppConfigChanged += () =>
-        {
             ImportButtonVisibility = ConfigManager.Instance.AppConfig.App.DeveloperSetting;
-        };
 
         PluginBars.CollectionChanged += (_, _) =>
         {

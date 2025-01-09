@@ -22,7 +22,7 @@ public static class Instances
 
     internal static void Initialize()
     {
-        var location = $"{nameof(Instances)}.{nameof(Initialize)}";
+        const string location = $"{nameof(Instances)}.{nameof(Initialize)}";
 
         TasksManager.RunTask(() =>
         {
@@ -32,11 +32,11 @@ public static class Instances
                 catchException: true
             );
 
-            TasksManager.RunTask(
-                () => KeyHookManager = new KeyHookManager().Hook(),
-                location.Append("." + nameof(KeyHookManager)),
-                catchException: true
-            );
+            //TasksManager.RunTask(
+            //    () => KeyHookManager = new KeyHookManager().Hook(),
+            //    location.Append("." + nameof(KeyHookManager)),
+            //    catchException: true
+            //);
 
             TasksManager.RunTask(
                 () => SecurityManager = SecurityManager.Instance,

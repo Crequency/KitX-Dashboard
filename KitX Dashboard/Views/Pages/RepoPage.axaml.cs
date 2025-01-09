@@ -32,7 +32,7 @@ public partial class RepoPage : UserControl
 
     private void Drop(object? sender, DragEventArgs e)
     {
-        var location = $"{nameof(RepoPage)}.{nameof(Drop)}";
+        const string location = $"{nameof(RepoPage)}.{nameof(Drop)}";
 
         var files = e.Data?.GetFiles()?.Select(x => x.Path.LocalPath).ToArray();
 

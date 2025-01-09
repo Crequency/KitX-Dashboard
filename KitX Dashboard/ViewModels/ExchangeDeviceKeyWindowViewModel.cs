@@ -18,7 +18,7 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
         InitEvents();
     }
 
-    public override void InitCommands()
+    public sealed override void InitCommands()
     {
         CancelCommand = ReactiveCommand.Create(() =>
         {
@@ -26,10 +26,7 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
         });
     }
 
-    public override void InitEvents()
-    {
-
-    }
+    public sealed override void InitEvents() { }
 
     private int updatingIndex = 0;
 
@@ -59,7 +56,8 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
         get => string.Join(null, VerificationCode);
         set
         {
-            if (value.Length != verificationCode.Length) throw new InvalidCastException();
+            if (value.Length != verificationCode.Length)
+                throw new InvalidCastException();
 
             for (var i = 0; i < verificationCode.Length; ++i)
                 verificationCode[i] = value[i].ToString();
@@ -99,28 +97,33 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
 
     internal bool NextCode(char code)
     {
-        if (updatingIndex == VerificationCode.Length) return false;
+        if (updatingIndex == VerificationCode.Length)
+            return false;
 
         verificationCode[updatingIndex++] = code.ToString();
 
         Update();
 
-        if (updatingIndex == VerificationCode.Length) return false;
+        if (updatingIndex == VerificationCode.Length)
+            return false;
 
         return true;
     }
 
     internal bool Backspace(bool clear = true)
     {
-        if (updatingIndex == 0) return false;
+        if (updatingIndex == 0)
+            return false;
 
         if (clear)
         {
             if (verificationCode[updatingIndex].Equals("0") == false)
                 verificationCode[updatingIndex] = "0";
-            else verificationCode[--updatingIndex] = "0";
+            else
+                verificationCode[--updatingIndex] = "0";
         }
-        else --updatingIndex;
+        else
+            --updatingIndex;
 
         Update();
 
