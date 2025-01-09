@@ -29,7 +29,7 @@ internal class AnnouncementManager
 
         var link = new StringBuilder()
             .Append(linkBase)
-            .Append(ConstantTable.Api_Get_Announcements)
+            .Append(ConstantTable.ApiGetAnnouncements)
             .ToString();
 
         try
@@ -58,7 +58,7 @@ internal class AnnouncementManager
             foreach (var item in unreads)
             {
                 var apiLink = new StringBuilder()
-                    .Append($"{linkBase}{ConstantTable.Api_Get_Announcement}")
+                    .Append($"{linkBase}{ConstantTable.ApiGetAnnouncement}")
                     .Append('?')
                     .Append($"lang={ConfigManager.Instance.AppConfig.App.AppLanguage}")
                     .Append('&')

@@ -15,19 +15,17 @@ internal static class ConstantTable
 
     internal const string AssetsPath = "./Assets/";
 
-    internal const string KXPTempReleasePath = "Temp/";
-
     internal const string UpdateSavePath = "./Update/";
 
     internal const string IconBase64FileName = "KitX.Base64.txt";
 
     private const string activitiesDataBaseFilePath = $"{DataPath}Activities.db";
 
-    private const string thirdPartLicenseFilePath = $"{AssetsPath}ThirdPartLicense.md";
+    private const string thirdPartyLicenseFilePath = $"{AssetsPath}ThirdPartyLicense.md";
 
     internal static string ActivitiesDataBaseFilePath => activitiesDataBaseFilePath.GetFullPath();
 
-    internal static string ThirdPartLicenseFilePath => thirdPartLicenseFilePath.GetFullPath();
+    internal static string ThirdPartyLicenseFilePath => thirdPartyLicenseFilePath.GetFullPath();
 
     internal static bool IsExchangingDeviceKey = false;
 
@@ -55,11 +53,9 @@ internal static class ConstantTable
 
     internal static DateTime ServerBuildTime = new();
 
-    internal const string Api_Get_Announcements = "get-announcements.php";
+    internal const string ApiGetAnnouncements = "get-announcements.php";
 
-    internal const string Api_Get_Announcement = "get-announcement.php";
-
-    internal static string MyMacAddress = string.Empty;
+    internal const string ApiGetAnnouncement = "get-announcement.php";
 
     internal static string KitXIconBase64 = string.Empty;
 

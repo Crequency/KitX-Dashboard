@@ -32,7 +32,7 @@ internal class Settings_AboutViewModel : ViewModelBase
 
         LoadThirdPartyLicenseCommand = ReactiveCommand.Create(async () =>
         {
-            var license = await FileHelper.ReadAllAsync(ConstantTable.ThirdPartLicenseFilePath);
+            var license = await FileHelper.ReadAllAsync(ConstantTable.ThirdPartyLicenseFilePath);
 
             ThirdPartyLicenseString = license;
         });
@@ -42,12 +42,12 @@ internal class Settings_AboutViewModel : ViewModelBase
 
     internal static string VersionText => $"v{Assembly.GetEntryAssembly()?.GetName().Version}";
 
-    private string thirdPartyLicenseString = string.Empty;
+    private string _thirdPartyLicenseString = string.Empty;
 
     internal string ThirdPartyLicenseString
     {
-        get => thirdPartyLicenseString;
-        set => this.RaiseAndSetIfChanged(ref thirdPartyLicenseString, value);
+        get => _thirdPartyLicenseString;
+        set => this.RaiseAndSetIfChanged(ref _thirdPartyLicenseString, value);
     }
 
     public static bool AboutAreaExpanded

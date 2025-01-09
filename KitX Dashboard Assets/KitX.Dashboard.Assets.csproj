@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <TrimMode>copyused</TrimMode>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <RootNamespace>KitX.Dashboard.Assets</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
         <None Remove="KitX-Icon-1024x-margin-2x.png" />

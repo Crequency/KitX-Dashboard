@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using Avalonia.Platform;
 using Common.BasicHelper.Graphics.Screen;
+using KitX.Dashboard.Specific.MsWindows.Graphics;
 
 namespace KitX.Dashboard.Utils;
 
 internal static class WindowsUtils
 {
-    [DllImport("user32.dll")]
-    private static extern int GetDpiForSystem();
-
-    private const int DefaultDpi = 96;
-
     internal static Resolution SuggestResolution(
         this Resolution res,
         Screen? screen,
@@ -37,14 +32,17 @@ internal static class WindowsUtils
         {
             notScaled = suggest.Clone();
 
-            int dpi = GetDpiForSystem();
-            float scale = (float)dpi / DefaultDpi;
+            float scale = DpiUtils.GetScale();
 
             suggest.Width /= scale;
             suggest.Height /= scale;
 
             suggest = suggest.Integerization();
         }
+
+        if (OperatingSystem.IsMacOS()) { }
+
+        if (OperatingSystem.IsLinux()) { }
 
         return suggest;
     }

@@ -1,6 +1,6 @@
 ﻿using Common.Update.Replacer;
 
-namespace KitX.Updater
+namespace KitX.Dashboard.Updater
 {
     public class Updater
     {
@@ -34,7 +34,8 @@ namespace KitX.Updater
                                 ++i;
                                 _rootDir = args[i];
                             }
-                            else throw new Exception("参数 --source-dir 缺少值");
+                            else
+                                throw new Exception("参数 --source-dir 缺少值");
                             break;
                         case "--update-from":
                             if (i != args.Length - 1)
@@ -42,24 +43,25 @@ namespace KitX.Updater
                                 ++i;
                                 _newFilesDir = args[i];
                             }
-                            else throw new Exception("参数 --update-from 缺少值");
+                            else
+                                throw new Exception("参数 --update-from 缺少值");
                             break;
                     }
                 }
 
-                Replacer replacer = new Replacer()
-                    .SetSourceDir(_newFilesDir)
-                    .SetRootDir(_rootDir);
+                Replacer replacer = new Replacer().SetSourceDir(_newFilesDir).SetRootDir(_rootDir);
                 replacer.Replace();
             }
             catch (Exception e)
             {
-                DoColor(ConsoleColor.Red, new(() =>
-                {
-                    Console.WriteLine(e.Message);
-                }));
+                DoColor(
+                    ConsoleColor.Red,
+                    new(() =>
+                    {
+                        Console.WriteLine(e.Message);
+                    })
+                );
             }
         }
     }
 }
-
