@@ -156,6 +156,7 @@ public partial class MainWindow : Window, IView
         }
     }
 
+
     private static Type GetPageTypeFromName(string name) =>
         name switch
         {
@@ -166,8 +167,10 @@ public partial class MainWindow : Window, IView
             "Page_Settings" => typeof(Pages.SettingsPage),
             "Page_Market" => typeof(Pages.MarketPage),
             "Page_Device" => typeof(Pages.DevicesPage),
+            "Page_Workflow" => typeof(Pages.WorkflowPage),
             _ => typeof(Pages.HomePage),
         };
+
 
     private static string SelectedPageName
     {

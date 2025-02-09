@@ -89,6 +89,16 @@
                         </StackPanel>
                     </ui:NavigationViewItem.Content>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem x:Name="Page_Workflow"
+                                       Tag="Page_Workflow"
+                                       ToolTip.Tip="{DynamicResource Text_MainWindow_NavigationView_Workflow}">
+                    <ui:NavigationViewItem.Content>
+                        <StackPanel Classes="Item">
+                            <icon:MaterialIcon VerticalAlignment="Center" Kind="Workflow"/>
+                            <TextBlock Classes="Normal" Text="{DynamicResource Text_MainWindow_NavigationView_Workflow}"/>
+                        </StackPanel>
+                    </ui:NavigationViewItem.Content>
+                </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
 
             <ui:NavigationView.FooterMenuItems>

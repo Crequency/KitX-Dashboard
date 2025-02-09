@@ -49,6 +49,7 @@
     <sys:String x:Key="Text_MainWindow_NavigationView_Repo">склад</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Plan">план миссии</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Devices">Управление устройствами</sys:String>
+    <x:String x:Key="Text_MainWindow_NavigationView_Workflow">Text_MainWindow_NavigationView_Workflow</x:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Account">учетная запись</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Settings">настраивать</sys:String>
     <sys:String x:Key="Text_MainWindow_HomePage_Recent">Недавно использованный</sys:String>

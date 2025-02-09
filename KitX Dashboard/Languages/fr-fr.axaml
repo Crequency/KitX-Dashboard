@@ -49,6 +49,7 @@
     <sys:String x:Key="Text_MainWindow_NavigationView_Repo">entrepôt</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Plan">plan de mission</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Devices">Gestion d'appareils</sys:String>
+    <x:String x:Key="Text_MainWindow_NavigationView_Workflow">Text_MainWindow_NavigationView_Workflow</x:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Account">Compte</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Settings">d'installation</sys:String>
     <sys:String x:Key="Text_MainWindow_HomePage_Recent">Utilisé récemment</sys:String>

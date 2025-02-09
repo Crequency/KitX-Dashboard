@@ -49,6 +49,7 @@
     <sys:String x:Key="Text_MainWindow_NavigationView_Repo">창고</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Plan">임무 계획</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Devices">기기 관리</sys:String>
+    <x:String x:Key="Text_MainWindow_NavigationView_Workflow">Text_MainWindow_NavigationView_Workflow</x:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Account">계정</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Settings">설정</sys:String>
     <sys:String x:Key="Text_MainWindow_HomePage_Recent">최근 사용</sys:String>

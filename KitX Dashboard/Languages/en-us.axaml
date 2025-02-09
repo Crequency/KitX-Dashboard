@@ -49,6 +49,7 @@
     <sys:String x:Key="Text_MainWindow_NavigationView_Repo">Repository</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Plan">Task and Plan</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Devices">Devices</sys:String>
+    <x:String x:Key="Text_MainWindow_NavigationView_Workflow">Workflow</x:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Account">Account</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Settings">Settings</sys:String>
     <sys:String x:Key="Text_MainWindow_HomePage_Recent">Recent Using</sys:String>
