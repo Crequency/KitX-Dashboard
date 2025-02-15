@@ -12,6 +12,8 @@ public static class ViewInstances
 {
     public static ObservableCollection<DeviceCase> DeviceCases { get; set; } = [];
 
+    public static ObservableCollection<WorkflowCase> WorkflowCases { get; set; } = [];
+
     public static ObservableCollection<PluginInfo> PluginInfos { get; set; } = [];
 
     public static MainWindow? MainWindow { get; set; }
@@ -20,7 +22,8 @@ public static class ViewInstances
 
     public static List<Window> Windows { get; set; } = [];
 
-    public static void ShowWindow<T>(T window, Window? owner = null, bool showDialog = false, bool onlyOneInSameTime = false) where T : Window
+    public static void ShowWindow<T>(T window, Window? owner = null, bool showDialog = false, bool onlyOneInSameTime = false)
+        where T : Window
     {
         if (onlyOneInSameTime && Windows.Any(x => x.Title?.Equals(window.Title) ?? window.Title is null))
             return;

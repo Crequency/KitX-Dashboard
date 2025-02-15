@@ -63,5 +63,4 @@ public partial class RepoPage : UserControl
         if (!e.Data.Contains(DataFormats.Files))
             e.DragEffects = DragDropEffects.None;
     }
-
 }

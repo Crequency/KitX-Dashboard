@@ -52,10 +52,7 @@ public partial class MainWindow : Window, IView
                     );
 
                     if (config.IsHidden)
-                        Instances.SignalTasksManager.SignalRun(
-                            nameof(SignalsNames.MainWindowOpenedSignal),
-                            Hide
-                        );
+                        Instances.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal), Hide);
                 }
                 catch (Exception e)
                 {
@@ -111,11 +108,7 @@ public partial class MainWindow : Window, IView
 
         EventService.GreetingTextIntervalUpdated += UpdateGreetingText;
 
-        var timer = new Timer()
-        {
-            AutoReset = true,
-            Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval,
-        };
+        var timer = new Timer() { AutoReset = true, Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval };
 
         timer.Elapsed += (_, _) => UpdateGreetingText();
 
@@ -135,11 +128,7 @@ public partial class MainWindow : Window, IView
             {
                 Application
                     .Current.Resources.MergedDictionaries[0]
-                    .TryGetResource(
-                        GreetingTextGenerator.GetKey(),
-                        ActualThemeVariant,
-                        out object? text
-                    );
+                    .TryGetResource(GreetingTextGenerator.GetKey(), ActualThemeVariant, out object? text);
 
                 if (text is null)
                     return;
@@ -166,6 +155,7 @@ public partial class MainWindow : Window, IView
             "Page_Settings" => typeof(Pages.SettingsPage),
             "Page_Market" => typeof(Pages.MarketPage),
             "Page_Device" => typeof(Pages.DevicesPage),
+            "Page_Workflow" => typeof(Pages.WorkflowPage),
             _ => typeof(Pages.HomePage),
         };
 
@@ -180,10 +170,7 @@ public partial class MainWindow : Window, IView
         }
     }
 
-    private void MainNavigationView_SelectionChanged(
-        object? sender,
-        NavigationViewSelectionChangedEventArgs e
-    )
+    private void MainNavigationView_SelectionChanged(object? sender, NavigationViewSelectionChangedEventArgs e)
     {
         try
         {

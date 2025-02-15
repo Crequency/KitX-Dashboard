@@ -194,11 +194,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref isInDirectSelectingMode, value);
     }
 
-    private void BringSelectedButtonIntoView(
-        int perLineButtonsCount,
-        double scrollviewerHeight,
-        double scrollviewerOffsetY
-    )
+    private void BringSelectedButtonIntoView(int perLineButtonsCount, double scrollviewerHeight, double scrollviewerOffsetY)
     {
         var viewerHeight = (int)Math.Floor(scrollviewerHeight);
 
@@ -233,11 +229,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    internal void SelectLeftOne(
-        int perLineCount,
-        double scrollviewerHeight,
-        double scrollviewerOffsetY
-    )
+    internal void SelectLeftOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
     {
         if (PluginIndexInRange(selectedPluginIndex - 1))
         {
@@ -247,11 +239,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    internal void SelectRightOne(
-        int perLineCount,
-        double scrollviewerHeight,
-        double scrollviewerOffsetY
-    )
+    internal void SelectRightOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
     {
         if (PluginIndexInRange(SelectedPluginIndex + 1))
         {
@@ -261,11 +249,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    internal void SelectUpOne(
-        int perLineCount,
-        double scrollviewerHeight,
-        double scrollviewerOffsetY
-    )
+    internal void SelectUpOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
     {
         var targetIndex = SelectedPluginIndex - perLineCount;
 
@@ -277,11 +261,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    internal void SelectDownOne(
-        int perLineCount,
-        double scrollviewerHeight,
-        double scrollviewerOffsetY
-    )
+    internal void SelectDownOne(int perLineCount, double scrollviewerHeight, double scrollviewerOffsetY)
     {
         var targetIndex = SelectedPluginIndex + perLineCount;
 
@@ -359,19 +339,13 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
                         break;
                     }
 
-            if (
-                SelectedPluginInfo is not null
-                && SelectedFunction is not null
-                && (HavingParameters == false)
-            )
+            if (SelectedPluginInfo is not null && SelectedFunction is not null && (HavingParameters == false))
             {
                 var plugConnector = PluginsServer.Instance.FindConnector(SelectedPluginInfo);
 
                 if (plugConnector is not null)
                 {
-                    var connector = new Connector()
-                        .SetSerializer(x => JsonSerializer.Serialize(x))
-                        .SetSender(plugConnector.Request);
+                    var connector = new Connector().SetSerializer(x => JsonSerializer.Serialize(x)).SetSender(plugConnector.Request);
 
                     var request = connector
                         .Request()

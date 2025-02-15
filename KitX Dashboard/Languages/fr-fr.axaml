@@ -49,6 +49,7 @@
     <sys:String x:Key="Text_MainWindow_NavigationView_Repo">entrepôt</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Plan">plan de mission</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Devices">Gestion d'appareils</sys:String>
+    <x:String x:Key="Text_MainWindow_NavigationView_Workflow">Text_MainWindow_NavigationView_Workflow</x:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Account">Compte</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Settings">d'installation</sys:String>
     <sys:String x:Key="Text_MainWindow_HomePage_Recent">Utilisé récemment</sys:String>
@@ -111,6 +112,7 @@
     <x:String x:Key="Text_Device_Context_Security">Sécurité</x:String>
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">Autoriser le dispositif et échanger les clés</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">Révoquer l'autorisation de ce dispositif (générer une nouvelle clé locale et l'échanger avec d'autres appareils)</x:String>
+    <x:String x:Key="Text_Workflow_Count">Vous avez $count workflows</x:String>
     <sys:String x:Key="Text_Settings_General">Universel</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">répertoire local des plugins</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">Répertoire de données du plug-in local</sys:String>

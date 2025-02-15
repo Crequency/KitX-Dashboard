@@ -25,51 +25,60 @@ internal class ActivityManager
 
             return col.FindAll().ToList();
         }
-        else return [];
+        else
+            return [];
     }
 
     public static void Record(Activity activity, Expression<Func<Activity, int>> keySelector)
     {
         const string location = $"{nameof(ActivityManager)}.{nameof(Record)}";
 
-        TasksManager.RunTask(() =>
-        {
-            lock (_activityRecordLock)
+        TasksManager.RunTask(
+            () =>
             {
-                if (Instances.ActivitiesDataBase is LiteDatabase db)
+                lock (_activityRecordLock)
                 {
-                    var col = db.GetCollection<Activity>(CollectionName);
+                    if (Instances.ActivitiesDataBase is LiteDatabase db)
+                    {
+                        var col = db.GetCollection<Activity>(CollectionName);
 
-                    col?.Insert(activity);
+                        col?.Insert(activity);
 
-                    col?.EnsureIndex(keySelector);
+                        col?.EnsureIndex(keySelector);
 
-                    ConfigManager.Instance.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
+                        ConfigManager.Instance.AppConfig.Activity.TotalRecorded += col is null ? 0 : 1;
 
-                    db.Commit();
+                        db.Commit();
+                    }
                 }
-            }
-        }, location, catchException: true);
+            },
+            location,
+            catchException: true
+        );
     }
 
     public static void Update(Activity activity)
     {
         const string location = $"{nameof(ActivityManager)}.{nameof(Update)}";
 
-        TasksManager.RunTask(() =>
-        {
-            lock (_activityRecordLock)
+        TasksManager.RunTask(
+            () =>
             {
-                if (Instances.ActivitiesDataBase is LiteDatabase db)
+                lock (_activityRecordLock)
                 {
-                    var col = db.GetCollection<Activity>(CollectionName);
+                    if (Instances.ActivitiesDataBase is LiteDatabase db)
+                    {
+                        var col = db.GetCollection<Activity>(CollectionName);
 
-                    col?.Update(activity);
+                        col?.Update(activity);
 
-                    db.Commit();
+                        db.Commit();
+                    }
                 }
-            }
-        }, location, catchException: true);
+            },
+            location,
+            catchException: true
+        );
     }
 
     public static void RecordAppStart()

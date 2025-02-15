@@ -38,8 +38,7 @@ internal class Home_CountViewModel : ViewModelBase
             {
                 Values = use?.Values.ToArray(),
                 Fill = null,
-                XToolTipLabelFormatter = x =>
-                    $"{use?.Keys.ToArray()[(int)x.Coordinate.SecondaryValue]}: {x.Coordinate.PrimaryValue} h",
+                XToolTipLabelFormatter = x => $"{use?.Keys.ToArray()[(int)x.Coordinate.SecondaryValue]}: {x.Coordinate.PrimaryValue} h",
             },
         ];
     }
@@ -65,10 +64,7 @@ internal class Home_CountViewModel : ViewModelBase
         }
     }
 
-    private ISeries[] useSeries =
-    [
-        new LineSeries<double> { Values = new double[] { 2, 1, 3, 5, 3, 4, 6 }, Fill = null },
-    ];
+    private ISeries[] useSeries = [new LineSeries<double> { Values = new double[] { 2, 1, 3, 5, 3, 4, 6 }, Fill = null }];
 
     public ISeries[] Use_Series
     {

@@ -33,8 +33,12 @@ public abstract class ViewModelBase : ReactiveObject
         return null;
     }
 
-    protected static void SaveAppConfigChanges() =>
-        EventService.Invoke(nameof(EventService.AppConfigChanged));
+    protected static string? TranslateText(string key = "", Application? app = null) => Translate(key, "Text", separator: "_", app: app);
+
+    protected static string? TranslateTextWithSuffix(string key = "", string suffix = "", Application? app = null) =>
+        Translate(key, "Text", suffix, "_", app);
+
+    protected static void SaveAppConfigChanges() => EventService.Invoke(nameof(EventService.AppConfigChanged));
 
     public abstract void InitCommands();
 
@@ -42,6 +46,5 @@ public abstract class ViewModelBase : ReactiveObject
 
     internal static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
 
-    internal static AnnouncementConfig AnnouncementConfig =>
-        ConfigManager.Instance.AnnouncementConfig;
+    internal static AnnouncementConfig AnnouncementConfig => ConfigManager.Instance.AnnouncementConfig;
 }

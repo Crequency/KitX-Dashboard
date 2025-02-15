@@ -26,11 +26,7 @@ public partial class App : Application
     {
         get
         {
-            var path = Path.Combine(
-                    ConstantTable.AssetsPath,
-                    ConfigManager.Instance.AppConfig.App.CoverIconFileName
-                )
-                .GetFullPath();
+            var path = Path.Combine(ConstantTable.AssetsPath, ConfigManager.Instance.AppConfig.App.CoverIconFileName).GetFullPath();
 
             if (Design.IsDesignMode)
                 return null;
@@ -82,9 +78,7 @@ public partial class App : Application
         {
             Resources.MergedDictionaries.Clear();
 
-            Resources.MergedDictionaries.Add(
-                AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(path)) as ResourceDictionary ?? []
-            );
+            Resources.MergedDictionaries.Add(AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(path)) as ResourceDictionary ?? []);
         }
         catch (Exception ex)
         {
@@ -95,9 +89,7 @@ public partial class App : Application
             try
             {
                 Resources.MergedDictionaries.Add(
-                    AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(backup_langPath))
-                        as ResourceDictionary
-                        ?? []
+                    AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(backup_langPath)) as ResourceDictionary ?? []
                 );
 
                 config.App.AppLanguage = backup_lang;
@@ -128,9 +120,7 @@ public partial class App : Application
 
         if (Current is not null)
         {
-            Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(
-                new Color(c.A, c.R, c.G, c.B)
-            );
+            Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
 
             for (char i = 'A'; i <= 'E'; ++i)
             {
@@ -153,9 +143,7 @@ public partial class App : Application
             var usingLightTheme = Current?.ActualThemeVariant == ThemeVariant.Light;
 
             LiveCharts.Configure(config =>
-                (usingLightTheme ? config.AddLightTheme() : config.AddDarkTheme())
-                    .AddSkiaSharp()
-                    .AddDefaultMappers()
+                (usingLightTheme ? config.AddLightTheme() : config.AddDarkTheme()).AddSkiaSharp().AddDefaultMappers()
             );
         }
 

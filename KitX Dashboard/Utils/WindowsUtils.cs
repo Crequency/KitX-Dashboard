@@ -7,11 +7,7 @@ namespace KitX.Dashboard.Utils;
 
 internal static class WindowsUtils
 {
-    internal static Resolution SuggestResolution(
-        this Resolution res,
-        Screen? screen,
-        out Resolution? notScaled
-    )
+    internal static Resolution SuggestResolution(this Resolution res, Screen? screen, out Resolution? notScaled)
     {
         notScaled = null;
 

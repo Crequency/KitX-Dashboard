@@ -2,10 +2,7 @@
 
 internal class MarketPageViewModel : ViewModelBase
 {
-    public MarketPageViewModel()
-    {
-
-    }
+    public MarketPageViewModel() { }
 
     public override void InitCommands() => throw new System.NotImplementedException();
 

@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="KitX.Dashboard.Views.Pages.WorkflowPage"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:KitX.Dashboard.Converters"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:icon="using:Material.Icons.Avalonia"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
+             d:DesignHeight="450"
+             d:DesignWidth="800"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:StringOverLengthConverter x:Key="StringOverLengthConverter" />
+    </UserControl.Resources>
+    <DockPanel>
+        <Grid Height="80"
+              DockPanel.Dock="Top">
+            <AutoCompleteBox Width="400"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             IsTextCompletionEnabled="True"
+                             Text="{Binding SearchingText}"
+                             Watermark="{DynamicResource Text_Workflow_Search}" />
+            <StackPanel Margin="25,0,0,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                <TextBlock Text="{Binding WorkflowCountTip}" />
+            </StackPanel>
+            <StackPanel Margin="0,0,20,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                <Button x:Name="RunWorkflowCommandProvider"
+                        Command="{Binding RunWorkflowCommand}"
+                        IsVisible="False" />
+                <Button x:Name="StopWorkflowCommandProvider"
+                        Command="{Binding StopWorkflowCommand}"
+                        IsVisible="False" />
+            </StackPanel>
+        </Grid>
+        <DockPanel Margin="10">
+            <Border Height="{Binding NoWorkflow_TipHeight}"
+                    DockPanel.Dock="Top">
+                <TextBlock HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Text="{DynamicResource Text_Workflow_No}" />
+            </Border>
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding WorkflowCases}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Width="340"
+                                    Margin="10"
+                                    BorderThickness="3">
+                                <Grid>
+                                    <StackPanel Margin="10">
+                                        <DockPanel Width="300">
+                                            <icon:MaterialIcon Width="45"
+                                                               Height="45"
+                                                               DockPanel.Dock="Left"
+                                                               Kind="{Binding IconPath}" />
+                                            <DockPanel Margin="10,0,0,0">
+                                                <TextBlock MaxWidth="220"
+                                                           HorizontalAlignment="Left"
+                                                           FontSize="20"
+                                                           Text="{Binding Name}"
+                                                           ToolTip.Tip="{Binding Name}" />
+                                                <TextBlock MaxHeight="220"
+                                                           HorizontalAlignment="Left"
+                                                           FontSize="14"
+                                                           Text="{Binding Description}"
+                                                           ToolTip.Tip="{Binding Description}" />
+                                            </DockPanel>
+                                        </DockPanel>
+                                        <DockPanel Width="300"
+                                                   Margin="0,10,0,0">
+                                            <Grid Margin="25,0,0,0"
+                                                  VerticalAlignment="Center"
+                                                  DockPanel.Dock="Right">
+                                                <Button FontSize="18"
+                                                        IsVisible="{Binding IsRunning}"
+                                                        Command="{Binding #StopWorkflowCommandProvider.Command}">
+                                                    <icon:MaterialIcon Width="20"
+                                                                       Height="20"
+                                                                       Kind="Stop" />
+                                                </Button>
+                                                <Button FontSize="18"
+                                                        IsVisible="{Binding !IsRunning}"
+                                                        Command="{Binding #RunWorkflowCommandProvider.Command}">
+                                                    <icon:MaterialIcon Width="20"
+                                                                       Height="20"
+                                                                       Kind="Play" />
+                                                </Button>
+                                            </Grid>
+                                        </DockPanel>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,5,0,0"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Top"
+                                                Orientation="Horizontal">
+                                        <Ellipse Width="15"
+                                                 Height="15"
+                                                 IsVisible="{Binding !IsRunning}"
+                                                 Fill="Red"
+                                                 ToolTip.Tip="{DynamicResource Text_Workflow_Status}" />
+                                        <Ellipse Width="15"
+                                                 Height="15"
+                                                 IsVisible="{Binding IsRunning}"
+                                                 Fill="Green"
+                                                 ToolTip.Tip="{DynamicResource Text_Workflow_Status}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </DockPanel>
+</UserControl>

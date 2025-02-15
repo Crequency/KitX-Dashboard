@@ -37,7 +37,8 @@ internal class PluginsManager
 
                 var pluginInfo = JsonSerializer.Deserialize<PluginInfo>(rst.Item2);
 
-                if (pluginInfo is null) continue;
+                if (pluginInfo is null)
+                    continue;
 
                 var config = ConfigManager.Instance.AppConfig;
 
@@ -52,8 +53,7 @@ internal class PluginsManager
                     .Append('/')
                     .Append(pluginInfo.Version)
                     .ToString()
-                    .GetFullPath()
-                    ;
+                    .GetFullPath();
 
                 if (Directory.Exists(thisPluginDir))
                     Directory.Delete(thisPluginDir, true);
@@ -63,10 +63,7 @@ internal class PluginsManager
                 _ = decoder.Decode(thisPluginDir);
 
                 if (!Plugins.Exists(x => x.InstallPath?.Equals(thisPluginDir) ?? false))
-                    Plugins.Add(new()
-                    {
-                        InstallPath = thisPluginDir
-                    });
+                    Plugins.Add(new() { InstallPath = thisPluginDir });
             }
             catch (Exception e)
             {
@@ -78,7 +75,7 @@ internal class PluginsManager
                 {
                     Log.Error(e, msg);
 
-                    throw;  // If called in graphic mode, throw again for better tip
+                    throw; // If called in graphic mode, throw again for better tip
                 }
             }
         }

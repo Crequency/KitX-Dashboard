@@ -33,8 +33,7 @@ internal class Settings_GeneralViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        EventService.DevelopSettingsChanged += () =>
-            this.RaisePropertyChanged(nameof(DeveloperSettingEnabled));
+        EventService.DevelopSettingsChanged += () => this.RaisePropertyChanged(nameof(DeveloperSettingEnabled));
     }
 
     internal static string LocalPluginsFileDirectory

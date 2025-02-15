@@ -6,10 +6,7 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Home_RecentUseViewModel : ViewModelBase, IView
 {
-    public Home_RecentUseViewModel()
-    {
-
-    }
+    public Home_RecentUseViewModel() { }
 
     public double NoRecent_TipHeight { get; set; } = 200;
 

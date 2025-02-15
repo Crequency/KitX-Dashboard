@@ -33,7 +33,8 @@ public static class ConfigBaseExtensions
         PropertyNameCaseInsensitive = true,
     };
 
-    public static T Load<T>(this string path) where T : ConfigBase, new()
+    public static T Load<T>(this string path)
+        where T : ConfigBase, new()
     {
         path = path.GetFullPath();
 
@@ -61,7 +62,8 @@ public static class ConfigBaseExtensions
         return result as T ?? throw new Exception("Can not deserialize config file.");
     }
 
-    public static T Save<T>(this T config, string path) where T : ConfigBase
+    public static T Save<T>(this T config, string path)
+        where T : ConfigBase
     {
         path = path.GetFullPath();
 
@@ -75,7 +77,8 @@ public static class ConfigBaseExtensions
         return config;
     }
 
-    public static T SetConfigFileLocation<T>(this T config, string path) where T : ConfigBase
+    public static T SetConfigFileLocation<T>(this T config, string path)
+        where T : ConfigBase
     {
         config.ConfigFileLocation = path;
 

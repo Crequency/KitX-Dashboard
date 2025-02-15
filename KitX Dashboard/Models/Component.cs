@@ -2,10 +2,7 @@
 
 internal class Component
 {
-    public Component()
-    {
-
-    }
+    public Component() { }
 
     internal bool CanUpdate { get; set; }
 

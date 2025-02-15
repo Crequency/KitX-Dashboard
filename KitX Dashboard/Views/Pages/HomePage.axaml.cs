@@ -40,9 +40,7 @@ public partial class HomePage : UserControl, IView
         }
     }
 
-    private void HomeNavigationView_SelectionChanged(
-        object? sender,
-        NavigationViewSelectionChangedEventArgs e)
+    private void HomeNavigationView_SelectionChanged(object? sender, NavigationViewSelectionChangedEventArgs e)
     {
         const string location = $"{nameof(HomePage)}.{nameof(HomeNavigationView_SelectionChanged)}";
 
@@ -50,7 +48,8 @@ public partial class HomePage : UserControl, IView
         {
             var tag = ((sender as NavigationView)?.SelectedItem as Control)?.Tag?.ToString();
 
-            if (tag is null) return;
+            if (tag is null)
+                return;
 
             SelectedViewName = tag;
 
@@ -62,11 +61,12 @@ public partial class HomePage : UserControl, IView
         }
     }
 
-    private static Type SelectedViewType() => SelectedViewName switch
-    {
-        "View_Recent" => typeof(Home_RecentUse),
-        "View_Count" => typeof(Home_Count),
-        "View_ActivityLog" => typeof(Home_ActivityLog),
-        _ => typeof(Home_RecentUse),
-    };
+    private static Type SelectedViewType() =>
+        SelectedViewName switch
+        {
+            "View_Recent" => typeof(Home_RecentUse),
+            "View_Count" => typeof(Home_Count),
+            "View_ActivityLog" => typeof(Home_ActivityLog),
+            _ => typeof(Home_RecentUse),
+        };
 }

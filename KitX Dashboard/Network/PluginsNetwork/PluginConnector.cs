@@ -38,10 +38,7 @@ public class PluginConnector
 
     public event PluginStatusUpdatedHandler PluginStatusUpdated = new(() => { });
 
-    public PluginConnector()
-    {
-
-    }
+    public PluginConnector() { }
 
     public PluginConnector(IWebSocketConnection socket)
     {
@@ -102,9 +99,7 @@ public class PluginConnector
 
         const string location = $"{nameof(PluginConnector)}.{nameof(Run)}";
 
-        _connection!.OnOpen = () =>
-        {
-        };
+        _connection!.OnOpen = () => { };
 
         _connection.OnClose = () =>
         {
@@ -125,7 +120,8 @@ public class PluginConnector
         {
             var kwc = JsonSerializer.Deserialize<Request>(message, serializerOptions);
 
-            if (kwc is null) return;
+            if (kwc is null)
+                return;
 
             var command = JsonSerializer.Deserialize<Command>(kwc.Content, serializerOptions);
 
@@ -142,10 +138,7 @@ public class PluginConnector
                     ArgumentNullException.ThrowIfNull(PluginInfo.Tags, nameof(PluginInfo.Tags));
 
                     PluginInfo.Tags.Add(nameof(ConnectionId), ConnectionId ?? string.Empty);
-                    PluginInfo.Tags.Add(
-                        nameof(PluginTagsNames.JoinTime),
-                        DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss(FF)")
-                    );
+                    PluginInfo.Tags.Add(nameof(PluginTagsNames.JoinTime), DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss(FF)"));
 
                     ViewInstances.PluginInfos.Add(PluginInfo);
 
@@ -160,7 +153,6 @@ public class PluginConnector
                 case CommandRequestInfo.RequestCommand:
                     break;
             }
-
             ;
         };
 
@@ -184,22 +176,13 @@ public class PluginConnector
         return this;
     }
 
-    private void SendMessage<T>(T content) => _connection!.Send(
-        JsonSerializer.Serialize(content, serializerOptions)
-    );
+    private void SendMessage<T>(T content) => _connection!.Send(JsonSerializer.Serialize(content, serializerOptions));
 
     private void SendWorkingDetail()
     {
         if (_path.IsNullOrWhiteSpace())
-            SendMessage(new PluginWorkingDetail()
-            {
-                PluginDataDirectory = null,
-                PluginSaveDirectory = null,
-            });
-        else
-        {
-
-        }
+            SendMessage(new PluginWorkingDetail() { PluginDataDirectory = null, PluginSaveDirectory = null });
+        else { }
     }
 
     internal async void Request(Request request)

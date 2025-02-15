@@ -63,9 +63,7 @@ public partial class PluginsServer : ConfigFetcher
 
     public PluginConnector? FindConnector(PluginInfo info)
     {
-        var query = PluginConnectors.Where(x =>
-            x.PluginInfo is not null && x.PluginInfo.Equals(info)
-        );
+        var query = PluginConnectors.Where(x => x.PluginInfo is not null && x.PluginInfo.Equals(info));
 
         if (query.Any())
             return query.First();

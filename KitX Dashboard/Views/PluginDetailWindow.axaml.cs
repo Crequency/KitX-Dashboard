@@ -23,11 +23,13 @@ public partial class PluginDetailWindow : Window
 
         if (screen is not null)
         {
-            var suggest = Resolution.Suggest(
-                Resolution.Parse("2560x1440"),
-                Resolution.Parse("820x500"),
-                Resolution.Parse($"{screen.Bounds.Width}x{screen.Bounds.Height}")
-            ).Integerization();
+            var suggest = Resolution
+                .Suggest(
+                    Resolution.Parse("2560x1440"),
+                    Resolution.Parse("820x500"),
+                    Resolution.Parse($"{screen.Bounds.Width}x{screen.Bounds.Height}")
+                )
+                .Integerization();
 
             if (suggest is not null)
                 ClientSize = new(suggest.Width ?? 820, suggest.Height ?? 500);

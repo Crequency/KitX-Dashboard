@@ -29,15 +29,14 @@ public partial class SettingsPage : UserControl, IView
             nav.SelectedItem = this.FindControl<NavigationViewItem>(SelectedViewName);
     }
 
-    private void SettingsNavigationView_SelectionChanged(
-        object? sender,
-        NavigationViewSelectionChangedEventArgs e)
+    private void SettingsNavigationView_SelectionChanged(object? sender, NavigationViewSelectionChangedEventArgs e)
     {
         try
         {
             var tag = ((sender as NavigationView)?.SelectedItem as Control)?.Tag?.ToString();
 
-            if (tag is null) return;
+            if (tag is null)
+                return;
 
             SelectedViewName = tag;
 
@@ -60,13 +59,14 @@ public partial class SettingsPage : UserControl, IView
         }
     }
 
-    private static Type SelectedViewType() => SelectedViewName switch
-    {
-        "View_General" => typeof(Settings_General),
-        "View_Personalise" => typeof(Settings_Personalise),
-        "View_Performence" => typeof(Settings_Performence),
-        "View_Update" => typeof(Settings_Update),
-        "View_About" => typeof(Settings_About),
-        _ => typeof(Settings_General),
-    };
+    private static Type SelectedViewType() =>
+        SelectedViewName switch
+        {
+            "View_General" => typeof(Settings_General),
+            "View_Personalise" => typeof(Settings_Personalise),
+            "View_Performence" => typeof(Settings_Performence),
+            "View_Update" => typeof(Settings_Update),
+            "View_About" => typeof(Settings_About),
+            _ => typeof(Settings_General),
+        };
 }

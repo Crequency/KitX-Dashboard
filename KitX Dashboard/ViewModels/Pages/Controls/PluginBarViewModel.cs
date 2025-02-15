@@ -30,10 +30,7 @@ internal class PluginBarViewModel : ViewModelBase
         ViewDetailsCommand = ReactiveCommand.Create(() =>
         {
             if (Plugin is not null && ViewInstances.MainWindow is not null)
-                new PluginDetailWindow()
-                {
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                }
+                new PluginDetailWindow() { WindowStartupLocation = WindowStartupLocation.CenterOwner }
                     .SetPluginInfo(Plugin.PluginInfo)
                     .Show(ViewInstances.MainWindow);
         });
@@ -87,9 +84,7 @@ internal class PluginBarViewModel : ViewModelBase
                         Process.Start(pluginFile, $"--connect {connectStr}");
                     else
                     {
-                        var loaderFile =
-                            $"{AppConfig.Loaders.InstallPath}/"
-                            + $"{loaderName}/{loaderVersion}/{loaderName}";
+                        var loaderFile = $"{AppConfig.Loaders.InstallPath}/" + $"{loaderName}/{loaderVersion}/{loaderName}";
 
                         if (OperatingSystem.IsWindows())
                             loaderFile += ".exe";
@@ -132,10 +127,7 @@ internal class PluginBarViewModel : ViewModelBase
             if (Plugin is null)
                 return null;
 
-            return Plugin.PluginInfo.DisplayName.TryGetValue(
-                AppConfig.App.AppLanguage,
-                out var lang
-            )
+            return Plugin.PluginInfo.DisplayName.TryGetValue(AppConfig.App.AppLanguage, out var lang)
                 ? lang
                 : Plugin.PluginInfo.DisplayName.Values.GetEnumerator().Current;
         }

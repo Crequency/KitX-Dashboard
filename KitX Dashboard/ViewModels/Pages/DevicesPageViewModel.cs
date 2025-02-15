@@ -40,13 +40,7 @@ internal class DevicesPageViewModel : ViewModelBase
             if (Instances.WebManager is null)
                 return;
 
-            await Instances.WebManager.CloseAsync(
-                new()
-                {
-                    ClosePluginsServer = false,
-                    CloseDevicesServer = false,
-                }
-            );
+            await Instances.WebManager.CloseAsync(new() { ClosePluginsServer = false, CloseDevicesServer = false });
 
             await Task.Delay(AppConfig.Web.UdpSendFrequency + 200);
 

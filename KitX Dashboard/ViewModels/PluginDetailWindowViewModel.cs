@@ -40,17 +40,14 @@ internal class PluginDetailWindowViewModel : ViewModelBase
 
     internal string? PublishDate => PluginDetail?.PublishDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-    internal string? LastUpdateDate =>
-        PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
+    internal string? LastUpdateDate => PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
 
     internal static Color TintColor =>
         AppConfig.App.Theme switch
         {
             "Light" => Colors.WhiteSmoke,
             "Dark" => Colors.Black,
-            "Follow" => Application.Current?.ActualThemeVariant == ThemeVariant.Light
-                ? Colors.WhiteSmoke
-                : Colors.Black,
+            "Follow" => Application.Current?.ActualThemeVariant == ThemeVariant.Light ? Colors.WhiteSmoke : Colors.Black,
             _ => Color.Parse(AppConfig.App.ThemeColor),
         };
 
@@ -67,11 +64,7 @@ internal class PluginDetailWindowViewModel : ViewModelBase
 
         foreach (var func in PluginDetail.Functions)
         {
-            var sb = new StringBuilder()
-                .Append(func.ReturnValueType)
-                .Append(' ')
-                .Append(func.Name)
-                .Append('(');
+            var sb = new StringBuilder().Append(func.ReturnValueType).Append(' ').Append(func.Name).Append('(');
 
             var index = 0;
 

@@ -2,10 +2,7 @@
 
 internal class AccountPageViewModel : ViewModelBase
 {
-    public AccountPageViewModel()
-    {
-
-    }
+    public AccountPageViewModel() { }
 
     public override void InitCommands() => throw new System.NotImplementedException();
 

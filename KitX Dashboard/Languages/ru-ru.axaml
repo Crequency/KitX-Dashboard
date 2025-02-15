@@ -49,6 +49,7 @@
     <sys:String x:Key="Text_MainWindow_NavigationView_Repo">склад</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Plan">план миссии</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Devices">Управление устройствами</sys:String>
+    <x:String x:Key="Text_MainWindow_NavigationView_Workflow">Text_MainWindow_NavigationView_Workflow</x:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Account">учетная запись</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Settings">настраивать</sys:String>
     <sys:String x:Key="Text_MainWindow_HomePage_Recent">Недавно использованный</sys:String>
@@ -111,6 +112,7 @@
     <x:String x:Key="Text_Device_Context_Security">Text_Device_Context_Authorization</x:String>
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">Аутентифицируйте устройство и обменивайте ключи</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">Отозвать авторизацию для этого устройства (сгенерировать новый локальный ключ и обменять его с другими устройствами)</x:String>
+    <x:String x:Key="Text_Workflow_Count">У вас есть $count рабочих процессов</x:String>
     <sys:String x:Key="Text_Settings_General">Универсальный</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">локальный каталог плагинов</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">Локальный каталог данных плагина</sys:String>

@@ -28,7 +28,8 @@ public class PluginController : ControllerBase
 
             var request = JsonSerializer.Deserialize<Request>(requestJson);
 
-            if (request is null) return BadRequest($"Wrong format of {nameof(requestJson)}");
+            if (request is null)
+                return BadRequest($"Wrong format of {nameof(requestJson)}");
 
             var noTarget = request.Target is null;
 
@@ -36,7 +37,8 @@ public class PluginController : ControllerBase
 
             var isNotMe = !isMe;
 
-            if (noTarget || isNotMe) return BadRequest(noTarget ? "Provide target field please." : "Please send to actual target.");
+            if (noTarget || isNotMe)
+                return BadRequest(noTarget ? "Provide target field please." : "Please send to actual target.");
 
             var content = request.GetContent(toDecrypt =>
             {
@@ -71,24 +73,31 @@ public class PluginController : ControllerBase
 
                     throw new InvalidOperationException("Invalid encryption method.");
                 }
-                else return toDecrypt;
+                else
+                    return toDecrypt;
             });
 
-            request.Match(content, matchCommand: command =>
-            {
-                var kwc = JsonSerializer.Deserialize<Command>(command);
-
-                var connector = PluginsServer.Instance.FindConnector(kwc.PluginConnectionId);
-
-                if (connector is null) return;
-
-                connector.Request(request.Rebuild(request =>
+            request.Match(
+                content,
+                matchCommand: command =>
                 {
-                    request.Content = command;
+                    var kwc = JsonSerializer.Deserialize<Command>(command);
 
-                    return request;
-                }));
-            });
+                    var connector = PluginsServer.Instance.FindConnector(kwc.PluginConnectionId);
+
+                    if (connector is null)
+                        return;
+
+                    connector.Request(
+                        request.Rebuild(request =>
+                        {
+                            request.Content = command;
+
+                            return request;
+                        })
+                    );
+                }
+            );
 
             return Ok();
         }
@@ -113,10 +122,7 @@ public static class PluginControllerExtensions
 
         using var http = new HttpClient();
 
-        var response = await http.PostAsync(
-            url,
-            new StringContent(toSend, Encoding.UTF8, "application/json")
-        );
+        var response = await http.PostAsync(url, new StringContent(toSend, Encoding.UTF8, "application/json"));
 
         return response;
     }

@@ -30,14 +30,14 @@ internal class StatisticsManager
             try
             {
                 var dataDir = ConstantTable.DataPath.GetFullPath();
-                if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
+                if (!Directory.Exists(dataDir))
+                    Directory.CreateDirectory(dataDir);
 
                 var useFile = "UseCount.json";
                 var usePath = $"{dataDir}/{useFile}".GetFullPath();
                 var json = JsonSerializer.Serialize(UseStatistics);
 
                 await File.WriteAllTextAsync(usePath, json);
-
             }
             catch (Exception ex)
             {
@@ -49,7 +49,8 @@ internal class StatisticsManager
     internal static async void RecoverPreviousStatistics()
     {
         var dataDir = ConstantTable.DataPath.GetFullPath();
-        if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
+        if (!Directory.Exists(dataDir))
+            Directory.CreateDirectory(dataDir);
 
         try
         {
@@ -95,7 +96,7 @@ internal class StatisticsManager
 
         var use_timer = new Timer()
         {
-            Interval = 1000 * 60 * 0.6    //  Update per 0.6 minutes
+            Interval = 1000 * 60 * 0.6, //  Update per 0.6 minutes
         };
         use_timer.Elapsed += (_, _) =>
         {
@@ -103,7 +104,8 @@ internal class StatisticsManager
             {
                 var today = DateTime.Now.ToString("MM.dd");
 
-                if (UseStatistics is null) return;
+                if (UseStatistics is null)
+                    return;
 
                 if (!UseStatistics.TryAdd(today, 0.01))
                 {

@@ -6,8 +6,7 @@ public class ConfigFetcher
 {
     public static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
 
-    public static AnnouncementConfig AnnouncementConfig =>
-        ConfigManager.Instance.AnnouncementConfig;
+    public static AnnouncementConfig AnnouncementConfig => ConfigManager.Instance.AnnouncementConfig;
 
     public static MarketConfig MarketConfig => ConfigManager.Instance.MarketConfig;
 

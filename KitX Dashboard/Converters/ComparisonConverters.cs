@@ -10,10 +10,12 @@ public class IntegerEqualConverter : IValueConverter
     {
         if (value is int a && parameter is int b)
             return a == b;
-        else return null;
+        else
+            return null;
     }
 
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotImplementedException();
 }
 
 public class StringEqualConverter : IValueConverter
@@ -22,8 +24,10 @@ public class StringEqualConverter : IValueConverter
     {
         if (value is string a && parameter is string b)
             return a.Equals(b);
-        else return null;
+        else
+            return null;
     }
 
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotImplementedException();
 }

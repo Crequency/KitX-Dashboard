@@ -29,8 +29,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
     {
         EmptyLogsCommand = ReactiveCommand.Create(() =>
         {
-            const string location =
-                $"{nameof(Settings_PerformenceViewModel)}.{nameof(EmptyLogsCommand)}";
+            const string location = $"{nameof(Settings_PerformenceViewModel)}.{nameof(EmptyLogsCommand)}";
 
             Task.Run(() =>
             {
@@ -52,9 +51,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
             });
         });
 
-        RefreshLogsUsageCommand = ReactiveCommand.Create(
-            () => this.RaisePropertyChanged(nameof(LogFileSizeUsage))
-        );
+        RefreshLogsUsageCommand = ReactiveCommand.Create(() => this.RaisePropertyChanged(nameof(LogFileSizeUsage)));
     }
 
     public sealed override void InitEvents()
@@ -87,11 +84,9 @@ internal class Settings_PerformenceViewModel : ViewModelBase
             this.RaisePropertyChanged(nameof(SupportedLogLevels));
         };
 
-        EventService.DevicesServerPortChanged += _ =>
-            this.RaisePropertyChanged(nameof(DevicesServerPort));
+        EventService.DevicesServerPortChanged += _ => this.RaisePropertyChanged(nameof(DevicesServerPort));
 
-        EventService.PluginsServerPortChanged += _ =>
-            this.RaisePropertyChanged(nameof(PluginsServerPort));
+        EventService.PluginsServerPortChanged += _ => this.RaisePropertyChanged(nameof(PluginsServerPort));
 
         Instances.SignalTasksManager?.SignalRun(
             nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal),
@@ -218,8 +213,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
         }
     }
 
-    internal static ObservableCollection<string>? AvailableNetworkInterfaces =>
-        Instances.WebManager?.NetworkInterfaceRegistered;
+    internal static ObservableCollection<string>? AvailableNetworkInterfaces => Instances.WebManager?.NetworkInterfaceRegistered;
 
     internal static ObservableCollection<string>? SelectedNetworkInterfaces { get; } = [];
 
@@ -291,8 +285,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
         }
     }
 
-    internal static int LogFileSizeUsage =>
-        (int)(AppConfig.Log.LogFilePath.GetTotalSize() / 1000 / 1024);
+    internal static int LogFileSizeUsage => (int)(AppConfig.Log.LogFilePath.GetTotalSize() / 1000 / 1024);
 
     internal static int LogFileSizeLimit
     {
@@ -344,8 +337,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
         }
     }
 
-    private static string GetLogLevelDisplayText(string key) =>
-        Translate(key, prefix: "Text_Log_") ?? string.Empty;
+    private static string GetLogLevelDisplayText(string key) => Translate(key, prefix: "Text_Log_") ?? string.Empty;
 
     internal static List<SupportedLogLevel> SupportedLogLevels { get; } =
         [
@@ -387,9 +379,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
             },
         ];
 
-    private SupportedLogLevel? _currentLogLevel = SupportedLogLevels.Find(x =>
-        x.LogEventLevel == AppConfig.Log.LogLevel
-    );
+    private SupportedLogLevel? _currentLogLevel = SupportedLogLevels.Find(x => x.LogEventLevel == AppConfig.Log.LogLevel);
 
     internal SupportedLogLevel? CurrentLogLevel
     {

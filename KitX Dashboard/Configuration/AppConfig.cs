@@ -37,16 +37,17 @@ public class AppConfig : ConfigBase
 
         public string ThemeColor { get; set; } = "#FF3873D9";
 
-        public Dictionary<string, string> SurpportLanguages { get; set; } = new()
-        {
-            { "zh-cn", "中文 (简体)" },
-            { "zh-tw", "中文 (繁體)" },
-            { "ru-ru", "Русский" },
-            { "en-us", "English (US)" },
-            { "fr-fr", "Français" },
-            { "ja-jp", "日本語" },
-            { "ko-kr", "한국어" },
-        };
+        public Dictionary<string, string> SurpportLanguages { get; set; } =
+            new()
+            {
+                { "zh-cn", "中文 (简体)" },
+                { "zh-tw", "中文 (繁體)" },
+                { "ru-ru", "Русский" },
+                { "en-us", "English (US)" },
+                { "fr-fr", "Français" },
+                { "ja-jp", "日本語" },
+                { "ko-kr", "한국어" },
+            };
 
         public string LocalPluginsFileFolder { get; set; } = "./Plugins/";
 
@@ -77,10 +78,7 @@ public class AppConfig : ConfigBase
 
             public bool IsHidden { get; set; } = false;
 
-            public Dictionary<string, string> Tags { get; set; } = new()
-            {
-                { "SelectedPage", "Page_Home" }
-            };
+            public Dictionary<string, string> Tags { get; set; } = new() { { "SelectedPage", "Page_Home" } };
 
             public bool EnabledMica { get; set; } = true;
 
@@ -126,15 +124,9 @@ public class AppConfig : ConfigBase
             public bool UseAreaExpanded { get; set; } = true;
         }
 
-        public class Config_DevicePage
-        {
+        public class Config_DevicePage { }
 
-        }
-
-        public class Config_MarketPage
-        {
-
-        }
+        public class Config_MarketPage { }
 
         public class Config_SettingsPage
         {
@@ -215,7 +207,7 @@ public class AppConfig : ConfigBase
 
     public class Config_Log
     {
-        public long LogFileSingleMaxSize { get; set; } = 1024 * 1024 * 10;      //  10MB
+        public long LogFileSingleMaxSize { get; set; } = 1024 * 1024 * 10; //  10MB
 
         public string LogFilePath { get; set; } = "./Log/";
 
@@ -234,7 +226,6 @@ public class AppConfig : ConfigBase
         public LogEventLevel LogLevel { get; set; } = LogEventLevel.Warning;
 
 #endif
-
     }
 
     public class Config_IO

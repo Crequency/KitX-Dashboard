@@ -10,7 +10,8 @@ public class GetEnumerableItemByIndexConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (parameter is null) return null;
+        if (parameter is null)
+            return null;
 
         if (parameter is int index || (parameter is string sindex && int.TryParse(sindex, out index)))
         {
@@ -21,7 +22,8 @@ public class GetEnumerableItemByIndexConverter : IValueConverter
             else
                 return null;
         }
-        else return null;
+        else
+            return null;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

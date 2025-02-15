@@ -56,9 +56,11 @@ public partial class PluginsLaunchWindow : Window
 
     private void PluginsScrollViewer_KeyDown(object? sender, KeyEventArgs e)
     {
-        if (sender is not ScrollViewer viewer) return;
+        if (sender is not ScrollViewer viewer)
+            return;
 
-        if (viewer.IsFocused == false) return;
+        if (viewer.IsFocused == false)
+            return;
 
         switch (e.Key)
         {
@@ -76,32 +78,16 @@ public partial class PluginsLaunchWindow : Window
         switch (e.Key)
         {
             case Key.Left:
-                viewModel.SelectLeftOne(
-                    perLineCount,
-                    viewerHeight,
-                    viewerOffsetY
-                );
+                viewModel.SelectLeftOne(perLineCount, viewerHeight, viewerOffsetY);
                 break;
             case Key.Right:
-                viewModel.SelectRightOne(
-                    perLineCount,
-                    viewerHeight,
-                    viewerOffsetY
-                );
+                viewModel.SelectRightOne(perLineCount, viewerHeight, viewerOffsetY);
                 break;
             case Key.Up:
-                viewModel.SelectUpOne(
-                    perLineCount,
-                    viewerHeight,
-                    viewerOffsetY
-                );
+                viewModel.SelectUpOne(perLineCount, viewerHeight, viewerOffsetY);
                 break;
             case Key.Down:
-                viewModel.SelectDownOne(
-                    perLineCount,
-                    viewerHeight,
-                    viewerOffsetY
-                );
+                viewModel.SelectDownOne(perLineCount, viewerHeight, viewerOffsetY);
                 break;
             case Key.Home:
                 viewModel.SelectHomeOne(perLineCount);
@@ -114,36 +100,43 @@ public partial class PluginsLaunchWindow : Window
 
     private void RegisterGlobalHotKey()
     {
-        Instances.KeyHookManager?.RegisterHotKeyHandler(nameof(PluginsLaunchWindow), codes =>
-        {
-            var count = codes.Length;
-
-            var tmpList = codes;
-
-            if (count < 3) return;
-
-            if (tmpList[count - 3] != KeyCode.VcLeftControl) return;
-
-            if (tmpList[count - 2] != KeyCode.VcLeftMeta) return;
-
-            if (tmpList[count - 1] != KeyCode.VcC) return;
-
-            Dispatcher.UIThread.Post(() =>
+        Instances.KeyHookManager?.RegisterHotKeyHandler(
+            nameof(PluginsLaunchWindow),
+            codes =>
             {
-                if (pluginsLaunchWindowDisplayed)
-                {
-                    Activate();
+                var count = codes.Length;
 
-                    Focus();
-                }
-                else
-                {
-                    Show();
-                }
+                var tmpList = codes;
 
-                pluginsLaunchWindowDisplayed = true;
-            });
-        });
+                if (count < 3)
+                    return;
+
+                if (tmpList[count - 3] != KeyCode.VcLeftControl)
+                    return;
+
+                if (tmpList[count - 2] != KeyCode.VcLeftMeta)
+                    return;
+
+                if (tmpList[count - 1] != KeyCode.VcC)
+                    return;
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (pluginsLaunchWindowDisplayed)
+                    {
+                        Activate();
+
+                        Focus();
+                    }
+                    else
+                    {
+                        Show();
+                    }
+
+                    pluginsLaunchWindowDisplayed = true;
+                });
+            }
+        );
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

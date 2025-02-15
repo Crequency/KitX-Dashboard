@@ -49,6 +49,7 @@
     <sys:String x:Key="Text_MainWindow_NavigationView_Repo">창고</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Plan">임무 계획</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Devices">기기 관리</sys:String>
+    <x:String x:Key="Text_MainWindow_NavigationView_Workflow">Text_MainWindow_NavigationView_Workflow</x:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Account">계정</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Settings">설정</sys:String>
     <sys:String x:Key="Text_MainWindow_HomePage_Recent">최근 사용</sys:String>
@@ -111,6 +112,7 @@
     <x:String x:Key="Text_Device_Context_Security">보안</x:String>
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">장치를 권한을 부여하고 키를 교환하세요</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">이 장치의 권한을 취소하고(새로운 로컬 키를 생성하여 다른 장치와 교환) 합니다</x:String>
+    <x:String x:Key="Text_Workflow_Count">워크플로가 $count개 있습니다</x:String>
     <sys:String x:Key="Text_Settings_General">만능인</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">로컬 플러그인 디렉토리</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">로컬 플러그인 데이터 디렉토리</sys:String>

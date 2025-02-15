@@ -51,9 +51,7 @@ public static class DebugService
             return includeTimestamp
                 ? new StringBuilder()
                     .AppendLine($"[{begin:yyyy-MM-dd HH:mm:ss}] [I] Posted.")
-                    .AppendLine(
-                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [I] Ended, took {sw.ElapsedMilliseconds} ms."
-                    )
+                    .AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [I] Ended, took {sw.ElapsedMilliseconds} ms.")
                     .AppendLine(result)
                     .ToString()
                 : result;

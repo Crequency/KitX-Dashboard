@@ -14,10 +14,7 @@ public static class EventService
 
         if (eventField is null || !typeof(Delegate).IsAssignableFrom(eventField.FieldType))
         {
-            throw new ArgumentException(
-                $"No event found with the name '{eventName}'.",
-                nameof(eventName)
-            );
+            throw new ArgumentException($"No event found with the name '{eventName}'.", nameof(eventName));
         }
 
         var @delegate = eventField.GetValue(null) as Delegate;
@@ -65,13 +62,11 @@ public static class EventService
 
     public delegate void DevicesServerPortChangedHandler(int port);
 
-    public static event DevicesServerPortChangedHandler DevicesServerPortChanged = port =>
-        ConstantTable.DevicesServerPort = port;
+    public static event DevicesServerPortChangedHandler DevicesServerPortChanged = port => ConstantTable.DevicesServerPort = port;
 
     public delegate void PluginsServerPortChangedHandler(int port);
 
-    public static event PluginsServerPortChangedHandler PluginsServerPortChanged = port =>
-        ConstantTable.PluginsServerPort = port;
+    public static event PluginsServerPortChangedHandler PluginsServerPortChanged = port => ConstantTable.PluginsServerPort = port;
 
     public delegate void OnActivitiesUpdatedHandler();
 
@@ -79,8 +74,8 @@ public static class EventService
 
     public delegate void OnReceiveCancelExchangingDeviceKeyHandler();
 
-    public static event OnReceiveCancelExchangingDeviceKeyHandler OnReceiveCancelExchangingDeviceKey =
-        () => ConstantTable.IsExchangingDeviceKey = false;
+    public static event OnReceiveCancelExchangingDeviceKeyHandler OnReceiveCancelExchangingDeviceKey = () =>
+        ConstantTable.IsExchangingDeviceKey = false;
 
     public delegate void OnExitingHandler();
 

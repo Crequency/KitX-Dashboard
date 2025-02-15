@@ -60,9 +60,7 @@ public static class AppFramework
         {
             var waitCount = 0;
 
-            while (
-                Process.GetProcesses().Count(x => x.ProcessName.StartsWith("KitX.Dashboard")) >= 2
-            )
+            while (Process.GetProcesses().Count(x => x.ProcessName.StartsWith("KitX.Dashboard")) >= 2)
             {
                 if (waitCount > 10)
                     Environment.Exit(ExitCodes.WaitRestartingLockFileTooLong);
@@ -231,8 +229,7 @@ public static class AppFramework
         }
     }
 
-    public static void AfterInitailization(Action action) =>
-        actionsInInitialization.Enqueue(action);
+    public static void AfterInitailization(Action action) => actionsInInitialization.Enqueue(action);
 
     private static void ImportPlugin(string kxpPath)
     {

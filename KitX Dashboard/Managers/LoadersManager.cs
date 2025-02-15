@@ -1,7 +1,3 @@
 ﻿namespace KitX.Dashboard.Managers;
 
-internal class LoadersManager
-{
-
-
-}
+internal class LoadersManager { }

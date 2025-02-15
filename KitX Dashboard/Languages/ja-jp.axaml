@@ -49,6 +49,7 @@
     <sys:String x:Key="Text_MainWindow_NavigationView_Repo">倉庫</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Plan">ミッションプラン</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Devices">端末管理</sys:String>
+    <x:String x:Key="Text_MainWindow_NavigationView_Workflow">Text_MainWindow_NavigationView_Workflow</x:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Account">アカウント</sys:String>
     <sys:String x:Key="Text_MainWindow_NavigationView_Settings">設定</sys:String>
     <sys:String x:Key="Text_MainWindow_HomePage_Recent">最近使用された</sys:String>
@@ -111,6 +112,7 @@
     <x:String x:Key="Text_Device_Context_Security">Sekurity</x:String>
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">デバイスを承認し、キーを交換する</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">このデバイスの認可を取消し（新しいローカルキーを生成して他のデバイスと交換する）</x:String>
+    <x:String x:Key="Text_Workflow_Count">ワークフローが $count あります</x:String>
     <sys:String x:Key="Text_Settings_General">ユニバーサル</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">ローカル プラグイン ディレクトリ</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">ローカル プラグイン データ ディレクトリ</sys:String>

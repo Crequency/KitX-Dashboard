@@ -41,17 +41,17 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
                 if (Application.Current is null)
                     return;
 
-                Application.Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(
-                    new Color(c.A, c.R, c.G, c.B)
-                );
+                Application.Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
 
                 for (char i = 'A'; i <= 'E'; ++i)
-                    Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                        new SolidColorBrush(new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B));
+                    Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
+                        new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
+                    );
 
                 for (int i = 1; i <= 9; ++i)
-                    Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] =
-                        new SolidColorBrush(new Color((byte)(i * 10 + i), c.R, c.G, c.B));
+                    Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
+                        new Color((byte)(i * 10 + i), c.R, c.G, c.B)
+                    );
             });
 
             AppConfig.App.ThemeColor = themeColor.ToHexString();
@@ -80,13 +80,9 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         SupportedLanguages.Clear();
 
         foreach (var item in AppConfig.App.SurpportLanguages)
-            SupportedLanguages.Add(
-                new SupportedLanguage() { LanguageCode = item.Key, LanguageName = item.Value }
-            );
+            SupportedLanguages.Add(new SupportedLanguage() { LanguageCode = item.Key, LanguageName = item.Value });
 
-        LanguageSelected = SupportedLanguages.FindIndex(x =>
-            x.LanguageCode.Equals(AppConfig.App.AppLanguage)
-        );
+        LanguageSelected = SupportedLanguages.FindIndex(x => x.LanguageCode.Equals(AppConfig.App.AppLanguage));
     }
 
     private Color2 themeColor = new();
@@ -105,8 +101,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         set => themeColor = value;
     }
 
-    private static string GetThemeDisplayText(string key) =>
-        Translate(key, prefix: "Text_Settings_Personalise_Theme_") ?? string.Empty;
+    private static string GetThemeDisplayText(string key) => Translate(key, prefix: "Text_Settings_Personalise_Theme_") ?? string.Empty;
 
     internal static List<SupportedTheme> SupportedThemes =>
         [
@@ -123,9 +118,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
             new() { ThemeName = "Follow", ThemeDisplayName = GetThemeDisplayText("Follow") },
         ];
 
-    private SupportedTheme? _currentAppTheme = SupportedThemes.Find(x =>
-        x.ThemeName.Equals(AppConfig.App.Theme)
-    );
+    private SupportedTheme? _currentAppTheme = SupportedThemes.Find(x => x.ThemeName.Equals(AppConfig.App.Theme));
 
     internal SupportedTheme? CurrentAppTheme
     {
@@ -171,20 +164,14 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
             Application.Current.Resources.MergedDictionaries.Clear();
 
             Application.Current.Resources.MergedDictionaries.Add(
-                AvaloniaRuntimeXamlLoader.Load(
-                    File.ReadAllText($"{ConstantTable.LanguageFilePath}/{lang}.axaml")
-                ) as ResourceDictionary
+                AvaloniaRuntimeXamlLoader.Load(File.ReadAllText($"{ConstantTable.LanguageFilePath}/{lang}.axaml")) as ResourceDictionary
                     ?? []
             );
         }
         catch (Exception ex)
         {
             MessageBoxManager
-                .GetMessageBoxStandard(
-                    "Error",
-                    "No this language file.",
-                    icon: MsBox.Avalonia.Enums.Icon.Error
-                )
+                .GetMessageBoxStandard("Error", "No this language file.", icon: MsBox.Avalonia.Enums.Icon.Error)
                 .ShowWindowAsync();
 
             Log.Warning(ex, $"In {location}: Language File {lang}.axaml not found.");
