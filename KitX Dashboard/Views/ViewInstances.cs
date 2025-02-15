@@ -12,6 +12,8 @@ public static class ViewInstances
 {
     public static ObservableCollection<DeviceCase> DeviceCases { get; set; } = [];
 
+    public static ObservableCollection<WorkflowCase> WorkflowCases { get; set; } = [];
+
     public static ObservableCollection<PluginInfo> PluginInfos { get; set; } = [];
 
     public static MainWindow? MainWindow { get; set; }
