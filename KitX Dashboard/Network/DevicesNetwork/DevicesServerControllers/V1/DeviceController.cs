@@ -32,9 +32,11 @@ public class DeviceController : ControllerBase
     [HttpPost(nameof(ExchangeKey), Name = nameof(ExchangeKey))]
     public IActionResult ExchangeKey([FromQuery] string verifyCodeSHA1, [FromQuery] string address, [FromBody] string deviceKey)
     {
-        if (ConstantTable.IsExchangingDeviceKey) return BadRequest("Remote device is exchanging device key.");
+        if (ConstantTable.IsExchangingDeviceKey)
+            return BadRequest("Remote device is exchanging device key.");
 
-        if (SecurityManager.Instance.LocalDeviceKey is null) return BadRequest("Remote device didn't set up device key.");
+        if (SecurityManager.Instance.LocalDeviceKey is null)
+            return BadRequest("Remote device didn't set up device key.");
 
         ConstantTable.IsExchangingDeviceKey = true;
 
@@ -45,90 +47,92 @@ public class DeviceController : ControllerBase
             EventService.OnReceiveCancelExchangingDeviceKey += () => Dispatcher.UIThread.Post(() => window.Canceled());
 
             ViewInstances.ShowWindow(
-                window.OnVerificationCodeEntered(async code =>
-                {
-                    if (verifyCodeSHA1.Equals(SecurityManager.GetSHA1(code)))
+                window
+                    .OnVerificationCodeEntered(async code =>
                     {
-                        var deviceKeyDecrypted = SecurityManager.AesDecrypt(deviceKey, code);
+                        if (verifyCodeSHA1.Equals(SecurityManager.GetSHA1(code)))
+                        {
+                            var deviceKeyDecrypted = SecurityManager.AesDecrypt(deviceKey, code);
 
-                        var deviceKeyInstance = JsonSerializer.Deserialize<DeviceKey>(deviceKeyDecrypted);
+                            var deviceKeyInstance = JsonSerializer.Deserialize<DeviceKey>(deviceKeyDecrypted);
 
-                        if (deviceKeyInstance is null) await window.OnErrorDecodeAsync();
+                            if (deviceKeyInstance is null)
+                                await window.OnErrorDecodeAsync();
+                            else
+                            {
+                                var url = $"http://{address}/Api/V1/Device/{nameof(ExchangeKeyBack)}";
+
+                                if (SecurityManager.Instance.LocalDeviceKey is null)
+                                {
+                                    await window.OnErrorDecodeAsync();
+
+                                    ConstantTable.IsExchangingDeviceKey = false;
+
+                                    return;
+                                }
+
+                                var currentKey = SecurityManager.Instance.GetPrivateDeviceKey();
+
+                                if (currentKey is null)
+                                {
+                                    await window.OnErrorDecodeAsync();
+
+                                    ConstantTable.IsExchangingDeviceKey = false;
+
+                                    return;
+                                }
+
+                                var currentKeyJson = JsonSerializer.Serialize(currentKey);
+
+                                var currentKeyEncrypted = SecurityManager.AesEncrypt(currentKeyJson, code);
+
+                                using var http = new HttpClient();
+
+                                var response = await http.PostAsync(
+                                    url,
+                                    new StringContent(JsonSerializer.Serialize(currentKeyEncrypted), Encoding.UTF8, "application/json")
+                                );
+
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    SecurityManager.Instance.AddDeviceKey(deviceKeyInstance);
+
+                                    window.Success();
+
+                                    ConstantTable.IsExchangingDeviceKey = false;
+                                }
+                                else
+                                    await window.OnErrorDecodeAsync(
+                                        new StringBuilder()
+                                            .AppendLine($"Requested: {url}")
+                                            .AppendLine($"Responsed: {response.StatusCode} - {response.ReasonPhrase}")
+                                            .AppendLine($"Content: {await response.Content.ReadAsStringAsync()}")
+                                            .AppendLine(response.RequestMessage?.ToString())
+                                            .ToString()
+                                    );
+                            }
+                        }
                         else
                         {
-                            var url = $"http://{address}/Api/V1/Device/{nameof(ExchangeKeyBack)}";
-
-                            if (SecurityManager.Instance.LocalDeviceKey is null)
-                            {
-                                await window.OnErrorDecodeAsync();
-
-                                ConstantTable.IsExchangingDeviceKey = false;
-
-                                return;
-                            }
-
-                            var currentKey = SecurityManager.Instance.GetPrivateDeviceKey();
-
-                            if (currentKey is null)
-                            {
-                                await window.OnErrorDecodeAsync();
-
-                                ConstantTable.IsExchangingDeviceKey = false;
-
-                                return;
-                            }
-
-                            var currentKeyJson = JsonSerializer.Serialize(currentKey);
-
-                            var currentKeyEncrypted = SecurityManager.AesEncrypt(currentKeyJson, code);
-
-                            using var http = new HttpClient();
-
-                            var response = await http.PostAsync(
-                                url,
-                                new StringContent(
-                                    JsonSerializer.Serialize(currentKeyEncrypted),
-                                    Encoding.UTF8,
-                                    "application/json"
-                                )
-                            );
-
-                            if (response.IsSuccessStatusCode)
-                            {
-                                SecurityManager.Instance.AddDeviceKey(deviceKeyInstance);
-
-                                window.Success();
-
-                                ConstantTable.IsExchangingDeviceKey = false;
-                            }
-                            else await window.OnErrorDecodeAsync(
-                                new StringBuilder()
-                                    .AppendLine($"Requested: {url}")
-                                    .AppendLine($"Responsed: {response.StatusCode} - {response.ReasonPhrase}")
-                                    .AppendLine($"Content: {await response.Content.ReadAsStringAsync()}")
-                                    .AppendLine(response.RequestMessage?.ToString())
-                                    .ToString()
-                            );
+                            await window.OnErrorDecodeAsync();
                         }
-                    }
-                    else
+                    })
+                    .OnCancel(async () =>
                     {
-                        await window.OnErrorDecodeAsync();
-                    }
-                }).OnCancel(async () =>
-                {
-                    window.Canceled();
+                        window.Canceled();
 
-                    ConstantTable.IsExchangingDeviceKey = false;
+                        ConstantTable.IsExchangingDeviceKey = false;
 
-                    var url = $"http://{address}/Api/V1/Device/{nameof(CancelExchangingKey)}";
+                        var url = $"http://{address}/Api/V1/Device/{nameof(CancelExchangingKey)}";
 
-                    using var http = new HttpClient();
+                        using var http = new HttpClient();
 
-                    var response = await http.PostAsync(url, null);
+                        var response = await http.PostAsync(url, null);
 
-                    Log.Information($"In {nameof(DeviceController)}: Requested {url} with responsed {response.StatusCode} - {response}");
-                }),
+                        Log.Information(
+                            $"In {nameof(DeviceController)}: Requested {url} with responsed {response.StatusCode} - {response}"
+                        );
+                    }),
                 ViewInstances.MainWindow,
                 false
             );
@@ -141,13 +145,15 @@ public class DeviceController : ControllerBase
     [HttpPost(nameof(ExchangeKeyBack), Name = nameof(ExchangeKeyBack))]
     public IActionResult ExchangeKeyBack([FromBody] string deviceKey)
     {
-        if (ConstantTable.ExchangeDeviceKeyCode is null) return BadRequest();
+        if (ConstantTable.ExchangeDeviceKeyCode is null)
+            return BadRequest();
 
         var deviceKeyDecrypted = SecurityManager.AesDecrypt(deviceKey, ConstantTable.ExchangeDeviceKeyCode);
 
         var deviceKeyInstance = JsonSerializer.Deserialize<DeviceKey>(deviceKeyDecrypted);
 
-        if (deviceKeyInstance is null) return BadRequest();
+        if (deviceKeyInstance is null)
+            return BadRequest();
 
         SecurityManager.Instance.AddDeviceKey(deviceKeyInstance);
 
@@ -160,7 +166,8 @@ public class DeviceController : ControllerBase
     [HttpPost(nameof(CancelExchangingKey), Name = nameof(CancelExchangingKey))]
     public IActionResult CancelExchangingKey()
     {
-        if (ConstantTable.IsExchangingDeviceKey == false) return BadRequest("Remote device isn't exchanging device key.");
+        if (ConstantTable.IsExchangingDeviceKey == false)
+            return BadRequest("Remote device isn't exchanging device key.");
 
         EventService.Invoke(nameof(EventService.OnReceiveCancelExchangingDeviceKey));
 
@@ -175,15 +182,18 @@ public class DeviceController : ControllerBase
     {
         var device = JsonSerializer.Deserialize<DeviceLocator>(Convert.FromBase64String(deviceBase64).ToUTF8());
 
-        if (device is null) return BadRequest($"You provided wrong {nameof(deviceBase64)} which is not a type of `{nameof(DeviceLocator)}`.");
+        if (device is null)
+            return BadRequest($"You provided wrong {nameof(deviceBase64)} which is not a type of `{nameof(DeviceLocator)}`.");
 
         var key = SecurityManager.SearchDeviceKey(device);
 
-        if (key is null) return BadRequest("You are not authorized by remote device.");
+        if (key is null)
+            return BadRequest("You are not authorized by remote device.");
 
         var deviceNameDecrypted = SecurityManager.RsaDecryptString(key, deviceNameEncrypted);
 
-        if (deviceNameDecrypted is null) return StatusCode(500, "Remote crashed when decrypting device name.");
+        if (deviceNameDecrypted is null)
+            return StatusCode(500, "Remote crashed when decrypting device name.");
 
         if (device.DeviceName.Equals(deviceNameDecrypted) == false)
             return BadRequest("You provided incorrect encrypted device name.");
@@ -194,7 +204,4 @@ public class DeviceController : ControllerBase
     }
 }
 
-public static class DeviceControllerExtensions
-{
-
-}
+public static class DeviceControllerExtensions { }

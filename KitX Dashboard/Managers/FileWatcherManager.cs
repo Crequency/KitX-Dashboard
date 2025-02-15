@@ -22,10 +22,7 @@ public class FileWatcherManager : ManagerBase
         });
     }
 
-    public FileWatcherManager RegisterWatcher(
-        string name,
-        string filePath,
-        Action<object, FileSystemEventArgs> onchange)
+    public FileWatcherManager RegisterWatcher(string name, string filePath, Action<object, FileSystemEventArgs> onchange)
     {
         const string location = $"{nameof(FileWatcherManager)}.{nameof(RegisterWatcher)}";
 
@@ -35,7 +32,8 @@ public class FileWatcherManager : ManagerBase
 
             Watchers.Add(name, watcher);
         }
-        else throw new InvalidOperationException($"FileWatcher {name} already exists.");
+        else
+            throw new InvalidOperationException($"FileWatcher {name} already exists.");
 
         return this;
     }
@@ -87,19 +85,22 @@ internal class FileWatcher : IDisposable
     public FileWatcher(
         string filename,
         Action<object, FileSystemEventArgs> onchanged,
-        NotifyFilters? notifyFilters = NotifyFilters.LastWrite)
+        NotifyFilters? notifyFilters = NotifyFilters.LastWrite
+    )
     {
         const string location = $"{nameof(FileWatcherManager)}.{nameof(FileWatcher)}";
 
         var filepath = filename.GetFullPath();
 
-        var path = Path.GetDirectoryName(filepath) ?? throw new NullReferenceException($"In {location}._ctor: Failed in {nameof(Path.GetDirectoryName)}");
+        var path =
+            Path.GetDirectoryName(filepath)
+            ?? throw new NullReferenceException($"In {location}._ctor: Failed in {nameof(Path.GetDirectoryName)}");
 
         watcher = new()
         {
             NotifyFilter = notifyFilters ?? NotifyFilters.LastWrite,
             Path = path,
-            Filter = Path.GetFileName(filepath.GetFullPath())
+            Filter = Path.GetFileName(filepath.GetFullPath()),
         };
 
         watcher.Changed += (x, y) =>

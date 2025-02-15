@@ -20,24 +20,27 @@ public class WebManager
     {
         const string location = $"{nameof(WebManager)}.{nameof(RunAsync)}";
 
-        await TasksManager.RunTaskAsync(async () =>
-        {
-            try
+        await TasksManager.RunTaskAsync(
+            async () =>
             {
-                if (info.RunAll || info.RunPluginsServer)
-                    PluginsServer.Instance.Run();
+                try
+                {
+                    if (info.RunAll || info.RunPluginsServer)
+                        PluginsServer.Instance.Run();
 
-                if (info.RunAll || info.RunDevicesDiscoveryServer)
-                    await DevicesDiscoveryServer.Instance.RunAsync();
+                    if (info.RunAll || info.RunDevicesDiscoveryServer)
+                        await DevicesDiscoveryServer.Instance.RunAsync();
 
-                if (info.RunAll || info.RunDevicesServer)
-                    await DevicesServer.Instance.RunAsync();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"In {location}: {JsonSerializer.Serialize(info)}");
-            }
-        }, location);
+                    if (info.RunAll || info.RunDevicesServer)
+                        await DevicesServer.Instance.RunAsync();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"In {location}: {JsonSerializer.Serialize(info)}");
+                }
+            },
+            location
+        );
 
         return this;
     }
@@ -53,14 +56,14 @@ public class WebManager
 
             if (info.CloseAll || info.CloseDevicesDiscoveryServer)
             {
-                await DevicesDiscoveryServer.Instance.CloseAsync().ContinueWith(
-                    async server =>
+                await DevicesDiscoveryServer
+                    .Instance.CloseAsync()
+                    .ContinueWith(async server =>
                     {
                         await Task.Delay(ConfigManager.Instance.AppConfig.Web.UdpSendFrequency + 500);
 
                         server.Dispose();
-                    }
-                );
+                    });
 
                 while (DevicesDiscoveryServer.Instance.CloseDevicesDiscoveryServerRequest) { }
             }
@@ -124,8 +127,5 @@ public struct WebManagerOperationInfo
         }
     }
 
-    public WebManagerOperationInfo()
-    {
-
-    }
+    public WebManagerOperationInfo() { }
 }

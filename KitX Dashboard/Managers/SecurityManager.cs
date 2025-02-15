@@ -20,7 +20,11 @@ public class SecurityManager : ManagerBase, IDisposable
 
     private DeviceKey? localDeviceKey;
 
-    public DeviceKey? LocalDeviceKey { get => localDeviceKey; set => localDeviceKey = value; }
+    public DeviceKey? LocalDeviceKey
+    {
+        get => localDeviceKey;
+        set => localDeviceKey = value;
+    }
 
     private RSA? RsaInstance;
 
@@ -33,16 +37,15 @@ public class SecurityManager : ManagerBase, IDisposable
     {
         var local = DevicesDiscoveryServer.Instance.DefaultDeviceInfo;
 
-        var device = local.Device ?? throw new ArgumentNullException(
-            nameof(local.Device),
-            "It seems that you didn't run Devices Discovery System."
-        );
+        var device =
+            local.Device ?? throw new ArgumentNullException(nameof(local.Device), "It seems that you didn't run Devices Discovery System.");
 
         LocalDeviceKey = SecurityConfig.DeviceKeys.FirstOrDefault(x => x.Device.IsSameDevice(device));
 
         if (LocalDeviceKey is not null)
         {
-            if (LocalDeviceKey.RsaPublicKeyPem is null || LocalDeviceKey.RsaPrivateKeyPem is null) AddLocalDevice(device);
+            if (LocalDeviceKey.RsaPublicKeyPem is null || LocalDeviceKey.RsaPrivateKeyPem is null)
+                AddLocalDevice(device);
 
             RsaInstance = RSA.Create(2048);
 
@@ -61,12 +64,14 @@ public class SecurityManager : ManagerBase, IDisposable
 
         RsaInstance = rsa;
 
-        AddDeviceKey(new()
-        {
-            Device = device,
-            RsaPrivateKeyPem = rsa.ExportRSAPrivateKeyPem(),
-            RsaPublicKeyPem = rsa.ExportRSAPublicKeyPem(),
-        });
+        AddDeviceKey(
+            new()
+            {
+                Device = device,
+                RsaPrivateKeyPem = rsa.ExportRSAPrivateKeyPem(),
+                RsaPublicKeyPem = rsa.ExportRSAPublicKeyPem(),
+            }
+        );
     }
 
     public SecurityManager AddDeviceKey(DeviceKey deviceKey)
@@ -80,24 +85,22 @@ public class SecurityManager : ManagerBase, IDisposable
 
     public SecurityManager RemoveDeviceKey(DeviceInfo deviceInfo)
     {
-        SecurityConfig.DeviceKeys.RemoveMany(
-            SecurityConfig.DeviceKeys.Where(
-                x => x.Device.IsSameDevice(deviceInfo.Device)
-            )
-        );
+        SecurityConfig.DeviceKeys.RemoveMany(SecurityConfig.DeviceKeys.Where(x => x.Device.IsSameDevice(deviceInfo.Device)));
 
         SecurityConfig.Save(SecurityConfig.ConfigFileLocation!);
 
         return this;
     }
 
-    public static DeviceKey? SearchDeviceKey(DeviceLocator locator) => SecurityConfig.DeviceKeys.FirstOrDefault(x => x.Device.IsSameDevice(locator));
+    public static DeviceKey? SearchDeviceKey(DeviceLocator locator) =>
+        SecurityConfig.DeviceKeys.FirstOrDefault(x => x.Device.IsSameDevice(locator));
 
     public static bool IsDeviceKeyCorrect(DeviceLocator locator, DeviceKey key)
     {
         var existing = SearchDeviceKey(locator);
 
-        if (existing is null) return false;
+        if (existing is null)
+            return false;
 
         return existing.IsSameKey(key);
     }
@@ -106,9 +109,12 @@ public class SecurityManager : ManagerBase, IDisposable
 
     public string? EncryptString(string data)
     {
-        if (RsaInstance is null) return null;
+        if (RsaInstance is null)
+            return null;
 
-        if (data.Length >= 90) { /* ToDo: Split data */ }
+        if (data.Length >= 90)
+        { /* ToDo: Split data */
+        }
 
         var dataBytes = data.FromUTF8();
 
@@ -119,24 +125,27 @@ public class SecurityManager : ManagerBase, IDisposable
 
     public string? DecryptString(string encryptedData)
     {
-        if (RsaInstance is null) return null;
+        if (RsaInstance is null)
+            return null;
 
-        if (encryptedData.Length >= 90) { /* ToDo: Split data */ }
+        if (encryptedData.Length >= 90)
+        { /* ToDo: Split data */
+        }
 
         var encryptedDataBytes = Convert.FromBase64String(encryptedData);
 
         return RsaInstance.Decrypt(encryptedDataBytes, RSAEncryptionPadding.OaepSHA256).ToUTF8();
     }
 
-    public DeviceKey? GetPrivateDeviceKey() => LocalDeviceKey is null ? null : new DeviceKey()
-    {
-        Device = LocalDeviceKey.Device,
-        RsaPrivateKeyPem = LocalDeviceKey.RsaPrivateKeyPem,
-    };
+    public DeviceKey? GetPrivateDeviceKey() =>
+        LocalDeviceKey is null
+            ? null
+            : new DeviceKey() { Device = LocalDeviceKey.Device, RsaPrivateKeyPem = LocalDeviceKey.RsaPrivateKeyPem };
 
     public static string? RsaEncryptString(DeviceKey key, string data)
     {
-        if (data.Length >= 90) throw new ArgumentOutOfRangeException(nameof(data), "Data length is too long.");
+        if (data.Length >= 90)
+            throw new ArgumentOutOfRangeException(nameof(data), "Data length is too long.");
 
         using var rsa = RSA.Create(2048);
 
@@ -193,7 +202,8 @@ public class SecurityManager : ManagerBase, IDisposable
 
         var sb = new StringBuilder();
 
-        foreach (var item in hash) sb.Append(item.ToString("x2"));
+        foreach (var item in hash)
+            sb.Append(item.ToString("x2"));
 
         return sb.ToString();
     }
@@ -206,7 +216,8 @@ public class SecurityManager : ManagerBase, IDisposable
 
         while (expandedKey.Length < length)
         {
-            if (expandIndex == key.Length) expandIndex = 0;
+            if (expandIndex == key.Length)
+                expandIndex = 0;
 
             expandedKey += key[expandIndex];
 

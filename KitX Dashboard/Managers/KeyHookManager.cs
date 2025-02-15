@@ -46,13 +46,15 @@ public class KeyHookManager : ManagerBase
 
         var tmpList = new KeyCode[keysLimitation];
 
-        keyPressed!.ForEach(x =>
-        {
-            tmpList[index] = x;
+        keyPressed!.ForEach(
+            x =>
+            {
+                tmpList[index] = x;
 
-            ++index;
-
-        }, true);
+                ++index;
+            },
+            true
+        );
 
         foreach (var handler in hotKeyHandlers!.Values)
             handler.Invoke(tmpList);

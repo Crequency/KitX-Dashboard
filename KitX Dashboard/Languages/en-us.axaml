@@ -112,6 +112,7 @@
     <x:String x:Key="Text_Device_Context_Security">Security</x:String>
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">Authorize the device and exchange device key</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">Revoke the authorization for this device (generate a new local key and exchange it with other devices)</x:String>
+    <x:String x:Key="Text_Workflow_Count">$count workflows owned</x:String>
     <sys:String x:Key="Text_Settings_General">General</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">Local Plugins Program Files Path</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">Local Plugins Program Data Path</sys:String>

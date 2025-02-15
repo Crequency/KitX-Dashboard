@@ -21,10 +21,7 @@ internal class LibPageViewModel : ViewModelBase
         ViewDetailsCommand = ReactiveCommand.Create<PluginInfo>(info =>
         {
             if (ViewInstances.MainWindow is not null)
-                new PluginDetailWindow()
-                {
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                }
+                new PluginDetailWindow() { WindowStartupLocation = WindowStartupLocation.CenterOwner }
                     .SetPluginInfo(info)
                     .Show(ViewInstances.MainWindow);
         });

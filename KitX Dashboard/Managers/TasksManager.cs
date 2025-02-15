@@ -29,7 +29,8 @@ internal class TasksManager
                     Log.Error(e, $"{prompt}Task `{name}` failed: {e.Message}");
             }
         }
-        else action();
+        else
+            action();
 
         if (logIt)
             Log.Information($"{prompt}Task `{name}` done.");
@@ -58,7 +59,8 @@ internal class TasksManager
                     Log.Error(e, $"{prompt}Task `{name}` failed: {e.Message}");
             }
         }
-        else await Task.Run(action);
+        else
+            await Task.Run(action);
 
         if (logIt)
             Log.Information($"{prompt}Task `{name}` done.");

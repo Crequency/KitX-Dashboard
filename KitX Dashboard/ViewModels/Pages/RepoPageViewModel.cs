@@ -91,14 +91,10 @@ internal class RepoPageViewModel : ViewModelBase
                     {
                         InstallPath = item.InstallPath,
                         PluginInfo = JsonSerializer.Deserialize<PluginInfo>(
-                            File.ReadAllText(
-                                Path.GetFullPath($"{item.InstallPath}/PluginInfo.json")
-                            )
+                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/PluginInfo.json"))
                         ),
                         LoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
-                            File.ReadAllText(
-                                Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json")
-                            )
+                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json"))
                         ),
                         InstalledDevices = [],
                     };
@@ -121,8 +117,7 @@ internal class RepoPageViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        EventService.AppConfigChanged += () =>
-            ImportButtonVisibility = ConfigManager.Instance.AppConfig.App.DeveloperSetting;
+        EventService.AppConfigChanged += () => ImportButtonVisibility = ConfigManager.Instance.AppConfig.App.DeveloperSetting;
 
         PluginBars.CollectionChanged += (_, _) =>
         {

@@ -1,8 +1,9 @@
 ﻿using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Threading.Tasks;
-using Avalonia.Controls;
+using Avalonia.Metadata;
 using KitX.Dashboard.Models;
+using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -16,26 +17,31 @@ namespace KitX.Dashboard.ViewModels.Pages
         {
             InitCommands();
             InitEvents();
+
             testInit();
         }
 
         private void testInit()
         {
-            WorkflowCases.Add(new WorkflowCase
-            {
-                Name = "Test",
-                Description = "Test",
-                IconPath = "Test",
-                IsRunning = false
-            });
+            WorkflowCases.Add(
+                new WorkflowCase
+                {
+                    Name = "Test",
+                    Description = "Test",
+                    IconPath = "Test",
+                    IsRunning = false,
+                }
+            );
 
-            WorkflowCases.Add(new WorkflowCase
-            {
-                Name = "Test",
-                Description = "Test",
-                IconPath = "Test",
-                IsRunning = true
-            });
+            WorkflowCases.Add(
+                new WorkflowCase
+                {
+                    Name = "Test",
+                    Description = "Test",
+                    IconPath = "Test",
+                    IsRunning = true,
+                }
+            );
         }
 
         public sealed override void InitCommands()
@@ -44,9 +50,7 @@ namespace KitX.Dashboard.ViewModels.Pages
             {
                 // 运行工作流的逻辑
                 // 临时调试用，弹出消息框
-                var messageBoxStandardWindow = MessageBoxManager
-                                    .GetMessageBoxStandard("FU", "CK", icon: Icon.Error)
-                                    .ShowWindowAsync();
+                var messageBoxStandardWindow = MessageBoxManager.GetMessageBoxStandard("FU", "CK", icon: Icon.Error).ShowWindowAsync();
                 return Task.CompletedTask;
             });
 
@@ -54,9 +58,7 @@ namespace KitX.Dashboard.ViewModels.Pages
             {
                 // 停止工作流的逻辑
                 // 临时调试用，弹出消息框
-                var messageBoxStandardWindow = MessageBoxManager
-                                    .GetMessageBoxStandard("C", "XK", icon: Icon.Error)
-                                    .ShowWindowAsync();
+                var messageBoxStandardWindow = MessageBoxManager.GetMessageBoxStandard("C", "XK", icon: Icon.Error).ShowWindowAsync();
                 return Task.CompletedTask;
             });
         }
@@ -66,15 +68,22 @@ namespace KitX.Dashboard.ViewModels.Pages
             WorkflowCases.CollectionChanged += (_, _) =>
             {
                 NoWorkflow_TipHeight = WorkflowCases.Count == 0 ? 300 : 0;
-                WorkflowCount = WorkflowCases.Count.ToString();
+                WorkflowCount = WorkflowCases.Count;
+            };
+
+            EventService.LanguageChanged += () =>
+            {
+                this.RaisePropertyChanged(nameof(WorkflowCountTip));
             };
         }
 
         internal string? SearchingText { get; set; }
-        internal string workflowCount = "0";
+
+        internal int workflowCount = 0;
+
         internal double noWorkflow_TipHeight = 0;
 
-        internal string WorkflowCount
+        internal int WorkflowCount
         {
             get => workflowCount;
             set => this.RaiseAndSetIfChanged(ref workflowCount, value);
@@ -86,9 +95,14 @@ namespace KitX.Dashboard.ViewModels.Pages
             set => this.RaiseAndSetIfChanged(ref noWorkflow_TipHeight, value);
         }
 
+        [DependsOn(nameof(WorkflowCount))]
+        internal string WorkflowCountTip =>
+            TranslateTextWithSuffix("Workflow", "Count")?.Replace("$count", WorkflowCount.ToString()) ?? "Language key not found";
+
         internal static ObservableCollection<WorkflowCase> WorkflowCases => ViewInstances.WorkflowCases;
 
         internal ReactiveCommand<Unit, Task>? RunWorkflowCommand { get; set; }
+
         internal ReactiveCommand<Unit, Task>? StopWorkflowCommand { get; set; }
     }
 }

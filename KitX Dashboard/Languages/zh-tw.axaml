@@ -112,6 +112,7 @@
     <x:String x:Key="Text_Device_Context_Security">Text_Device_Context_Authorization</x:String>
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">授權該裝置並交換金鑰</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">取消此裝置的授權（產生新的本機金鑰並與其他裝置進行交換）</x:String>
+    <x:String x:Key="Text_Workflow_Count">您有 $count 個工作流</x:String>
     <sys:String x:Key="Text_Settings_General">通用</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">本機插件的程序路徑</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">本機插件的文件路徑</sys:String>

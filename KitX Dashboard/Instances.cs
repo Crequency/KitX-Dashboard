@@ -24,31 +24,39 @@ public static class Instances
     {
         const string location = $"{nameof(Instances)}.{nameof(Initialize)}";
 
-        TasksManager.RunTask(() =>
-        {
-            TasksManager.RunTask(
-                () => SignalTasksManager = new(),
-                location.Append("." + nameof(SignalTasksManager)),
-                catchException: true
-            );
-
-            //TasksManager.RunTask(
-            //    () => KeyHookManager = new KeyHookManager().Hook(),
-            //    location.Append("." + nameof(KeyHookManager)),
-            //    catchException: true
-            //);
-
-            TasksManager.RunTask(
-                () => SecurityManager = SecurityManager.Instance,
-                location.Append("." + nameof(SecurityManager)),
-                catchException: true
-            );
-
-            TasksManager.RunTask(() =>
+        TasksManager.RunTask(
+            () =>
             {
-                if (ConstantTable.EnabledConfigFileHotReload)
-                    FileWatcherManager = new();
-            }, location.Append("." + nameof(FileWatcherManager)), catchException: true);
-        }, location, catchException: true);
+                TasksManager.RunTask(
+                    () => SignalTasksManager = new(),
+                    location.Append("." + nameof(SignalTasksManager)),
+                    catchException: true
+                );
+
+                //TasksManager.RunTask(
+                //    () => KeyHookManager = new KeyHookManager().Hook(),
+                //    location.Append("." + nameof(KeyHookManager)),
+                //    catchException: true
+                //);
+
+                TasksManager.RunTask(
+                    () => SecurityManager = SecurityManager.Instance,
+                    location.Append("." + nameof(SecurityManager)),
+                    catchException: true
+                );
+
+                TasksManager.RunTask(
+                    () =>
+                    {
+                        if (ConstantTable.EnabledConfigFileHotReload)
+                            FileWatcherManager = new();
+                    },
+                    location.Append("." + nameof(FileWatcherManager)),
+                    catchException: true
+                );
+            },
+            location,
+            catchException: true
+        );
     }
 }

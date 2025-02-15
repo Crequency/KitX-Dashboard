@@ -112,6 +112,7 @@
     <x:String x:Key="Text_Device_Context_Security">Sekurity</x:String>
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">デバイスを承認し、キーを交換する</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">このデバイスの認可を取消し（新しいローカルキーを生成して他のデバイスと交換する）</x:String>
+    <x:String x:Key="Text_Workflow_Count">ワークフローが $count あります</x:String>
     <sys:String x:Key="Text_Settings_General">ユニバーサル</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">ローカル プラグイン ディレクトリ</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">ローカル プラグイン データ ディレクトリ</sys:String>

@@ -41,10 +41,7 @@ internal class DebugWindowViewModel : ViewModelBase
         Task.Run(
             async () =>
             {
-                var result = await DebugService.ExecuteCodesAsync(
-                    code,
-                    cancellationToken: tokenSource.Token
-                );
+                var result = await DebugService.ExecuteCodesAsync(code, cancellationToken: tokenSource.Token);
 
                 tokenSource.Dispose();
 

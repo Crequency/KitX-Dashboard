@@ -22,7 +22,8 @@ public static class ViewInstances
 
     public static List<Window> Windows { get; set; } = [];
 
-    public static void ShowWindow<T>(T window, Window? owner = null, bool showDialog = false, bool onlyOneInSameTime = false) where T : Window
+    public static void ShowWindow<T>(T window, Window? owner = null, bool showDialog = false, bool onlyOneInSameTime = false)
+        where T : Window
     {
         if (onlyOneInSameTime && Windows.Any(x => x.Title?.Equals(window.Title) ?? window.Title is null))
             return;

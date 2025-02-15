@@ -16,10 +16,7 @@ namespace KitX.Dashboard.Network;
 
 internal static class NetworkHelper
 {
-    internal static bool CheckNetworkInterface(
-        NetworkInterface adapter,
-        IPInterfaceProperties adapterProperties
-    )
+    internal static bool CheckNetworkInterface(NetworkInterface adapter, IPInterfaceProperties adapterProperties)
     {
         var userPointed = ConfigManager.Instance.AppConfig.Web.AcceptedNetworkInterfaces;
 
@@ -73,9 +70,7 @@ internal static class NetworkHelper
                     && ip.ToString().StartsWith(ConfigManager.Instance.AppConfig.Web.IPFilter)
                 select ip;
 
-            Log.Information(
-                $"IPv4 addresses: {search.Print(print: false, separateWithNewLine: false)}"
-            );
+            Log.Information($"IPv4 addresses: {search.Print(print: false, separateWithNewLine: false)}");
 
             var result = search.FirstOrDefault()?.ToString();
 
@@ -97,13 +92,10 @@ internal static class NetworkHelper
         {
             var search =
                 from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                where
-                    ip.AddressFamily == AddressFamily.InterNetworkV6 && !ip.ToString().Equals("::1")
+                where ip.AddressFamily == AddressFamily.InterNetworkV6 && !ip.ToString().Equals("::1")
                 select ip;
 
-            Log.Information(
-                $"IPv6 addresses: {search.Print(print: false, separateWithNewLine: false)}"
-            );
+            Log.Information($"IPv6 addresses: {search.Print(print: false, separateWithNewLine: false)}");
 
             var result = search.FirstOrDefault()?.ToString();
 
@@ -127,10 +119,7 @@ internal static class NetworkHelper
                 from nic in NetworkInterface.GetAllNetworkInterfaces()
                 where
                     CheckNetworkInterface(nic, nic.GetIPProperties())
-                    && nic.GetIPProperties()
-                        .UnicastAddresses.Any(x =>
-                            x.Address.ToString().Equals(GetInterNetworkIPv4())
-                        )
+                    && nic.GetIPProperties().UnicastAddresses.Any(x => x.Address.ToString().Equals(GetInterNetworkIPv4()))
                 select nic.GetPhysicalAddress().ToString();
 
             var result = mac.FirstOrDefault()?.SeparateGroup(2, sb => sb.Append(':'));

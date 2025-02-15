@@ -110,8 +110,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
         }
     }
 
-    private static string GetUpdateTip(string key) =>
-        Translate(key, prefix: "Text_Settings_Update_Tip_") ?? string.Empty;
+    private static string GetUpdateTip(string key) => Translate(key, prefix: "Text_Settings_Update_Tip_") ?? string.Empty;
 
     private static async void DownloadNewComponent(string url, string to, HttpClient client)
     {
@@ -172,8 +171,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
     private void CalculateComponentsHash(Checker checker)
     {
-        const string location =
-            $"{nameof(Settings_UpdateViewModel)}.{nameof(CalculateComponentsHash)}";
+        const string location = $"{nameof(Settings_UpdateViewModel)}.{nameof(CalculateComponentsHash)}";
 
         var _calculateFinished = false;
 
@@ -184,8 +182,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
             {
                 var progress = checker.GetProgress();
 
-                Tip = GetUpdateTip("Calculate")
-                    .Replace("%Progress%", $"({progress.Item1}/{progress.Item2})");
+                Tip = GetUpdateTip("Calculate").Replace("%Progress%", $"({progress.Item1}/{progress.Item2})");
 
                 if (_calculateFinished)
                     timer.Stop();
@@ -209,9 +206,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
         PropertyNamingPolicy = new UpdateHashNamePolicy(),
     };
 
-    private static async Task<Dictionary<string, (string, string, long)>?> GetLatestComponentsAsync(
-        HttpClient client
-    )
+    private static async Task<Dictionary<string, (string, string, long)>?> GetLatestComponentsAsync(HttpClient client)
     {
         client.DefaultRequestHeaders.Accept.Clear(); //  清除请求头部
 
@@ -233,18 +228,12 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
         var json = await client.GetStringAsync(link);
 
-        var latestComponents = JsonSerializer.Deserialize<
-            Dictionary<string, (string, string, long)>
-        >(json, JsonSerializerOptions);
+        var latestComponents = JsonSerializer.Deserialize<Dictionary<string, (string, string, long)>>(json, JsonSerializerOptions);
 
         return latestComponents;
     }
 
-    private void AddLocalComponentsToView(
-        Dictionary<string, (string, string)> result,
-        string wd,
-        ref long localComponentsTotalSize
-    )
+    private void AddLocalComponentsToView(Dictionary<string, (string, string)> result, string wd, ref long localComponentsTotalSize)
     {
         var localComponents = new List<Component>();
 
@@ -317,10 +306,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
         foreach (var item in result)
             if (!latestComponents.ContainsKey(item.Key))
-                tdeleteComponents.Add(
-                    item.Key,
-                    new FileInfo($"{wd}/{item.Key}".GetFullPath()).Length
-                );
+                tdeleteComponents.Add(item.Key, new FileInfo($"{wd}/{item.Key}".GetFullPath()).Length);
 
         return (updatedComponents, new2addComponents, tdeleteComponents);
     }
@@ -401,10 +387,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
                 : $"+ {GetDisplaySize(latestComponentsTotalSize - localComponentsTotalSize)}";
     }
 
-    private void DownloadNewComponents(
-        ref Dictionary<string, long> updatedComponents,
-        ref HttpClient client
-    )
+    private void DownloadNewComponents(ref Dictionary<string, long> updatedComponents, ref HttpClient client)
     {
         Tip = GetUpdateTip("Download");
 
@@ -466,12 +449,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
                     Dispatcher.UIThread.Post(async () =>
                     {
                         await MessageBoxManager
-                            .GetMessageBoxStandard(
-                                "Error",
-                                "Can't get working directory!",
-                                ButtonEnum.Ok,
-                                Icon.Warning
-                            )
+                            .GetMessageBoxStandard("Error", "Can't get working directory!", ButtonEnum.Ok, Icon.Warning)
                             .ShowAsync();
                     });
 
@@ -506,12 +484,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
                         Dictionary<string, long>,
                         Dictionary<string, long>,
                         Dictionary<string, long>
-                    ))CompareDifferentComponents(
-                        ref wd,
-                        ref latestComponents,
-                        ref result,
-                        ref latestComponentsTotalSize
-                    );
+                    ))CompareDifferentComponents(ref wd, ref latestComponents, ref result, ref latestComponentsTotalSize);
 
                     var updatedComponents = difference.Item1;
                     var new2addComponents = difference.Item2;
@@ -546,14 +519,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
                 Dispatcher.UIThread.Post(async () =>
                 {
-                    await MessageBoxManager
-                        .GetMessageBoxStandard(
-                            GetUpdateTip("Failed"),
-                            e.Message,
-                            ButtonEnum.Ok,
-                            Icon.Error
-                        )
-                        .ShowAsync();
+                    await MessageBoxManager.GetMessageBoxStandard(GetUpdateTip("Failed"), e.Message, ButtonEnum.Ok, Icon.Error).ShowAsync();
                 });
 
                 Log.Error(e, $"In {location}: {e.Message}");

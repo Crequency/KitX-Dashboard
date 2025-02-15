@@ -21,16 +21,9 @@ internal class AnnouncementManager
 
         var appConfig = ConfigManager.Instance.AppConfig;
 
-        var linkBase = new StringBuilder()
-            .Append("https://")
-            .Append(appConfig.Web.ApiServer)
-            .Append(appConfig.Web.ApiPath)
-            .ToString();
+        var linkBase = new StringBuilder().Append("https://").Append(appConfig.Web.ApiServer).Append(appConfig.Web.ApiPath).ToString();
 
-        var link = new StringBuilder()
-            .Append(linkBase)
-            .Append(ConstantTable.ApiGetAnnouncements)
-            .ToString();
+        var link = new StringBuilder().Append(linkBase).Append(ConstantTable.ApiGetAnnouncements).ToString();
 
         try
         {
@@ -47,11 +40,7 @@ internal class AnnouncementManager
             if (list is null)
                 return;
 
-            var unreads = (
-                from item in list
-                where !accepted.Contains(item)
-                select DateTime.Parse(item)
-            ).ToList();
+            var unreads = (from item in list where !accepted.Contains(item) select DateTime.Parse(item)).ToList();
 
             var src = new Dictionary<string, string>();
 
@@ -87,15 +76,9 @@ internal class AnnouncementManager
 
             Dispatcher.UIThread.Post(() =>
             {
-                var content = new StringBuilder()
-                    .AppendLine($"GET: {link}")
-                    .AppendLine()
-                    .AppendLine(ex.StackTrace)
-                    .ToString();
+                var content = new StringBuilder().AppendLine($"GET: {link}").AppendLine().AppendLine(ex.StackTrace).ToString();
 
-                var box = MessageBoxManager
-                    .GetMessageBoxStandard(ex.Message, content, icon: Icon.Error)
-                    .ShowWindowAsync();
+                var box = MessageBoxManager.GetMessageBoxStandard(ex.Message, content, icon: Icon.Error).ShowWindowAsync();
             });
         }
     }

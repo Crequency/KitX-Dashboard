@@ -37,10 +37,7 @@ public partial class ExchangeDeviceKeyWindow : Window
 
     public ExchangeDeviceKeyWindow OnCancel(Action action)
     {
-        _ = viewModel
-            .OnCancel(action)
-            .OnCancel(Close)
-            ;
+        _ = viewModel.OnCancel(action).OnCancel(Close);
 
         return this;
     }
@@ -76,11 +73,7 @@ public partial class ExchangeDeviceKeyWindow : Window
             }
         };
 
-        waittingAcceptingDeviceKeyTimer = new()
-        {
-            Interval = 60 * 1000,
-            AutoReset = false
-        };
+        waittingAcceptingDeviceKeyTimer = new() { Interval = 60 * 1000, AutoReset = false };
 
         waittingAcceptingDeviceKeyTimer.Elapsed += (_, _) =>
         {
@@ -162,7 +155,8 @@ public partial class ExchangeDeviceKeyWindow : Window
             return;
         }
 
-        if (viewModel.IsVerifing || (viewModel.IsEditable == false)) return;
+        if (viewModel.IsVerifing || (viewModel.IsEditable == false))
+            return;
 
         if (e.Key == Key.V && e.KeyModifiers == KeyModifiers.Control)
         {
@@ -170,13 +164,15 @@ public partial class ExchangeDeviceKeyWindow : Window
 
             var clipboard = Clipboard;
 
-            if (clipboard is null) return;
+            if (clipboard is null)
+                return;
 
             var text = await clipboard.GetTextAsync();
 
             var regex = @"[1-9]{8}";
 
-            if (text is null || (Regex.IsMatch(text, regex) == false)) return;
+            if (text is null || (Regex.IsMatch(text, regex) == false))
+                return;
 
             viewModel.Paste(text);
 
@@ -190,11 +186,13 @@ public partial class ExchangeDeviceKeyWindow : Window
 
         if (e.PhysicalKey == PhysicalKey.Backspace || inMainKeys || inNumPad)
             e.Handled = true;
-        else return;
+        else
+            return;
 
         var boxes = this.FindControl<StackPanel>("VerifyCodeBoxes");
 
-        if (boxes is null) return;
+        if (boxes is null)
+            return;
 
         if (e.PhysicalKey == PhysicalKey.Backspace)
             viewModel.Backspace();

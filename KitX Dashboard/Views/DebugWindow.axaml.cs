@@ -41,18 +41,13 @@ public partial class DebugWindow : Window, IView
 
     private void SetEditor(TextEditor? textEditor, string ext)
     {
-        if (textEditor is null) return;
+        if (textEditor is null)
+            return;
 
-        var registryOptions = new RegistryOptions(
-            ActualThemeVariant == ThemeVariant.Light ? ThemeName.LightPlus : ThemeName.DarkPlus
-        );
+        var registryOptions = new RegistryOptions(ActualThemeVariant == ThemeVariant.Light ? ThemeName.LightPlus : ThemeName.DarkPlus);
 
         var textMateInstallation = textEditor.InstallTextMate(registryOptions);
 
-        textMateInstallation.SetGrammar(
-            registryOptions.GetScopeByLanguageId(
-                registryOptions.GetLanguageByExtension(ext).Id
-            )
-        );
+        textMateInstallation.SetGrammar(registryOptions.GetScopeByLanguageId(registryOptions.GetLanguageByExtension(ext).Id));
     }
 }

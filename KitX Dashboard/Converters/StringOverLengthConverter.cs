@@ -14,9 +14,11 @@ internal class StringOverLengthConverter : IValueConverter
             int length = int.Parse((string)parameter);
             if (str.Length > length)
                 return string.Concat(str.AsSpan(0, length), " ...");
-            else return str;
+            else
+                return str;
         }
-        else return string.Empty;
+        else
+            return string.Empty;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

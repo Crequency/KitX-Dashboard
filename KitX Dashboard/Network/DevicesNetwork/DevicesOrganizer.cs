@@ -58,10 +58,7 @@ internal class DevicesOrganizer : ConfigFetcher
                 receivedDeviceInfo4Watch?.Add(deviceInfo);
             }
 
-            if (
-                deviceInfo.IsMainDevice
-                && deviceInfo.DevicesServerBuildTime < ConstantTable.ServerBuildTime
-            )
+            if (deviceInfo.IsMainDevice && deviceInfo.DevicesServerBuildTime < ConstantTable.ServerBuildTime)
             {
                 ConstantTable.IsMainMachine = false;
 
@@ -70,9 +67,7 @@ internal class DevicesOrganizer : ConfigFetcher
                 Log.Information(
                     new StringBuilder()
                         .AppendLine("Watched earlier built server.")
-                        .AppendLine(
-                            $"DevicesServerAddress: {deviceInfo.Device.IPv4}:{deviceInfo.DevicesServerPort} "
-                        )
+                        .AppendLine($"DevicesServerAddress: {deviceInfo.Device.IPv4}:{deviceInfo.DevicesServerPort} ")
                         .AppendLine($"DevicesServerBuildTime: {deviceInfo.DevicesServerBuildTime}")
                         .ToString()
                 );
@@ -148,11 +143,7 @@ internal class DevicesOrganizer : ConfigFetcher
     {
         const string location = $"{nameof(DevicesOrganizer)}.{nameof(KeepCheckAndRemove)}";
 
-        var timer = new Timer()
-        {
-            Interval = AppConfig.Web.DevicesViewRefreshDelay,
-            AutoReset = true,
-        };
+        var timer = new Timer() { Interval = AppConfig.Web.DevicesViewRefreshDelay, AutoReset = true };
 
         timer.Elapsed += (_, _) =>
         {
@@ -215,10 +206,7 @@ internal class DevicesOrganizer : ConfigFetcher
                         {
                             if (item.IsMainDevice)
                             {
-                                if (
-                                    item.DevicesServerBuildTime.ToUniversalTime()
-                                    < earliestBuiltServerTime
-                                )
+                                if (item.DevicesServerBuildTime.ToUniversalTime() < earliestBuiltServerTime)
                                 {
                                     serverPort = item.DevicesServerPort;
                                     serverAddress = item.Device.IPv4;

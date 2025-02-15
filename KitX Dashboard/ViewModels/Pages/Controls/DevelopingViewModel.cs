@@ -2,10 +2,7 @@
 
 internal class DevelopingViewModel : ViewModelBase
 {
-    public DevelopingViewModel()
-    {
-
-    }
+    public DevelopingViewModel() { }
 
     public override void InitCommands() => throw new System.NotImplementedException();
 

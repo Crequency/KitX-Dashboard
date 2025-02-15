@@ -42,46 +42,51 @@ public partial class AppLogo : UserControl
 
         Task BuildAnimationTask(Shape control)
         {
-            return new Task(() =>
-                Dispatcher.UIThread.Invoke(async () =>
-                {
-                    var ani = new Animation
+            return new Task(
+                () =>
+                    Dispatcher.UIThread.Invoke(async () =>
                     {
-                        Duration = TimeSpan.FromSeconds(random.NextDouble() + random.Next(1, 3)),
-                        IterationCount = IterationCount.Infinite,
-                        PlaybackDirection = PlaybackDirection.Alternate,
-                        Children =
+                        var ani = new Animation
                         {
-                            new KeyFrame
+                            Duration = TimeSpan.FromSeconds(random.NextDouble() + random.Next(1, 3)),
+                            IterationCount = IterationCount.Infinite,
+                            PlaybackDirection = PlaybackDirection.Alternate,
+                            Children =
                             {
-                                Setters = { new Setter { Property = Shape.FillProperty, Value = control.Fill } },
-                                Cue = Cue.Parse("0%", null)
-                            },
-                            new KeyFrame
-                            {
-                                Setters = {
-                                    new Setter
+                                new KeyFrame
+                                {
+                                    Setters =
                                     {
-                                        Property = Shape.FillProperty,
-                                        Value = new SolidColorBrush(
-                                            Color.FromArgb(
-                                                (byte)random.Next(0x0, 0xff),
-                                                (byte)random.Next(0x0, 0xff),
-                                                (byte)random.Next(0x0, 0xff),
-                                                (byte)random.Next(0x0, 0xff)
-                                            )
-                                        )
-                                    }
+                                        new Setter { Property = Shape.FillProperty, Value = control.Fill },
+                                    },
+                                    Cue = Cue.Parse("0%", null),
                                 },
-                                Cue = Cue.Parse("100%", null)
-                            }
-                        }
-                    };
+                                new KeyFrame
+                                {
+                                    Setters =
+                                    {
+                                        new Setter
+                                        {
+                                            Property = Shape.FillProperty,
+                                            Value = new SolidColorBrush(
+                                                Color.FromArgb(
+                                                    (byte)random.Next(0x0, 0xff),
+                                                    (byte)random.Next(0x0, 0xff),
+                                                    (byte)random.Next(0x0, 0xff),
+                                                    (byte)random.Next(0x0, 0xff)
+                                                )
+                                            ),
+                                        },
+                                    },
+                                    Cue = Cue.Parse("100%", null),
+                                },
+                            },
+                        };
 
-                    animations.Add(ani);
+                        animations.Add(ani);
 
-                    await ani.RunAsync(control, cancellationToken);
-                })
+                        await ani.RunAsync(control, cancellationToken);
+                    })
             );
         }
 
@@ -112,13 +117,11 @@ public partial class AppLogo : UserControl
 
     public void StopAnimations()
     {
-        animations.ForEach(
-            x =>
-            {
-                x.IterationCount = IterationCount.Parse("0");
-                x.PlaybackDirection = PlaybackDirection.Normal;
-            }
-        );
+        animations.ForEach(x =>
+        {
+            x.IterationCount = IterationCount.Parse("0");
+            x.PlaybackDirection = PlaybackDirection.Normal;
+        });
 
         cancellationTokenSource.Cancel();
 

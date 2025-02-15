@@ -13,8 +13,7 @@ public class ConfigManager
 {
     private static ConfigManager? _instance;
 
-    public static ConfigManager Instance =>
-        _instance ??= new ConfigManager().SetLocation("./Config/").Load();
+    public static ConfigManager Instance => _instance ??= new ConfigManager().SetLocation("./Config/").Load();
 
     internal class ConfigManagerInfo
     {
@@ -57,18 +56,14 @@ public class ConfigManager
             {
                 EventService.AppConfigChanged += () =>
                 {
-                    Instances.FileWatcherManager!.IncreaseExceptCount(
-                        AppConfig.ConfigFileWatcherName!
-                    );
+                    Instances.FileWatcherManager!.IncreaseExceptCount(AppConfig.ConfigFileWatcherName!);
 
                     AppConfig.Save(AppConfig.ConfigFileLocation!);
                 };
 
                 EventService.PluginsConfigChanged += () =>
                 {
-                    Instances.FileWatcherManager!.IncreaseExceptCount(
-                        PluginsConfig.ConfigFileWatcherName!
-                    );
+                    Instances.FileWatcherManager!.IncreaseExceptCount(PluginsConfig.ConfigFileWatcherName!);
 
                     PluginsConfig.Save(PluginsConfig.ConfigFileLocation!);
                 };

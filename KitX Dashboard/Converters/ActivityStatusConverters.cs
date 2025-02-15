@@ -10,7 +10,8 @@ public class ActivityStatusIconConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is null) return null;
+        if (value is null)
+            return null;
 
         if (value is ActivityStatus status)
             switch (status)
@@ -32,7 +33,8 @@ public class ActivityStatusIconConverter : IValueConverter
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is null) return null;
+        if (value is null)
+            return null;
 
         if (value is MaterialIconKind kind)
             switch (kind)
@@ -57,7 +59,8 @@ public class ActivityTasksStatusIconConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is null) return null;
+        if (value is null)
+            return null;
 
         if (value is ActivityTaskStatus status)
             switch (status)
@@ -81,7 +84,8 @@ public class ActivityTasksStatusIconConverter : IValueConverter
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is null) return null;
+        if (value is null)
+            return null;
 
         if (value is MaterialIconKind kind)
             switch (kind)

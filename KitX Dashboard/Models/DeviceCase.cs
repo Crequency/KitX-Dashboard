@@ -88,8 +88,7 @@ public class DeviceCase : ViewModelBase
 
                 var sha1 = SecurityManager.GetSHA1(key);
 
-                var url =
-                    $"http://{target}/Api/V1/Device/{nameof(DeviceController.ExchangeKey)}?verifyCodeSHA1={sha1}&address={address}";
+                var url = $"http://{target}/Api/V1/Device/{nameof(DeviceController.ExchangeKey)}?verifyCodeSHA1={sha1}&address={address}";
 
                 ConstantTable.ExchangeDeviceKeyCode = key;
 
@@ -101,32 +100,24 @@ public class DeviceCase : ViewModelBase
 
                     ConstantTable.IsExchangingDeviceKey = false;
 
-                    var url =
-                        $"http://{target}/Api/V1/Device/{nameof(DeviceController.CancelExchangingKey)}";
+                    var url = $"http://{target}/Api/V1/Device/{nameof(DeviceController.CancelExchangingKey)}";
 
                     using var http = new HttpClient();
 
                     var response = await http.PostAsync(url, null);
 
-                    Log.Information(
-                        $"In {nameof(DeviceController)}: Requested {url} with responsed {response.StatusCode} - {response}"
-                    );
+                    Log.Information($"In {nameof(DeviceController)}: Requested {url} with responsed {response.StatusCode} - {response}");
                 });
 
                 ViewInstances.ShowWindow(window);
 
-                EventService.OnReceiveCancelExchangingDeviceKey += () =>
-                    Dispatcher.UIThread.Post(() => window.Canceled());
+                EventService.OnReceiveCancelExchangingDeviceKey += () => Dispatcher.UIThread.Post(() => window.Canceled());
 
                 using var http = new HttpClient();
 
                 var response = await http.PostAsync(
                     url,
-                    new StringContent(
-                        JsonSerializer.Serialize(localKeyEncrypted),
-                        Encoding.UTF8,
-                        "application/json"
-                    )
+                    new StringContent(JsonSerializer.Serialize(localKeyEncrypted), Encoding.UTF8, "application/json")
                 );
 
                 if (response.IsSuccessStatusCode) { }
@@ -136,9 +127,7 @@ public class DeviceCase : ViewModelBase
                         Translate("Text_Log_Error") ?? "Null",
                         new StringBuilder()
                             .AppendLine($"Requested: {url}")
-                            .AppendLine(
-                                $"Responsed: {response.StatusCode} - {response.RequestMessage}"
-                            )
+                            .AppendLine($"Responsed: {response.StatusCode} - {response.RequestMessage}")
                             .ToString(),
                         ButtonEnum.Ok,
                         Icon.Error
@@ -230,23 +219,16 @@ public class DeviceCase : ViewModelBase
 
                 deviceJson = Convert.ToBase64String(deviceJson.FromUTF8());
 
-                var url =
-                    $"http://{address}/Api/V1/Device/{nameof(DeviceController.Connect)}?deviceBase64={deviceJson}";
+                var url = $"http://{address}/Api/V1/Device/{nameof(DeviceController.Connect)}?deviceBase64={deviceJson}";
 
                 var response = await http.PostAsync(
                     url,
-                    new StringContent(
-                        JsonSerializer.Serialize(deviceNameEncrypted),
-                        Encoding.UTF8,
-                        "application/json"
-                    )
+                    new StringContent(JsonSerializer.Serialize(deviceNameEncrypted), Encoding.UTF8, "application/json")
                 );
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Log.Information(
-                        $"Connected to {DeviceInfo.Device.DeviceName} with response {response}"
-                    );
+                    Log.Information($"Connected to {DeviceInfo.Device.DeviceName} with response {response}");
 
                     var body = await response.Content.ReadAsStringAsync();
 
@@ -262,9 +244,7 @@ public class DeviceCase : ViewModelBase
                     Log.Warning(
                         new StringBuilder()
                             .AppendLine($"Requested: {url}")
-                            .AppendLine(
-                                $"Responsed: {response.StatusCode} - {response.ReasonPhrase}"
-                            )
+                            .AppendLine($"Responsed: {response.StatusCode} - {response.ReasonPhrase}")
                             .AppendLine(response.RequestMessage?.ToString())
                             .ToString()
                     );
@@ -276,8 +256,7 @@ public class DeviceCase : ViewModelBase
 
     public bool IsAuthorized => SecurityManager.IsDeviceAuthorized(DeviceInfo.Device);
 
-    public bool IsConnected =>
-        DevicesServer.Instance.IsDeviceSignedIn(DeviceInfo.Device) || ConnectionToken is not null;
+    public bool IsConnected => DevicesServer.Instance.IsDeviceSignedIn(DeviceInfo.Device) || ConnectionToken is not null;
 
     public bool IsCurrentDevice => DeviceInfo.IsCurrentDevice();
 

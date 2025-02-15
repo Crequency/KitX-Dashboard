@@ -112,6 +112,7 @@
     <x:String x:Key="Text_Device_Context_Security">安全</x:String>
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">授权该设备并交换密钥</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">取消授权该设备 (生成新的本机密钥并与其他设备交换)</x:String>
+    <x:String x:Key="Text_Workflow_Count">您有 $count 个工作流</x:String>
     <sys:String x:Key="Text_Settings_General">通用</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">本地插件程序目录</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">本地插件数据目录</sys:String>

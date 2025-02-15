@@ -2,6 +2,5 @@
 
 internal class ActivityTitles
 {
-
     internal static string? AppStart { get; } = $"{ConstantTable.AppFullName} Start";
 }
