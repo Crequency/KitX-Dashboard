@@ -1,0 +1,54 @@
+<Window x:Class="KitX.Dashboard.Views.WorkflowScriptEditorWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avalonedit="using:AvaloniaEdit"
+        d:DesignHeight="450"
+        d:DesignWidth="800"
+        Title="Workflow Script Editor"
+        Width="1000"
+        Height="700"
+        mc:Ignorable="d">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10">
+            <Button Name="SaveButton" Content="Save" Margin="0,0,10,0"/>
+            <Button Name="RunButton" Content="Run" Margin="0,0,10,0"/>
+            <Button Name="StopButton" Content="Stop" IsEnabled="False" Margin="0,0,10,0"/>
+            <TextBlock Name="StatusText" VerticalAlignment="Center" Text="Ready"/>
+        </StackPanel>
+        
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            
+            <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top" Text="Script Editor" Margin="5"/>
+                <avalonedit:TextEditor Name="CodeEditor"
+                                       FontFamily="Consolas"
+                                       FontSize="10"
+                                       ShowLineNumbers="True"
+                                       SyntaxHighlighting="C#"
+                                       HorizontalScrollBarVisibility="Auto"
+                                       VerticalScrollBarVisibility="Auto"/>
+            </DockPanel>
+            
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
+            
+            <DockPanel Grid.Column="2">
+                <TextBlock DockPanel.Dock="Top" Text="Output" Margin="5"/>
+                <avalonedit:TextEditor Name="OutputEditor"
+                                       IsReadOnly="True"
+                                       FontFamily="Consolas"
+                                       FontSize="10"
+                                       ShowLineNumbers="False"
+                                       SyntaxHighlighting="Text"
+                                       HorizontalScrollBarVisibility="Auto"
+                                       VerticalScrollBarVisibility="Auto"/>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</Window>

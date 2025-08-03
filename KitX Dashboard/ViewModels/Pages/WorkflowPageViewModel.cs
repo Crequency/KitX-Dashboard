@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Threading.Tasks;
 using Avalonia.Metadata;
@@ -61,6 +61,14 @@ namespace KitX.Dashboard.ViewModels.Pages
                 var messageBoxStandardWindow = MessageBoxManager.GetMessageBoxStandard("C", "XK", icon: Icon.Error).ShowWindowAsync();
                 return Task.CompletedTask;
             });
+            
+            // 添加打开工作流脚本编辑器的命令
+            OpenWorkflowEditorCommand = ReactiveCommand.Create(() =>
+            {
+                var editorWindow = new WorkflowScriptEditorWindow();
+                editorWindow.Show();
+                return Task.CompletedTask;
+            });
         }
 
         public sealed override void InitEvents()
@@ -104,5 +112,8 @@ namespace KitX.Dashboard.ViewModels.Pages
         internal ReactiveCommand<Unit, Task>? RunWorkflowCommand { get; set; }
 
         internal ReactiveCommand<Unit, Task>? StopWorkflowCommand { get; set; }
+        
+        // 新增命令：打开工作流脚本编辑器
+        internal ReactiveCommand<Unit, Task>? OpenWorkflowEditorCommand { get; set; }
     }
 }

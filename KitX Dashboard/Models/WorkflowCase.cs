@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace KitX.Dashboard.Models
 {
@@ -8,5 +8,6 @@ namespace KitX.Dashboard.Models
         public required string Description { get; set; } // 简介信息
         public required string IconPath { get; set; } // 图标路径
         public bool IsRunning { get; set; } // 运行状态
+        public string ScriptPath { get; set; } = string.Empty; // 脚本文件路径
     }
 }

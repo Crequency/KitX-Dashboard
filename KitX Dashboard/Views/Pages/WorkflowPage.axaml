@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="KitX.Dashboard.Views.Pages.WorkflowPage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -33,6 +33,10 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
+                <!-- 添加打开工作流编辑器的按钮 -->
+                <Button Content="Open Workflow Editor"
+                        Command="{Binding OpenWorkflowEditorCommand}"
+                        Margin="0,0,10,0"/>
                 <Button x:Name="RunWorkflowCommandProvider"
                         Command="{Binding RunWorkflowCommand}"
                         IsVisible="False" />
