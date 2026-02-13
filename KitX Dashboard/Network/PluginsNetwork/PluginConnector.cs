@@ -38,6 +38,11 @@ public class PluginConnector
 
     public event PluginStatusUpdatedHandler PluginStatusUpdated = new(() => { });
 
+    /// <summary>
+    /// 插件响应事件 - 当接收到插件功能调用的响应时触发
+    /// </summary>
+    public static event Action<string, string>? OnPluginResponse;
+
     public PluginConnector() { }
 
     public PluginConnector(IWebSocketConnection socket)
@@ -124,6 +129,15 @@ public class PluginConnector
                 return;
 
             var command = JsonSerializer.Deserialize<Command>(kwc.Content, serializerOptions);
+
+            // 检查是否是功能调用的响应（通过RequestId标签）
+            if (command.Tags != null &&
+                command.Tags.TryGetValue("RequestId", out var requestId))
+            {
+                // 触发插件响应事件
+                OnPluginResponse?.Invoke(requestId, kwc.Content);
+                return;
+            }
 
             switch (command.Request)
             {
