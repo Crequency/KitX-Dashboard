@@ -1,13 +1,17 @@
-﻿using System;
-using KitX.Dashboard.Configuration;
+using KitX.Core.Contract.Configuration;
+using System;
 
 namespace KitX.Dashboard.Generators;
 
-internal class GreetingTextGenerator : ConfigFetcher
+internal class GreetingTextGenerator
 {
     private static int PreviousIndex = 0;
 
     private static readonly Random random = new();
+
+    private static IConfigService? _configService;
+
+    private static IConfigService ConfigService => _configService ??= App.GetService<IConfigService>();
 
     internal static string GetKey()
     {
@@ -44,22 +48,23 @@ internal class GreetingTextGenerator : ConfigFetcher
 
         while (result == PreviousIndex)
         {
+            var windows = ConfigService.AppConfig.Windows;
             switch (step)
             {
                 case Step.Morning:
-                    result = random.Next(1, AppConfig.Windows.MainWindow.GreetingTextCount_Morning + 1);
+                    result = random.Next(1, windows.MainWindow.GreetingTextCount_Morning + 1);
                     break;
                 case Step.Noon:
-                    result = random.Next(1, AppConfig.Windows.MainWindow.GreetingTextCount_Noon + 1);
+                    result = random.Next(1, windows.MainWindow.GreetingTextCount_Noon + 1);
                     break;
                 case Step.AfterNoon:
-                    result = random.Next(1, AppConfig.Windows.MainWindow.GreetingTextCount_AfterNoon + 1);
+                    result = random.Next(1, windows.MainWindow.GreetingTextCount_AfterNoon + 1);
                     break;
                 case Step.Evening:
-                    result = random.Next(1, AppConfig.Windows.MainWindow.GreetingTextCount_Evening + 1);
+                    result = random.Next(1, windows.MainWindow.GreetingTextCount_Evening + 1);
                     break;
                 case Step.Night:
-                    result = random.Next(1, AppConfig.Windows.MainWindow.GreetingTextCount_Night + 1);
+                    result = random.Next(1, windows.MainWindow.GreetingTextCount_Night + 1);
                     break;
             }
         }

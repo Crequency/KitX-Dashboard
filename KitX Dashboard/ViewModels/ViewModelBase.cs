@@ -1,14 +1,29 @@
-﻿using Avalonia;
+﻿using System;
+using Avalonia;
 using Avalonia.Controls;
-using KitX.Dashboard.Configuration;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Announcement;
+using KitX.Core.Contract.Event;
 using ReactiveUI;
+using KitX.Core.Event;
+using KitX.Core.Configuration;
 
 namespace KitX.Dashboard.ViewModels;
 
 public abstract class ViewModelBase : ReactiveObject
 {
+    /// <summary>
+    /// Gets the config service from DI container
+    /// </summary>
+    protected IConfigService ConfigService =>
+        App.GetService<IConfigService>();
+
+    /// <summary>
+    /// Gets the announcement service from DI container
+    /// </summary>
+    protected IAnnouncementService AnnouncementService =>
+        App.GetService<IAnnouncementService>();
+
     protected static string? Translate(
         string key = "",
         string prefix = "",
@@ -38,13 +53,47 @@ public abstract class ViewModelBase : ReactiveObject
     protected static string? TranslateTextWithSuffix(string key = "", string suffix = "", Application? app = null) =>
         Translate(key, "Text", suffix, "_", app);
 
-    protected static void SaveAppConfigChanges() => EventService.Invoke(nameof(EventService.AppConfigChanged));
+    /// <summary>
+    /// Saves application config changes - Obsolete: Use ConfigService instead
+    /// </summary>
+    [Obsolete("Use ConfigService.SaveAll() instead.")]
+    protected static void SaveAppConfigChanges()
+    {
+        var configService = App.GetService<IConfigService>();
+        configService.SaveAll();
+        var eventService = App.GetService<IEventService>();
+        eventService.Publish(EventNames.AppConfigChanged, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Gets application config - Obsolete: Use ConfigService.AppConfig instead
+    /// </summary>
+    [Obsolete("Use ConfigService.AppConfig instead.")]
+    internal static AppConfig AppConfig
+    {
+        get
+        {
+            var configService = App.GetService<IConfigService>();
+            return configService.AppConfig as AppConfig ?? new();
+        }
+    }
+
+    /// <summary>
+    /// Gets announcement config - Obsolete: Use AnnouncementService.AnnouncementConfig instead
+    /// </summary>
+    [Obsolete("Use AnnouncementService.AnnouncementConfig instead.")]
+    internal static AnnouncementConfig AnnouncementConfig
+    {
+        get
+        {
+            // Use IAnnouncementService.AnnouncementConfig for strong type access
+            var announcementService = App.GetService<IAnnouncementService>();
+            return announcementService.AnnouncementConfig as AnnouncementConfig
+                ?? new();
+        }
+    }
 
     public abstract void InitCommands();
 
     public abstract void InitEvents();
-
-    internal static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
-
-    internal static AnnouncementConfig AnnouncementConfig => ConfigManager.Instance.AnnouncementConfig;
 }

@@ -2,9 +2,10 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
+using KitX.Dashboard;
 using KitX.Dashboard.ViewModels;
-using SharpHook.Native;
 
 namespace KitX.Dashboard.Views;
 
@@ -26,7 +27,8 @@ public partial class PluginsLaunchWindow : Window
 
         OnHideAction = () => pluginsLaunchWindowDisplayed = false;
 
-        EventService.OnExiting += Close;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.OnExiting, (s, e) => Close());
 
         Initialize();
     }
@@ -111,13 +113,13 @@ public partial class PluginsLaunchWindow : Window
                 if (count < 3)
                     return;
 
-                if (tmpList[count - 3] != KeyCode.VcLeftControl)
+                if (tmpList[count - 3] != "VcLeftControl")
                     return;
 
-                if (tmpList[count - 2] != KeyCode.VcLeftMeta)
+                if (tmpList[count - 2] != "VcLeftMeta")
                     return;
 
-                if (tmpList[count - 1] != KeyCode.VcC)
+                if (tmpList[count - 1] != "VcC")
                     return;
 
                 Dispatcher.UIThread.Post(() =>

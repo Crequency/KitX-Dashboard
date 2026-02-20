@@ -1,4 +1,7 @@
-﻿using KitX.Dashboard.Services;
+using System;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
+using KitX.Dashboard;
 
 namespace KitX.Dashboard.Views;
 
@@ -6,6 +9,7 @@ internal interface IView
 {
     internal static void SaveAppConfigChanges()
     {
-        EventService.Invoke(nameof(EventService.AppConfigChanged));
+        var eventService = App.GetService<IEventService>();
+        eventService.Publish(EventNames.AppConfigChanged, EventArgs.Empty);
     }
 }

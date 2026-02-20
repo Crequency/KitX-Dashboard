@@ -1,8 +1,11 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using Avalonia.Controls;
 using Avalonia.Styling;
 using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
+using KitX.Dashboard;
 using KitX.Dashboard.ViewModels;
 using TextMateSharp.Grammars;
 
@@ -25,7 +28,8 @@ public partial class DebugWindow : Window, IView
     {
         InitializeEditor();
 
-        EventService.ThemeConfigChanged += InitializeEditor;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.ThemeConfigChanged, (s, e) => InitializeEditor());
     }
 
     private void InitializeEditor()

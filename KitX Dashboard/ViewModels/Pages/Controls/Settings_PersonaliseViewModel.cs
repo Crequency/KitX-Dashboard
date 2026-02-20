@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using Avalonia;
@@ -11,8 +12,11 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Media;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
+using KitX.Dashboard;
 using KitX.Dashboard.Models;
-using KitX.Dashboard.Services;
 using MsBox.Avalonia;
 using ReactiveUI;
 using Serilog;
@@ -21,8 +25,12 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_PersonaliseViewModel : ViewModelBase
 {
+    private readonly IConfigService _configService;
+
     internal Settings_PersonaliseViewModel()
     {
+        _configService = ConfigService;
+
         InitCommands();
 
         InitEvents();
@@ -54,35 +62,40 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
                     );
             });
 
-            AppConfig.App.ThemeColor = themeColor.ToHexString();
+            _configService.AppConfig.App.ThemeColor = themeColor.ToHexString();
 
-            SaveAppConfigChanges();
+            _configService.SaveAll();
         });
     }
 
     public sealed override void InitEvents()
     {
-        EventService.LanguageChanged += () =>
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.LanguageChanged, (s, e) =>
         {
             foreach (var item in SupportedThemes)
                 item.ThemeDisplayName = GetThemeDisplayText(item.ThemeName);
 
-            _currentAppTheme = SupportedThemes.Find(x => x.ThemeName.Equals(AppConfig.App.Theme));
+            _currentAppTheme = SupportedThemes.Find(x => x.ThemeName.Equals(_configService.AppConfig.App.Theme));
 
             this.RaisePropertyChanged(nameof(CurrentAppTheme));
 
             this.RaisePropertyChanged(nameof(SupportedThemes));
-        };
+        });
     }
 
     private void InitData()
     {
         SupportedLanguages.Clear();
 
-        foreach (var item in AppConfig.App.SurpportLanguages)
+        foreach (var item in _configService.AppConfig.App.SurpportLanguages)
             SupportedLanguages.Add(new SupportedLanguage() { LanguageCode = item.Key, LanguageName = item.Value });
 
-        LanguageSelected = SupportedLanguages.FindIndex(x => x.LanguageCode.Equals(AppConfig.App.AppLanguage));
+        LanguageSelected = SupportedLanguages.FindIndex(x => x.LanguageCode.Equals(_configService.AppConfig.App.AppLanguage));
+
+        // Initialize current theme - must explicitly set to show in ComboBox
+        _currentAppTheme = SupportedThemes.Find(x => x.ThemeName.Equals(_configService.AppConfig.App.Theme))
+            ?? SupportedThemes.FirstOrDefault(); // Fallback to first theme if not found
     }
 
     private Color2 themeColor = new();
@@ -103,26 +116,29 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
 
     private static string GetThemeDisplayText(string key) => Translate(key, prefix: "Text_Settings_Personalise_Theme_") ?? string.Empty;
 
-    internal static List<SupportedTheme> SupportedThemes =>
-        [
-            new()
-            {
-                ThemeName = FluentAvaloniaTheme.LightModeString,
-                ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.LightModeString),
-            },
-            new()
-            {
-                ThemeName = FluentAvaloniaTheme.DarkModeString,
-                ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.DarkModeString),
-            },
-            new() { ThemeName = "Follow", ThemeDisplayName = GetThemeDisplayText("Follow") },
-        ];
+    // Use static field instead of property to ensure consistent object references for ComboBox binding
+    private static readonly List<SupportedTheme> _supportedThemes =
+    [
+        new()
+        {
+            ThemeName = FluentAvaloniaTheme.LightModeString,
+            ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.LightModeString),
+        },
+        new()
+        {
+            ThemeName = FluentAvaloniaTheme.DarkModeString,
+            ThemeDisplayName = GetThemeDisplayText(FluentAvaloniaTheme.DarkModeString),
+        },
+        new() { ThemeName = "Follow", ThemeDisplayName = GetThemeDisplayText("Follow") },
+    ];
 
-    private SupportedTheme? _currentAppTheme = SupportedThemes.Find(x => x.ThemeName.Equals(AppConfig.App.Theme));
+    internal static List<SupportedTheme> SupportedThemes => _supportedThemes;
+
+    private SupportedTheme? _currentAppTheme;
 
     internal SupportedTheme? CurrentAppTheme
     {
-        get => _currentAppTheme;
+        get => _currentAppTheme ??= SupportedThemes.Find(x => x.ThemeName.Equals(_configService.AppConfig.App.Theme));
         set
         {
             _currentAppTheme = value;
@@ -130,7 +146,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
             if (value is null)
                 return;
 
-            AppConfig.App.Theme = value.ThemeName;
+            _configService.AppConfig.App.Theme = value.ThemeName;
 
             if (Application.Current is null)
                 return;
@@ -142,9 +158,10 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
                 _ => ThemeVariant.Default,
             };
 
-            EventService.Invoke(nameof(EventService.ThemeConfigChanged));
+            var eventService = App.GetService<IEventService>();
+            eventService.Publish(EventNames.ThemeConfigChanged, EventArgs.Empty);
 
-            SaveAppConfigChanges();
+            _configService.SaveAll();
         }
     }
 
@@ -154,7 +171,8 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
     {
         const string location = $"{nameof(Settings_PersonaliseViewModel)}.{nameof(LoadLanguage)}";
 
-        var lang = AppConfig.App.AppLanguage;
+        var configService = App.GetService<IConfigService>();
+        var lang = configService.AppConfig.App.AppLanguage;
 
         if (Application.Current is null)
             return;
@@ -177,7 +195,8 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
             Log.Warning(ex, $"In {location}: Language File {lang}.axaml not found.");
         }
 
-        EventService.Invoke(nameof(EventService.LanguageChanged));
+        var eventService = App.GetService<IEventService>();
+        eventService.Publish(EventNames.LanguageChanged, EventArgs.Empty);
     }
 
     internal int languageSelected = -1;
@@ -189,14 +208,14 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         {
             try
             {
-                AppConfig.App.AppLanguage = SupportedLanguages[value].LanguageCode;
+                _configService.AppConfig.App.AppLanguage = SupportedLanguages[value].LanguageCode;
 
                 if (languageSelected != -1)
                     LoadLanguage();
 
                 languageSelected = value;
 
-                SaveAppConfigChanges();
+                _configService.SaveAll();
             }
             catch
             {
@@ -205,14 +224,14 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         }
     }
 
-    internal static bool PaletteAreaExpanded
+    internal bool PaletteAreaExpanded
     {
-        get => AppConfig.Pages.Settings.PaletteAreaExpanded;
+        get => _configService.AppConfig.Pages.Settings.PaletteAreaExpanded;
         set
         {
-            AppConfig.Pages.Settings.PaletteAreaExpanded = value;
+            _configService.AppConfig.Pages.Settings.PaletteAreaExpanded = value;
 
-            SaveAppConfigChanges();
+            _configService.SaveAll();
         }
     }
 

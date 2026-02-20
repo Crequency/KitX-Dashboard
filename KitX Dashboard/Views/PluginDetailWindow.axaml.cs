@@ -2,7 +2,9 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using Common.BasicHelper.Graphics.Screen;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
+using KitX.Dashboard;
 using KitX.Dashboard.ViewModels;
 using KitX.Shared.CSharp.Plugin;
 using Serilog;
@@ -60,7 +62,8 @@ public partial class PluginDetailWindow : Window
 
         Opened += (_, _) => viewModel.InitFunctionsAndTags();
 
-        EventService.OnExiting += Close;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.OnExiting, (s, e) => Close());
     }
 
     public PluginDetailWindow SetPluginInfo(PluginInfo ps)

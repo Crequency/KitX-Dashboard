@@ -5,7 +5,9 @@ using System.Timers;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
+using KitX.Dashboard;
 using KitX.Dashboard.ViewModels;
 using MsBox.Avalonia;
 
@@ -25,7 +27,8 @@ public partial class ExchangeDeviceKeyWindow : Window
 
         DataContext = viewModel;
 
-        EventService.OnExiting += Close;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.OnExiting, (s, e) => Close());
     }
 
     public ExchangeDeviceKeyWindow OnVerificationCodeEntered(Action<string> action)
@@ -63,15 +66,16 @@ public partial class ExchangeDeviceKeyWindow : Window
 
         viewModel.VerificationCodeString = code;
 
-        EventService.OnAcceptingDeviceKey += keyCode =>
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe<DeviceKeyEventArgs>(EventNames.OnAcceptingDeviceKey, (s, e) =>
         {
-            if (code.Equals(keyCode))
+            if (code.Equals(e.Key))
             {
                 ConstantTable.ExchangeDeviceKeyCode = null;
 
                 Dispatcher.UIThread.Post(Close);
             }
-        };
+        });
 
         waittingAcceptingDeviceKeyTimer = new() { Interval = 60 * 1000, AutoReset = false };
 

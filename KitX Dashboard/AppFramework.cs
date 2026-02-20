@@ -11,10 +11,19 @@ using Avalonia.Threading;
 using CommandLine;
 using Common.BasicHelper.IO;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Managers;
+using KitX.Core.Activity;
+using KitX.Core.Configuration;
+using KitX.Core.Contract.Activity;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Device;
+using KitX.Core.Contract.Plugin;
+using KitX.Core.Contract.Statistics;
+using KitX.Core.Plugin;
+using KitX.Core.Statistics;
+using KitX.Core.Task;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Options;
-using KitX.Dashboard.Views;
+using KitX.Dashboard.Services;
 using LiteDB;
 using ReactiveUI;
 using Serilog;
@@ -52,6 +61,9 @@ public static class AppFramework
         if (Design.IsDesignMode)
             return;
 
+        // Initialize DI container before any UI code runs
+        App.InitializeServiceProvider();
+
         // If dump file exists, delete it.
         if (File.Exists("./dump.log".GetFullPath()))
             File.Delete("./dump.log".GetFullPath());
@@ -73,9 +85,13 @@ public static class AppFramework
             File.Delete("restart.lock");
         }
 
-        ConfigManager.Instance.AppConfig.App.RanTime++;
+        // Use DI to get config service
+        var configService = App.GetService<IConfigService>();
+        configService.Load();
 
-        var config = ConfigManager.Instance.AppConfig;
+        configService.AppConfig.App.RanTime++;
+
+        var config = configService.AppConfig;
 
         ProcessStartupArguments();
 
@@ -99,6 +115,7 @@ public static class AppFramework
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
+            .WriteTo.Console(outputTemplate: config.Log.LogTemplate, restrictedToMinimumLevel: config.Log.LogLevel)
             .WriteTo.File(
                 $"{logdir}Log_.log",
                 outputTemplate: config.Log.LogTemplate,
@@ -116,7 +133,9 @@ public static class AppFramework
 
         #endregion
 
+        Log.Information("Calling Instances.Initialize()...");
         Instances.Initialize();
+        Log.Information("Instances.Initialize() completed.");
 
         #region Initialize global exception catching
 
@@ -154,10 +173,31 @@ public static class AppFramework
                 {
                     Thread.Sleep(Convert.ToInt32(config.Web.DelayStartSeconds * 1000));
 
-                    if (ConstantTable.SkipNetworkSystemOnStartup)
-                        Instances.WebManager = new();
-                    else
-                        Instances.WebManager = await new WebManager().RunAsync(new());
+                    if (!ConstantTable.SkipNetworkSystemOnStartup)
+                    {
+                        // Use DI services instead of WebManager
+                        var discoveryServer = Instances.DevicesDiscoveryServer;
+                        var devicesServer = Instances.DevicesServer;
+                        var pluginsServer = Instances.PluginsServer;
+
+                        if (discoveryServer != null)
+                        {
+                            discoveryServer.ConfigurePort((int)(config.Web.UserSpecifiedDevicesServerPort ?? 0));
+                            discoveryServer.Run();
+                            KitX.Core.Device.DevicesOrganizer.Run();
+                        }
+
+                        if (devicesServer != null)
+                        {
+                            devicesServer.ConfigurePort((int)(config.Web.UserSpecifiedPluginsServerPort ?? 0));
+                            devicesServer.Run();
+                        }
+
+                        if (pluginsServer != null)
+                        {
+                            pluginsServer.Run();
+                        }
+                    }
                 }).Start();
             }
         );
@@ -166,7 +206,7 @@ public static class AppFramework
 
         #region Initialize StatisticsManager
 
-        StatisticsManager.Start();
+        App.GetService<IStatisticsService>().Start();
 
         #endregion
 
@@ -178,7 +218,7 @@ public static class AppFramework
             {
                 Dispatcher.UIThread.Post(() =>
                 {
-                    ViewInstances.PluginsLaunchWindow = new();
+                    UIStateService.PluginsLaunchWindow = new();
                 });
             }
         );
@@ -205,7 +245,10 @@ public static class AppFramework
 
             Instances.ActivitiesDataBase = db;
 
-            ActivityManager.RecordAppStart();
+            // Also set the database for Core ActivityManager
+            KitX.Core.Activity.ActivityManager.ActivitiesDatabase = db;
+
+            App.GetService<IActivityService>().RecordAppStart();
         }
         catch (Exception ex)
         {
@@ -245,7 +288,7 @@ public static class AppFramework
             }
             else
             {
-                PluginsManager.ImportPlugin([kxpPath]);
+                _ = App.GetService<IPluginService>().ImportPluginAsync(kxpPath);
             }
         }
         catch (Exception ex)
@@ -267,16 +310,22 @@ public static class AppFramework
         {
             try
             {
-                ActivityManager.RecordAppExit();
+                App.GetService<IActivityService>().RecordAppExit();
 
-                Instances.FileWatcherManager?.Clear();
+                Instances.FileWatcherService?.Clear();
 
-                ConfigManager.Instance.SaveAll();
+                App.GetService<IConfigService>().SaveAll();
 
                 Log.CloseAndFlush();
 
-                if (Instances.WebManager is not null)
-                    await Instances.WebManager.CloseAsync(new());
+                // Use DI services instead of WebManager
+                var pluginsServer = Instances.PluginsServer;
+                var devicesDiscoveryServer = Instances.DevicesDiscoveryServer;
+                var devicesServer = Instances.DevicesServer;
+
+                pluginsServer?.Stop();
+                devicesServer?.Stop();
+                devicesDiscoveryServer?.Stop();
 
                 Instances.ActivitiesDataBase?.Commit();
                 Instances.ActivitiesDataBase?.Dispose();
@@ -293,7 +342,7 @@ public static class AppFramework
                         Process.Start(path);
                 }
 
-                Thread.Sleep(ConfigManager.Instance.AppConfig.App.LastBreakAfterExit);
+                Thread.Sleep(App.GetService<IConfigService>().AppConfig.App.LastBreakAfterExit);
 
                 ConstantTable.EnsureExiting = false;
             }

@@ -1,19 +1,34 @@
-﻿using System.Reactive;
+﻿using System;
+using System.Linq;
+using System.Reactive;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using KitX.Dashboard.Managers;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Announcement;
+using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Plugin;
+using KitX.Core.Event;
+using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using ReactiveUI;
+using WindowState = Avalonia.Controls.WindowState;
 
 namespace KitX.Dashboard.ViewModels;
 
 internal class AppViewModel : ViewModelBase
 {
+    private readonly IConfigService _configService;
+    private readonly IAnnouncementService _announcementService;
+
     public AppViewModel()
     {
+        // Get services from DI container
+        _configService = ConfigService;
+        _announcementService = AnnouncementService;
+
         InitCommands();
 
         InitEvents();
@@ -25,7 +40,7 @@ internal class AppViewModel : ViewModelBase
     {
         TrayIconClickedCommand = ReactiveCommand.Create(() =>
         {
-            var win = ViewInstances.MainWindow;
+            var win = UIStateService.MainWindow;
 
             if (win?.WindowState == WindowState.Minimized)
                 win.WindowState = WindowState.Normal;
@@ -34,26 +49,26 @@ internal class AppViewModel : ViewModelBase
 
             win?.Activate();
 
-            ConfigManager.Instance.AppConfig.Windows.MainWindow.IsHidden = false;
+            _configService.AppConfig.Windows.MainWindow.IsHidden = false;
 
-            SaveAppConfigChanges();
+            _configService.SaveAll();
         });
 
         ViewLatestAnnouncementsCommand = ReactiveCommand.Create(async () =>
         {
-            await AnnouncementManager.CheckNewAnnouncements();
+            await _announcementService.CheckNewAnnouncementsAsync();
         });
 
         OpenDebugToolCommand = ReactiveCommand.Create(() =>
         {
-            ViewInstances.ShowWindow(new DebugWindow());
+            UIStateService.ShowWindow(new DebugWindow());
         });
 
         PluginLauncherCommand = ReactiveCommand.Create(() =>
         {
-            ViewInstances.PluginsLaunchWindow ??= new();
+            UIStateService.PluginsLaunchWindow ??= new();
 
-            var win = ViewInstances.PluginsLaunchWindow;
+            var win = UIStateService.PluginsLaunchWindow;
 
             if (win.IsVisible)
             {
@@ -79,13 +94,55 @@ internal class AppViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        ViewInstances.DeviceCases.CollectionChanged += (_, _) => UpdateTrayIconText();
+        UIStateService.DeviceCases.CollectionChanged += (_, _) => UpdateTrayIconText();
 
-        ViewInstances.PluginInfos.CollectionChanged += (_, _) => UpdateTrayIconText();
+        UIStateService.PluginInfos.CollectionChanged += (_, _) => UpdateTrayIconText();
 
-        EventService.DevicesServerPortChanged += _ => UpdateTrayIconText();
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe<PortChangedEventArgs>(EventNames.DevicesServerPortChanged, (s, e) => UpdateTrayIconText());
 
-        EventService.PluginsServerPortChanged += _ => UpdateTrayIconText();
+        eventService.Subscribe<PortChangedEventArgs>(EventNames.PluginsServerPortChanged, (s, e) => UpdateTrayIconText());
+
+        // Subscribe to announcement events to show announcement window
+        _announcementService.NewAnnouncementsAvailable += (_, e) =>
+        {
+            // Convert IAnnouncement list to Dictionary<string, string> format (Legacy compatible)
+            var src = new System.Collections.Generic.Dictionary<string, string>();
+            foreach (var announcement in e.Announcements)
+            {
+                src[announcement.PublishDate.ToString("yyyy-MM-dd HH:mm")] = $"# {announcement.Title}\n\n{announcement.Content}";
+            }
+
+            if (src.Count > 0)
+            {
+                var window = new AnnouncementsWindow().UpdateSource(src);
+                UIStateService.ShowWindow(window);
+            }
+        };
+
+        // Subscribe to plugin server events to update UIStateService.PluginInfos
+        if (Instances.PluginsServer is not null)
+        {
+            Instances.PluginsServer.PluginRegistered += (_, args) =>
+            {
+                if (args.PluginInfo is not null && !UIStateService.PluginInfos.Any(x => x.Equals(args.PluginInfo)))
+                {
+                    UIStateService.PluginInfos.Add(args.PluginInfo);
+                }
+            };
+
+            Instances.PluginsServer.PluginUnregistered += (_, args) =>
+            {
+                if (args.PluginInfo is not null)
+                {
+                    var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Equals(args.PluginInfo));
+                    if (existing is not null)
+                    {
+                        UIStateService.PluginInfos.Remove(existing);
+                    }
+                }
+            };
+        }
     }
 
     private void UpdateTrayIconText()
@@ -99,9 +156,9 @@ internal class AppViewModel : ViewModelBase
             .Append(Translate("Text_Settings_Performence_Web_PluginsServerPort"))
             .AppendLine(": " + ConstantTable.PluginsServerPort)
             .AppendLine()
-            .Append(ViewInstances.DeviceCases.Count + " ")
+            .Append(UIStateService.DeviceCases.Count + " ")
             .AppendLine(Translate("Text_Device_Tip_Detected"))
-            .Append(ViewInstances.PluginInfos.Count + " ")
+            .Append(UIStateService.PluginInfos.Count + " ")
             .AppendLine(Translate("Text_Lib_Tip_Connected"))
             .AppendLine()
             .Append("Hello, World!");
@@ -111,15 +168,16 @@ internal class AppViewModel : ViewModelBase
 
     public static void Exit()
     {
-        ViewInstances.DeviceCases.Clear();
+        UIStateService.DeviceCases.Clear();
 
-        ViewInstances.PluginInfos.Clear();
+        UIStateService.PluginInfos.Clear();
 
         ConstantTable.Exiting = true;
 
-        EventService.Invoke(nameof(EventService.OnExiting));
+        var eventService = App.GetService<IEventService>();
+        eventService.Publish(EventNames.OnExiting, EventArgs.Empty);
 
-        var win = ViewInstances.MainWindow;
+        var win = UIStateService.MainWindow;
 
         win?.Close();
     }

@@ -2,7 +2,8 @@
 using System.Linq;
 using System.Reactive;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Configuration;
+using KitX.Core.Contract.Announcement;
+using KitX.Core.Contract.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 
@@ -10,6 +11,11 @@ namespace KitX.Dashboard.ViewModels;
 
 internal class AnnouncementsWindowViewModel : ViewModelBase
 {
+    /// <summary>
+    /// Gets the announcement service from DI container
+    /// </summary>
+    private IAnnouncementService AnnouncementService => App.GetService<IAnnouncementService>();
+
     public AnnouncementsWindowViewModel()
     {
         InitCommands();
@@ -21,7 +27,7 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
     {
         ConfirmReceivedCommand = ReactiveCommand.Create(() =>
         {
-            var config = AnnouncementConfig;
+            var config = AnnouncementService.AnnouncementConfig;
 
             var accepted = config.Accepted;
 
@@ -36,7 +42,7 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
             if (!accepted.Contains(key))
                 accepted.Add(key);
 
-            config.Save(config.ConfigFileLocation!);
+            AnnouncementService.SaveAnnouncementConfig();
 
             var found = false;
 
@@ -60,7 +66,7 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
 
         ConfirmReceivedAllCommand = ReactiveCommand.Create(() =>
         {
-            var config = AnnouncementConfig;
+            var config = AnnouncementService.AnnouncementConfig;
 
             var accepted = config.Accepted;
 
@@ -80,7 +86,7 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
                     accepted.Add(key);
             }
 
-            config.Save(config.ConfigFileLocation!);
+            AnnouncementService.SaveAnnouncementConfig();
 
             Window?.Close();
         });
@@ -90,14 +96,14 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
 
     internal static double Window_Width
     {
-        get => AppConfig.Windows.AnnouncementWindow.Size.Width!.Value;
-        set => AppConfig.Windows.AnnouncementWindow.Size.Width = value;
+        get => App.GetService<IConfigService>().AppConfig.Windows.AnnouncementWindow.Size.Width!.Value;
+        set => App.GetService<IConfigService>().AppConfig.Windows.AnnouncementWindow.Size.Width = value;
     }
 
     internal static double Window_Height
     {
-        get => AppConfig.Windows.AnnouncementWindow.Size.Height!.Value;
-        set => AppConfig.Windows.AnnouncementWindow.Size.Height = value;
+        get => App.GetService<IConfigService>().AppConfig.Windows.AnnouncementWindow.Size.Height!.Value;
+        set => App.GetService<IConfigService>().AppConfig.Windows.AnnouncementWindow.Size.Height = value;
     }
 
     private NavigationViewItem? _selectedMenuItem;

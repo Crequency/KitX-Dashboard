@@ -5,8 +5,9 @@ using System.Linq;
 using System.Text.Json;
 using Avalonia;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Network.PluginsNetwork;
-using KitX.Dashboard.Views;
+using KitX.Core.Contract.Plugin;
+using KitX.Core.Device;
+using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
 using KitX.Shared.CSharp.WebCommand;
 using ReactiveUI;
@@ -98,7 +99,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    public static ObservableCollection<PluginInfo> PluginInfos => ViewInstances.PluginInfos;
+    public static ObservableCollection<PluginInfo> PluginInfos => UIStateService.PluginInfos;
 
     private bool isSelectingPlugin = true;
 
@@ -341,7 +342,8 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
             if (SelectedPluginInfo is not null && SelectedFunction is not null && (HavingParameters == false))
             {
-                var plugConnector = PluginsServer.Instance.FindConnector(SelectedPluginInfo);
+                var pluginServer = App.GetService<IPluginServer>();
+                var plugConnector = pluginServer.FindConnector(SelectedPluginInfo);
 
                 if (plugConnector is not null)
                 {

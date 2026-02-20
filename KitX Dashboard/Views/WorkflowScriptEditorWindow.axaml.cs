@@ -1,28 +1,30 @@
-using Avalonia;
+﻿using System;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using KitX.Dashboard.ViewModels;
 using AvaloniaEdit;
 using Avalonia.Interactivity;
 using System.IO;
-using System.Reactive.Linq;
-using KitX.Dashboard.Services;
 using TextMateSharp.Grammars;
 using AvaloniaEdit.TextMate;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Avalonia.Styling;
 using Avalonia.Platform.Storage;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
+using KitX.Core.Contract.Workflow;
+using KitX.Dashboard;
 
 namespace KitX.Dashboard.Views;
 
 public partial class WorkflowScriptEditorWindow : Window, IView
 {
-    private readonly WorkflowScriptEditorWindowViewModel viewModel = new();
+    private readonly WorkflowScriptEditorWindowViewModel viewModel;
 
     public WorkflowScriptEditorWindow()
     {
         InitializeComponent();
+
+        // Use DI to get the ViewModel
+        viewModel = App.GetService<WorkflowScriptEditorWindowViewModel>();
 
         DataContext = viewModel;
 
@@ -33,7 +35,8 @@ public partial class WorkflowScriptEditorWindow : Window, IView
     {
         InitializeEditor();
 
-        EventService.ThemeConfigChanged += InitializeEditor;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.ThemeConfigChanged, (s, e) => InitializeEditor());
 
         var codeEditor = this.FindControl<TextEditor>("CodeEditor");
         var outputEditor = this.FindControl<TextEditor>("OutputEditor");

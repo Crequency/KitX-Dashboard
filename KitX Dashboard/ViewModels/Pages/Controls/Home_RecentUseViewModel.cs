@@ -1,5 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-using KitX.Dashboard.Models;
+using KitX.Core.Plugin;
 using KitX.Dashboard.Views;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;

@@ -7,8 +7,12 @@ using System.Threading;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Models;
-using KitX.Dashboard.Network.DevicesNetwork;
+using KitX.Core.Contract.Device;
+using KitX.Core.Contract.Event;
+using KitX.Core.Device;
+using KitX.Core.Event;
+using KitX.Core.Plugin;
+using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Dashboard.Views.Pages.Controls;
@@ -29,10 +33,10 @@ internal class PluginBarViewModel : ViewModelBase
     {
         ViewDetailsCommand = ReactiveCommand.Create(() =>
         {
-            if (Plugin is not null && ViewInstances.MainWindow is not null)
+            if (Plugin is not null && UIStateService.MainWindow is not null)
                 new PluginDetailWindow() { WindowStartupLocation = WindowStartupLocation.CenterOwner }
                     .SetPluginInfo(Plugin.PluginInfo)
-                    .Show(ViewInstances.MainWindow);
+                    .Show(UIStateService.MainWindow);
         });
 
         RemoveCommand = ReactiveCommand.Create(() =>
@@ -71,9 +75,11 @@ internal class PluginBarViewModel : ViewModelBase
 
                     var pluginPath = $"{Plugin?.InstallPath}/{pd?.RootStartupFileName}";
                     var pluginFile = pluginPath.GetFullPath();
+
+                    var deviceService = App.GetService<IDeviceDiscoveryService>();
                     var connectStr =
                         "ws://"
-                        + $"{DevicesDiscoveryServer.Instance.DefaultDeviceInfo.Device.IPv4}"
+                        + $"{deviceService.DefaultDeviceInfo.Device.IPv4}"
                         + $":"
                         + $"{ConstantTable.PluginsServerPort}/";
 
@@ -84,7 +90,7 @@ internal class PluginBarViewModel : ViewModelBase
                         Process.Start(pluginFile, $"--connect {connectStr}");
                     else
                     {
-                        var loaderFile = $"{AppConfig.Loaders.InstallPath}/" + $"{loaderName}/{loaderVersion}/{loaderName}";
+                        var loaderFile = $"{ConfigService.AppConfig.Loaders.InstallPath}/" + $"{loaderName}/{loaderVersion}/{loaderName}";
 
                         if (OperatingSystem.IsWindows())
                             loaderFile += ".exe";
@@ -113,7 +119,8 @@ internal class PluginBarViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        EventService.LanguageChanged += () => this.RaisePropertyChanged(nameof(DisplayName));
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.LanguageChanged, (s, e) => this.RaisePropertyChanged(nameof(DisplayName)));
     }
 
     internal PluginBar? PluginBar { get; set; }
@@ -127,7 +134,7 @@ internal class PluginBarViewModel : ViewModelBase
             if (Plugin is null)
                 return null;
 
-            return Plugin.PluginInfo.DisplayName.TryGetValue(AppConfig.App.AppLanguage, out var lang)
+            return Plugin.PluginInfo.DisplayName.TryGetValue(ConfigService.AppConfig.App.AppLanguage, out var lang)
                 ? lang
                 : Plugin.PluginInfo.DisplayName.Values.GetEnumerator().Current;
         }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Reactive;
 using Avalonia.Controls;
+using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
@@ -20,10 +21,10 @@ internal class LibPageViewModel : ViewModelBase
     {
         ViewDetailsCommand = ReactiveCommand.Create<PluginInfo>(info =>
         {
-            if (ViewInstances.MainWindow is not null)
+            if (UIStateService.MainWindow is not null)
                 new PluginDetailWindow() { WindowStartupLocation = WindowStartupLocation.CenterOwner }
                     .SetPluginInfo(info)
-                    .Show(ViewInstances.MainWindow);
+                    .Show(UIStateService.MainWindow);
         });
     }
 
@@ -54,7 +55,7 @@ internal class LibPageViewModel : ViewModelBase
 
     public string? SearchingText { get; set; }
 
-    public static ObservableCollection<PluginInfo> PluginInfos => ViewInstances.PluginInfos;
+    public static ObservableCollection<PluginInfo> PluginInfos => UIStateService.PluginInfos;
 
     internal ReactiveCommand<PluginInfo, Unit>? ViewDetailsCommand { get; set; }
 }

@@ -4,7 +4,8 @@ using System.Threading;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
-using KitX.Dashboard.Managers;
+using KitX.Core.Contract.Plugin;
+using KitX.Core.Plugin;
 using KitX.Dashboard.ViewModels.Pages;
 using Serilog;
 
@@ -42,7 +43,11 @@ public partial class RepoPage : UserControl
             {
                 try
                 {
-                    PluginsManager.ImportPlugin(files, true);
+                    var pluginService = App.GetService<IPluginService>();
+                    foreach (var file in files!)
+                    {
+                        _ = pluginService.ImportPluginAsync(file);
+                    }
 
                     Dispatcher.UIThread.Post(() => viewModel.RefreshPluginsCommand?.Execute());
                 }

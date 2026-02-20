@@ -1,18 +1,27 @@
 ﻿using System;
 using System.Reactive;
 using System.Threading.Tasks;
-using KitX.Dashboard.Managers;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Announcement;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Utils;
 using KitX.Dashboard.Views;
 using ReactiveUI;
-using Serilog;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_GeneralViewModel : ViewModelBase
 {
+    private readonly IConfigService _configService;
+    private readonly IAnnouncementService _announcementService;
+
     internal Settings_GeneralViewModel()
     {
+        _configService = ConfigService;
+        _announcementService = AnnouncementService;
+
         InitCommands();
 
         InitEvents();
@@ -22,63 +31,63 @@ internal class Settings_GeneralViewModel : ViewModelBase
     {
         ShowAnnouncementsInstantlyCommand = ReactiveCommand.Create(() =>
         {
-            Task.Run(async () => await AnnouncementManager.CheckNewAnnouncements());
+            Task.Run(async () => await _announcementService.CheckNewAnnouncementsAsync());
         });
 
         OpenDebugToolCommand = ReactiveCommand.Create(() =>
         {
-            ViewInstances.ShowWindow(new DebugWindow(), ViewInstances.MainWindow);
+            UIStateService.ShowWindow(new DebugWindow(), UIStateService.MainWindow);
         });
     }
 
     public sealed override void InitEvents()
     {
-        EventService.DevelopSettingsChanged += () => this.RaisePropertyChanged(nameof(DeveloperSettingEnabled));
+        Events.Subscribe(EventNames.DevelopSettingsChanged, (s, e) => this.RaisePropertyChanged(nameof(DeveloperSettingEnabled)));
     }
 
-    internal static string LocalPluginsFileDirectory
+    internal string LocalPluginsFileDirectory
     {
-        get => ConfigManager.Instance.AppConfig.App.LocalPluginsFileFolder;
+        get => _configService.AppConfig.App.LocalPluginsFileFolder;
         set
         {
-            ConfigManager.Instance.AppConfig.App.LocalPluginsFileFolder = value;
-            SaveAppConfigChanges();
+            _configService.AppConfig.App.LocalPluginsFileFolder = value;
+            _configService.SaveAll();
         }
     }
 
-    internal static string LocalPluginsDataDirectory
+    internal string LocalPluginsDataDirectory
     {
-        get => ConfigManager.Instance.AppConfig.App.LocalPluginsDataFolder;
+        get => _configService.AppConfig.App.LocalPluginsDataFolder;
         set
         {
-            ConfigManager.Instance.AppConfig.App.LocalPluginsDataFolder = value;
-            SaveAppConfigChanges();
+            _configService.AppConfig.App.LocalPluginsDataFolder = value;
+            _configService.SaveAll();
         }
     }
 
-    internal static int ShowAnnouncementsStatus
+    internal int ShowAnnouncementsStatus
     {
-        get => ConfigManager.Instance.AppConfig.App.ShowAnnouncementWhenStart ? 0 : 1;
+        get => _configService.AppConfig.App.ShowAnnouncementWhenStart ? 0 : 1;
         set
         {
-            ConfigManager.Instance.AppConfig.App.ShowAnnouncementWhenStart = value == 0;
-            SaveAppConfigChanges();
+            _configService.AppConfig.App.ShowAnnouncementWhenStart = value == 0;
+            _configService.SaveAll();
         }
     }
 
-    internal static bool DeveloperSettingEnabled
+    internal bool DeveloperSettingEnabled
     {
-        get => ConfigManager.Instance.AppConfig.App.DeveloperSetting;
+        get => _configService.AppConfig.App.DeveloperSetting;
     }
 
-    internal static int DeveloperSettingStatus
+    internal int DeveloperSettingStatus
     {
-        get => ConfigManager.Instance.AppConfig.App.DeveloperSetting ? 0 : 1;
+        get => _configService.AppConfig.App.DeveloperSetting ? 0 : 1;
         set
         {
-            ConfigManager.Instance.AppConfig.App.DeveloperSetting = value == 0;
-            EventService.Invoke(nameof(EventService.DevelopSettingsChanged));
-            SaveAppConfigChanges();
+            _configService.AppConfig.App.DeveloperSetting = value == 0;
+            Events.Publish(EventNames.DevelopSettingsChanged);
+            _configService.SaveAll();
         }
     }
 

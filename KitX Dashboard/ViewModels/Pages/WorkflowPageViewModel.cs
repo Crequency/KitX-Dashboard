@@ -1,8 +1,13 @@
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Threading.Tasks;
 using Avalonia.Metadata;
-using KitX.Dashboard.Models;
+using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Workflow;
+using KitX.Core.Event;
+using KitX.Core.Workflow;
+using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using MsBox.Avalonia;
@@ -79,10 +84,11 @@ namespace KitX.Dashboard.ViewModels.Pages
                 WorkflowCount = WorkflowCases.Count;
             };
 
-            EventService.LanguageChanged += () =>
+            var eventService = App.GetService<IEventService>();
+            eventService.Subscribe(EventNames.LanguageChanged, (s, e) =>
             {
                 this.RaisePropertyChanged(nameof(WorkflowCountTip));
-            };
+            });
         }
 
         internal string? SearchingText { get; set; }
@@ -107,7 +113,7 @@ namespace KitX.Dashboard.ViewModels.Pages
         internal string WorkflowCountTip =>
             TranslateTextWithSuffix("Workflow", "Count")?.Replace("$count", WorkflowCount.ToString()) ?? "Language key not found";
 
-        internal static ObservableCollection<WorkflowCase> WorkflowCases => ViewInstances.WorkflowCases;
+        internal static ObservableCollection<IWorkflowCase> WorkflowCases => UIStateService.WorkflowCases;
 
         internal ReactiveCommand<Unit, Task>? RunWorkflowCommand { get; set; }
 

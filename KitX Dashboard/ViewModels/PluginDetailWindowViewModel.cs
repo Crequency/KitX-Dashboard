@@ -1,11 +1,15 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Text;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
+using KitX.Dashboard;
 using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
 
@@ -13,8 +17,12 @@ namespace KitX.Dashboard.ViewModels;
 
 internal class PluginDetailWindowViewModel : ViewModelBase
 {
+    private readonly IConfigService _configService;
+
     public PluginDetailWindowViewModel()
     {
+        _configService = ConfigService;
+
         InitCommands();
 
         InitEvents();
@@ -27,7 +35,8 @@ internal class PluginDetailWindowViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        EventService.ThemeConfigChanged += () => this.RaisePropertyChanged(nameof(TintColor));
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.ThemeConfigChanged, (s, e) => this.RaisePropertyChanged(nameof(TintColor)));
     }
 
     private PluginInfo? pluginDetail;
@@ -42,13 +51,13 @@ internal class PluginDetailWindowViewModel : ViewModelBase
 
     internal string? LastUpdateDate => PluginDetail?.LastUpdateDate.ToLocalTime().ToString("yyyy.MM.dd");
 
-    internal static Color TintColor =>
-        AppConfig.App.Theme switch
+    internal Color TintColor =>
+        _configService.AppConfig.App.Theme switch
         {
             "Light" => Colors.WhiteSmoke,
             "Dark" => Colors.Black,
             "Follow" => Application.Current?.ActualThemeVariant == ThemeVariant.Light ? Colors.WhiteSmoke : Colors.Black,
-            _ => Color.Parse(AppConfig.App.ThemeColor),
+            _ => Color.Parse(_configService.AppConfig.App.ThemeColor),
         };
 
     internal void InitFunctionsAndTags()

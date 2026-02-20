@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using Avalonia.Controls;
-using KitX.Dashboard.Models;
+using KitX.Core.Plugin;
 using KitX.Dashboard.ViewModels.Pages.Controls;
 
 namespace KitX.Dashboard.Views.Pages.Controls;

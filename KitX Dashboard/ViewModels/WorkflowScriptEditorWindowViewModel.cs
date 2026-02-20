@@ -1,15 +1,11 @@
-using System;
+﻿using System;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
-using KitX.Dashboard.Services;
 using ReactiveUI;
-using System.Reflection;
-using System.Collections.Generic;
-using Kscript.CSharp.Parser;
-using KitX.Shared.CSharp.Plugin;
+using KitX.Core.Contract.Workflow;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -19,8 +15,16 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
 
     private readonly IDisposable _codeDocumentSubscription;
 
-    public WorkflowScriptEditorWindowViewModel()
+    private readonly IWorkflowService _workflowService;
+
+    /// <summary>
+    /// Constructor with DI injection
+    /// </summary>
+    /// <param name="workflowService">Workflow service injected via DI</param>
+    public WorkflowScriptEditorWindowViewModel(IWorkflowService workflowService)
     {
+        _workflowService = workflowService;
+
         InitCommands();
         InitEvents();
 
@@ -57,7 +61,8 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
         Task.Run(
             async () =>
             {
-                var result = await WorkflowScriptService.ExecuteCodesAsync(code, cancellationToken: tokenSource.Token);
+                // Use injected service instead of static method
+                var result = await _workflowService.ExecuteCodesAsync(code, cancellationToken: tokenSource.Token);
 
                 tokenSource.Dispose();
 

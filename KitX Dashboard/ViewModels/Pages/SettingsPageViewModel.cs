@@ -1,14 +1,18 @@
 ﻿using System.Reactive;
 using Avalonia;
-using FluentAvalonia.UI.Controls;
+using KitX.Core.Contract.Configuration;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class SettingsPageViewModel : ViewModelBase
 {
+    private readonly IConfigService _configService;
+
     internal SettingsPageViewModel()
     {
+        _configService = ConfigService;
+
         InitCommands();
     }
 
@@ -16,56 +20,56 @@ internal class SettingsPageViewModel : ViewModelBase
     {
         ResetToAutoCommand = ReactiveCommand.Create(() =>
         {
-            NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Auto;
+            NavigationViewPaneDisplayMode = FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode.Auto;
         });
 
         MoveToLeftCommand = ReactiveCommand.Create(() =>
         {
-            NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+            NavigationViewPaneDisplayMode = FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode.Left;
         });
 
         MoveToTopCommand = ReactiveCommand.Create(() =>
         {
-            NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Top;
+            NavigationViewPaneDisplayMode = FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode.Top;
         });
     }
 
     public override void InitEvents() => throw new System.NotImplementedException();
 
-    internal static bool IsPaneOpen
+    internal bool IsPaneOpen
     {
-        get => AppConfig.Pages.Settings.IsNavigationViewPaneOpened;
+        get => _configService.AppConfig.Pages.Settings.IsNavigationViewPaneOpened;
         set
         {
-            AppConfig.Pages.Settings.IsNavigationViewPaneOpened = value;
+            _configService.AppConfig.Pages.Settings.IsNavigationViewPaneOpened = value;
 
-            SaveAppConfigChanges();
+            _configService.SaveAll();
         }
     }
 
     internal Thickness FirstItemMargin =>
         NavigationViewPaneDisplayMode switch
         {
-            NavigationViewPaneDisplayMode.Auto => new(0, 5, 0, 0),
-            NavigationViewPaneDisplayMode.Left => new(0, 5, 0, 0),
-            NavigationViewPaneDisplayMode.LeftCompact => new(0, 5, 0, 0),
-            NavigationViewPaneDisplayMode.LeftMinimal => new(0, 5, 0, 0),
-            NavigationViewPaneDisplayMode.Top => new(0, 0, 0, 0),
+            FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode.Auto => new(0, 5, 0, 0),
+            FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode.Left => new(0, 5, 0, 0),
+            FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode.LeftCompact => new(0, 5, 0, 0),
+            FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode.LeftMinimal => new(0, 5, 0, 0),
+            FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode.Top => new(0, 0, 0, 0),
             _ => new(0, 0, 0, 0),
         };
 
-    internal NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
+    internal FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
     {
-        get => AppConfig.Pages.Settings.NavigationViewPaneDisplayMode;
+        get => (FluentAvalonia.UI.Controls.NavigationViewPaneDisplayMode)(int)_configService.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode;
         set
         {
-            AppConfig.Pages.Settings.NavigationViewPaneDisplayMode = value;
+            _configService.AppConfig.Pages.Settings.NavigationViewPaneDisplayMode = (KitX.Core.Contract.Configuration.NavigationViewPaneDisplayMode)(int)value;
 
             this.RaisePropertyChanged(nameof(NavigationViewPaneDisplayMode));
 
             this.RaisePropertyChanged(nameof(FirstItemMargin));
 
-            SaveAppConfigChanges();
+            _configService.SaveAll();
         }
     }
 

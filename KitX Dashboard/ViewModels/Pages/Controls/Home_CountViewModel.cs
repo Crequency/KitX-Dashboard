@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
+using KitX.Core.Statistics;
+using KitX.Dashboard;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using ReactiveUI;
@@ -10,8 +14,12 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Home_CountViewModel : ViewModelBase
 {
+    private readonly IConfigService _configService;
+
     public Home_CountViewModel()
     {
+        _configService = ConfigService;
+
         RecoveryUseCount();
 
         InitEvents();
@@ -23,7 +31,8 @@ internal class Home_CountViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        EventService.UseStatisticsChanged += RecoveryUseCount;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.UseStatisticsChanged, (s, e) => RecoveryUseCount());
     }
 
     internal void RecoveryUseCount()
@@ -53,14 +62,14 @@ internal class Home_CountViewModel : ViewModelBase
 
     internal bool UseAreaExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Home.UseAreaExpanded;
+        get => _configService.AppConfig.Pages.Home.UseAreaExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Home.UseAreaExpanded = value;
+            _configService.AppConfig.Pages.Home.UseAreaExpanded = value;
 
             this.RaisePropertyChanged(nameof(UseAreaExpanded));
 
-            SaveAppConfigChanges();
+            _configService.SaveAll();
         }
     }
 

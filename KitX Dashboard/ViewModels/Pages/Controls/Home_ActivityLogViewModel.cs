@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using Common.Activity;
-using KitX.Dashboard.Managers;
+using KitX.Core.Activity;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;

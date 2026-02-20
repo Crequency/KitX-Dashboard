@@ -6,9 +6,12 @@ using System.Reactive;
 using System.Text.Json;
 using System.Threading;
 using Avalonia.Controls;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Models;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Plugin;
+using KitX.Core.Event;
+using KitX.Core.Plugin;
+using KitX.Dashboard;
 using KitX.Dashboard.Views.Pages;
 using KitX.Dashboard.Views.Pages.Controls;
 using KitX.Shared.CSharp.Loader;
@@ -20,10 +23,13 @@ namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class RepoPageViewModel : ViewModelBase
 {
+    private readonly IConfigService _configService;
     private RepoPage? CurrentPage { get; set; }
 
     public RepoPageViewModel()
     {
+        _configService = ConfigService;
+
         InitCommands();
 
         InitEvents();
@@ -62,7 +68,11 @@ internal class RepoPageViewModel : ViewModelBase
                 {
                     try
                     {
-                        PluginsManager.ImportPlugin(files, true);
+                        var pluginService = App.GetService<IPluginService>();
+                        foreach (var file in files!)
+                        {
+                            _ = pluginService.ImportPluginAsync(file);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -83,7 +93,8 @@ internal class RepoPageViewModel : ViewModelBase
 
             //}
 
-            foreach (var item in PluginsManager.Plugins)
+            var pluginService = App.GetService<IPluginService>();
+            foreach (var item in pluginService.GetInstalledPlugins())
             {
                 try
                 {
@@ -117,7 +128,8 @@ internal class RepoPageViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        EventService.AppConfigChanged += () => ImportButtonVisibility = ConfigManager.Instance.AppConfig.App.DeveloperSetting;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.AppConfigChanged, (s, e) => ImportButtonVisibility = _configService.AppConfig.App.DeveloperSetting);
 
         PluginBars.CollectionChanged += (_, _) =>
         {
@@ -156,12 +168,14 @@ internal class RepoPageViewModel : ViewModelBase
 
     internal bool ImportButtonVisibility
     {
-        get => ConfigManager.Instance.AppConfig.App.DeveloperSetting;
+        get => _configService.AppConfig.App.DeveloperSetting;
         set
         {
-            ConfigManager.Instance.AppConfig.App.DeveloperSetting = value;
+            _configService.AppConfig.App.DeveloperSetting = value;
 
             this.RaisePropertyChanged(nameof(ImportButtonVisibility));
+
+            _configService.SaveAll();
         }
     }
 

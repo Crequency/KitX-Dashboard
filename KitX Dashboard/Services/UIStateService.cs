@@ -1,18 +1,26 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Controls;
-using KitX.Dashboard.Models;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Device;
+using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Workflow;
+using KitX.Core.Event;
+using KitX.Dashboard;
+using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Plugin;
 
-namespace KitX.Dashboard.Views;
+namespace KitX.Dashboard.Services;
 
-public static class ViewInstances
+/// <summary>
+/// UI State Service - Manages shared UI state across ViewModels
+/// </summary>
+public static class UIStateService
 {
-    public static ObservableCollection<DeviceCase> DeviceCases { get; set; } = [];
+    public static ObservableCollection<IDeviceCase> DeviceCases { get; set; } = [];
 
-    public static ObservableCollection<WorkflowCase> WorkflowCases { get; set; } = [];
+    public static ObservableCollection<IWorkflowCase> WorkflowCases { get; set; } = [];
 
     public static ObservableCollection<PluginInfo> PluginInfos { get; set; } = [];
 
@@ -28,7 +36,8 @@ public static class ViewInstances
         if (onlyOneInSameTime && Windows.Any(x => x.Title?.Equals(window.Title) ?? window.Title is null))
             return;
 
-        EventService.OnExiting += window.Close;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.OnExiting, (s, e) => window.Close());
 
         Windows.Add(window);
 

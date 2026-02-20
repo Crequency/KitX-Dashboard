@@ -10,23 +10,83 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Managers;
+using KitX.Core.Announcement;
+using KitX.Core.Contract.Announcement;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Event;
+using KitX.Core.DI;
+using KitX.Core.Event;
+using KitX.Core.Contract.Event;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.Views;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace KitX.Dashboard;
 
 public partial class App : Application
 {
+    /// <summary>
+    /// Service provider for dependency injection
+    /// </summary>
+    private static IServiceProvider? _serviceProvider;
+
+    /// <summary>
+    /// Initialize DI container before UI framework starts
+    /// This should be called from AppFramework.RunFramework() before any UI code runs
+    /// </summary>
+    internal static void InitializeServiceProvider()
+    {
+        if (_serviceProvider != null)
+            return;
+
+        Log.Information("Initializing service provider...");
+
+        // Initialize service provider with Core services
+        var services = new ServiceCollection();
+
+        // Register Core services from KitX.Core
+        services.AddCoreServices();
+
+        // Register ViewModels that require DI
+        services.AddTransient<WorkflowScriptEditorWindowViewModel>();
+
+        _serviceProvider = services.BuildServiceProvider();
+
+        Log.Information("Service provider initialized.");
+    }
+
+    /// <summary>
+    /// Gets service from DI container
+    /// </summary>
+    public static T GetService<T>() where T : class
+    {
+        var location = $"{nameof(App)}.{nameof(GetService)}<{typeof(T).Name}>";
+
+        Log.Information($"Getting service: {typeof(T).Name}");
+
+        if (_serviceProvider == null)
+        {
+            Log.Warning("Service provider is null, initializing now (this should not happen in normal flow)...");
+
+            // Fallback initialization - this should not happen if InitializeServiceProvider was called properly
+            InitializeServiceProvider();
+        }
+
+        var result = _serviceProvider!.GetRequiredService<T>();
+        Log.Information($"Got service: {typeof(T).Name}");
+        return result;
+    }
+
     public static Bitmap? DefaultIcon
     {
         get
         {
-            var path = Path.Combine(ConstantTable.AssetsPath, ConfigManager.Instance.AppConfig.App.CoverIconFileName).GetFullPath();
+            var configService = GetService<IConfigService>();
+            var path = Path.Combine(ConstantTable.AssetsPath, configService.AppConfig.App.CoverIconFileName).GetFullPath();
 
             if (Design.IsDesignMode)
                 return null;
@@ -57,7 +117,8 @@ public partial class App : Application
 
     private void LoadTheme()
     {
-        RequestedThemeVariant = ConfigManager.Instance.AppConfig.App.Theme switch
+        var configService = GetService<IConfigService>();
+        RequestedThemeVariant = configService.AppConfig.App.Theme switch
         {
             "Light" => ThemeVariant.Light,
             "Dark" => ThemeVariant.Dark,
@@ -68,7 +129,8 @@ public partial class App : Application
 
     private void LoadLanguage()
     {
-        var config = ConfigManager.Instance.AppConfig;
+        var configService = GetService<IConfigService>();
+        var config = configService.AppConfig;
         var lang = config.App.AppLanguage;
         var backup_lang = config.App.SurpportLanguages.Keys.First();
         var path = $"{ConstantTable.LanguageFilePath}/{lang}.axaml".GetFullPath();
@@ -106,7 +168,8 @@ public partial class App : Application
 
         try
         {
-            EventService.Invoke(nameof(EventService.LanguageChanged));
+            var eventService = GetService<IEventService>();
+            eventService.Publish(EventNames.LanguageChanged, EventArgs.Empty);
         }
         catch (Exception e)
         {
@@ -116,7 +179,8 @@ public partial class App : Application
 
     private static void CalculateThemeColor()
     {
-        Color c = Color.Parse(ConfigManager.Instance.AppConfig.App.ThemeColor);
+        var configService = GetService<IConfigService>();
+        Color c = Color.Parse(configService.AppConfig.App.ThemeColor);
 
         if (Current is not null)
         {
@@ -147,7 +211,8 @@ public partial class App : Application
             );
         }
 
-        EventService.ThemeConfigChanged += () =>
+        var eventService = GetService<IEventService>();
+        eventService.Subscribe(EventNames.ThemeConfigChanged, (s, e) =>
         {
             var usingLightTheme = Current?.ActualThemeVariant == ThemeVariant.Light;
 
@@ -155,7 +220,7 @@ public partial class App : Application
             {
                 config = usingLightTheme ? config.AddLightTheme() : config.AddDarkTheme();
             });
-        };
+        });
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -167,8 +232,12 @@ public partial class App : Application
             desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel() };
         }
 
-        if (ConfigManager.Instance.AppConfig.App.ShowAnnouncementWhenStart)
-            new Thread(async () => await AnnouncementManager.CheckNewAnnouncements()).Start();
+        var configService = GetService<IConfigService>();
+        if (configService.AppConfig.App.ShowAnnouncementWhenStart)
+        {
+            var announcementService = GetService<IAnnouncementService>();
+            new Thread(async () => await announcementService.CheckNewAnnouncementsAsync()).Start();
+        }
 
         base.OnFrameworkInitializationCompleted();
     }

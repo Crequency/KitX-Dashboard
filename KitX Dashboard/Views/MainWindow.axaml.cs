@@ -4,10 +4,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Configuration;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Event;
+using KitX.Core.Event;
 using KitX.Dashboard.Converters;
 using KitX.Dashboard.Generators;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
@@ -20,7 +21,7 @@ public partial class MainWindow : Window, IView
 {
     private readonly MainWindowViewModel viewModel = new();
 
-    private static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
+    private static IAppConfig AppConfig => App.GetService<IConfigService>().AppConfig;
 
     public MainWindow()
     {
@@ -28,7 +29,7 @@ public partial class MainWindow : Window, IView
 
         InitializeComponent();
 
-        ViewInstances.MainWindow = this;
+        UIStateService.MainWindow = this;
 
         DataContext = viewModel;
 
@@ -48,7 +49,7 @@ public partial class MainWindow : Window, IView
                 {
                     Instances.SignalTasksManager.SignalRun(
                         nameof(SignalsNames.MainWindowOpenedSignal),
-                        () => WindowState = config.WindowState
+                        () => WindowState = config.WindowState.ToAvalonia()
                     );
 
                     if (config.IsHidden)
@@ -61,7 +62,7 @@ public partial class MainWindow : Window, IView
 
                 SizeChanged += (_, _) =>
                 {
-                    if (WindowState == WindowState.Maximized)
+                    if (WindowState == Avalonia.Controls.WindowState.Maximized)
                         return;
 
                     config.Size.Width = ClientSize.Width;
@@ -79,14 +80,14 @@ public partial class MainWindow : Window, IView
 
                 PositionChanged += (_, _) =>
                 {
-                    if (WindowState != WindowState.Normal)
+                    if (WindowState != Avalonia.Controls.WindowState.Normal)
                         return;
 
                     config.Location.Left = Position.X;
                     config.Location.Top = Position.Y;
                 };
 
-                if (WindowState != WindowState.Normal)
+                if (WindowState != Avalonia.Controls.WindowState.Normal)
                     return;
 
                 ClientSize = new(config.Size.Width!.Value, config.Size.Height!.Value);
@@ -104,9 +105,10 @@ public partial class MainWindow : Window, IView
 
         UpdateGreetingText();
 
-        EventService.LanguageChanged += UpdateGreetingText;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.LanguageChanged, (s, e) => UpdateGreetingText());
 
-        EventService.GreetingTextIntervalUpdated += UpdateGreetingText;
+        eventService.Subscribe(EventNames.GreetingTextIntervalUpdated, (s, e) => UpdateGreetingText());
 
         var timer = new Timer() { AutoReset = true, Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval };
 
