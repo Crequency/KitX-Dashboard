@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -73,14 +74,17 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         var eventService = App.GetService<IEventService>();
         eventService.Subscribe(EventNames.LanguageChanged, (s, e) =>
         {
+            // Update theme display names
             foreach (var item in SupportedThemes)
                 item.ThemeDisplayName = GetThemeDisplayText(item.ThemeName);
 
-            _currentAppTheme = SupportedThemes.Find(x => x.ThemeName.Equals(_configService.AppConfig.App.Theme));
+            _currentAppTheme = SupportedThemes.FirstOrDefault(x => x.ThemeName.Equals(_configService.AppConfig.App.Theme));
+
+            // Update language display names
+            foreach (var item in SupportedLanguages)
+                item.LanguageName = GetLanguageDisplayText(item.LanguageCode);
 
             this.RaisePropertyChanged(nameof(CurrentAppTheme));
-
-            this.RaisePropertyChanged(nameof(SupportedThemes));
         });
     }
 
@@ -91,10 +95,11 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         foreach (var item in _configService.AppConfig.App.SurpportLanguages)
             SupportedLanguages.Add(new SupportedLanguage() { LanguageCode = item.Key, LanguageName = item.Value });
 
-        LanguageSelected = SupportedLanguages.FindIndex(x => x.LanguageCode.Equals(_configService.AppConfig.App.AppLanguage));
+        var selectedLanguage = SupportedLanguages.FirstOrDefault(x => x.LanguageCode.Equals(_configService.AppConfig.App.AppLanguage));
+        LanguageSelected = selectedLanguage != null ? SupportedLanguages.IndexOf(selectedLanguage) : 0;
 
         // Initialize current theme - must explicitly set to show in ComboBox
-        _currentAppTheme = SupportedThemes.Find(x => x.ThemeName.Equals(_configService.AppConfig.App.Theme))
+        _currentAppTheme = SupportedThemes.FirstOrDefault(x => x.ThemeName.Equals(_configService.AppConfig.App.Theme))
             ?? SupportedThemes.FirstOrDefault(); // Fallback to first theme if not found
     }
 
@@ -115,6 +120,9 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
     }
 
     private static string GetThemeDisplayText(string key) => Translate(key, prefix: "Text_Settings_Personalise_Theme_") ?? string.Empty;
+
+    private string GetLanguageDisplayText(string languageCode) =>
+        _configService.AppConfig.App.SurpportLanguages.TryGetValue(languageCode, out var name) ? name : string.Empty;
 
     // Use static field instead of property to ensure consistent object references for ComboBox binding
     private static readonly List<SupportedTheme> _supportedThemes =
@@ -165,7 +173,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
         }
     }
 
-    internal List<SupportedLanguage> SupportedLanguages { get; } = [];
+    internal ObservableCollection<SupportedLanguage> SupportedLanguages { get; } = [];
 
     internal static void LoadLanguage()
     {
