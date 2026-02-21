@@ -1,0 +1,165 @@
+<Window x:Class="KitX.Dashboard.Views.PluginSelectorDialog"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:converters="using:KitX.Dashboard.Converters"
+        Title="选择插件"
+        Width="700"
+        Height="500"
+        MinWidth="500"
+        MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        mc:Ignorable="d">
+
+    <Window.Resources>
+        <converters:PluginMultiLanguagePropertyConverter x:Key="PluginMultiLanguagePropertyConverter"/>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- 顶部搜索和筛选 -->
+        <Grid Height="60" DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <AutoCompleteBox x:Name="SearchBox"
+                            Grid.Column="0"
+                            Width="350"
+                            Margin="15,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FilterMode="Contains"
+                            IsTextCompletionEnabled="True"
+                            Watermark="搜索插件..."/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="15,0" VerticalAlignment="Center">
+                <Button Name="SelectAllButton" Content="全选" Margin="0,0,5,0" Padding="10,5"/>
+                <Button Name="ClearAllButton" Content="清除" Padding="10,5"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 已选择插件区域 -->
+        <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="10">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="已选择: " VerticalAlignment="Center" FontWeight="SemiBold"/>
+                <TextBlock DockPanel.Dock="Left" x:Name="SelectedCountText" Text="0" VerticalAlignment="Center"/>
+                <TextBlock DockPanel.Dock="Left" Text=" 个插件" VerticalAlignment="Center"/>
+
+                <Button x:Name="ConfirmButton" DockPanel.Dock="Right" Content="确认选择" Padding="15,8"/>
+                <Button x:Name="CancelButton" DockPanel.Dock="Right" Content="取消" Padding="15,8" Margin="0,0,10,0"/>
+
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="SelectedPluginsList">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,5,0"
+                                        Padding="8,4"
+                                        Background="{DynamicResource SystemControlBackgroundAccentBrush}"
+                                        CornerRadius="4">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Foreground="White"/>
+                                        <Button Tag="{Binding}" Margin="5,0,0,0" Padding="2" Background="Transparent" BorderThickness="0">
+                                            <icon:MaterialIcon Kind="Close" Width="12" Height="12" Foreground="White"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- 插件列表 -->
+        <DockPanel Margin="10">
+            <!-- 无插件提示 -->
+            <Border x:Name="NoPluginsTip" DockPanel.Dock="Top" IsVisible="False">
+                <TextBlock Text="未找到可用插件" HorizontalAlignment="Center" Margin="0,50" FontSize="16" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+            </Border>
+
+            <!-- 插件列表 - 使用 WrapPanel -->
+            <ScrollViewer>
+                <ItemsControl x:Name="PluginsList">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="140"
+                                  Height="100"
+                                  Margin="8"
+                                  Tag="{Binding}">
+                                <Grid.Styles>
+                                    <Style Selector="Button.pluginCard">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="Padding" Value="0"/>
+                                    </Style>
+                                    <Style Selector="Button.pluginCard:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+                                    </Style>
+                                </Grid.Styles>
+                                <Button Classes="pluginCard" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                                            CornerRadius="8"
+                                            Padding="10">
+                                        <DockPanel>
+                                            <!-- 插件图标 -->
+                                            <Border DockPanel.Dock="Top"
+                                                    Width="40"
+                                                    Height="40"
+                                                    Margin="0,0,0,8"
+                                                    HorizontalAlignment="Center"
+                                                    Background="{DynamicResource SystemControlBackgroundAccentBrush}"
+                                                    CornerRadius="6">
+                                                <icon:MaterialIcon Kind="Puzzle"
+                                                                   Width="24"
+                                                                   Height="24"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="White"/>
+                                            </Border>
+
+                                            <!-- 插件名称 -->
+                                            <TextBlock DockPanel.Dock="Top"
+                                                       Text="{Binding Name}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       HorizontalAlignment="Center"
+                                                       ToolTip.Tip="{Binding Name}"/>
+
+                                            <!-- 插件状态 -->
+                                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,0">
+                                                <Ellipse Width="8" Height="8" Margin="0,0,5,0" x:Name="StatusIndicator"/>
+                                                <TextBlock x:Name="StatusText" FontSize="10" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                            </StackPanel>
+
+                                            <!-- 选择复选框 -->
+                                            <CheckBox x:Name="SelectCheckBox"
+                                                      HorizontalAlignment="Right"
+                                                      VerticalAlignment="Top"
+                                                      Margin="-5,-5,0,0"
+                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"/>
+                                        </DockPanel>
+                                    </Border>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </DockPanel>
+</Window>

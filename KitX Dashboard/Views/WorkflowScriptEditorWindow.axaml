@@ -4,51 +4,397 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:avalonedit="using:AvaloniaEdit"
-        d:DesignHeight="450"
-        d:DesignWidth="800"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        d:DesignHeight="700"
+        d:DesignWidth="1200"
         Title="Workflow Script Editor"
-        Width="1000"
-        Height="700"
+        Width="1200"
+        Height="800"
+        MinWidth="900"
+        MinHeight="600"
+        WindowStartupLocation="CenterScreen"
         mc:Ignorable="d">
+
     <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10">
-            <Button Name="SaveButton" Content="Save" Margin="0,0,10,0"/>
-            <Button Name="RunButton" Content="Run" Margin="0,0,10,0"/>
-            <Button Name="StopButton" Content="Stop" IsEnabled="False" Margin="0,0,10,0"/>
-            <TextBlock Name="StatusText" VerticalAlignment="Center" Text="Ready"/>
-        </StackPanel>
-        
+        <!-- 顶部菜单栏 -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="文件(_F)">
+                <MenuItem Header="新建(_N)" InputGesture="Ctrl+N"/>
+                <MenuItem Header="打开(_O)" InputGesture="Ctrl+O"/>
+                <MenuItem Header="保存(_S)" InputGesture="Ctrl+S"/>
+                <MenuItem Header="另存为(_A)" InputGesture="Ctrl+Shift+S"/>
+                <Separator/>
+                <MenuItem Header="导出(_E)"/>
+                <Separator/>
+                <MenuItem Header="退出(_X)" InputGesture="Alt+F4"/>
+            </MenuItem>
+            <MenuItem Header="编辑(_E)">
+                <MenuItem Header="撤销(_U)" InputGesture="Ctrl+Z"/>
+                <MenuItem Header="重做(_R)" InputGesture="Ctrl+Y"/>
+                <Separator/>
+                <MenuItem Header="剪切(_T)" InputGesture="Ctrl+X"/>
+                <MenuItem Header="复制(_C)" InputGesture="Ctrl+C"/>
+                <MenuItem Header="粘贴(_P)" InputGesture="Ctrl+V"/>
+                <MenuItem Header="全选(_A)" InputGesture="Ctrl+A"/>
+                <Separator/>
+                <MenuItem Header="查找(_F)" InputGesture="Ctrl+F"/>
+                <MenuItem Header="替换(_R)" InputGesture="Ctrl+H"/>
+            </MenuItem>
+            <MenuItem Header="视图(_V)">
+                <MenuItem Header="工具箱(_T)" IsChecked="True"/>
+                <MenuItem Header="插件 API 面板(_P)" IsChecked="True"/>
+                <MenuItem Header="变量监视器(_V)"/>
+                <MenuItem Header="调试控制台(_D)" IsChecked="True"/>
+                <Separator/>
+                <MenuItem Header="全屏(_F)" InputGesture="F11"/>
+            </MenuItem>
+            <MenuItem Header="运行(_R)">
+                <MenuItem Header="运行(_R)" InputGesture="F5" Name="MenuRun"/>
+                <MenuItem Header="停止(_S)" InputGesture="Shift+F5" Name="MenuStop"/>
+                <Separator/>
+                <MenuItem Header="调试(_D)"/>
+            </MenuItem>
+            <MenuItem Header="帮助(_H)">
+                <MenuItem Header="文档(_D)"/>
+                <MenuItem Header="关于(_A)"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- 顶部工具栏 -->
+        <Grid DockPanel.Dock="Top" Height="45" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 运行控制按钮 -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="10,0">
+                <Button Name="RunButton" ToolTip.Tip="运行 (F5)" Margin="0,0,5,0">
+                    <StackPanel Orientation="Horizontal">
+                        <icon:MaterialIcon Kind="Play" Width="16" Height="16"/>
+                        <TextBlock Text="运行" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Name="StopButton" ToolTip.Tip="停止 (Shift+F5)" IsEnabled="False" Margin="0,0,5,0">
+                    <StackPanel Orientation="Horizontal">
+                        <icon:MaterialIcon Kind="Stop" Width="16" Height="16"/>
+                        <TextBlock Text="停止" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="10,5"/>
+                <Button Name="SaveButton" ToolTip.Tip="保存 (Ctrl+S)" Margin="0,0,5,0">
+                    <StackPanel Orientation="Horizontal">
+                        <icon:MaterialIcon Kind="ContentSave" Width="16" Height="16"/>
+                        <TextBlock Text="保存" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Name="ExportButton" ToolTip.Tip="导出">
+                    <StackPanel Orientation="Horizontal">
+                        <icon:MaterialIcon Kind="Export" Width="16" Height="16"/>
+                        <TextBlock Text="导出" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- 标签页切换 -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                <RadioButton Name="TabCode" Content="代码编辑器" GroupName="EditorTab" IsChecked="True" Margin="5,0"/>
+                <RadioButton Name="TabPluginApi" Content="插件 API" GroupName="EditorTab" Margin="5,0"/>
+                <RadioButton Name="TabVariables" Content="变量监视器" GroupName="EditorTab" Margin="5,0"/>
+            </StackPanel>
+
+            <!-- 状态显示 -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0" VerticalAlignment="Center">
+                <TextBlock Name="StatusText" Text="就绪" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 底部状态栏 -->
+        <Grid DockPanel.Dock="Bottom" Height="24" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Name="StatusBarText" Text="就绪" Margin="10,0" VerticalAlignment="Center" FontSize="11"/>
+            <TextBlock Grid.Column="1" Name="LineColText" Text="行: 1, 列: 1" Margin="10,0" VerticalAlignment="Center" FontSize="11"/>
+            <TextBlock Grid.Column="2" Name="LanguageText" Text="C#" Margin="10,0" VerticalAlignment="Center" FontSize="11"/>
+        </Grid>
+
+        <!-- 调试控制台 (可折叠) -->
+        <Grid DockPanel.Dock="Bottom" Height="150" Name="DebugConsoleGrid" Background="{DynamicResource SystemControlBackgroundChromeLowBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- 控制台标题栏 -->
+            <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" Padding="10,5">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Name="ToggleDebugConsoleBtn" Background="Transparent" BorderThickness="0" Padding="4">
+                        <icon:MaterialIcon Kind="ChevronDown" Width="14" Height="14"/>
+                    </Button>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="输出控制台" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <Border Width="20"/>
+                        <Button Name="FilterAll" Content="全部" Padding="8,2" Margin="2,0" Background="Transparent" BorderThickness="0"/>
+                        <Button Name="FilterError" Content="错误" Padding="8,2" Margin="2,0" Background="Transparent" BorderThickness="0"/>
+                        <Button Name="FilterWarning" Content="警告" Padding="8,2" Margin="2,0" Background="Transparent" BorderThickness="0"/>
+                        <Button Name="FilterInfo" Content="信息" Padding="8,2" Margin="2,0" Background="Transparent" BorderThickness="0"/>
+                        <Border Width="10"/>
+                        <Button Name="ClearConsoleBtn" Content="清除" Padding="8,2" Background="Transparent" BorderThickness="0"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- 控制台内容 -->
+            <ScrollViewer Grid.Row="1" Name="ConsoleScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <ItemsControl Name="ConsoleOutput">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="11" Margin="10,2" TextWrapping="Wrap">
+                                <TextBlock.Styles>
+                                    <Style Selector="TextBlock.error">
+                                        <Setter Property="Foreground" Value="#FF6B6B"/>
+                                    </Style>
+                                    <Style Selector="TextBlock.warning">
+                                        <Setter Property="Foreground" Value="#FFD93D"/>
+                                    </Style>
+                                    <Style Selector="TextBlock.info">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                    </Style>
+                                </TextBlock.Styles>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- 主内容区域 -->
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="5" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="250" MinWidth="150" MaxWidth="400"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="280" MinWidth="180" MaxWidth="450"/>
             </Grid.ColumnDefinitions>
-            
-            <DockPanel Grid.Column="0">
-                <TextBlock DockPanel.Dock="Top" Text="Script Editor" Margin="5"/>
+
+            <!-- 左侧工具箱面板 -->
+            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <!-- 面板标题 -->
+                    <Border DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" Padding="10,8">
+                        <Grid>
+                            <TextBlock Text="工具箱" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Button Name="CollapseToolbox" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" Padding="4">
+                                <icon:MaterialIcon Kind="ChevronLeft" Width="16" Height="16"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- 工具箱内容 -->
+                    <ScrollViewer>
+                        <StackPanel Margin="10">
+                            <!-- 工作流模板 -->
+                            <Expander IsExpanded="True" Margin="0,0,0,10">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <icon:MaterialIcon Kind="FileDocument" Width="16" Height="16" Margin="0,0,8,0"/>
+                                        <TextBlock Text="工作流模板"/>
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel Margin="24,5,0,0">
+                                    <Button Name="TemplateTimer" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="Timer" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="定时任务"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Name="TemplateCondition" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="CallSplit" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="条件触发"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Name="TemplatePlugin" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="Puzzle" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="插件调用"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Name="TemplateErrorHandling" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="AlertCircle" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="错误处理"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Expander>
+
+                            <!-- 代码片段 -->
+                            <Expander IsExpanded="True" Margin="0,0,0,10">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <icon:MaterialIcon Kind="CodeBraces" Width="16" Height="16" Margin="0,0,8,0"/>
+                                        <TextBlock Text="代码片段"/>
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel Margin="24,5,0,0">
+                                    <Button Name="SnippetLog" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="Console" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="日志输出"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Name="SnippetNotify" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="Bell" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="发送通知"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Name="SnippetFile" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="File" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="文件操作"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Name="SnippetHttp" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="Web" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="HTTP 请求"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Name="SnippetAsync" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="Sync" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="异步模式"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Expander>
+
+                            <!-- 插件动作 -->
+                            <Expander IsExpanded="True">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <icon:MaterialIcon Kind="Puzzle" Width="16" Height="16" Margin="0,0,8,0"/>
+                                        <TextBlock Text="插件动作"/>
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel Margin="24,5,0,0">
+                                    <Button Name="SelectPluginButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icon:MaterialIcon Kind="Plus" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="选择插件..."/>
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock Name="NoPluginTip" Text="未选择插件" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="24,5,0,0" IsVisible="True"/>
+                                    <ItemsControl Name="SelectedPluginsList" Margin="0,5,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2" Tag="{Binding}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <icon:MaterialIcon Kind="Puzzle" Width="14" Height="14" Margin="0,0,8,0"/>
+                                                        <TextBlock Text="{Binding Name}"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- 左侧分割器 -->
+            <GridSplitter Grid.Column="1" Width="3" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent"/>
+
+            <!-- 中央代码编辑器 -->
+            <DockPanel Grid.Column="2">
+                <Border DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" Padding="10,8">
+                    <Grid>
+                        <TextBlock Text="代码编辑器" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <!-- 智能提示显示区域 -->
+                        <TextBlock Name="IntellisenseTip"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   IsVisible="False"/>
+                    </Grid>
+                </Border>
                 <avalonedit:TextEditor Name="CodeEditor"
                                        FontFamily="Consolas"
-                                       FontSize="10"
+                                       FontSize="13"
                                        ShowLineNumbers="True"
                                        SyntaxHighlighting="C#"
                                        HorizontalScrollBarVisibility="Auto"
-                                       VerticalScrollBarVisibility="Auto"/>
+                                       VerticalScrollBarVisibility="Auto"
+                                       WordWrap="False"
+                                       Document="{Binding CodeDocument}"
+                                       Margin="0"/>
             </DockPanel>
-            
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
-            
-            <DockPanel Grid.Column="2">
-                <TextBlock DockPanel.Dock="Top" Text="Output" Margin="5"/>
-                <avalonedit:TextEditor Name="OutputEditor"
-                                       IsReadOnly="True"
-                                       FontFamily="Consolas"
-                                       FontSize="10"
-                                       ShowLineNumbers="False"
-                                       SyntaxHighlighting="Text"
-                                       HorizontalScrollBarVisibility="Auto"
-                                       VerticalScrollBarVisibility="Auto"/>
-            </DockPanel>
+
+            <!-- 中央分割器 -->
+            <GridSplitter Grid.Column="3" Width="3" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent"/>
+
+            <!-- 右侧属性编辑器 / 插件 API 面板 / 变量监视器 -->
+            <Border Grid.Column="4" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1,0,0,0">
+                <DockPanel>
+                    <!-- 面板标题 -->
+                    <Border DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" Padding="10,8">
+                        <Grid>
+                            <TextBlock Name="RightPanelTitle" Text="属性" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Button Name="CollapseRightPanel" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" Padding="4">
+                                <icon:MaterialIcon Kind="ChevronRight" Width="16" Height="16"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- 右侧面板内容 (根据标签页切换显示不同内容) -->
+                    <Grid Name="RightPanelContent">
+                        <!-- 属性编辑器 -->
+                        <ScrollViewer Name="PropertyEditorPanel" IsVisible="True">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="当前无选中元素" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" HorizontalAlignment="Center" Margin="0,20"/>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- 插件 API 面板 -->
+                        <ScrollViewer Name="PluginApiPanel" IsVisible="False">
+                            <StackPanel Margin="10">
+                                <TextBox Name="PluginSearchBox" Watermark="搜索插件 API..." Margin="0,0,0,10"/>
+                                <TextBlock Name="NoPluginApiTip" Text="未选择插件" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" HorizontalAlignment="Center" Margin="0,20" IsVisible="True"/>
+                                <ItemsControl Name="PluginApiList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" Margin="0,2" Tag="{Binding}" Click="PluginApiItem_Click">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontFamily="Consolas" FontSize="12"/>
+                                                    <TextBlock Text="{Binding Signature}" FontSize="10" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- 变量监视器 -->
+                        <ScrollViewer Name="VariableMonitorPanel" IsVisible="False">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="当前无运行中的变量" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" HorizontalAlignment="Center" Margin="0,20"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </DockPanel>
+            </Border>
         </Grid>
     </DockPanel>
 </Window>
