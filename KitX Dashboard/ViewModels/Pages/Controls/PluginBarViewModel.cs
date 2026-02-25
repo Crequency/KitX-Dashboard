@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Threading;
 using Avalonia.Controls;
@@ -45,7 +47,9 @@ internal class PluginBarViewModel : ViewModelBase
             {
                 PluginBars?.Remove(PluginBar);
 
-                //PluginsNetwork.RequireRemovePlugin(PluginDetail);
+                // Also remove from PluginsManager - use Id directly from installation
+                var pluginService = App.GetService<KitX.Core.Contract.Plugin.IPluginService>();
+                _ = pluginService.RemovePluginAsync(Plugin.Id);
             }
         });
 
@@ -53,8 +57,12 @@ internal class PluginBarViewModel : ViewModelBase
         {
             if (Plugin is not null && PluginBar is not null)
             {
+                // First remove from PluginsManager (which also deletes files) - use Id directly
+                var pluginService = App.GetService<KitX.Core.Contract.Plugin.IPluginService>();
+                _ = pluginService.RemovePluginAsync(Plugin.Id);
+
+                // Then remove from UI
                 PluginBars?.Remove(PluginBar);
-                //PluginsNetwork.RequireDeletePlugin(PluginDetail);
             }
         });
 
@@ -73,35 +81,71 @@ internal class PluginBarViewModel : ViewModelBase
                     var loaderVersion = Plugin?.LoaderInfo.LoaderVersion;
                     var pd = Plugin?.PluginInfo;
 
+                    // InstallPath is already an absolute path from PluginsManager
                     var pluginPath = $"{Plugin?.InstallPath}/{pd?.RootStartupFileName}";
-                    var pluginFile = pluginPath.GetFullPath();
 
                     var deviceService = App.GetService<IDeviceDiscoveryService>();
+
+                    // Get actual port from PluginsServer instead of using ConstantTable
+                    var pluginsServer = Instances.PluginsServer;
+                    var actualPort = pluginsServer?.Port ?? 7777;  // Default to 7777 if not available
+
+                    // Generate a unique connection ID (GUID) for this plugin instance
+                    var connectionId = Guid.NewGuid().ToString();
                     var connectStr =
                         "ws://"
                         + $"{deviceService.DefaultDeviceInfo.Device.IPv4}"
                         + $":"
-                        + $"{ConstantTable.PluginsServerPort}/";
+                        + $"{actualPort}/"
+                        + $"{connectionId}/";
 
                     if (Plugin is null)
                         return;
 
+                    Log.Information($"Launch: {pluginPath}");
+
                     if (Plugin.LoaderInfo.SelfLoad)
-                        Process.Start(pluginFile, $"--connect {connectStr}");
+                    {
+                        Process.Start(pluginPath, $"--connect {connectStr}");
+                    }
                     else
                     {
-                        var loaderFile = $"{ConfigService.AppConfig.Loaders.InstallPath}/" + $"{loaderName}/{loaderVersion}/{loaderName}";
+                        // Loader path - relative to app directory
+                        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+                        var loaderPath = ConfigService.AppConfig.Loaders.InstallPath.TrimStart(new[] { '.', '/', '\\' });
+                        var loaderFile = Path.Combine(appDir, loaderPath, loaderName ?? "", loaderVersion ?? "", loaderName ?? "");
 
                         if (OperatingSystem.IsWindows())
                             loaderFile += ".exe";
 
-                        loaderFile = loaderFile.GetFullPath();
+                        Log.Information($"Launch through loader: {loaderFile}");
 
-                        Log.Information($"Launch: {pluginFile} through {loaderFile}");
-
-                        if (File.Exists(loaderFile) && File.Exists(pluginFile))
+                        // Get the actual plugin file - must use RootStartupFileName from PluginInfo
+                        var pluginFile = pd?.RootStartupFileName;
+                        if (string.IsNullOrEmpty(pluginFile))
                         {
-                            var arg = $"--load \"{pluginFile}\" --connect {connectStr}";
+                            Log.Error("RootStartupFileName is not specified in PluginInfo. Please ensure the plugin package includes this field.");
+                            return;
+                        }
+
+                        // Build the full path to the plugin file
+                        var pluginFilePath = Path.Combine(Plugin?.InstallPath ?? "", pluginFile);
+
+                        if (!File.Exists(loaderFile))
+                        {
+                            Log.Error($"Loader not found: {loaderFile}. Please ensure the loader is installed.");
+                            return;
+                        }
+
+                        if (!File.Exists(pluginFilePath))
+                        {
+                            Log.Error($"Plugin file not found: {pluginFilePath}. Please check RootStartupFileName in PluginInfo.json.");
+                            return;
+                        }
+
+                        if (File.Exists(loaderFile) && File.Exists(pluginFilePath))
+                        {
+                            var arg = $"--load \"{pluginFilePath}\" --connect {connectStr}";
 
                             Log.Information($"Launch Argument: {arg}");
 

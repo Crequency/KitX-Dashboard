@@ -31,9 +31,15 @@ internal static class ConstantTable
 
     internal static string? ExchangeDeviceKeyCode;
 
-    internal static int DevicesServerPort = -1;
+    /// <summary>
+    /// Devices Server Port - now references KitX.Core.ConstantTable
+    /// </summary>
+    internal static int DevicesServerPort => KitX.Core.ConstantTable.DevicesServerPort;
 
-    internal static int PluginsServerPort = -1;
+    /// <summary>
+    /// Plugins Server Port - now references KitX.Core.ConstantTable
+    /// </summary>
+    internal static int PluginsServerPort => KitX.Core.ConstantTable.PluginsServerPort;
 
     internal static bool Running = true;
 

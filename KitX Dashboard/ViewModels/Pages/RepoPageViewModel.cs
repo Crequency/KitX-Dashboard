@@ -43,15 +43,30 @@ internal class RepoPageViewModel : ViewModelBase
 
     public sealed override void InitCommands()
     {
-        ImportPluginCommand = ReactiveCommand.Create<object?>(async win =>
+        ImportPluginCommand = ReactiveCommand.Create<object?>(async obj =>
         {
-            if (win is not Window window)
-                return;
+            // Try to get TopLevel from the current page first, then from the command parameter
+            var topLevel = CurrentPage is not null
+                ? TopLevel.GetTopLevel(CurrentPage)
+                : null;
 
-            var topLevel = TopLevel.GetTopLevel(CurrentPage!);
+            // If CurrentPage doesn't work, try the obj parameter
+            if (topLevel is null && obj is Window window)
+            {
+                topLevel = TopLevel.GetTopLevel(window);
+            }
+
+            // Last resort: try to get the main window from Application
+            if (topLevel is null && Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                topLevel = TopLevel.GetTopLevel(desktop.MainWindow);
+            }
 
             if (topLevel is null)
+            {
+                Log.Warning("Cannot get TopLevel for file picker");
                 return;
+            }
 
             var files = (
                 await topLevel.StorageProvider.OpenFilePickerAsync(
@@ -64,24 +79,21 @@ internal class RepoPageViewModel : ViewModelBase
 
             if (files is not null && files?.Length > 0)
             {
-                new Thread(() =>
+                try
                 {
-                    try
+                    var pluginService = App.GetService<IPluginService>();
+                    foreach (var file in files!)
                     {
-                        var pluginService = App.GetService<IPluginService>();
-                        foreach (var file in files!)
-                        {
-                            _ = pluginService.ImportPluginAsync(file);
-                        }
+                        await pluginService.ImportPluginAsync(file);
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "In RepoPageViewModel.ImportPlugin()");
-                    }
-                }).Start();
+                    // Import completed, refresh the list
+                    RefreshPluginsCommand?.Execute(new());
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "In RepoPageViewModel.ImportPlugin()");
+                }
             }
-
-            RefreshPluginsCommand?.Execute(new());
         });
 
         RefreshPluginsCommand = ReactiveCommand.Create(() =>

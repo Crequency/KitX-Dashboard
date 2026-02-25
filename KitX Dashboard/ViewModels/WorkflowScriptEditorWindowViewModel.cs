@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +8,8 @@ using Avalonia.Threading;
 using AvaloniaEdit.Document;
 using ReactiveUI;
 using KitX.Core.Contract.Workflow;
+using KitX.Dashboard.Services;
+using KitX.Shared.CSharp.Plugin;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -54,6 +58,9 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
 
         var code = doc.Text;
 
+        // Get the list of connected plugins to enable plugin API in the script
+        var connectedPlugins = UIStateService.PluginInfos?.ToList() ?? new List<PluginInfo>();
+
         var tokenSource = new CancellationTokenSource();
 
         _cancellationTokenSource = tokenSource;
@@ -61,8 +68,12 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
         Task.Run(
             async () =>
             {
-                // Use injected service instead of static method
-                var result = await _workflowService.ExecuteCodesAsync(code, cancellationToken: tokenSource.Token);
+                // Pass connected plugins to enable plugin function calls in the script
+                var result = await _workflowService.ExecuteCodesAsync(
+                    code,
+                    requiredPlugins: connectedPlugins,
+                    cancellationToken: tokenSource.Token
+                );
 
                 tokenSource.Dispose();
 

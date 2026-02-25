@@ -14,6 +14,7 @@ using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using ReactiveUI;
+using Serilog;
 using WindowState = Avalonia.Controls.WindowState;
 
 namespace KitX.Dashboard.ViewModels;
@@ -99,9 +100,59 @@ internal class AppViewModel : ViewModelBase
         UIStateService.PluginInfos.CollectionChanged += (_, _) => UpdateTrayIconText();
 
         var eventService = App.GetService<IEventService>();
+
+        // Subscribe to port changes via EventService to update tray icon
         eventService.Subscribe<PortChangedEventArgs>(EventNames.DevicesServerPortChanged, (s, e) => UpdateTrayIconText());
 
         eventService.Subscribe<PortChangedEventArgs>(EventNames.PluginsServerPortChanged, (s, e) => UpdateTrayIconText());
+
+        // Subscribe to plugin events via EventService to update UIStateService.PluginInfos
+        eventService.Subscribe<PluginEventArgs>(EventNames.PluginRegistered, (s, e) =>
+        {
+            Log.Information($"[AppViewModel] Received PluginRegistered event for: {e.PluginInfo?.Name}");
+            if (e.PluginInfo is not null && !UIStateService.PluginInfos.Any(x => x.Name == e.PluginInfo.Name))
+            {
+                UIStateService.PluginInfos.Add(e.PluginInfo);
+                Log.Information($"[AppViewModel] Added plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+            }
+        });
+
+        eventService.Subscribe<PluginEventArgs>(EventNames.PluginUnregistered, (s, e) =>
+        {
+            Log.Information($"[AppViewModel] Received PluginUnregistered event for: {e.PluginInfo?.Name}");
+            if (e.PluginInfo is not null)
+            {
+                var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo.Name);
+                if (existing is not null)
+                {
+                    UIStateService.PluginInfos.Remove(existing);
+                    Log.Information($"[AppViewModel] Removed plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+                }
+                else
+                {
+                    Log.Warning($"[AppViewModel] Plugin not found in list: {e.PluginInfo.Name}");
+                }
+            }
+        });
+
+        // Subscribe to plugin disconnected events to update UIStateService.PluginInfos
+        eventService.Subscribe<PluginConnectionEventArgs>(EventNames.PluginDisconnected, (s, e) =>
+        {
+            Log.Information($"[AppViewModel] Received PluginDisconnected event for: {e.PluginInfo?.Name}, connection: {e.ConnectionId}");
+            if (e.PluginInfo is not null)
+            {
+                var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo.Name);
+                if (existing is not null)
+                {
+                    UIStateService.PluginInfos.Remove(existing);
+                    Log.Information($"[AppViewModel] Removed disconnected plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+                }
+                else
+                {
+                    Log.Warning($"[AppViewModel] Disconnected plugin not found in list: {e.PluginInfo.Name}");
+                }
+            }
+        });
 
         // Subscribe to announcement events to show announcement window
         _announcementService.NewAnnouncementsAvailable += (_, e) =>
@@ -119,30 +170,6 @@ internal class AppViewModel : ViewModelBase
                 UIStateService.ShowWindow(window);
             }
         };
-
-        // Subscribe to plugin server events to update UIStateService.PluginInfos
-        if (Instances.PluginsServer is not null)
-        {
-            Instances.PluginsServer.PluginRegistered += (_, args) =>
-            {
-                if (args.PluginInfo is not null && !UIStateService.PluginInfos.Any(x => x.Equals(args.PluginInfo)))
-                {
-                    UIStateService.PluginInfos.Add(args.PluginInfo);
-                }
-            };
-
-            Instances.PluginsServer.PluginUnregistered += (_, args) =>
-            {
-                if (args.PluginInfo is not null)
-                {
-                    var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Equals(args.PluginInfo));
-                    if (existing is not null)
-                    {
-                        UIStateService.PluginInfos.Remove(existing);
-                    }
-                }
-            };
-        }
     }
 
     private void UpdateTrayIconText()

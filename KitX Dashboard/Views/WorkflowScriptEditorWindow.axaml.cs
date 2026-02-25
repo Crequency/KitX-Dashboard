@@ -45,22 +45,26 @@ public partial class WorkflowScriptEditorWindow : Window, IView
         {
             viewModel.CodeDocument = codeEditor.Document;
             codeEditor.Text = @"// Workflow Script Example
-// You can use KitX plugins directly in your workflow scripts
+// Use WorkflowOutput.WriteLine() to print debug messages
+// This won't affect script execution like 'return' does
+// Console.WriteLine() won't work properly
 
-using System;
-using System.Threading.Tasks;
+WorkflowOutput.WriteLine(""Hello from workflow script!"");
 
-public class WorkflowScript
+// This is actually a C# script, so you can use C# syntax and features
+// Such as loops, conditions, async/await, and even LINQ
+for (int i = 0; i < 5; i++)
 {
-    public static async Task Main()
-    {
-        // Example usage of plugins
-        // var result = await SomePlugin.SomeMethod();
-        // Console.WriteLine($""Result: {result}"");
-        
-        Console.WriteLine(""Hello from workflow script!"");
-    }
-}";
+    WorkflowOutput.WriteLine($""Count: {i}"");
+}
+
+// You Can call plugin functions directly like this:
+// With running the plugin TestPlugin.WPF.Core,
+// A MessageBox with ""Hello from KitX !"" will pop up
+// TestPlugin.WPF.Core.HelloKitX();
+
+// Output after the plugin call will still execute
+WorkflowOutput.WriteLine(""Plugin call completed!"");";
         }
 
         var runButton = this.FindControl<Button>("RunButton");

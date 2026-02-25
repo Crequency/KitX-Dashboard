@@ -14,10 +14,10 @@ public class PluginMultiLanguagePropertyConverter : IValueConverter
         if (value is null)
             return null;
 
-        if (value is Dictionary<string, string> dict)
+        if (value is Dictionary<string, string> dict && dict.Count > 0)
         {
             var appLanguage = App.GetService<IConfigService>().AppConfig.App.AppLanguage;
-            var result = dict.TryGetValue(appLanguage, out var lang) ? lang : dict.Values.First();
+            var result = dict.TryGetValue(appLanguage, out var lang) ? lang : dict.Values.FirstOrDefault() ?? string.Empty;
 
             return result;
         }
