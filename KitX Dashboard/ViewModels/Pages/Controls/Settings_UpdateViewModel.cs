@@ -28,11 +28,6 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_UpdateViewModel : ViewModelBase
 {
-    /// <summary>
-    /// Gets the config service (for static properties access)
-    /// </summary>
-    private static IConfigService ConfigService => App.GetService<IConfigService>();
-
     private bool _canUpdateDataGridView = true;
 
     internal Settings_UpdateViewModel()

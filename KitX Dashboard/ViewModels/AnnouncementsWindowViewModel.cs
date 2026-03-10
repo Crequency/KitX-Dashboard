@@ -11,11 +11,6 @@ namespace KitX.Dashboard.ViewModels;
 
 internal class AnnouncementsWindowViewModel : ViewModelBase
 {
-    /// <summary>
-    /// Gets the announcement service from DI container
-    /// </summary>
-    private IAnnouncementService AnnouncementService => App.GetService<IAnnouncementService>();
-
     public AnnouncementsWindowViewModel()
     {
         InitCommands();
