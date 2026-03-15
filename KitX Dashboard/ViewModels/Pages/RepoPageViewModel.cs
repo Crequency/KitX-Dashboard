@@ -112,6 +112,7 @@ internal class RepoPageViewModel : ViewModelBase
                 {
                     var plugin = new PluginInstallation()
                     {
+                        Id = item.Id,
                         InstallPath = item.InstallPath,
                         PluginInfo = JsonSerializer.Deserialize<PluginInfo>(
                             File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/PluginInfo.json"))
