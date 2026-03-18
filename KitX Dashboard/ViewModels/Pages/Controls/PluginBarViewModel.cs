@@ -92,10 +92,9 @@ internal class PluginBarViewModel : ViewModelBase
 
                     // Generate a unique connection ID (GUID) for this plugin instance
                     var connectionId = Guid.NewGuid().ToString();
+                    // Use 127.0.0.1 instead of LAN IP since plugin and Dashboard run on the same machine
                     var connectStr =
-                        "ws://"
-                        + $"{deviceService.DefaultDeviceInfo.Device.IPv4}"
-                        + $":"
+                        "ws://127.0.0.1:"
                         + $"{actualPort}/"
                         + $"{connectionId}/";
 

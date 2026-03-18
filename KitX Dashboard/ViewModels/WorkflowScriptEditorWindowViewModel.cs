@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Threading;
@@ -21,13 +22,24 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
 
     private readonly IWorkflowService _workflowService;
 
+    private readonly IKcsFileService _kcsFileService;
+
+    private readonly IMainProgramAnalyzer _mainProgramAnalyzer;
+
     /// <summary>
-    /// Constructor with DI injection
+    /// 构造函数，通过DI注入
     /// </summary>
-    /// <param name="workflowService">Workflow service injected via DI</param>
-    public WorkflowScriptEditorWindowViewModel(IWorkflowService workflowService)
+    /// <param name="workflowService">通过DI注入的Workflow服务</param>
+    /// <param name="kcsFileService">通过DI注入的KCS文件服务</param>
+    /// <param name="mainProgramAnalyzer">通过DI注入的主程序分析器</param>
+    public WorkflowScriptEditorWindowViewModel(
+        IWorkflowService workflowService,
+        IKcsFileService kcsFileService,
+        IMainProgramAnalyzer mainProgramAnalyzer)
     {
         _workflowService = workflowService;
+        _kcsFileService = kcsFileService;
+        _mainProgramAnalyzer = mainProgramAnalyzer;
 
         InitCommands();
         InitEvents();
@@ -36,11 +48,11 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
         _codeDocumentSubscription = this.WhenAnyValue(x => x.CodeDocument)
             .Subscribe(document =>
             {
-                // 在这里处理CodeDocument变化的逻辑
                 if (document != null)
                 {
-                    // 例如：可以在这里触发代码分析或保存操作
-                    // SubmitCodes(document);
+                    // 当主程序代码变化时，解析常量
+                    var constants = _workflowService.ParseConstantsFromCode(document.Text);
+                    UpdateVariableConstants(constants);
                 }
             });
     }
@@ -48,17 +60,226 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
     public sealed override void InitCommands()
     {
         CancelExecutionCommand = ReactiveCommand.Create(() => _cancellationTokenSource?.Cancel());
+
+        // 加载工作流文件命令
+        LoadWorkflowCommand = ReactiveCommand.CreateFromTask(async (string? filePath) =>
+        {
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                await LoadKcsFileAsync(filePath);
+            }
+        });
+
+        // 保存工作流文件命令
+        SaveWorkflowCommand = ReactiveCommand.CreateFromTask(async (string? filePath) =>
+        {
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                await SaveKcsFileAsync(filePath);
+            }
+        });
+
+        // 添加辅助函数命令
+        AddHelperFunctionCommand = ReactiveCommand.Create(() =>
+        {
+            var newFunction = new HelperFunction
+            {
+                Name = $"HelperFunction{HelperFunctions.Count + 1}",
+                ReturnType = "object",
+                Parameters = new List<HelperFunctionParameter>(),
+                Code = "// Helper function body\nreturn null;"
+            };
+            HelperFunctions.Add(newFunction);
+            SelectedHelperFunction = newFunction;
+        });
+
+        // 删除辅助函数命令
+        RemoveHelperFunctionCommand = ReactiveCommand.Create<HelperFunction>((helperFunction) =>
+        {
+            if (helperFunction != null)
+            {
+                HelperFunctions.Remove(helperFunction);
+                if (SelectedHelperFunction == helperFunction)
+                {
+                    SelectedHelperFunction = HelperFunctions.FirstOrDefault();
+                }
+            }
+        });
+
+        // 恢复常量默认值命令
+        ResetConstantCommand = ReactiveCommand.Create<VariableConstant>((constant) =>
+        {
+            if (constant != null)
+            {
+                constant.UserValue = constant.DefaultValue;
+                // 触发UI更新
+                this.RaisePropertyChanged(nameof(VariableConstants));
+            }
+        });
+
+        // 恢复所有常量命令
+        ResetAllConstantsCommand = ReactiveCommand.Create(() =>
+        {
+            foreach (var constant in VariableConstants)
+            {
+                constant.UserValue = constant.DefaultValue;
+            }
+            this.RaisePropertyChanged(nameof(VariableConstants));
+        });
     }
 
     public sealed override void InitEvents() { }
 
+    /// <summary>
+    /// 解析代码中的常量
+    /// </summary>
+    /// <param name="code">代码内容</param>
+    public void ParseConstantsFromCode(string code)
+    {
+        var constants = _workflowService.ParseConstantsFromCode(code);
+        UpdateVariableConstants(constants);
+    }
+
+    /// <summary>
+    /// 更新可变常量列表
+    /// </summary>
+    private void UpdateVariableConstants(List<VariableConstant> newConstants)
+    {
+        // 保留用户已修改的值
+        foreach (var newConstant in newConstants)
+        {
+            var existing = VariableConstants.FirstOrDefault(c => c.Name == newConstant.Name);
+            if (existing != null)
+            {
+                newConstant.UserValue = existing.UserValue;
+            }
+        }
+
+        // 更新列表
+        VariableConstants.Clear();
+        foreach (var constant in newConstants)
+        {
+            VariableConstants.Add(constant);
+        }
+    }
+
+    /// <summary>
+    /// 加载KCS文件
+    /// </summary>
+    internal async Task LoadKcsFileAsync(string filePath)
+    {
+        try
+        {
+            var kcs = await _kcsFileService.LoadKcsFileAsync(filePath);
+
+            if (kcs != null)
+            {
+                // 加载主程序
+                MainProgramCode = kcs.MainProgram;
+
+                // 加载辅助函数
+                HelperFunctions.Clear();
+                foreach (var func in kcs.HelperFunctions)
+                {
+                    HelperFunctions.Add(func);
+                }
+
+                // 加载可变常量
+                VariableConstants.Clear();
+                foreach (var kvp in kcs.VariableConstants)
+                {
+                    VariableConstants.Add(new VariableConstant
+                    {
+                        Name = kvp.Key,
+                        DefaultValue = kvp.Value,
+                        UserValue = kvp.Value,
+                        Type = GetTypeName(kvp.Value)
+                    });
+                }
+
+                // 默认选中主程序（不选中任何辅助函数）
+                SelectedHelperFunction = null;
+                CurrentFilePath = filePath;
+            }
+        }
+        catch (Exception ex)
+        {
+            ExecutionResult = $"Error loading file: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// 保存KCS文件
+    /// </summary>
+    internal async Task SaveKcsFileAsync(string filePath)
+    {
+        try
+        {
+            var kcs = new KcsFileFormat
+            {
+                MainProgram = MainProgramCode ?? string.Empty,
+                HelperFunctions = HelperFunctions.ToList(),
+                VariableConstants = VariableConstants.ToDictionary(
+                    c => c.Name,
+                    c => c.UserValue
+                )
+            };
+
+            await _kcsFileService.SaveKcsFileAsync(filePath, kcs);
+            CurrentFilePath = filePath;
+            ExecutionResult = "File saved successfully.";
+        }
+        catch (Exception ex)
+        {
+            ExecutionResult = $"Error saving file: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// 获取值的类型名称
+    /// </summary>
+    private string GetTypeName(object? value)
+    {
+        return value switch
+        {
+            null => "object",
+            int => "int",
+            double => "double",
+            float => "float",
+            bool => "bool",
+            string => "string",
+            _ => value.GetType().Name
+        };
+    }
+
+    /// <summary>
+    /// 提交代码执行
+    /// </summary>
     internal void SubmitCodes(IDocument doc)
     {
+        // 首先在UI线程获取代码文本，避免跨线程访问
+        string codeText;
+        try
+        {
+            codeText = doc.Text;
+        }
+        catch (InvalidOperationException)
+        {
+            ExecutionResult = "Error: Cannot access document from background thread.";
+            return;
+        }
+
+        // 首先检查代码是否包含禁止的语法
+        var analysisResult = _mainProgramAnalyzer.Analyze(codeText);
+        if (!analysisResult.IsValid)
+        {
+            ExecutionResult = $"Code analysis failed: {analysisResult.ForbiddenReason}";
+            return;
+        }
+
         IsExecuting = true;
 
-        var code = doc.Text;
-
-        // Get the list of connected plugins to enable plugin API in the script
+        // 获取已连接的插件列表
         var connectedPlugins = UIStateService.PluginInfos?.ToList() ?? new List<PluginInfo>();
 
         var tokenSource = new CancellationTokenSource();
@@ -68,11 +289,14 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
         Task.Run(
             async () =>
             {
-                // Pass connected plugins to enable plugin function calls in the script
-                var result = await _workflowService.ExecuteCodesAsync(
-                    code,
-                    requiredPlugins: connectedPlugins,
-                    cancellationToken: tokenSource.Token
+                // 使用新的 ExecuteKcsCodesAsync 方法
+                var result = await _workflowService.ExecuteKcsCodesAsync(
+                    codeText,
+                    HelperFunctions.ToList(),
+                    VariableConstants.ToList(),
+                    connectedPlugins,
+                    true,
+                    tokenSource.Token
                 );
 
                 tokenSource.Dispose();
@@ -95,6 +319,8 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
         _cancellationTokenSource?.Cancel();
     }
 
+    #region Properties
+
     private string _executionResult = string.Empty;
 
     public string ExecutionResult
@@ -113,5 +339,115 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
 
     internal IDocument? CodeDocument { get; set; }
 
+    /// <summary>
+    /// 主程序代码
+    /// </summary>
+    private string? _mainProgramCode;
+
+    public string? MainProgramCode
+    {
+        get => _mainProgramCode;
+        set => this.RaiseAndSetIfChanged(ref _mainProgramCode, value);
+    }
+
+    /// <summary>
+    /// 辅助函数文档
+    /// </summary>
+    internal IDocument? HelperFunctionDocument { get; set; }
+
+    /// <summary>
+    /// 辅助函数列表
+    /// </summary>
+    public ObservableCollection<HelperFunction> HelperFunctions { get; set; } = [];
+
+    /// <summary>
+    /// 当前选中的辅助函数
+    /// </summary>
+    private HelperFunction? _selectedHelperFunction;
+
+    public HelperFunction? SelectedHelperFunction
+    {
+        get => _selectedHelperFunction;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedHelperFunction, value);
+            // 通知UI更新辅助函数代码编辑器
+            this.RaisePropertyChanged(nameof(HelperFunctionDocument));
+            // 通知UI更新是否正在编辑辅助函数
+            this.RaisePropertyChanged(nameof(IsEditingHelperFunction));
+            // 更新参数列表
+            Parameters.Clear();
+            if (value?.Parameters != null)
+            {
+                foreach (var param in value.Parameters)
+                {
+                    Parameters.Add(param);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 是否正在编辑辅助函数
+    /// </summary>
+    public bool IsEditingHelperFunction => _selectedHelperFunction != null;
+
+    /// <summary>
+    /// 当前选中辅助函数的参数列表（用于UI绑定）
+    /// </summary>
+    public ObservableCollection<HelperFunctionParameter> Parameters { get; set; } = [];
+
+    /// <summary>
+    /// 可变常量列表
+    /// </summary>
+    public ObservableCollection<VariableConstant> VariableConstants { get; set; } = [];
+
+    /// <summary>
+    /// 当前文件路径
+    /// </summary>
+    private string? _currentFilePath;
+
+    public string? CurrentFilePath
+    {
+        get => _currentFilePath;
+        set => this.RaiseAndSetIfChanged(ref _currentFilePath, value);
+    }
+
+    #endregion
+
+    #region Commands
+
     internal ReactiveCommand<Unit, Unit>? CancelExecutionCommand { get; set; }
+
+    /// <summary>
+    /// 加载工作流命令
+    /// </summary>
+    internal ReactiveCommand<string?, Unit>? LoadWorkflowCommand { get; set; }
+
+    /// <summary>
+    /// 保存工作流命令
+    /// </summary>
+    internal ReactiveCommand<string?, Unit>? SaveWorkflowCommand { get; set; }
+
+    /// <summary>
+    /// 添加辅助函数命令
+    /// </summary>
+    internal ReactiveCommand<Unit, Unit>? AddHelperFunctionCommand { get; set; }
+
+    /// <summary>
+    /// 删除辅助函数命令
+    /// </summary>
+    internal ReactiveCommand<HelperFunction, Unit>? RemoveHelperFunctionCommand { get; set; }
+
+    /// <summary>
+    /// 恢复常量默认值命令
+    /// </summary>
+    internal ReactiveCommand<VariableConstant, Unit>? ResetConstantCommand { get; set; }
+
+    /// <summary>
+    /// 恢复所有常量命令
+    /// </summary>
+    internal ReactiveCommand<Unit, Unit>? ResetAllConstantsCommand { get; set; }
+
+    #endregion
 }

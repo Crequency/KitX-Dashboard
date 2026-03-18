@@ -4,50 +4,204 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:avalonedit="using:AvaloniaEdit"
-        d:DesignHeight="450"
-        d:DesignWidth="800"
+        d:DesignHeight="700"
+        d:DesignWidth="1200"
         Title="Workflow Script Editor"
-        Width="1000"
-        Height="700"
+        Width="1200"
+        Height="800"
         mc:Ignorable="d">
     <DockPanel>
+        <!-- 工具栏 -->
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10">
+            <Button Name="OpenButton" Content="Open" Margin="0,0,10,0"/>
             <Button Name="SaveButton" Content="Save" Margin="0,0,10,0"/>
             <Button Name="RunButton" Content="Run" Margin="0,0,10,0"/>
             <Button Name="StopButton" Content="Stop" IsEnabled="False" Margin="0,0,10,0"/>
+            <Button Name="AddHelperFunctionButton" Content="Add Helper Function" Margin="0,0,10,0"/>
             <TextBlock Name="StatusText" VerticalAlignment="Center" Text="Ready"/>
         </StackPanel>
-        
+
+        <!-- 主布局: 三栏 -->
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="5" />
-                <ColumnDefinition Width="*" />
+                <!-- 左侧边栏: 辅助函数列表 -->
+                <ColumnDefinition Width="200" MinWidth="150" MaxWidth="300"/>
+                <ColumnDefinition Width="5"/>
+                <!-- 中间部分: 代码编辑器和常量面板 -->
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="5"/>
+                <!-- 右侧: 输出面板 -->
+                <ColumnDefinition Width="300" MinWidth="200" MaxWidth="500"/>
             </Grid.ColumnDefinitions>
-            
-            <DockPanel Grid.Column="0">
-                <TextBlock DockPanel.Dock="Top" Text="Script Editor" Margin="5"/>
-                <avalonedit:TextEditor Name="CodeEditor"
-                                       FontFamily="Consolas"
-                                       FontSize="10"
-                                       ShowLineNumbers="True"
-                                       SyntaxHighlighting="C#"
-                                       HorizontalScrollBarVisibility="Auto"
-                                       VerticalScrollBarVisibility="Auto"/>
+
+            <!-- 左侧边栏: 辅助函数列表 -->
+            <DockPanel Grid.Column="0" Margin="5">
+                <TextBlock DockPanel.Dock="Top" Text="Code Sections" FontWeight="Bold" Margin="5,5,5,10"/>
+                <Button DockPanel.Dock="Top" Name="AddHelperFunctionListButton" Content="+ Add Helper Function" HorizontalAlignment="Stretch"
+                        Margin="5" Padding="5,2" Click="AddHelperFunctionListButton_Click"/>
+                <Button DockPanel.Dock="Top" Name="BackToMainProgramButton" Content="Main Program" HorizontalAlignment="Stretch"
+                        Margin="5" Padding="5,2" Click="BackToMainProgramButton_Click"/>
+
+                <!-- 辅助函数列表 -->
+                <ListBox Name="HelperFunctionsListBox" SelectionChanged="HelperFunctionsListBox_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Name="HelperFunctionNameEditor"
+                                         Text="{Binding Name, Mode=TwoWay}"
+                                         VerticalAlignment="Center"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         MinWidth="80"
+                                         LostFocus="HelperFunctionNameEditor_LostFocus"
+                                         KeyDown="HelperFunctionNameEditor_KeyDown"/>
+                                <Button Grid.Column="1" Name="RemoveHelperFunctionButton" Content="X"
+                                        Tag="{Binding}" Click="RemoveHelperFunctionButton_Click"
+                                        Padding="5,2" Margin="5,0,0,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </DockPanel>
-            
+
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
-            
-            <DockPanel Grid.Column="2">
-                <TextBlock DockPanel.Dock="Top" Text="Output" Margin="5"/>
-                <avalonedit:TextEditor Name="OutputEditor"
-                                       IsReadOnly="True"
-                                       FontFamily="Consolas"
-                                       FontSize="10"
-                                       ShowLineNumbers="False"
-                                       SyntaxHighlighting="Text"
-                                       HorizontalScrollBarVisibility="Auto"
-                                       VerticalScrollBarVisibility="Auto"/>
+
+            <!-- 中间部分 -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <!-- 顶部: 代码编辑器 (主程序或辅助函数) -->
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
+                    <!-- 底部: 可变常量面板 -->
+                    <RowDefinition Height="200" MinHeight="100" MaxHeight="300"/>
+                </Grid.RowDefinitions>
+
+                <!-- 代码编辑器 -->
+                <DockPanel Grid.Row="0" Margin="5">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5">
+                        <TextBlock Name="CodeEditorTitle" Text="Main Program" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Name="CurrentFileLabel" Text=" (New File)" Margin="10,0,0,0"
+                                   VerticalAlignment="Center" Foreground="Gray"/>
+                    </StackPanel>
+                    <avalonedit:TextEditor Name="CodeEditor"
+                                           FontFamily="Consolas"
+                                           FontSize="12"
+                                           ShowLineNumbers="True"
+                                           SyntaxHighlighting="C#"
+                                           HorizontalScrollBarVisibility="Auto"
+                                           VerticalScrollBarVisibility="Auto"/>
+                </DockPanel>
+
+                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"/>
+
+                <!-- 可变常量面板 / 辅助函数设置面板（动态切换） -->
+                <DockPanel Grid.Row="2" Margin="5">
+                    <!-- 当编辑主程序时显示 Variable Constants -->
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5"
+                                IsVisible="{Binding !IsEditingHelperFunction}">
+                        <TextBlock Text="Variable Constants" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <Button Name="ResetAllConstantsButton" Content="Reset All" Margin="10,0,0,0"
+                                Padding="5,2" Click="ResetAllConstantsButton_Click"/>
+                    </StackPanel>
+
+                    <!-- 当编辑辅助函数时显示 Helper Function Settings -->
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5"
+                                IsVisible="{Binding IsEditingHelperFunction}">
+                        <TextBlock Text="Helper Function Settings" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- 内容区域根据状态切换 -->
+                    <Grid>
+                        <!-- Variable Constants 内容 -->
+                        <ScrollViewer IsVisible="{Binding !IsEditingHelperFunction}">
+                            <ItemsControl Name="ConstantsItemsControl">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Orientation="Vertical">
+                                                <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Type}" Foreground="Gray" FontSize="10"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1" Name="ConstantValueTextBox"
+                                                     Text="{Binding UserValue, Mode=TwoWay}"
+                                                     Margin="5,0"/>
+                                            <Button Grid.Column="2" Name="ResetConstantButton" Content="R"
+                                                    Tag="{Binding}" ToolTip.Tip="Reset to default"
+                                                    Padding="5,2" Click="ResetConstantButton_Click"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <!-- Helper Function Settings 内容 -->
+                        <ScrollViewer IsVisible="{Binding IsEditingHelperFunction}">
+                            <StackPanel Spacing="5" Margin="5">
+                                <!-- 返回类型 -->
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="Return:" VerticalAlignment="Center" Width="60"/>
+                                    <TextBox Name="ReturnTypeTextBox"
+                                             Text="{Binding SelectedHelperFunction.ReturnType, Mode=TwoWay}"
+                                             Width="120"
+                                             VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- 参数列表 -->
+                                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
+                                    <TextBlock Text="Params:" VerticalAlignment="Center" Width="60"/>
+                                    <Button Name="AddParameterButton" Content="+" Padding="5,2"
+                                            Click="AddParameterButton_Click" ToolTip.Tip="Add Parameter"/>
+                                </StackPanel>
+
+                                <!-- 参数 ItemsControl -->
+                                <ItemsControl Name="ParametersItemsControl" Margin="0,5,0,0"
+                                              ItemsSource="{Binding Parameters}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2">
+                                                <TextBox Name="ParamTypeTextBox"
+                                                         Text="{Binding Type, Mode=TwoWay}"
+                                                         Width="50"
+                                                         ToolTip.Tip="Type"/>
+                                                <TextBox Name="ParamNameTextBox"
+                                                         Text="{Binding Name, Mode=TwoWay}"
+                                                         Width="70"
+                                                         ToolTip.Tip="Name"/>
+                                                <Button Name="RemoveParameterButton" Content="X" Padding="5,2"
+                                                        Tag="{Binding}" Click="RemoveParameterButton_Click"
+                                                        ToolTip.Tip="Remove"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </DockPanel>
+            </Grid>
+
+            <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch"/>
+
+            <!-- 右侧: 输出面板 -->
+            <DockPanel Grid.Column="4" Margin="5">
+                <TextBlock DockPanel.Dock="Top" Text="Output" FontWeight="Bold" Margin="5"/>
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <TextBox Name="OutputTextBox"
+                             IsReadOnly="True"
+                             FontFamily="Consolas"
+                             FontSize="11"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"/>
+                </ScrollViewer>
             </DockPanel>
         </Grid>
     </DockPanel>
