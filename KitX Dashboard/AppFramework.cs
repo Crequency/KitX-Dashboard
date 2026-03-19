@@ -20,7 +20,7 @@ using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Statistics;
 using KitX.Core.Plugin;
 using KitX.Core.Statistics;
-using KitX.Core.Task;
+using KitX.Core.Tasks;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Options;
 using KitX.Dashboard.Services;
@@ -61,53 +61,13 @@ public static class AppFramework
         if (Design.IsDesignMode)
             return;
 
-        // Initialize DI container before any UI code runs
-        App.InitializeServiceProvider();
-
-        // If dump file exists, delete it.
-        if (File.Exists("./dump.log".GetFullPath()))
-            File.Delete("./dump.log".GetFullPath());
-
-        if (File.Exists("restart.lock"))
-        {
-            var waitCount = 0;
-
-            while (Process.GetProcesses().Count(x => x.ProcessName.StartsWith("KitX.Dashboard")) >= 2)
-            {
-                if (waitCount > 10)
-                    Environment.Exit(ExitCodes.WaitRestartingLockFileTooLong);
-
-                ++waitCount;
-
-                Thread.Sleep(1000);
-            }
-
-            File.Delete("restart.lock");
-        }
-
-        // Use DI to get config service
-        var configService = App.GetService<IConfigService>();
+        // Step 1: Load configuration from ConfigManager singleton
+        var configService = ConfigManager.Instance;
         configService.Load();
+        var config = configService.TypedAppConfig;
 
-        configService.AppConfig.App.RanTime++;
-
-        var config = configService.AppConfig;
-
-        ProcessStartupArguments();
-
-        if (ConstantTable.IsSingleProcessStartMode)
-            Process
-                .GetProcesses()
-                .WhenCount(
-                    count => count >= 2,
-                    item => item.ProcessName.StartsWith("KitX.Dashboard"),
-                    _ => Environment.Exit(ExitCodes.MultiProcessesStarted)
-                );
-
-        LoadResource();
-
-        #region Initialize log system
-
+        // Step 2: Initialize log system before any DI container operations
+        // Logger doesn't depend on DI container, only on ConfigManager singleton
         var logdir = config.Log.LogFilePath.GetFullPath();
 
         if (!Directory.Exists(logdir))
@@ -131,7 +91,44 @@ public static class AppFramework
 
         Log.Information("KitX Dashboard Started.");
 
-        #endregion
+        // Step 3: Initialize DI container (Logger is now available)
+        App.InitializeServiceProvider();
+
+        // If dump file exists, delete it.
+        if (File.Exists("./dump.log".GetFullPath()))
+            File.Delete("./dump.log".GetFullPath());
+
+        if (File.Exists("restart.lock"))
+        {
+            var waitCount = 0;
+
+            while (Process.GetProcesses().Count(x => x.ProcessName.StartsWith("KitX.Dashboard")) >= 2)
+            {
+                if (waitCount > 10)
+                    Environment.Exit(ExitCodes.WaitRestartingLockFileTooLong);
+
+                ++waitCount;
+
+                Thread.Sleep(1000);
+            }
+
+            File.Delete("restart.lock");
+        }
+
+        configService.TypedAppConfig.App.RanTime++;
+
+        ProcessStartupArguments();
+
+        if (ConstantTable.IsSingleProcessStartMode)
+            Process
+                .GetProcesses()
+                .WhenCount(
+                    count => count >= 2,
+                    item => item.ProcessName.StartsWith("KitX.Dashboard"),
+                    _ => Environment.Exit(ExitCodes.MultiProcessesStarted)
+                );
+
+        LoadResource();
 
         Log.Information("Calling Instances.Initialize()...");
         Instances.Initialize();

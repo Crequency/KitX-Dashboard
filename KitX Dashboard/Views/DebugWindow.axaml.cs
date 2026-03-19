@@ -13,7 +13,7 @@ namespace KitX.Dashboard.Views;
 
 public partial class DebugWindow : Window, IView
 {
-    private readonly DebugWindowViewModel viewModel = new();
+    private readonly DebugWindowViewModel viewModel = App.GetService<DebugWindowViewModel>();
 
     public DebugWindow()
     {

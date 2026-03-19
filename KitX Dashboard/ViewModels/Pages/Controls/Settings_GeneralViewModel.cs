@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Tasks;
 using KitX.Core.Event;
+using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
 using KitX.Dashboard.Views;
@@ -16,11 +18,13 @@ internal class Settings_GeneralViewModel : ViewModelBase
 {
     private readonly IConfigService _configService;
     private readonly IAnnouncementService _announcementService;
+    private readonly ITasksService _tasksService;
 
-    internal Settings_GeneralViewModel()
+    public Settings_GeneralViewModel(IConfigService configService, IAnnouncementService announcementService, ITasksService tasksService)
     {
-        _configService = ConfigService;
-        _announcementService = AnnouncementService;
+        _configService = configService;
+        _announcementService = announcementService;
+        _tasksService = tasksService;
 
         InitCommands();
 
@@ -31,7 +35,10 @@ internal class Settings_GeneralViewModel : ViewModelBase
     {
         ShowAnnouncementsInstantlyCommand = ReactiveCommand.Create(() =>
         {
-            Task.Run(async () => await _announcementService.CheckNewAnnouncementsAsync());
+            _tasksService.RunTaskAsync(
+                async () => await _announcementService.CheckNewAnnouncementsAsync(),
+                nameof(ShowAnnouncementsInstantlyCommand)
+            );
         });
 
         OpenDebugToolCommand = ReactiveCommand.Create(() =>

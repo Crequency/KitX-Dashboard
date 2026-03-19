@@ -5,7 +5,7 @@ namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class Settings_General : UserControl
 {
-    private readonly Settings_GeneralViewModel viewModel = new();
+    private readonly Settings_GeneralViewModel viewModel = App.GetService<Settings_GeneralViewModel>();
 
     public Settings_General()
     {

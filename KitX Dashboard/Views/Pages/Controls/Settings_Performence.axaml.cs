@@ -5,7 +5,7 @@ namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class Settings_Performence : UserControl
 {
-    private readonly Settings_PerformenceViewModel viewModel = new();
+    private readonly Settings_PerformenceViewModel viewModel = App.GetService<Settings_PerformenceViewModel>();
 
     public Settings_Performence()
     {

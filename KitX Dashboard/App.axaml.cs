@@ -19,6 +19,7 @@ using KitX.Core.Event;
 using KitX.Core.Contract.Event;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
+using KitX.Dashboard.ViewModels.Pages.Controls;
 using KitX.Dashboard.Views;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
@@ -37,6 +38,7 @@ public partial class App : Application
     /// <summary>
     /// Initialize DI container before UI framework starts
     /// This should be called from AppFramework.RunFramework() before any UI code runs
+    /// Logger is guaranteed to be initialized before this is called
     /// </summary>
     internal static void InitializeServiceProvider()
     {
@@ -49,10 +51,8 @@ public partial class App : Application
         var services = new ServiceCollection();
 
         // Register Core services from KitX.Core
+        // ViewModels with constructor dependencies will be auto-resolved via ActivatorUtilities
         services.AddCoreServices();
-
-        // Register ViewModels that require DI
-        services.AddTransient<WorkflowScriptEditorWindowViewModel>();
 
         _serviceProvider = services.BuildServiceProvider();
 
@@ -61,24 +61,45 @@ public partial class App : Application
 
     /// <summary>
     /// Gets service from DI container
+    /// Supports automatic resolution of unregistered types via constructor injection
+    /// Logger is guaranteed to be initialized when this is called
     /// </summary>
     public static T GetService<T>() where T : class
     {
-        var location = $"{nameof(App)}.{nameof(GetService)}<{typeof(T).Name}>";
-
         Log.Information($"Getting service: {typeof(T).Name}");
 
         if (_serviceProvider == null)
         {
             Log.Warning("Service provider is null, initializing now (this should not happen in normal flow)...");
 
-            // Fallback initialization - this should not happen if InitializeServiceProvider was called properly
             InitializeServiceProvider();
         }
 
-        var result = _serviceProvider!.GetRequiredService<T>();
-        Log.Information($"Got service: {typeof(T).Name}");
-        return result;
+        try
+        {
+            var result = _serviceProvider!.GetRequiredService<T>();
+
+            Log.Information($"Got service: {typeof(T).Name}");
+
+            return result;
+        }
+        catch (InvalidOperationException)
+        {
+            // Type not registered - try auto-resolution via ActivatorUtilities
+            // This allows constructor injection without explicit registration
+            Log.Information($"Auto-resolving unregistered service: {typeof(T).Name}");
+
+            var result = ActivatorUtilities.CreateInstance<T>(_serviceProvider!);
+
+            Log.Information($"Auto-resolved service: {typeof(T).Name}");
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"Failed to get service: {typeof(T).Name}");
+            throw;
+        }
     }
 
     public static Bitmap? DefaultIcon

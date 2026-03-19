@@ -11,6 +11,28 @@
 
 ## 1. 架构概述
 
+### 架构核心（重要！务必遵循！）
+
+1. 与KitX Core有关的业务逻辑放在Core中，接口放在Core.Contract中，前端（Dashboard）中只能放置与UI直接相关的逻辑
+2. Dashboard中的对Core的调用必须使用DI容器通过接口调用
+3. 尽可能使用全局EventService中的事件系统，以避免私有孤立事件造成逻辑冗余或是漏洞（如造成事件触发的无限循环）
+4. **Task.Run 与 ITasksService 的使用原则：**
+   - `KitX.Core.Tasks.TasksManager`（通过 `ITasksService` 接口访问）用于**业务逻辑任务**，提供统一的日志记录和异常处理
+   - `System.Threading.Tasks.Task.Run()` 用于**内部基础设施任务**（如网络I/O、线程管理）和 **UI 辅助任务**（如动画）
+   - **Core 内部**：可以使用 `TasksManager.Instance` 直接访问单例
+   - **UI 层（Dashboard）**：必须通过 DI 容器获取 `ITasksService` 实例，**禁止直接使用 `TasksManager.Instance`**
+   - 示例：
+     ```csharp
+     // ✅ Dashboard 中正确用法（通过 DI）
+     _tasksService.RunTaskAsync(async () => { ... }, nameof(MyTask));
+
+     // ❌ Dashboard 中错误用法（直接访问单例）
+     TasksManager.Instance.RunTaskAsync(...);
+
+     // ✅ Core 内部正确用法（可直接访问）
+     TasksManager.Instance.RunTaskAsync(...);
+     ```
+
 ### 1.1 设计目标
 
 KitX Dashboard 采用 Core-UI 分离架构，主要目标如下：

@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
 using ReactiveUI;
+using KitX.Core.Contract.Tasks;
 using KitX.Core.Contract.Workflow;
+using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
 
@@ -26,20 +28,25 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
 
     private readonly IMainProgramAnalyzer _mainProgramAnalyzer;
 
+    private readonly ITasksService _tasksService;
+
     /// <summary>
     /// 构造函数，通过DI注入
     /// </summary>
     /// <param name="workflowService">通过DI注入的Workflow服务</param>
     /// <param name="kcsFileService">通过DI注入的KCS文件服务</param>
     /// <param name="mainProgramAnalyzer">通过DI注入的主程序分析器</param>
+    /// <param name="tasksService">通过DI注入的任务服务</param>
     public WorkflowScriptEditorWindowViewModel(
         IWorkflowService workflowService,
         IKcsFileService kcsFileService,
-        IMainProgramAnalyzer mainProgramAnalyzer)
+        IMainProgramAnalyzer mainProgramAnalyzer,
+        ITasksService tasksService)
     {
         _workflowService = workflowService;
         _kcsFileService = kcsFileService;
         _mainProgramAnalyzer = mainProgramAnalyzer;
+        _tasksService = tasksService;
 
         InitCommands();
         InitEvents();
@@ -286,7 +293,7 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
 
         _cancellationTokenSource = tokenSource;
 
-        Task.Run(
+        _tasksService.RunTaskAsync(
             async () =>
             {
                 // 使用新的 ExecuteKcsCodesAsync 方法
@@ -310,7 +317,8 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
                     IsExecuting = false;
                 });
             },
-            tokenSource.Token
+            tokenSource.Token,
+            nameof(SubmitCodes)
         );
     }
 

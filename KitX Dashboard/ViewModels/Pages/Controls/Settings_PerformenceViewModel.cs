@@ -11,7 +11,9 @@ using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Tasks;
 using KitX.Core.Event;
+using KitX.Core.Tasks;
 using KitX.Dashboard;
 using KitX.Dashboard.Models;
 using KitX.Dashboard.Names;
@@ -23,8 +25,12 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_PerformenceViewModel : ViewModelBase
 {
-    internal Settings_PerformenceViewModel()
+    private readonly ITasksService _tasksService;
+
+    public Settings_PerformenceViewModel(ITasksService tasksService)
     {
+        _tasksService = tasksService;
+
         InitCommands();
 
         InitEvents();
@@ -36,7 +42,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
         {
             const string location = $"{nameof(Settings_PerformenceViewModel)}.{nameof(EmptyLogsCommand)}";
 
-            Task.Run(() =>
+            _tasksService.RunTask(() =>
             {
                 var dir = new DirectoryInfo(ConfigService.AppConfig.Log.LogFilePath.GetFullPath());
 
@@ -53,7 +59,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
                 }
 
                 this.RaisePropertyChanged(nameof(LogFileSizeUsage));
-            });
+            }, nameof(EmptyLogsCommand));
         });
 
         RefreshLogsUsageCommand = ReactiveCommand.Create(() => this.RaisePropertyChanged(nameof(LogFileSizeUsage)));
