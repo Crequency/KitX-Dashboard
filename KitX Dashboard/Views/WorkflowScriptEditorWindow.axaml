@@ -18,6 +18,7 @@
             <Button Name="RunButton" Content="Run" Margin="0,0,10,0"/>
             <Button Name="StopButton" Content="Stop" IsEnabled="False" Margin="0,0,10,0"/>
             <Button Name="AddHelperFunctionButton" Content="Add Helper Function" Margin="0,0,10,0"/>
+            <CheckBox Name="BlockModeCheckBox" Content="Block Mode" IsChecked="{Binding UseBlockMode}" Margin="0,0,10,0" VerticalAlignment="Center"/>
             <TextBlock Name="StatusText" VerticalAlignment="Center" Text="Ready"/>
         </StackPanel>
 

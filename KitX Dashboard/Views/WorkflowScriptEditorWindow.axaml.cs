@@ -51,8 +51,56 @@ public partial class WorkflowScriptEditorWindow : Window, IView
         {
             viewModel.CodeDocument = codeEditor.Document;
 
-            // 设置默认模板代码（满足受限语法要求）
-            codeEditor.Text = @"// Workflow Script Example (Main Program)
+            // 根据 UseBlockMode 选择模板代码
+            if (viewModel.UseBlockMode)
+            {
+                // BlockScript 模式模板
+                codeEditor.Text = @"#ConstBlock
+int guessNum = 5;  // 可变常量，用户在UI中可修改
+int loopMax = 3;
+
+#PubVarBlock
+var targetNum = 7;  // 目标数字，用户无法在UI看到
+var currentLoop = 1;
+
+#MainBlock
+Print(""开始执行工作流"");
+NextBlock = Loop(HelperFuncCompare(""BLE"", currentLoop, loopMax), ""LoopBody"", ""EndLogic"");  // 主循环
+
+#Block LoopBody
+Print(currentLoop);
+currentLoop = HelperFuncAdd(currentLoop, 1);  // 函数调用，记得在默认的HelperFunction初始化程序中添加这个HelperFuncAdd
+NextBlock = Branch(
+    HelperFuncCompare(""BEQ"", guessNum, targetNum),  // ✅ 函数调用
+    ""SuccessLogic"",
+    ""CheckLogic""
+);
+
+#Block CheckLogic
+NextBlock = Branch(
+    HelperFuncCompare(""BLT"", guessNum, targetNum),
+    ""LessThanLogic"",
+    ""GreaterThanLogic""
+);
+
+#Block LessThanLogic
+Print(""猜小了"");  // 其实用Print()也行
+NextBlock = LoopBodyEnd(""MainBlock"");  // 返回到 MainBlock 的 Loop
+
+#Block GreaterThanLogic
+Print(""猜大了"");
+NextBlock = LoopBodyEnd(""MainBlock"");  // 返回到 MainBlock 的 Loop
+
+#Block SuccessLogic
+Print(""猜对啦！""); // 这个Block没有Branch/Loop/LoopBodyEnd，自然进入下一行
+
+#Block EndLogic
+Print(""示例工作流结束"");";
+            }
+            else
+            {
+                // 旧KCS模式模板
+                codeEditor.Text = @"// Workflow Script Example (Main Program)
 // Use WorkflowOutput.WriteLine() to print debug messages
 // This is a restricted C# script - no if/else, for/while, try/catch allowed
 // Only the following syntax is supported:
@@ -76,6 +124,7 @@ WorkflowOutput.WriteLine($""Count: {count}"");
 
 // Output after the plugin call will still execute
 WorkflowOutput.WriteLine(""Plugin call completed!"");";
+            }
 
             // 订阅代码变化事件
             codeEditor.TextChanged += (s, e) =>

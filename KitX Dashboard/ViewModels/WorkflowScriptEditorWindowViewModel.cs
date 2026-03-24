@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -13,6 +13,7 @@ using KitX.Core.Contract.Workflow;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
+using Serilog;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -51,17 +52,72 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
         InitCommands();
         InitEvents();
 
+        // 如果是块脚本模式，初始化默认的 HelperFuncCompare 辅助函数
+        if (UseBlockMode)
+        {
+            InitializeDefaultHelperFunctions();
+        }
+
         // 订阅CodeDocument属性变化
         _codeDocumentSubscription = this.WhenAnyValue(x => x.CodeDocument)
             .Subscribe(document =>
             {
-                if (document != null)
+                if (document != null && !UseBlockMode)
                 {
-                    // 当主程序代码变化时，解析常量
+                    // 当主程序代码变化时，解析常量（旧KCS模式）
                     var constants = _workflowService.ParseConstantsFromCode(document.Text);
                     UpdateVariableConstants(constants);
                 }
             });
+    }
+
+    /// <summary>
+    /// 初始化默认的辅助函数（块脚本模式）
+    /// </summary>
+    private void InitializeDefaultHelperFunctions()
+    {
+        // 添加 HelperFuncCompare - 比较两个数，返回 bool
+        // op: "BEQ"(==), "BNE"(!=), "BLT"(<), "BGT"(>), "BLE"(<=), "BGE"(>=)
+        var helperFuncCompare = new HelperFunction
+        {
+            Name = "HelperFuncCompare",
+            ReturnType = "bool",
+            Parameters = new List<HelperFunctionParameter>
+            {
+                new() { Name = "op", Type = "string" },
+                new() { Name = "value1", Type = "object?" },
+                new() { Name = "value2", Type = "object?" }
+            },
+            Code = @"var v1 = Convert.ToDouble(value1);
+var v2 = Convert.ToDouble(value2);
+return op switch
+{
+    ""BEQ"" => v1 == v2,
+    ""BNE"" => v1 != v2,
+    ""BLT"" => v1 < v2,
+    ""BGT"" => v1 > v2,
+    ""BLE"" => v1 <= v2,
+    ""BGE"" => v1 >= v2,
+    _ => false
+};"
+        };
+        HelperFunctions.Add(helperFuncCompare);
+
+        // 添加 HelperFuncAdd - 将两个数相加
+        var helperFuncAdd = new HelperFunction
+        {
+            Name = "HelperFuncAdd",
+            ReturnType = "int",
+            Parameters = new List<HelperFunctionParameter>
+            {
+                new() { Name = "value1", Type = "object?" },
+                new() { Name = "value2", Type = "object?" }
+            },
+            Code = @"var v1 = Convert.ToInt32(value1);
+var v2 = Convert.ToInt32(value2);
+return v1 + v2;"
+        };
+        HelperFunctions.Add(helperFuncAdd);
     }
 
     public sealed override void InitCommands()
@@ -181,17 +237,28 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
 
             if (kcs != null)
             {
-                // 加载主程序
-                MainProgramCode = kcs.MainProgram;
+                // 检查是否使用块脚本模式
+                UseBlockMode = kcs.UseBlockMode;
 
-                // 加载辅助函数
+                if (kcs.UseBlockMode)
+                {
+                    // 块脚本模式：加载 BlockScriptSource
+                    MainProgramCode = kcs.BlockScriptSource ?? string.Empty;
+                }
+                else
+                {
+                    // 旧KCS模式：加载 MainProgram
+                    MainProgramCode = kcs.MainProgram;
+                }
+
+                // 加载辅助函数（两种模式都支持）
                 HelperFunctions.Clear();
                 foreach (var func in kcs.HelperFunctions)
                 {
                     HelperFunctions.Add(func);
                 }
 
-                // 加载可变常量
+                // 加载可变常量（旧KCS模式）
                 VariableConstants.Clear();
                 foreach (var kvp in kcs.VariableConstants)
                 {
@@ -224,12 +291,12 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
         {
             var kcs = new KcsFileFormat
             {
-                MainProgram = MainProgramCode ?? string.Empty,
+                UseBlockMode = UseBlockMode,
+                MainProgram = UseBlockMode ? string.Empty : (MainProgramCode ?? string.Empty),
+                BlockScriptSource = UseBlockMode ? (MainProgramCode ?? string.Empty) : null,
                 HelperFunctions = HelperFunctions.ToList(),
-                VariableConstants = VariableConstants.ToDictionary(
-                    c => c.Name,
-                    c => c.UserValue
-                )
+                VariableConstants = UseBlockMode ? new Dictionary<string, object?>() :
+                    VariableConstants.ToDictionary(c => c.Name, c => c.UserValue)
             };
 
             await _kcsFileService.SaveKcsFileAsync(filePath, kcs);
@@ -276,12 +343,26 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
             return;
         }
 
-        // 首先检查代码是否包含禁止的语法
-        var analysisResult = _mainProgramAnalyzer.Analyze(codeText);
-        if (!analysisResult.IsValid)
+        // 旧KCS模式：检查代码是否包含禁止的语法
+        if (!UseBlockMode)
         {
-            ExecutionResult = $"Code analysis failed: {analysisResult.ForbiddenReason}";
-            return;
+            var analysisResult = _mainProgramAnalyzer.Analyze(codeText);
+            if (!analysisResult.IsValid)
+            {
+                ExecutionResult = $"Code analysis failed: {analysisResult.ForbiddenReason}";
+                return;
+            }
+        }
+        else
+        {
+            // BlockScript模式：验证块脚本
+            var validationResult = _workflowService.ValidateBlockScript(codeText);
+            if (!validationResult.IsValid)
+            {
+                Log.Error("[WorkflowScriptEditorWindowViewModel] Block script validation failed: {Errors}", string.Join("; ", validationResult.Errors));
+                ExecutionResult = $"Block script validation failed: {string.Join("; ", validationResult.Errors)}";
+                return;
+            }
         }
 
         IsExecuting = true;
@@ -296,15 +377,39 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
         _tasksService.RunTaskAsync(
             async () =>
             {
-                // 使用新的 ExecuteKcsCodesAsync 方法
-                var result = await _workflowService.ExecuteKcsCodesAsync(
-                    codeText,
-                    HelperFunctions.ToList(),
-                    VariableConstants.ToList(),
-                    connectedPlugins,
-                    true,
-                    tokenSource.Token
-                );
+                string? result;
+
+                if (UseBlockMode)
+                {
+                    // BlockScript模式执行
+                    var executionResult = await _workflowService.ExecuteBlockScriptAsync(
+                        codeText,
+                        HelperFunctions.ToList(),
+                        tokenSource.Token
+                    );
+
+                    if (executionResult.IsSuccess)
+                    {
+                        var output = string.Join("\n", executionResult.Output);
+                        result = $"Blocks executed: {executionResult.ExecutedBlockCount}\nExecution time: {executionResult.ExecutionTimeMs}ms\nOutput:\n{output}";
+                    }
+                    else
+                    {
+                        result = $"Error: {executionResult.ErrorMessage}";
+                    }
+                }
+                else
+                {
+                    // 旧KCS模式执行
+                    result = await _workflowService.ExecuteKcsCodesAsync(
+                        codeText,
+                        HelperFunctions.ToList(),
+                        VariableConstants.ToList(),
+                        connectedPlugins,
+                        true,
+                        tokenSource.Token
+                    );
+                }
 
                 tokenSource.Dispose();
 
@@ -419,6 +524,17 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
     {
         get => _currentFilePath;
         set => this.RaiseAndSetIfChanged(ref _currentFilePath, value);
+    }
+
+    /// <summary>
+    /// 是否使用块脚本模式
+    /// </summary>
+    private bool _useBlockMode = true;  // 默认开启块脚本模式
+
+    public bool UseBlockMode
+    {
+        get => _useBlockMode;
+        set => this.RaiseAndSetIfChanged(ref _useBlockMode, value);
     }
 
     #endregion

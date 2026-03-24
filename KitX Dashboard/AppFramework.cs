@@ -74,7 +74,7 @@ public static class AppFramework
             Directory.CreateDirectory(logdir);
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Is(config.Log.LogLevel)
             .WriteTo.Console(outputTemplate: config.Log.LogTemplate, restrictedToMinimumLevel: config.Log.LogLevel)
             .WriteTo.File(
                 $"{logdir}Log_.log",
