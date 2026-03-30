@@ -1,0 +1,123 @@
+<Window x:Class="KitX.Dashboard.Views.BlueprintEditorWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:editor="clr-namespace:NodeEditor.Controls;assembly=NodeEditorAvalonia"
+        xmlns:viewModels="using:KitX.Dashboard.ViewModels"
+        mc:Ignorable="d"
+        d:DesignHeight="700"
+        d:DesignWidth="1200"
+        Title="Blueprint Editor"
+        Width="1200"
+        Height="800">
+
+    <DockPanel LastChildFill="True">
+        <!-- 工具栏 -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10">
+            <Button Name="NewButton" Content="New" Margin="0,0,10,0" Click="NewButton_Click"/>
+            <Button Name="OpenButton" Content="Open" Margin="0,0,10,0" Click="OpenButton_Click"/>
+            <Button Name="SaveButton" Content="Save" Margin="0,0,10,0" Click="SaveButton_Click"/>
+            <Button Name="ImportFromBSButton" Content="Import from BlockScript" Margin="0,0,10,0" Click="ImportFromBSButton_Click"/>
+            <Button Name="ExportToBSButton" Content="Export to BlockScript" Margin="0,0,10,0" Click="ExportToBSButton_Click"/>
+            <Button Name="RunButton" Content="Run" Margin="20,0,10,0" Click="RunButton_Click"/>
+            <Button Name="StopButton" Content="Stop" IsEnabled="False" Margin="0,0,10,0" Click="StopButton_Click"/>
+        </StackPanel>
+
+        <!-- 底部状态栏 -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="10,5">
+            <TextBlock Name="NodeCountText" Text="Nodes: 0" Margin="0,0,20,0"/>
+            <TextBlock Name="ConnectionCountText" Text="Connections: 0" Margin="0,0,20,0"/>
+            <TextBlock Name="ZoomText" Text="Zoom: 100%" Margin="0,0,20,0"/>
+            <TextBlock Name="StatusText" Text="Ready" Margin="20,0,0,0"/>
+        </StackPanel>
+
+        <!-- 主布局 -->
+        <Grid ColumnDefinitions="200,5,*,5,250">
+            <!-- 左侧: 节点面板 -->
+            <Border Grid.Column="0" Background="#252525" Margin="5" CornerRadius="5">
+                <DockPanel Margin="10">
+                    <TextBlock DockPanel.Dock="Top" Text="Node Palette" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                    <ScrollViewer>
+                        <StackPanel>
+                            <!-- Entry -->
+                            <Expander Header="Entry" IsExpanded="True" Margin="0,5">
+                                <Button Name="AddEntryNode" Content="Entry"
+                                        HorizontalAlignment="Stretch" Margin="5"
+                                        Click="AddEntryNode_Click"/>
+                            </Expander>
+
+                            <!-- Flow Control -->
+                            <Expander Header="Flow Control" IsExpanded="True" Margin="0,5">
+                                <StackPanel>
+                                    <Button Name="AddBranchNode" Content="Branch"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Click="AddBranchNode_Click"/>
+                                    <Button Name="AddLoopNode" Content="Loop"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Click="AddLoopNode_Click"/>
+                                    <Button Name="AddBreakNode" Content="Break"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Click="AddBreakNode_Click"/>
+                                </StackPanel>
+                            </Expander>
+
+                            <!-- Data -->
+                            <Expander Header="Data" IsExpanded="True" Margin="0,5">
+                                <Button Name="AddConstNode" Content="Const"
+                                        HorizontalAlignment="Stretch" Margin="5"
+                                        Click="AddConstNode_Click"/>
+                            </Expander>
+
+                            <!-- Actions -->
+                            <Expander Header="Actions" IsExpanded="True" Margin="0,5">
+                                <StackPanel>
+                                    <Button Name="AddCallNode" Content="Call (Plugin)"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Click="AddCallNode_Click"/>
+                                    <Button Name="AddCallHelperNode" Content="Call Helper"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Click="AddCallHelperNode_Click"/>
+                                    <Button Name="AddPrintNode" Content="Print"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Click="AddPrintNode_Click"/>
+                                    <Button Name="AddPauseNode" Content="Pause"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Click="AddPauseNode_Click"/>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- 第一个分割线 -->
+            <Border Grid.Column="1" Background="#3F3F3F" Width="5"/>
+
+            <!-- 中间: 蓝图画布 - NodeEditor -->
+            <Border Grid.Column="2" Background="#1E1E1E" Margin="5" CornerRadius="5">
+                <editor:Editor x:Name="EditorControl"
+                              DrawingSource="{Binding Editor.Drawing}"
+                              ZoomControl="{Binding ElementName=ZoomBorder}"/>
+            </Border>
+
+            <!-- 第二个分割线 -->
+            <Border Grid.Column="3" Background="#3F3F3F" Width="5"/>
+
+            <!-- 右侧: 属性面板 -->
+            <Border Grid.Column="4" Background="#252525" Margin="5" CornerRadius="5">
+                <DockPanel Margin="10">
+                    <TextBlock DockPanel.Dock="Top" Text="Properties" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <ScrollViewer>
+                        <StackPanel Name="PropertiesPanel">
+                            <TextBlock Text="Select a node to view properties"
+                                       Foreground="Gray"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

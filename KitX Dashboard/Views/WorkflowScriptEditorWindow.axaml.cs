@@ -170,6 +170,7 @@ WorkflowOutput.WriteLine(""Plugin call completed!"");";
         var saveButton = this.FindControl<Button>("SaveButton");
         var openButton = this.FindControl<Button>("OpenButton");
         var addHelperFunctionButton = this.FindControl<Button>("AddHelperFunctionButton");
+        var openBlueprintEditorButton = this.FindControl<Button>("OpenBlueprintEditorButton");
         var statusText = this.FindControl<TextBlock>("StatusText");
 
         if (runButton != null)
@@ -186,6 +187,9 @@ WorkflowOutput.WriteLine(""Plugin call completed!"");";
 
         if (addHelperFunctionButton != null)
             addHelperFunctionButton.Click += AddHelperFunctionButton_Click;
+
+        if (openBlueprintEditorButton != null)
+            openBlueprintEditorButton.Click += OpenBlueprintEditorButton_Click;
 
         // 使用事件监听替代Observable
         viewModel.PropertyChanged += (sender, e) =>
@@ -423,6 +427,20 @@ WorkflowOutput.WriteLine(""Plugin call completed!"");";
     private void AddHelperFunctionButton_Click(object? sender, RoutedEventArgs e)
     {
         AddHelperFunction();
+    }
+
+    private void OpenBlueprintEditorButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var blueprintEditorWindow = new BlueprintEditorWindow();
+
+        // Pass the current BlockScript source code to the blueprint editor
+        var sourceCode = viewModel?.MainProgramCode;
+        if (!string.IsNullOrEmpty(sourceCode))
+        {
+            blueprintEditorWindow.SetSourceCode(sourceCode);
+        }
+
+        blueprintEditorWindow.Show();
     }
 
     private void AddHelperFunctionListButton_Click(object? sender, RoutedEventArgs e)
