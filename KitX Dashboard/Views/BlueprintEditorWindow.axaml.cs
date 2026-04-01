@@ -1,10 +1,15 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Avalonia.Media;
+using Avalonia.VisualTree;
 using KitX.Core.Contract.Tasks;
 using KitX.Core.Contract.Workflow;
 using KitX.Dashboard.ViewModels;
+using NodeEditor.Controls;
+using NodeEditor.Mvvm;
 using Serilog;
 
 namespace KitX.Dashboard.Views;
@@ -53,6 +58,8 @@ public partial class BlueprintEditorWindow : Window, IView
             {
                 await _viewModel.ImportFromBlockScriptCommand.ExecuteAsync(sourceCode);
                 UpdateStatus();
+                // Re-apply colors after layout pass completes
+                Dispatcher.UIThread.Post(ApplyConnectorColors, DispatcherPriority.Background);
             });
         }
     }
@@ -70,7 +77,34 @@ public partial class BlueprintEditorWindow : Window, IView
                 NodeCountText.Text = $"Nodes: {nodeCount}";
             if (ConnectionCountText != null)
                 ConnectionCountText.Text = $"Connections: {connectionCount}";
+
+            // Apply connector colors after the visual tree is built
+            ApplyConnectorColors();
         });
+    }
+
+    /// <summary>
+    /// Sets connector Stroke colors based on source pin PinType
+    /// </summary>
+    private void ApplyConnectorColors()
+    {
+        var editor = EditorControl;
+        if (editor == null) return;
+
+        // Walk the visual tree to find all Connector controls
+        var connectors = editor.GetVisualDescendants().OfType<Connector>();
+        foreach (var connector in connectors)
+        {
+            if (connector.ConnectorSource is ConnectorViewModel cvm)
+            {
+                var pinType = _viewModel?.GetConnectorPinType(cvm);
+                if (pinType.HasValue)
+                {
+                    connector.Stroke = BlueprintEditorViewModel.GetBrushForPinType(pinType.Value);
+                    connector.Fill = null;
+                }
+            }
+        }
     }
 
     private void NewButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -199,6 +233,8 @@ public partial class BlueprintEditorWindow : Window, IView
                     await _viewModel.ImportFromBlockScriptCommand.ExecuteAsync(sourceCode);
                     UpdateStatus();
                     StatusText.Text = _viewModel.StatusText;
+                    // Re-apply colors after layout pass completes
+                    Dispatcher.UIThread.Post(ApplyConnectorColors, DispatcherPriority.Background);
                 }
                 catch (Exception ex)
                 {

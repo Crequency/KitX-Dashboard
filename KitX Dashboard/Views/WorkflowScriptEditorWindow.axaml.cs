@@ -58,18 +58,32 @@ public partial class WorkflowScriptEditorWindow : Window, IView
                 codeEditor.Text = @"#ConstBlock
 int guessNum = 5;  // 可变常量，用户在UI中可修改
 int loopMax = 3;
+int targetNum = 7;
+int currentLoop;	// 无预赋值（值初始化），用户无法在UI中修改
+// 这个currentLoop为什么不能放在PubVarBlock中：
+// 它不是“一次性”的“边数据承载”变量，它是多处、多次使用且随运行而需要变化并持久存储的变量，它的最短生命周期远长于PubVarBlock中的一次性变量（赋值-使用1次后即可销毁，下次用到再重新创建）
 
 #PubVarBlock
-var targetNum = 7;  // 目标数字，用户无法在UI看到
-var currentLoop = 1;
+// 自动生成，为蓝图预留(是那些数据边为了临时承载数据而使用的变量）
+// 除非你知道自己在做什么并且完全了解块脚本与蓝图互译的过程，否则不要在这个块中添加、删除或修改代码
+// 直接编写BlockScript时不需要在这里设置变量
+bool vaaa0001;
+int vaaa0002;
 
 #MainBlock
 Print(""开始执行工作流"");
-NextBlock = Loop(HelperFuncCompare(""BLE"", currentLoop, loopMax), ""LoopBody"", ""EndLogic"");  // 主循环
+Set(""currentLoop"", 0);
+// NextBlock = Loop(HelperFuncCompare(""BLE"", Get(""currentLoop""), loopMax), ""LoopBody"", ""EndLogic""); // 转化前的语句（有嵌套调用）
+vaaa0001 = HelperFuncCompare(""BLE"", Get(""currentLoop""), loopMax);  // 脚本转蓝图后，再转回块脚本时，就会利用PubVarBlock中生成的“临时变量”来生成这样的语句（拆分嵌套调用）
+NextBlock = Loop(vaaa0001, ""LoopBody"", ""EndLogic"");  // 主循环
 
 #Block LoopBody
-Print(currentLoop);
-currentLoop = HelperFuncAdd(currentLoop, 1);  // 函数调用，记得在默认的HelperFunction初始化程序中添加这个HelperFuncAdd
+// Print(Get(currentLoop)); // 原始嵌套调用用法
+// vaaa0001 = Get(currentLoop);
+// Print(vaaa0001); // 其实逻辑上等价但是不推荐的方案──反正PubVarBlock的变量池是“无限大”的，没必要重复使用同一个变量。
+vaaa0002 = Get(""currentLoop"");
+Print(vaaa0002); // 更优的做法，每个临时变量实际上绑定了一条数据边。这样也方便后续直接对蓝图脚本进行Debug时监测数据边上的数据
+Set(""currentLoop"", HelperFuncAdd(Get(""currentLoop""), 1));  // 函数嵌套调用，记得在默认的HelperFunction初始化程序中添加这个HelperFuncAdd
 NextBlock = Branch(
     HelperFuncCompare(""BEQ"", guessNum, targetNum),  // ✅ 函数调用
     ""SuccessLogic"",
@@ -85,10 +99,13 @@ NextBlock = Branch(
 
 #Block LessThanLogic
 Print(""猜小了"");  // 其实用Print()也行
+vaaa0001 = HelperFuncCompare(""BLE"", Get(""currentLoop""), loopMax);  // 原先Loop中的内置嵌套condition表达式由于被拆分，需要在LoopBodyEnd被调用前进行结算，以保持逻辑一致性
 NextBlock = LoopBodyEnd(""MainBlock"");  // 返回到 MainBlock 的 Loop
 
 #Block GreaterThanLogic
 Print(""猜大了"");
+vaaa0001 = HelperFuncCompare(""BLE"", Get(""currentLoop""), loopMax);  // 原先Loop中的内置嵌套condition表达式由于被拆分，需要在LoopBodyEnd被调用前进行结算，以保持逻辑一致性
+// 这里仍是vaaa0001是因为在蓝图中实际上是一条边：CallHelper:HelperFuncCompare(BLE).Return --> Loop.Condition | PubVar=vaaa0001
 NextBlock = LoopBodyEnd(""MainBlock"");  // 返回到 MainBlock 的 Loop
 
 #Block SuccessLogic

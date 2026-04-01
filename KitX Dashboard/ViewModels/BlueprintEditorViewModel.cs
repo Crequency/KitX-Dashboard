@@ -62,6 +62,11 @@ public partial class BlueprintEditorViewModel : ObservableObject
     private Dictionary<NodeViewModel, string> _nodeIdMap = new();
 
     /// <summary>
+    /// Maps ConnectorViewModel to source pin PinType for color rendering
+    /// </summary>
+    private Dictionary<ConnectorViewModel, PinType> _connectorPinTypes = new();
+
+    /// <summary>
     /// Gets or sets the current blueprint
     /// </summary>
     public Blueprint? CurrentBlueprint
@@ -165,6 +170,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
         _originalPinIds.Clear();
 
         var pinMap = new Dictionary<string, IPin>();
+        var pinTypeMap = new Dictionary<string, PinType>();
 
         Log.Information("Loading blueprint: {NodeCount} nodes, {ConnectionCount} connections",
             blueprint.Nodes.Count, blueprint.Connections.Count);
@@ -180,20 +186,22 @@ public partial class BlueprintEditorViewModel : ObservableObject
             // Map each BlueprintPin.Id to the corresponding IPin and store original IDs
             foreach (var blueprintPin in blueprintNode.InputPins)
             {
-                var pinVm = FindPinByName(nodeVm, blueprintPin.Name);
+                var pinVm = FindPinByNameAndDirection(nodeVm, blueprintPin.Name, BlueprintPinDirection.Input);
                 if (pinVm != null)
                 {
                     pinMap[blueprintPin.Id] = pinVm;
-                    _originalPinIds[$"{blueprintNode.Id}:{blueprintPin.Name}"] = blueprintPin.Id;
+                    pinTypeMap[blueprintPin.Id] = blueprintPin.Type;
+                    _originalPinIds[$"{blueprintNode.Id}:{blueprintPin.Name}:in"] = blueprintPin.Id;
                 }
             }
             foreach (var blueprintPin in blueprintNode.OutputPins)
             {
-                var pinVm = FindPinByName(nodeVm, blueprintPin.Name);
+                var pinVm = FindPinByNameAndDirection(nodeVm, blueprintPin.Name, BlueprintPinDirection.Output);
                 if (pinVm != null)
                 {
                     pinMap[blueprintPin.Id] = pinVm;
-                    _originalPinIds[$"{blueprintNode.Id}:{blueprintPin.Name}"] = blueprintPin.Id;
+                    pinTypeMap[blueprintPin.Id] = blueprintPin.Type;
+                    _originalPinIds[$"{blueprintNode.Id}:{blueprintPin.Name}:out"] = blueprintPin.Id;
                 }
             }
 
@@ -217,6 +225,9 @@ public partial class BlueprintEditorViewModel : ObservableObject
                     End = targetPin,
                     Parent = Drawing
                 };
+                // Store source pin's PinType for color rendering
+                if (pinTypeMap.TryGetValue(connection.SourcePinId, out var pt))
+                    _connectorPinTypes[connector] = pt;
                 Drawing.Connectors.Add(connector);
                 Log.Debug("    Created connector: {SourcePinId} -> {TargetPinId}",
                     connection.SourcePinId, connection.TargetPinId);
@@ -266,8 +277,8 @@ public partial class BlueprintEditorViewModel : ObservableObject
                 // Look up original node IDs from map
                 _nodeIdMap.TryGetValue(sourceNode, out var sourceNodeId);
                 _nodeIdMap.TryGetValue(targetNode, out var targetNodeId);
-                var sourcePinKey = $"{sourceNodeId}:{connectorVm.Start.Name}";
-                var targetPinKey = $"{targetNodeId}:{connectorVm.End.Name}";
+                var sourcePinKey = $"{sourceNodeId}:{connectorVm.Start.Name}:out";
+                var targetPinKey = $"{targetNodeId}:{connectorVm.End.Name}:in";
 
                 _originalPinIds.TryGetValue(sourcePinKey, out var sourcePinId);
                 _originalPinIds.TryGetValue(targetPinKey, out var targetPinId);
@@ -337,6 +348,12 @@ public partial class BlueprintEditorViewModel : ObservableObject
             case CallHelperNode helperNode:
                 ((BlueprintNodeContentViewModel)nodeVm.Content).Title = $"Helper: {helperNode.HelperFunctionName}";
                 break;
+            case GetNode getNode:
+                ((BlueprintNodeContentViewModel)nodeVm.Content).Title = $"Get: {getNode.VarName}";
+                break;
+            case SetNode setNode:
+                ((BlueprintNodeContentViewModel)nodeVm.Content).Title = $"Set: {setNode.VarName}";
+                break;
         }
 
         return nodeVm;
@@ -390,6 +407,8 @@ public partial class BlueprintEditorViewModel : ObservableObject
             "CallHelper" => BlueprintNodeType.CallHelper,
             "Print" => BlueprintNodeType.Print,
             "Pause" => BlueprintNodeType.Pause,
+            "Get" => BlueprintNodeType.Get,
+            "Set" => BlueprintNodeType.Set,
             _ => BlueprintNodeType.Entry
         };
 
@@ -404,6 +423,8 @@ public partial class BlueprintEditorViewModel : ObservableObject
             BlueprintNodeType.CallHelper => new CallHelperNode(),
             BlueprintNodeType.Print => new PrintNode(),
             BlueprintNodeType.Pause => new PauseNode(),
+            BlueprintNodeType.Get => new GetNode(),
+            BlueprintNodeType.Set => new SetNode(),
             _ => new EntryNode()
         };
 
@@ -436,6 +457,12 @@ public partial class BlueprintEditorViewModel : ObservableObject
                 case CallHelperNode helperNode when content.Title.StartsWith("Helper:"):
                     helperNode.HelperFunctionName = content.Title.Substring("Helper:".Length).Trim();
                     break;
+                case GetNode getNode when content.Title.StartsWith("Get:"):
+                    getNode.VarName = content.Title.Substring("Get:".Length).Trim();
+                    break;
+                case SetNode setNode when content.Title.StartsWith("Set:"):
+                    setNode.VarName = content.Title.Substring("Set:".Length).Trim();
+                    break;
             }
         }
 
@@ -463,16 +490,41 @@ public partial class BlueprintEditorViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Finds a pin in a node by its name
+    /// Finds a pin in a node by its name and direction
     /// </summary>
-    private IPin? FindPinByName(NodeViewModel node, string pinName)
+    private IPin? FindPinByNameAndDirection(NodeViewModel node, string pinName, BlueprintPinDirection direction)
     {
+        var nodeDir = direction == BlueprintPinDirection.Input
+            ? NodeEditor.Model.PinDirection.Input
+            : NodeEditor.Model.PinDirection.Output;
         foreach (var pin in node.Pins)
         {
-            if (pin.Name == pinName) return pin;
+            if (pin is PinViewModel pinVm && pin.Name == pinName && pinVm.Direction == nodeDir)
+                return pin;
         }
         return null;
     }
+
+    /// <summary>
+    /// Returns the PinType for a connector's source pin, or null if unknown
+    /// </summary>
+    public PinType? GetConnectorPinType(ConnectorViewModel connector)
+    {
+        return _connectorPinTypes.TryGetValue(connector, out var pt) ? pt : null;
+    }
+
+    /// <summary>
+    /// Maps PinType to a brush color for connector rendering
+    /// </summary>
+    public static Avalonia.Media.IBrush GetBrushForPinType(PinType pinType) => pinType switch
+    {
+        PinType.Execution => Avalonia.Media.Brushes.LimeGreen,
+        PinType.Boolean => Avalonia.Media.Brushes.Cyan,
+        PinType.Integer => Avalonia.Media.Brushes.Orange,
+        PinType.Double => Avalonia.Media.Brushes.MediumPurple,
+        PinType.String => Avalonia.Media.Brushes.Yellow,
+        _ => Avalonia.Media.Brushes.White  // Any
+    };
 
     /// <summary>
     /// Creates a new blueprint
