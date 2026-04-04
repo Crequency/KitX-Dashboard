@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -19,6 +20,10 @@ public partial class BlueprintEditorWindow : Window, IView
     private readonly BlueprintEditorViewModel _viewModel;
     private IBlueprintService? _blueprintService;
     private string? _pendingSourceCode;
+    private List<HelperFunction>? _pendingHelperFunctions;
+    private int _colorRetryCount;
+    private const int MaxColorRetries = 10;
+    private DispatcherTimer? _colorRetryTimer;
 
     public BlueprintEditorWindow()
     {
@@ -38,9 +43,11 @@ public partial class BlueprintEditorWindow : Window, IView
     /// Sets the BlockScript source code to import when the window loads
     /// </summary>
     /// <param name="sourceCode">BlockScript source code to import</param>
-    public void SetSourceCode(string sourceCode)
+    /// <param name="helperFunctions">Optional helper functions for type resolution</param>
+    public void SetSourceCode(string sourceCode, List<HelperFunction>? helperFunctions = null)
     {
         _pendingSourceCode = sourceCode;
+        _pendingHelperFunctions = helperFunctions;
     }
 
     private void OnLoaded(object? sender, EventArgs e)
@@ -51,12 +58,14 @@ public partial class BlueprintEditorWindow : Window, IView
         if (!string.IsNullOrEmpty(_pendingSourceCode))
         {
             var sourceCode = _pendingSourceCode;
+            var helpers = _pendingHelperFunctions;
             _pendingSourceCode = null;
+            _pendingHelperFunctions = null;
 
             // Call import asynchronously
             Dispatcher.UIThread.Post(async () =>
             {
-                await _viewModel.ImportFromBlockScriptCommand.ExecuteAsync(sourceCode);
+                await _viewModel.ImportFromBlockScriptCommand.ExecuteAsync((sourceCode, helpers));
                 UpdateStatus();
                 // Re-apply colors after layout pass completes
                 Dispatcher.UIThread.Post(ApplyConnectorColors, DispatcherPriority.Background);
@@ -84,15 +93,21 @@ public partial class BlueprintEditorWindow : Window, IView
     }
 
     /// <summary>
-    /// Sets connector Stroke colors based on source pin PinType
+    /// Sets connector Stroke colors based on source pin PinType.
+    /// Uses retry mechanism to handle delayed visual tree construction.
     /// </summary>
     private void ApplyConnectorColors()
     {
         var editor = EditorControl;
         if (editor == null) return;
 
+        var viewModelConnectorCount = _viewModel?.Drawing?.Connectors?.Count ?? 0;
+        if (viewModelConnectorCount == 0) return;
+
         // Walk the visual tree to find all Connector controls
-        var connectors = editor.GetVisualDescendants().OfType<Connector>();
+        var connectors = editor.GetVisualDescendants().OfType<Connector>().ToList();
+        var appliedCount = 0;
+
         foreach (var connector in connectors)
         {
             if (connector.ConnectorSource is ConnectorViewModel cvm)
@@ -102,9 +117,34 @@ public partial class BlueprintEditorWindow : Window, IView
                 {
                     connector.Stroke = BlueprintEditorViewModel.GetBrushForPinType(pinType.Value);
                     connector.Fill = null;
+                    appliedCount++;
                 }
             }
         }
+
+        Log.Debug("[Color] Applied {Applied}/{Total} connector colors (visual={Visual})",
+            appliedCount, viewModelConnectorCount, connectors.Count);
+
+        // If not all connectors were found in visual tree, schedule a retry
+        if (appliedCount < viewModelConnectorCount && _colorRetryCount < MaxColorRetries)
+        {
+            _colorRetryCount++;
+            _colorRetryTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            _colorRetryTimer.Tick -= OnColorRetryTick;
+            _colorRetryTimer.Tick += OnColorRetryTick;
+            _colorRetryTimer.Start();
+        }
+        else
+        {
+            _colorRetryCount = 0;
+            _colorRetryTimer?.Stop();
+        }
+    }
+
+    private void OnColorRetryTick(object? sender, EventArgs e)
+    {
+        _colorRetryTimer?.Stop();
+        ApplyConnectorColors();
     }
 
     private void NewButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -230,7 +270,7 @@ public partial class BlueprintEditorWindow : Window, IView
                 StatusText.Text = "Importing...";
                 try
                 {
-                    await _viewModel.ImportFromBlockScriptCommand.ExecuteAsync(sourceCode);
+                    await _viewModel.ImportFromBlockScriptCommand.ExecuteAsync((sourceCode, (List<HelperFunction>?)null));
                     UpdateStatus();
                     StatusText.Text = _viewModel.StatusText;
                     // Re-apply colors after layout pass completes

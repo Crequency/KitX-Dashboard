@@ -25,6 +25,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
     private readonly ITasksService _tasksService;
     private readonly INodeTemplateProvider _nodeTemplateProvider;
     private readonly IKcsFileService _kcsFileService;
+    private readonly IBlueprintRenderDataService _renderDataService;
     private CancellationTokenSource? _cancellationTokenSource;
 
     /// <summary>
@@ -101,13 +102,15 @@ public partial class BlueprintEditorViewModel : ObservableObject
         IWorkflowService workflowService,
         ITasksService tasksService,
         INodeTemplateProvider nodeTemplateProvider,
-        IKcsFileService kcsFileService)
+        IKcsFileService kcsFileService,
+        IBlueprintRenderDataService renderDataService)
     {
         _blueprintService = blueprintService;
         _workflowService = workflowService;
         _tasksService = tasksService;
         _nodeTemplateProvider = nodeTemplateProvider;
         _kcsFileService = kcsFileService;
+        _renderDataService = renderDataService;
 
         // Initialize Editor with Drawing
         var drawing = CreateDrawing();
@@ -151,7 +154,10 @@ public partial class BlueprintEditorViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Loads a Blueprint into the drawing canvas
+    /// Loads a Blueprint into the drawing canvas using three-phase rendering:
+    /// Phase 1: Create all nodes
+    /// Phase 2: Create all execution flow connections
+    /// Phase 3: Create all data flow connections
     /// </summary>
     /// <param name="blueprint">The blueprint to load</param>
     public void LoadBlueprintIntoDrawing(Blueprint blueprint)
@@ -172,13 +178,16 @@ public partial class BlueprintEditorViewModel : ObservableObject
         var pinMap = new Dictionary<string, IPin>();
         var pinTypeMap = new Dictionary<string, PinType>();
 
-        Log.Information("Loading blueprint: {NodeCount} nodes, {ConnectionCount} connections",
-            blueprint.Nodes.Count, blueprint.Connections.Count);
+        // Get pre-classified rendering data
+        var renderData = _renderDataService.GetRenderData(blueprint);
 
-        // Convert and add nodes, also populate pinMap
-        foreach (var blueprintNode in blueprint.Nodes)
+        Log.Information("Loading blueprint: {NodeCount} nodes, {ExecCount} exec connections, {DataCount} data connections",
+            renderData.AllNodes.Count, renderData.ExecConnections.Count, renderData.DataConnections.Count);
+
+        // === Phase 1: Create all nodes ===
+        foreach (var blueprintNode in renderData.AllNodes)
         {
-            var nodeVm = ConvertBlueprintNodeToViewModel(blueprintNode);
+                var nodeVm = ConvertBlueprintNodeToViewModel(blueprintNode);
             nodeVm.Parent = Drawing;
             Drawing.Nodes.Add(nodeVm);
             nodeMap[blueprintNode.Id] = nodeVm;
@@ -210,38 +219,104 @@ public partial class BlueprintEditorViewModel : ObservableObject
                 blueprintNode.InputPins.Count, blueprintNode.OutputPins.Count);
         }
 
-        // Convert and add connections using pinMap
-        foreach (var connection in blueprint.Connections)
+        // [DIAG] Dump pinMap: for each BlueprintPin.Id, which NodeViewModel.Pin does it resolve to?
+        Log.Debug("[DIAG] === pinMap contents: {Count} entries ===", pinMap.Count);
+        foreach (var kvp in pinMap)
         {
-            Log.Debug("  Processing connection: {SourceId}:{SourcePinId} -> {TargetId}:{TargetPinId}",
-                connection.SourceNodeId, connection.SourcePinId, connection.TargetNodeId, connection.TargetPinId);
-
-            if (pinMap.TryGetValue(connection.SourcePinId, out var sourcePin) &&
-                pinMap.TryGetValue(connection.TargetPinId, out var targetPin))
-            {
-                var connector = new ConnectorViewModel
-                {
-                    Start = sourcePin,
-                    End = targetPin,
-                    Parent = Drawing
-                };
-                // Store source pin's PinType for color rendering
-                if (pinTypeMap.TryGetValue(connection.SourcePinId, out var pt))
-                    _connectorPinTypes[connector] = pt;
-                Drawing.Connectors.Add(connector);
-                Log.Debug("    Created connector: {SourcePinId} -> {TargetPinId}",
-                    connection.SourcePinId, connection.TargetPinId);
-            }
-            else
-            {
-                Log.Warning("    Could not find pins: sourcePin={SourceFound}, targetPin={TargetFound}",
-                    pinMap.ContainsKey(connection.SourcePinId),
-                    pinMap.ContainsKey(connection.TargetPinId));
-            }
+            var pinVm = kvp.Value as PinViewModel;
+            var parentNode = pinVm?.Parent as NodeViewModel;
+            Log.Debug("[DIAG]   BlueprintPin[{BpPinId}] => NodeVM '{NodeName}'.Pin '{PinName}' (dir={Dir})",
+                kvp.Key, parentNode?.Name ?? "?", pinVm?.Name ?? "?", pinVm?.Direction);
         }
 
-        Log.Information("Loaded blueprint with {NodeCount} nodes and {ConnectionCount} connections",
-            blueprint.Nodes.Count, blueprint.Connections.Count);
+        // === Phase 2: Create all execution flow connections ===
+        Log.Debug("[Rendering] --- Phase 2: Exec connections ({Count}) ---", renderData.ExecConnections.Count);
+        foreach (var connection in renderData.ExecConnections)
+        {
+            var srcNode = blueprint.GetNodeById(connection.SourceNodeId);
+            var tgtNode = blueprint.GetNodeById(connection.TargetNodeId);
+            Log.Debug("[Rendering]   [Exec] {SrcName}.{SrcPinId} -> {TgtName}.{TgtPinId}",
+                srcNode?.Name ?? "?", connection.SourcePinId,
+                tgtNode?.Name ?? "?", connection.TargetPinId);
+            CreateConnectorFromConnection(connection, pinMap, pinTypeMap);
+        }
+
+        // === Phase 3: Create all data flow connections ===
+        Log.Debug("[Rendering] --- Phase 3: Data connections ({Count}) ---", renderData.DataConnections.Count);
+        foreach (var connection in renderData.DataConnections)
+        {
+            var srcNode = blueprint.GetNodeById(connection.SourceNodeId);
+            var tgtNode = blueprint.GetNodeById(connection.TargetNodeId);
+            Log.Debug("[Rendering]   [Data] {SrcName}.{SrcPinId} -> {TgtName}.{TgtPinId}",
+                srcNode?.Name ?? "?", connection.SourcePinId,
+                tgtNode?.Name ?? "?", connection.TargetPinId);
+            CreateConnectorFromConnection(connection, pinMap, pinTypeMap);
+        }
+
+        Log.Information("Loaded blueprint with {NodeCount} nodes, {ExecCount} exec and {DataCount} data connections",
+            renderData.AllNodes.Count, renderData.ExecConnections.Count, renderData.DataConnections.Count);
+
+        // [DIAG] Per-node connector count summary
+        var nodeConnCounts = new System.Text.StringBuilder();
+        nodeConnCounts.AppendLine("[DIAG] === Per-node connector count ===");
+        foreach (var node in Drawing.Nodes.OfType<NodeViewModel>())
+        {
+            int execIn = 0, execOut = 0, dataIn = 0, dataOut = 0;
+            foreach (var conn in Drawing.Connectors.OfType<ConnectorViewModel>())
+            {
+                var startPin = conn.Start as PinViewModel;
+                var endPin = conn.End as PinViewModel;
+                if (startPin?.Parent == node)
+                {
+                    if (_connectorPinTypes.TryGetValue(conn, out var cpt) && cpt == PinType.Execution) execOut++; else dataOut++;
+                }
+                if (endPin?.Parent == node)
+                {
+                    if (_connectorPinTypes.TryGetValue(conn, out var cpt2) && cpt2 == PinType.Execution) execIn++; else dataIn++;
+                }
+            }
+            if (execIn + execOut + dataIn + dataOut > 0)
+                nodeConnCounts.AppendLine($"  {node.Name,-35} exec(in={execIn},out={execOut}) data(in={dataIn},out={dataOut})");
+        }
+        Log.Debug(nodeConnCounts.ToString().TrimEnd());
+    }
+
+    /// <summary>
+    /// Creates a connector from a BlueprintConnection using the pin maps
+    /// </summary>
+    private void CreateConnectorFromConnection(
+        BlueprintConnection connection,
+        Dictionary<string, IPin> pinMap,
+        Dictionary<string, PinType> pinTypeMap)
+    {
+        var srcFound = pinMap.TryGetValue(connection.SourcePinId, out var sourcePin);
+        var tgtFound = pinMap.TryGetValue(connection.TargetPinId, out var targetPin);
+
+        if (srcFound && tgtFound)
+        {
+            // [DIAG] Log the ACTUAL resolved endpoints
+            var srcParent = (sourcePin as PinViewModel)?.Parent as NodeViewModel;
+            var tgtParent = (targetPin as PinViewModel)?.Parent as NodeViewModel;
+            Log.Debug("[DIAG]     Resolved: '{SrcNode}'.{SrcPin} -> '{TgtNode}'.{TgtPin}",
+                srcParent?.Name ?? "?", sourcePin!.Name,
+                tgtParent?.Name ?? "?", targetPin!.Name);
+
+            var connector = new ConnectorViewModel
+            {
+                Start = sourcePin!,
+                End = targetPin!,
+                Parent = Drawing
+            };
+            // Determine effective pin type for color rendering
+            var effectiveType = DetermineEffectivePinType(connection, pinTypeMap);
+            _connectorPinTypes[connector] = effectiveType;
+            Drawing.Connectors.Add(connector);
+        }
+        else
+        {
+            Log.Warning("[Rendering] Could not find pins for connection: SourcePin={SrcPinId} (found={SrcFound}), TargetPin={TgtPinId} (found={TgtFound})",
+                connection.SourcePinId, srcFound, connection.TargetPinId, tgtFound);
+        }
     }
 
     /// <summary>
@@ -512,6 +587,81 @@ public partial class BlueprintEditorViewModel : ObservableObject
     {
         return _connectorPinTypes.TryGetValue(connector, out var pt) ? pt : null;
     }
+
+    /// <summary>
+    /// Determines the effective PinType for a data connection by tracing
+    /// the source node type (ConstNode.ConstType, HelperFunction.ReturnType, etc.)
+    /// rather than relying on pin PinType which is always Any for data pins.
+    /// </summary>
+    private PinType DetermineEffectivePinType(
+        BlueprintConnection connection,
+        Dictionary<string, PinType> pinTypeMap)
+    {
+        // For exec pins, use original type directly
+        if (pinTypeMap.TryGetValue(connection.SourcePinId, out var pt) && pt == PinType.Execution)
+            return PinType.Execution;
+
+        // For data connections, try to determine type from source node
+        var blueprint = _currentBlueprint;
+        if (blueprint == null) return PinType.Any;
+
+        var sourceNode = blueprint.GetNodeById(connection.SourceNodeId);
+        if (sourceNode == null) return PinType.Any;
+
+        // 1. ConstNode → use ConstType
+        if (sourceNode is ConstNode constNode)
+            return TypeStringToPinType(constNode.ConstType);
+
+        // 2. CallNode → look up ReturnType from HelperFunctions
+        if (sourceNode is CallNode callNode)
+        {
+            var helper = blueprint.HelperFunctions
+                .FirstOrDefault(h => h.Name == callNode.FunctionName);
+            if (helper != null)
+                return TypeStringToPinType(helper.ReturnType);
+        }
+
+        // 3. CallHelperNode → look up ReturnType from HelperFunctions
+        if (sourceNode is CallHelperNode helperNode)
+        {
+            var helper = blueprint.HelperFunctions
+                .FirstOrDefault(h => h.Name == helperNode.HelperFunctionName);
+            if (helper != null)
+                return TypeStringToPinType(helper.ReturnType);
+        }
+
+        // 4. GetNode → look up variable type in ConstValues
+        if (sourceNode is GetNode getNode)
+        {
+            var constVal = blueprint.ConstValues
+                .FirstOrDefault(cv => cv.Name == getNode.VarName);
+            if (constVal != null)
+                return TypeStringToPinType(constVal.Type);
+        }
+
+        // 5. Connection with PubVarName → look up in ConstValues
+        if (!string.IsNullOrEmpty(connection.PubVarName))
+        {
+            var constVal = blueprint.ConstValues
+                .FirstOrDefault(cv => cv.Name == connection.PubVarName);
+            if (constVal != null)
+                return TypeStringToPinType(constVal.Type);
+        }
+
+        return PinType.Any;
+    }
+
+    /// <summary>
+    /// Maps a type string (e.g., "int", "bool", "string") to PinType for color rendering
+    /// </summary>
+    private static PinType TypeStringToPinType(string typeStr) => typeStr?.ToLowerInvariant() switch
+    {
+        "int" or "integer" => PinType.Integer,
+        "bool" or "boolean" => PinType.Boolean,
+        "double" or "float" or "number" => PinType.Double,
+        "string" => PinType.String,
+        _ => PinType.Any
+    };
 
     /// <summary>
     /// Maps PinType to a brush color for connector rendering
@@ -787,8 +937,11 @@ public partial class BlueprintEditorViewModel : ObservableObject
     /// Command to import from BlockScript
     /// </summary>
     [RelayCommand]
-    private async Task ImportFromBlockScriptAsync(string sourceCode)
+    private async Task ImportFromBlockScriptAsync((string SourceCode, List<HelperFunction>? Helpers) args)
     {
+        var sourceCode = args.SourceCode;
+        var helperFunctions = args.Helpers;
+
         if (string.IsNullOrWhiteSpace(sourceCode))
         {
             StatusText = "Empty source code";
@@ -799,7 +952,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
 
         try
         {
-            var blueprint = _blueprintService.ImportFromBlockScript(sourceCode, null);
+            var blueprint = _blueprintService.ImportFromBlockScript(sourceCode, helperFunctions);
 
             if (blueprint != null)
             {

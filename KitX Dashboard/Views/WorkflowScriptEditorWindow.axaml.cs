@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using KitX.Dashboard.ViewModels;
@@ -452,9 +453,10 @@ WorkflowOutput.WriteLine(""Plugin call completed!"");";
 
         // Pass the current BlockScript source code to the blueprint editor
         var sourceCode = viewModel?.MainProgramCode;
+        var helpers = viewModel?.HelperFunctions?.ToList();
         if (!string.IsNullOrEmpty(sourceCode))
         {
-            blueprintEditorWindow.SetSourceCode(sourceCode);
+            blueprintEditorWindow.SetSourceCode(sourceCode, helpers);
         }
 
         blueprintEditorWindow.Show();
