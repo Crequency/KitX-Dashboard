@@ -54,6 +54,9 @@ public partial class App : Application
         // ViewModels with constructor dependencies will be auto-resolved via ActivatorUtilities
         services.AddCoreServices();
 
+        // Register Dashboard-specific services
+        services.AddSingleton<IFileDialogService, FileDialogService>();
+
         _serviceProvider = services.BuildServiceProvider();
 
         Log.Information("Service provider initialized.");

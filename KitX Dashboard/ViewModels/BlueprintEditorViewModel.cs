@@ -13,6 +13,7 @@ using NodeEditor.Model;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Contract.Tasks;
 using KitX.Core.Tasks;
+using KitX.Dashboard.Services;
 using Serilog;
 using BlueprintPinDirection = KitX.Core.Contract.Workflow.PinDirection;
 
@@ -26,6 +27,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
     private readonly INodeTemplateProvider _nodeTemplateProvider;
     private readonly IKcsFileService _kcsFileService;
     private readonly IBlueprintRenderDataService _renderDataService;
+    private readonly IFileDialogService _fileDialogService;
     private CancellationTokenSource? _cancellationTokenSource;
 
     /// <summary>
@@ -94,6 +96,28 @@ public partial class BlueprintEditorViewModel : ObservableObject
         set => SetProperty(ref _isExecuting, value);
     }
 
+    private int _nodeCount;
+
+    /// <summary>
+    /// Gets or sets the displayed node count for the status bar
+    /// </summary>
+    public int NodeCount
+    {
+        get => _nodeCount;
+        set => SetProperty(ref _nodeCount, value);
+    }
+
+    private int _connectionCount;
+
+    /// <summary>
+    /// Gets or sets the displayed connection count for the status bar
+    /// </summary>
+    public int ConnectionCount
+    {
+        get => _connectionCount;
+        set => SetProperty(ref _connectionCount, value);
+    }
+
     /// <summary>
     /// Constructor with DI injection
     /// </summary>
@@ -103,7 +127,8 @@ public partial class BlueprintEditorViewModel : ObservableObject
         ITasksService tasksService,
         INodeTemplateProvider nodeTemplateProvider,
         IKcsFileService kcsFileService,
-        IBlueprintRenderDataService renderDataService)
+        IBlueprintRenderDataService renderDataService,
+        IFileDialogService fileDialogService)
     {
         _blueprintService = blueprintService;
         _workflowService = workflowService;
@@ -111,6 +136,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
         _nodeTemplateProvider = nodeTemplateProvider;
         _kcsFileService = kcsFileService;
         _renderDataService = renderDataService;
+        _fileDialogService = fileDialogService;
 
         // Initialize Editor with Drawing
         var drawing = CreateDrawing();
@@ -255,6 +281,8 @@ public partial class BlueprintEditorViewModel : ObservableObject
 
         Log.Information("Loaded blueprint with {NodeCount} nodes, {ExecCount} exec and {DataCount} data connections",
             renderData.AllNodes.Count, renderData.ExecConnections.Count, renderData.DataConnections.Count);
+
+        RefreshCounts();
 
         // [DIAG] Per-node connector count summary
         var nodeConnCounts = new System.Text.StringBuilder();
@@ -688,6 +716,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
         // Clear existing nodes
         Drawing.Nodes.Clear();
         Drawing.Connectors.Clear();
+        RefreshCounts();
 
         Log.Information("Created new blueprint");
     }
@@ -726,51 +755,70 @@ public partial class BlueprintEditorViewModel : ObservableObject
         node.Parent = Drawing;
         Drawing.Nodes.Add(node);
         Log.Information("Added {NodeType} node", type);
+        RefreshCounts();
+    }
+
+    /// <summary>
+    /// Updates NodeCount and ConnectionCount properties from the drawing
+    /// </summary>
+    private void RefreshCounts()
+    {
+        NodeCount = Drawing.Nodes?.Count ?? 0;
+        ConnectionCount = Drawing.Connectors?.Count ?? 0;
     }
 
     /// <summary>
     /// Adds a new Entry node to the canvas
     /// </summary>
+    [RelayCommand]
     public void AddEntryNode() => AddNodeFromTemplate(BlueprintNodeType.Entry);
 
     /// <summary>
     /// Adds a new Branch node to the canvas
     /// </summary>
+    [RelayCommand]
     public void AddBranchNode() => AddNodeFromTemplate(BlueprintNodeType.Branch);
 
     /// <summary>
     /// Adds a new Loop node to the canvas
     /// </summary>
+    [RelayCommand]
     public void AddLoopNode() => AddNodeFromTemplate(BlueprintNodeType.Loop);
 
     /// <summary>
     /// Adds a new Break node to the canvas
     /// </summary>
+    [RelayCommand]
     public void AddBreakNode() => AddNodeFromTemplate(BlueprintNodeType.Break);
 
     /// <summary>
     /// Adds a new Const node to the canvas
     /// </summary>
+    [RelayCommand]
     public void AddConstNode() => AddNodeFromTemplate(BlueprintNodeType.Const, "Const: NewConst");
 
     /// <summary>
     /// Adds a new Call node to the canvas
     /// </summary>
+    [RelayCommand]
     public void AddCallNode() => AddNodeFromTemplate(BlueprintNodeType.Call, "Call: Plugin.Function");
 
     /// <summary>
     /// Adds a new Call Helper node to the canvas
     /// </summary>
+    [RelayCommand]
     public void AddCallHelperNode() => AddNodeFromTemplate(BlueprintNodeType.CallHelper, "Helper: Func");
 
     /// <summary>
     /// Adds a new Print node to the canvas
     /// </summary>
+    [RelayCommand]
     public void AddPrintNode() => AddNodeFromTemplate(BlueprintNodeType.Print);
 
     /// <summary>
     /// Adds a new Pause node to the canvas
     /// </summary>
+    [RelayCommand]
     public void AddPauseNode() => AddNodeFromTemplate(BlueprintNodeType.Pause);
 
     #endregion
@@ -1001,6 +1049,75 @@ public partial class BlueprintEditorViewModel : ObservableObject
         {
             StatusText = $"Export error: {ex.Message}";
             Log.Error(ex, "Blueprint export error");
+        }
+    }
+
+    /// <summary>
+    /// Command to open a blueprint from file
+    /// </summary>
+    [RelayCommand]
+    private async Task OpenBlueprintAsync()
+    {
+        var filters = new List<Services.FileDialogFilter>
+        {
+            new() { Name = "KCS Files", Extensions = ["kcs"] },
+            new() { Name = "All Files", Extensions = ["*"] }
+        };
+
+        var filePath = await _fileDialogService.ShowOpenDialogAsync("Open Blueprint", filters);
+        if (filePath == null) return;
+
+        await LoadBlueprintAsync(filePath);
+    }
+
+    /// <summary>
+    /// Command to save the blueprint to a new file
+    /// </summary>
+    [RelayCommand]
+    private async Task SaveBlueprintAsAsync()
+    {
+        var filters = new List<Services.FileDialogFilter>
+        {
+            new() { Name = "KCS Files", Extensions = ["kcs"] }
+        };
+
+        var suggestedName = !string.IsNullOrEmpty(CurrentFilePath)
+            ? System.IO.Path.GetFileName(CurrentFilePath)
+            : null;
+
+        var filePath = await _fileDialogService.ShowSaveDialogAsync("Save Blueprint", "kcs", filters, suggestedName);
+        if (filePath == null) return;
+
+        await SaveBlueprintAsync(filePath);
+    }
+
+    /// <summary>
+    /// Command to import from BlockScript via text input dialog
+    /// </summary>
+    [RelayCommand]
+    private async Task ImportFromBSAsync()
+    {
+        var sourceCode = await _fileDialogService.ShowTextInputDialogAsync(
+            "Import from BlockScript",
+            "Paste BlockScript source code:",
+            string.Empty);
+
+        if (string.IsNullOrWhiteSpace(sourceCode)) return;
+
+        await ImportFromBlockScriptCommand.ExecuteAsync((sourceCode, (List<HelperFunction>?)null));
+    }
+
+    /// <summary>
+    /// Command to export to BlockScript and show result dialog
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportToBSAsync()
+    {
+        ExportToBlockScriptCommand.Execute(null);
+
+        if (!string.IsNullOrEmpty(LastExportedSourceCode))
+        {
+            await _fileDialogService.ShowTextOutputDialogAsync("Exported BlockScript", LastExportedSourceCode);
         }
     }
 
