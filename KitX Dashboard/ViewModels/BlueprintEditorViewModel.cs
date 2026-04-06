@@ -70,6 +70,11 @@ public partial class BlueprintEditorViewModel : ObservableObject
     private Dictionary<ConnectorViewModel, PinType> _connectorPinTypes = new();
 
     /// <summary>
+    /// Maps PinViewModel to its PinType for attached property rendering
+    /// </summary>
+    private Dictionary<PinViewModel, PinType> _pinTypes = new();
+
+    /// <summary>
     /// Gets or sets the current blueprint
     /// </summary>
     public Blueprint? CurrentBlueprint
@@ -156,13 +161,23 @@ public partial class BlueprintEditorViewModel : ObservableObject
     {
         var settings = new DrawingNodeSettingsViewModel
         {
+            // Connection rules
+            EnableConnections = true,
+            RequireDirectionalConnections = true,
             EnableMultiplePinConnections = true,
+            AllowSelfConnections = false,
+            AllowDuplicateConnections = false,
+
+            // Snap and grid
             EnableSnap = true,
             SnapX = 15.0,
             SnapY = 15.0,
             EnableGrid = true,
             GridCellWidth = 15.0,
-            GridCellHeight = 15.0
+            GridCellHeight = 15.0,
+
+            // Custom validation: execution↔execution, data↔data by type
+            ConnectionValidator = ValidateConnection
         };
 
         var drawing = new DrawingNodeViewModel
@@ -281,6 +296,10 @@ public partial class BlueprintEditorViewModel : ObservableObject
 
         Log.Information("Loaded blueprint with {NodeCount} nodes, {ExecCount} exec and {DataCount} data connections",
             renderData.AllNodes.Count, renderData.ExecConnections.Count, renderData.DataConnections.Count);
+
+        // Update pin connection states for visual rendering (hollow/filled)
+        foreach (var node in Drawing.Nodes.OfType<NodeViewModel>())
+            UpdatePinConnectionStates(node);
 
         RefreshCounts();
 
@@ -408,34 +427,52 @@ public partial class BlueprintEditorViewModel : ObservableObject
     /// </summary>
     private NodeViewModel ConvertBlueprintNodeToViewModel(BlueprintNode blueprintNode)
     {
-        // Use self-describing node to get correct size and layout
+        // Use self-describing node to get correct layout
         var descriptor = blueprintNode.GetDescriptor();
+        var displayTitle = blueprintNode.GetDisplayTitle();
+
+        // Auto-size based on title and actual pin names (not just descriptor)
+        var actualInputNames = blueprintNode.InputPins.Select(p => p.Name).ToList();
+        var actualOutputNames = blueprintNode.OutputPins.Select(p => p.Name).ToList();
+        var inputDataPins = blueprintNode.InputPins.Count(p => p.Type != PinType.Execution);
+        var outputDataPins = blueprintNode.OutputPins.Count(p => p.Type != PinType.Execution);
+        var (width, height) = CalculateNodeSize(displayTitle, actualInputNames, actualOutputNames, inputDataPins, outputDataPins);
+
+        // Get category colors
+        var (primaryColor, lightColor) = GetCategoryColors(blueprintNode.NodeType);
 
         var nodeVm = new NodeViewModel
         {
             Name = blueprintNode.Name,
             X = blueprintNode.X,
             Y = blueprintNode.Y,
-            Width = descriptor.Width,
-            Height = descriptor.Height,
-            Content = new BlueprintNodeContentViewModel { Title = blueprintNode.GetDisplayTitle() },
+            Width = width,
+            Height = height,
+            Content = new BlueprintNodeContentViewModel
+            {
+                Title = displayTitle,
+                CategoryColor = primaryColor,
+                CategoryColorLight = lightColor,
+                InputPins = BuildPinInfosFromPins(blueprintNode.InputPins),
+                OutputPins = BuildPinInfosFromPins(blueprintNode.OutputPins)
+            },
             Pins = new ObservableCollection<IPin>()
         };
 
         // Store the mapping for round-trip export
         _nodeIdMap[nodeVm] = blueprintNode.Id;
 
-        // Add input pins using descriptor positions
+        // Add input pins with auto-computed positions
         foreach (var pin in blueprintNode.InputPins)
         {
-            var pinVm = CreatePinViewModel(pin, nodeVm, descriptor, true);
+            var pinVm = CreatePinViewModel(pin, nodeVm, blueprintNode.InputPins, true);
             nodeVm.Pins.Add(pinVm);
         }
 
-        // Add output pins using descriptor positions
+        // Add output pins with auto-computed positions
         foreach (var pin in blueprintNode.OutputPins)
         {
-            var pinVm = CreatePinViewModel(pin, nodeVm, descriptor, false);
+            var pinVm = CreatePinViewModel(pin, nodeVm, blueprintNode.OutputPins, false);
             nodeVm.Pins.Add(pinVm);
         }
 
@@ -443,25 +480,22 @@ public partial class BlueprintEditorViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Creates a PinViewModel from a BlueprintPin using the node's descriptor for Y position
+    /// Creates a PinViewModel from a BlueprintPin using auto-computed Y position.
+    /// Y is computed from the pin's index in the actual blueprintNode pin list
+    /// (not the static descriptor), so dynamic pins are correctly positioned.
     /// </summary>
     private PinViewModel CreatePinViewModel(BlueprintPin pin, NodeViewModel parentNode,
-        NodeDescriptor descriptor, bool isInput)
+        List<BlueprintPin> allPins, bool isInput)
     {
         double x = isInput ? 0 : parentNode.Width;
 
-        // Look up pin Y position from descriptor
-        double y;
-        if (isInput)
-        {
-            var pinDesc = descriptor.InputPins.FirstOrDefault(p => p.Name == pin.Name);
-            y = pinDesc?.RelativeY ?? 30;
-        }
-        else
-        {
-            var pinDesc = descriptor.OutputPins.FirstOrDefault(p => p.Name == pin.Name);
-            y = pinDesc?.RelativeY ?? 30;
-        }
+        // Sort: execution pins first, then data pins, then compute Y from index
+        var sorted = allPins
+            .OrderByDescending(p => p.Type == PinType.Execution)
+            .ThenBy(p => p.Name)
+            .ToList();
+        var index = sorted.IndexOf(pin);
+        double y = TitleBarHeight + index * RowHeight + RowHeight / 2;
 
         var pinVm = new PinViewModel
         {
@@ -469,8 +503,8 @@ public partial class BlueprintEditorViewModel : ObservableObject
             Parent = parentNode,
             X = x,
             Y = y,
-            Width = 10,
-            Height = 10,
+            Width = 14,
+            Height = 14,
             Alignment = isInput
                 ? PinAlignment.Left
                 : PinAlignment.Right,
@@ -478,6 +512,9 @@ public partial class BlueprintEditorViewModel : ObservableObject
                 ? NodeEditor.Model.PinDirection.Input
                 : NodeEditor.Model.PinDirection.Output
         };
+
+        // Store pin type for attached property rendering
+        _pinTypes[pinVm] = pin.Type;
 
         return pinVm;
     }
@@ -602,7 +639,26 @@ public partial class BlueprintEditorViewModel : ObservableObject
     /// </summary>
     public PinType? GetConnectorPinType(ConnectorViewModel connector)
     {
-        return _connectorPinTypes.TryGetValue(connector, out var pt) ? pt : null;
+        // Check stored mapping first (from loaded blueprints)
+        if (_connectorPinTypes.TryGetValue(connector, out var pt))
+            return pt;
+
+        // For manually-drawn connections, determine from the source pin's type
+        if (connector.Start is PinViewModel sourcePin && _pinTypes.TryGetValue(sourcePin, out var sourceType))
+        {
+            _connectorPinTypes[connector] = sourceType;
+            return sourceType;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Returns the PinType for a PinViewModel (for attached property rendering)
+    /// </summary>
+    public PinType? GetPinType(PinViewModel pin)
+    {
+        return _pinTypes.TryGetValue(pin, out var pt) ? pt : null;
     }
 
     /// <summary>
@@ -694,6 +750,238 @@ public partial class BlueprintEditorViewModel : ObservableObject
     };
 
     /// <summary>
+    /// Maps PinType to a hex color string for pin rendering in templates
+    /// </summary>
+    public static string GetHexColorForPinType(PinType pinType) => pinType switch
+    {
+        PinType.Execution => "#32CD32",     // LimeGreen
+        PinType.Boolean => "#00FFFF",       // Cyan
+        PinType.Integer => "#FFA500",       // Orange
+        PinType.Double => "#9370DB",        // MediumPurple
+        PinType.String => "#FFFF00",        // Yellow
+        _ => "#FFFFFF"                      // White (Any)
+    };
+
+    /// <summary>
+    /// Validates whether two pins can be connected.
+    /// Rules: Output→Input direction, execution↔execution only, data↔data with compatible types.
+    /// </summary>
+    private bool ValidateConnection(NodeEditor.Model.ConnectionValidationContext context)
+    {
+        var start = context.Start as PinViewModel;
+        var end = context.End as PinViewModel;
+        if (start == null || end == null) return false;
+
+        // Rule 1: Must be opposite directions (Output → Input)
+        if (start.Direction == end.Direction) return false;
+
+        // Rule 2: Get pin types from our tracking dictionary
+        var startType = _pinTypes.TryGetValue(start, out var st) ? st : (PinType?)null;
+        var endType = _pinTypes.TryGetValue(end, out var et) ? et : (PinType?)null;
+
+        // If we don't know either pin's type, allow the connection (graceful fallback)
+        if (startType is null || endType is null) return true;
+
+        var startIsExec = startType.Value == PinType.Execution;
+        var endIsExec = endType.Value == PinType.Execution;
+
+        // Rule 3: Execution pins can only connect to execution pins
+        if (startIsExec != endIsExec) return false;
+
+        // Rule 4: For data pins, check type compatibility
+        if (!startIsExec)
+        {
+            // PinType.Any is compatible with everything
+            if (startType.Value == PinType.Any || endType.Value == PinType.Any)
+                return true;
+
+            // Otherwise, types must match
+            if (startType.Value != endType.Value) return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Returns (TitleBarColor, BodyColor) hex pair for a node category
+    /// </summary>
+    public static (string Primary, string Light) GetCategoryColors(BlueprintNodeType type) => type switch
+    {
+        BlueprintNodeType.Entry => ("#4CAF50", "#2E7D32"),          // Green
+        BlueprintNodeType.Branch or BlueprintNodeType.Loop
+            or BlueprintNodeType.Break => ("#FF9800", "#BF6E00"),   // Orange
+        BlueprintNodeType.Const or BlueprintNodeType.Get
+            or BlueprintNodeType.Set => ("#2196F3", "#1565C0"),     // Blue
+        BlueprintNodeType.Call or BlueprintNodeType.CallHelper
+            or BlueprintNodeType.Print or BlueprintNodeType.Pause => ("#9C27B0", "#7B1FA2"), // Purple
+        _ => ("#607D8B", "#455A64")                                 // Gray fallback
+    };
+
+    #region Layout Constants
+
+    /// <summary>Title bar height in pixels</summary>
+    private const double TitleBarHeight = 28;
+
+    /// <summary>Row height per port (name only, no default value)</summary>
+    private const double RowHeight = 22;
+
+    /// <summary>Extra height for default value TextBox when shown</summary>
+    private const double DefaultValueHeight = 20;
+
+    /// <summary>Body vertical padding in pixels</summary>
+    private const double BodyPadding = 8;
+
+    /// <summary>Minimum node width in pixels</summary>
+    private const double MinNodeWidth = 140;
+
+    /// <summary>Estimated character width for auto-sizing (pixels per char)</summary>
+    private const double CharWidth = 7.5;
+
+    /// <summary>Horizontal padding inside node content</summary>
+    private const double ContentHPadding = 24;
+
+    /// <summary>Extra width for pin icon column per side</summary>
+    private const double PinIconWidth = 16;
+
+    #endregion
+
+    /// <summary>
+    /// Calculates auto-fit node size based on title and pin names
+    /// </summary>
+    private static (double Width, double Height) CalculateNodeSize(
+        string title, IReadOnlyList<PinDescriptor> inputPins, IReadOnlyList<PinDescriptor> outputPins)
+    {
+        // Delegate to the string-based overload
+        return CalculateNodeSize(title,
+            inputPins.Select(p => p.Name).ToList(),
+            outputPins.Select(p => p.Name).ToList(),
+            inputPins.Count(p => p.Type != PinType.Execution),
+            outputPins.Count(p => p.Type != PinType.Execution));
+    }
+
+    /// <summary>
+    /// Calculates auto-fit node size from pin names and data pin counts
+    /// </summary>
+    private static (double Width, double Height) CalculateNodeSize(
+        string title, List<string> inputNames, List<string> outputNames,
+        int inputDataPinCount = 0, int outputDataPinCount = 0)
+    {
+        var titleWidth = title.Length * CharWidth + ContentHPadding;
+
+        var maxInputName = inputNames.Count > 0
+            ? inputNames.Max(n => n.Length) * CharWidth + PinIconWidth
+            : 0;
+        var maxOutputName = outputNames.Count > 0
+            ? outputNames.Max(n => n.Length) * CharWidth + PinIconWidth
+            : 0;
+        var pinsWidth = maxInputName + maxOutputName + ContentHPadding * 2;
+
+        var width = Math.Max(Math.Max(titleWidth, pinsWidth), MinNodeWidth);
+
+        // Height: each pin gets RowHeight, data pins additionally get DefaultValueHeight
+        var execInputCount = inputNames.Count - inputDataPinCount;
+        var execOutputCount = outputNames.Count - outputDataPinCount;
+        var inputRows = execInputCount * RowHeight + inputDataPinCount * (RowHeight + DefaultValueHeight);
+        var outputRows = execOutputCount * RowHeight + outputDataPinCount * (RowHeight + DefaultValueHeight);
+        var bodyHeight = Math.Max(inputRows, outputRows) + BodyPadding;
+        var height = TitleBarHeight + bodyHeight;
+
+        return (width, height);
+    }
+
+    /// <summary>
+    /// Computes pin Y position from index (execution pins first, then data pins)
+    /// </summary>
+    private static double ComputePinY(IReadOnlyList<PinDescriptor> allPins, PinDescriptor targetPin)
+    {
+        // Sort: execution pins first, then data pins
+        var sorted = allPins
+            .OrderByDescending(p => p.Type == PinType.Execution)
+            .ThenBy(p => p.Name)
+            .ToList();
+        var index = sorted.IndexOf(targetPin);
+        return TitleBarHeight + index * RowHeight + RowHeight / 2;
+    }
+
+    /// <summary>
+    /// Builds a BlueprintPinInfo list from pin descriptors, with execution pins sorted first
+    /// </summary>
+    private static ObservableCollection<BlueprintPinInfo> BuildPinInfos(
+        IReadOnlyList<PinDescriptor> descriptors)
+    {
+        var sorted = descriptors
+            .OrderByDescending(p => p.Type == PinType.Execution)
+            .ThenBy(p => p.Name)
+            .ToList();
+
+        var result = new ObservableCollection<BlueprintPinInfo>();
+        foreach (var desc in sorted)
+        {
+            result.Add(new BlueprintPinInfo
+            {
+                Name = desc.Name,
+                IsExecution = desc.Type == PinType.Execution,
+                ColorHex = GetHexColorForPinType(desc.Type),
+                IsConnected = false
+            });
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Builds BlueprintPinInfo list from actual BlueprintPin objects (supports dynamic pins)
+    /// </summary>
+    private static ObservableCollection<BlueprintPinInfo> BuildPinInfosFromPins(
+        List<BlueprintPin> pins)
+    {
+        var sorted = pins
+            .OrderByDescending(p => p.Type == PinType.Execution)
+            .ThenBy(p => p.Name)
+            .ToList();
+
+        var result = new ObservableCollection<BlueprintPinInfo>();
+        foreach (var pin in sorted)
+        {
+            result.Add(new BlueprintPinInfo
+            {
+                Name = pin.Name,
+                IsExecution = pin.Type == PinType.Execution,
+                ColorHex = GetHexColorForPinType(pin.Type),
+                IsConnected = false,
+                DefaultValue = pin.DefaultValue
+            });
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Updates IsConnected on all BlueprintPinInfo in a node's content
+    /// </summary>
+    private void UpdatePinConnectionStates(NodeViewModel nodeVm)
+    {
+        if (nodeVm.Content is not BlueprintNodeContentViewModel content) return;
+
+        var connectedPinNames = new HashSet<string>();
+
+        foreach (var conn in Drawing.Connectors.OfType<ConnectorViewModel>())
+        {
+            if (conn.Start?.Parent == nodeVm)
+                connectedPinNames.Add(conn.Start.Name + ":out");
+            if (conn.End?.Parent == nodeVm)
+                connectedPinNames.Add(conn.End.Name + ":in");
+        }
+
+        foreach (var pin in content.InputPins)
+            pin.IsConnected = connectedPinNames.Contains(pin.Name + ":in");
+        foreach (var pin in content.OutputPins)
+            pin.IsConnected = connectedPinNames.Contains(pin.Name + ":out");
+
+        // RaisePropertyChanged for the collections so template updates
+        content.InputPins = new ObservableCollection<BlueprintPinInfo>(content.InputPins);
+        content.OutputPins = new ObservableCollection<BlueprintPinInfo>(content.OutputPins);
+    }
+
+    /// <summary>
     /// Creates a new blueprint
     /// </summary>
     [RelayCommand]
@@ -713,37 +1001,57 @@ public partial class BlueprintEditorViewModel : ObservableObject
     #region Node Creation Methods
 
     /// <summary>
-    /// Adds a node to the canvas from a descriptor
+    /// Adds a node to the canvas from a descriptor with auto-sizing
     /// </summary>
     private void AddNodeFromTemplate(BlueprintNodeType type, string? contentTitle = null)
     {
         var descriptor = _nodeRegistry.GetDescriptor(type);
+        var title = contentTitle ?? descriptor.DisplayName;
+
+        // Auto-size based on title and pin names
+        var (width, height) = CalculateNodeSize(title, descriptor.InputPins, descriptor.OutputPins);
+
+        // Get category colors
+        var (primaryColor, lightColor) = GetCategoryColors(type);
 
         var node = new NodeViewModel
         {
             Name = descriptor.DisplayName,
             X = 100,
             Y = 100,
-            Width = descriptor.Width,
-            Height = descriptor.Height,
-            Content = new BlueprintNodeContentViewModel { Title = contentTitle ?? descriptor.DisplayName },
+            Width = width,
+            Height = height,
+            Content = new BlueprintNodeContentViewModel
+            {
+                Title = title,
+                CategoryColor = primaryColor,
+                CategoryColorLight = lightColor,
+                InputPins = BuildPinInfos(descriptor.InputPins),
+                OutputPins = BuildPinInfos(descriptor.OutputPins)
+            },
             Pins = new ObservableCollection<IPin>()
         };
 
-        // Add input pins using descriptor positions
+        // Add input pins with auto-computed positions
         foreach (var pinDesc in descriptor.InputPins)
         {
-            node.AddPin(0, pinDesc.RelativeY, 10, 10, PinAlignment.Left, pinDesc.Name);
+            var y = ComputePinY(descriptor.InputPins, pinDesc);
+            var addedPin = node.AddPin(0, y, 14, 14, PinAlignment.Left, pinDesc.Name);
+            if (addedPin is PinViewModel pvm)
+                _pinTypes[pvm] = pinDesc.Type;
         }
-        // Add output pins using descriptor positions
+        // Add output pins with auto-computed positions
         foreach (var pinDesc in descriptor.OutputPins)
         {
-            node.AddPin(descriptor.Width, pinDesc.RelativeY, 10, 10, PinAlignment.Right, pinDesc.Name);
+            var y = ComputePinY(descriptor.OutputPins, pinDesc);
+            var addedPin = node.AddPin(width, y, 14, 14, PinAlignment.Right, pinDesc.Name);
+            if (addedPin is PinViewModel pvm)
+                _pinTypes[pvm] = pinDesc.Type;
         }
 
         node.Parent = Drawing;
         Drawing.Nodes.Add(node);
-        Log.Information("Added {NodeType} node", type);
+        Log.Information("Added {NodeType} node (auto-sized {Width}x{Height})", type, width, height);
         RefreshCounts();
     }
 
@@ -1114,12 +1422,51 @@ public partial class BlueprintEditorViewModel : ObservableObject
 }
 
 /// <summary>
+/// Pin display info for node content template rendering
+/// </summary>
+public class BlueprintPinInfo : ObservableObject
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsExecution { get; set; }
+    public string ColorHex { get; set; } = "#FFFFFF";
+
+    private bool _isConnected;
+    public bool IsConnected
+    {
+        get => _isConnected;
+        set { SetProperty(ref _isConnected, value); OnPropertyChanged(nameof(ShowDefaultValue)); }
+    }
+
+    private string? _defaultValue;
+    public string? DefaultValue
+    {
+        get => _defaultValue;
+        set => SetProperty(ref _defaultValue, value);
+    }
+
+    /// <summary>Show default value editor only for disconnected, non-execution pins</summary>
+    public bool ShowDefaultValue => !IsConnected && !IsExecution;
+}
+
+/// <summary>
 /// Content ViewModel for blueprint nodes
 /// </summary>
 public partial class BlueprintNodeContentViewModel : ObservableObject
 {
     [ObservableProperty]
     private string _title = string.Empty;
+
+    [ObservableProperty]
+    private string _categoryColor = "#607D8B";
+
+    [ObservableProperty]
+    private string _categoryColorLight = "#455A64";
+
+    [ObservableProperty]
+    private ObservableCollection<BlueprintPinInfo> _inputPins = [];
+
+    [ObservableProperty]
+    private ObservableCollection<BlueprintPinInfo> _outputPins = [];
 }
 
 /// <summary>

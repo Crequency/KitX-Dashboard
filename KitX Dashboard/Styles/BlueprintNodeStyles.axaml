@@ -1,0 +1,115 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:NodeEditor.Controls;assembly=NodeEditorAvalonia"
+        xmlns:bpControls="using:KitX.Dashboard.Controls"
+        xmlns:conv="using:KitX.Dashboard.Converters"
+        x:CompileBindings="True">
+
+  <Styles.Resources>
+    <ResourceDictionary>
+
+      <!-- ============================================================ -->
+      <!-- Override Node: no resize handles, layout via Content template -->
+      <!-- ============================================================ -->
+      <ControlTheme x:Key="{x:Type controls:Node}" TargetType="controls:Node">
+
+        <Setter Property="ClipToBounds" Value="False" />
+
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Panel Width="{Binding NodeSource.Width, RelativeSource={RelativeSource TemplatedParent}}"
+                   Height="{Binding NodeSource.Height, RelativeSource={RelativeSource TemplatedParent}}"
+                   RenderTransformOrigin="0.5,0.5">
+              <Panel.RenderTransform>
+                <RotateTransform Angle="{Binding NodeSource.Rotation, RelativeSource={RelativeSource TemplatedParent}}" />
+              </Panel.RenderTransform>
+
+              <ContentPresenter x:Name="PART_ContentPresenter"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Padding="{TemplateBinding Padding}"
+                                RecognizesAccessKey="True"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+
+              <controls:Pins x:Name="PART_Pins"
+                             Width="{Binding NodeSource.Width, RelativeSource={RelativeSource TemplatedParent}}"
+                             Height="{Binding NodeSource.Height, RelativeSource={RelativeSource TemplatedParent}}"
+                             NodeSource="{Binding NodeSource, RelativeSource={RelativeSource TemplatedParent}}"/>
+
+              <!-- No resize handles — node size is auto-calculated -->
+            </Panel>
+          </ControlTemplate>
+        </Setter>
+
+      </ControlTheme>
+
+      <!-- ============================================================ -->
+      <!-- Override Pin: renders triangle for exec, circle for data     -->
+      <!-- Uses attached properties from PinProperties for pin type info -->
+      <!-- ============================================================ -->
+      <ControlTheme x:Key="{x:Type controls:Pin}" TargetType="controls:Pin">
+
+        <Setter Property="ClipToBounds" Value="False" />
+        <Setter Property="Width" Value="14" />
+        <Setter Property="Height" Value="14" />
+        <!-- Center the 14x14 pin on its (X,Y) coordinate point -->
+        <Setter Property="Margin" Value="-7,-7,0,0" />
+        <!-- Default attached property values so bindings never fail -->
+        <Setter Property="bpControls:PinProperties.IsExecution" Value="False" />
+        <Setter Property="bpControls:PinProperties.PinTypeColor" Value="#FFFFFF" />
+        <Setter Property="bpControls:PinProperties.IsConnected" Value="False" />
+
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Panel>
+              <!-- Execution pin: right-pointing triangle -->
+              <Polygon x:Name="PART_ExecPin"
+                       Points="1,1 13,7 1,13"
+                       StrokeThickness="2"
+                       IsVisible="{Binding (bpControls:PinProperties.IsExecution), RelativeSource={RelativeSource TemplatedParent}}">
+                <Polygon.Stroke>
+                  <SolidColorBrush Color="#32CD32" />
+                </Polygon.Stroke>
+                <Polygon.Fill>
+                  <MultiBinding Converter="{x:Static conv:PinFillConverter.Instance}" FallbackValue="Transparent">
+                    <Binding Path="(bpControls:PinProperties.IsConnected)" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <Binding Path="(bpControls:PinProperties.PinTypeColor)" RelativeSource="{RelativeSource TemplatedParent}" />
+                  </MultiBinding>
+                </Polygon.Fill>
+              </Polygon>
+
+              <!-- Data pin: circle -->
+              <Ellipse x:Name="PART_DataPin"
+                       Width="12" Height="12"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       StrokeThickness="2"
+                       IsVisible="{Binding !(bpControls:PinProperties.IsExecution), RelativeSource={RelativeSource TemplatedParent}}">
+                <Ellipse.Stroke>
+                  <MultiBinding Converter="{x:Static conv:PinStrokeConverter.Instance}" FallbackValue="White">
+                    <Binding Path="(bpControls:PinProperties.IsConnected)" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <Binding Path="(bpControls:PinProperties.PinTypeColor)" RelativeSource="{RelativeSource TemplatedParent}" />
+                  </MultiBinding>
+                </Ellipse.Stroke>
+                <Ellipse.Fill>
+                  <MultiBinding Converter="{x:Static conv:PinFillConverter.Instance}" FallbackValue="Transparent">
+                    <Binding Path="(bpControls:PinProperties.IsConnected)" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <Binding Path="(bpControls:PinProperties.PinTypeColor)" RelativeSource="{RelativeSource TemplatedParent}" />
+                  </MultiBinding>
+                </Ellipse.Fill>
+              </Ellipse>
+            </Panel>
+          </ControlTemplate>
+        </Setter>
+
+      </ControlTheme>
+
+    </ResourceDictionary>
+  </Styles.Resources>
+
+</Styles>
