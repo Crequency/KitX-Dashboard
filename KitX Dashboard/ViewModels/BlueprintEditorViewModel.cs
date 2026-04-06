@@ -24,7 +24,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
     private readonly IBlueprintService _blueprintService;
     private readonly IWorkflowService _workflowService;
     private readonly ITasksService _tasksService;
-    private readonly INodeTemplateProvider _nodeTemplateProvider;
+    private readonly INodeRegistry _nodeRegistry;
     private readonly IKcsFileService _kcsFileService;
     private readonly IBlueprintRenderDataService _renderDataService;
     private readonly IFileDialogService _fileDialogService;
@@ -125,7 +125,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
         IBlueprintService blueprintService,
         IWorkflowService workflowService,
         ITasksService tasksService,
-        INodeTemplateProvider nodeTemplateProvider,
+        INodeRegistry nodeRegistry,
         IKcsFileService kcsFileService,
         IBlueprintRenderDataService renderDataService,
         IFileDialogService fileDialogService)
@@ -133,7 +133,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
         _blueprintService = blueprintService;
         _workflowService = workflowService;
         _tasksService = tasksService;
-        _nodeTemplateProvider = nodeTemplateProvider;
+        _nodeRegistry = nodeRegistry;
         _kcsFileService = kcsFileService;
         _renderDataService = renderDataService;
         _fileDialogService = fileDialogService;
@@ -408,71 +408,60 @@ public partial class BlueprintEditorViewModel : ObservableObject
     /// </summary>
     private NodeViewModel ConvertBlueprintNodeToViewModel(BlueprintNode blueprintNode)
     {
-        // Use template to get correct size
-        var (templateWidth, templateHeight) = _nodeTemplateProvider.GetNodeSize(blueprintNode.NodeType);
+        // Use self-describing node to get correct size and layout
+        var descriptor = blueprintNode.GetDescriptor();
 
         var nodeVm = new NodeViewModel
         {
             Name = blueprintNode.Name,
             X = blueprintNode.X,
             Y = blueprintNode.Y,
-            Width = templateWidth,
-            Height = templateHeight,
-            Content = new BlueprintNodeContentViewModel { Title = blueprintNode.Name },
+            Width = descriptor.Width,
+            Height = descriptor.Height,
+            Content = new BlueprintNodeContentViewModel { Title = blueprintNode.GetDisplayTitle() },
             Pins = new ObservableCollection<IPin>()
         };
 
         // Store the mapping for round-trip export
         _nodeIdMap[nodeVm] = blueprintNode.Id;
 
-        // Add input pins
+        // Add input pins using descriptor positions
         foreach (var pin in blueprintNode.InputPins)
         {
-            var pinVm = CreatePinViewModel(pin, nodeVm, blueprintNode.NodeType);
+            var pinVm = CreatePinViewModel(pin, nodeVm, descriptor, true);
             nodeVm.Pins.Add(pinVm);
         }
 
-        // Add output pins
+        // Add output pins using descriptor positions
         foreach (var pin in blueprintNode.OutputPins)
         {
-            var pinVm = CreatePinViewModel(pin, nodeVm, blueprintNode.NodeType);
+            var pinVm = CreatePinViewModel(pin, nodeVm, descriptor, false);
             nodeVm.Pins.Add(pinVm);
-        }
-
-        // Add type-specific content
-        switch (blueprintNode)
-        {
-            case ConstNode constNode:
-                ((BlueprintNodeContentViewModel)nodeVm.Content).Title = $"Const: {constNode.ConstName}";
-                break;
-            case CallNode callNode:
-                ((BlueprintNodeContentViewModel)nodeVm.Content).Title = $"Call: {callNode.FunctionName}";
-                break;
-            case CallHelperNode helperNode:
-                ((BlueprintNodeContentViewModel)nodeVm.Content).Title = $"Helper: {helperNode.HelperFunctionName}";
-                break;
-            case GetNode getNode:
-                ((BlueprintNodeContentViewModel)nodeVm.Content).Title = $"Get: {getNode.VarName}";
-                break;
-            case SetNode setNode:
-                ((BlueprintNodeContentViewModel)nodeVm.Content).Title = $"Set: {setNode.VarName}";
-                break;
         }
 
         return nodeVm;
     }
 
     /// <summary>
-    /// Creates a PinViewModel from a BlueprintPin
+    /// Creates a PinViewModel from a BlueprintPin using the node's descriptor for Y position
     /// </summary>
-    private PinViewModel CreatePinViewModel(BlueprintPin pin, NodeViewModel parentNode, BlueprintNodeType nodeType)
+    private PinViewModel CreatePinViewModel(BlueprintPin pin, NodeViewModel parentNode,
+        NodeDescriptor descriptor, bool isInput)
     {
-        double x = pin.Direction == BlueprintPinDirection.Input ? 0 : parentNode.Width;
+        double x = isInput ? 0 : parentNode.Width;
 
-        // Use template to get correct Y position
-        double y = pin.Direction == BlueprintPinDirection.Input
-            ? _nodeTemplateProvider.GetInputPinY(nodeType, pin.Name)
-            : _nodeTemplateProvider.GetOutputPinY(nodeType, pin.Name);
+        // Look up pin Y position from descriptor
+        double y;
+        if (isInput)
+        {
+            var pinDesc = descriptor.InputPins.FirstOrDefault(p => p.Name == pin.Name);
+            y = pinDesc?.RelativeY ?? 30;
+        }
+        else
+        {
+            var pinDesc = descriptor.OutputPins.FirstOrDefault(p => p.Name == pin.Name);
+            y = pinDesc?.RelativeY ?? 30;
+        }
 
         var pinVm = new PinViewModel
         {
@@ -482,10 +471,10 @@ public partial class BlueprintEditorViewModel : ObservableObject
             Y = y,
             Width = 10,
             Height = 10,
-            Alignment = pin.Direction == BlueprintPinDirection.Input
+            Alignment = isInput
                 ? PinAlignment.Left
                 : PinAlignment.Right,
-            Direction = pin.Direction == BlueprintPinDirection.Input
+            Direction = isInput
                 ? NodeEditor.Model.PinDirection.Input
                 : NodeEditor.Model.PinDirection.Output
         };
@@ -499,37 +488,10 @@ public partial class BlueprintEditorViewModel : ObservableObject
     private BlueprintNode ConvertViewModelToBlueprintNode(NodeViewModel nodeVm)
     {
         // Infer node type from name
-        var nodeType = nodeVm.Name switch
-        {
-            "Entry" => BlueprintNodeType.Entry,
-            "Branch" => BlueprintNodeType.Branch,
-            "Loop" => BlueprintNodeType.Loop,
-            "Break" => BlueprintNodeType.Break,
-            "Const" => BlueprintNodeType.Const,
-            "Call" => BlueprintNodeType.Call,
-            "CallHelper" => BlueprintNodeType.CallHelper,
-            "Print" => BlueprintNodeType.Print,
-            "Pause" => BlueprintNodeType.Pause,
-            "Get" => BlueprintNodeType.Get,
-            "Set" => BlueprintNodeType.Set,
-            _ => BlueprintNodeType.Entry
-        };
+        var nodeType = InferNodeTypeFromName(nodeVm.Name);
 
-        BlueprintNode blueprintNode = nodeType switch
-        {
-            BlueprintNodeType.Entry => new EntryNode(),
-            BlueprintNodeType.Branch => new BranchNode(),
-            BlueprintNodeType.Loop => new LoopNode(),
-            BlueprintNodeType.Break => new BreakNode(),
-            BlueprintNodeType.Const => new ConstNode(),
-            BlueprintNodeType.Call => new CallNode(),
-            BlueprintNodeType.CallHelper => new CallHelperNode(),
-            BlueprintNodeType.Print => new PrintNode(),
-            BlueprintNodeType.Pause => new PauseNode(),
-            BlueprintNodeType.Get => new GetNode(),
-            BlueprintNodeType.Set => new SetNode(),
-            _ => new EntryNode()
-        };
+        // Use registry to create the node (eliminates the creation switch)
+        var blueprintNode = _nodeRegistry.Create(nodeType);
 
         blueprintNode.Name = nodeVm.Name;
         blueprintNode.X = nodeVm.X;
@@ -540,33 +502,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
         // Extract type-specific properties from Content.Title
         if (nodeVm.Content is BlueprintNodeContentViewModel content)
         {
-            switch (blueprintNode)
-            {
-                case ConstNode constNode when content.Title.StartsWith("Const:"):
-                    constNode.ConstName = content.Title.Substring("Const:".Length).Trim();
-                    break;
-                case CallNode callNode when content.Title.StartsWith("Call:"):
-                    var callParts = content.Title.Substring("Call:".Length).Trim().Split('.');
-                    if (callParts.Length >= 2)
-                    {
-                        callNode.PluginName = callParts[0];
-                        callNode.FunctionName = string.Join(".", callParts.Skip(1));
-                    }
-                    else
-                    {
-                        callNode.FunctionName = callParts[0];
-                    }
-                    break;
-                case CallHelperNode helperNode when content.Title.StartsWith("Helper:"):
-                    helperNode.HelperFunctionName = content.Title.Substring("Helper:".Length).Trim();
-                    break;
-                case GetNode getNode when content.Title.StartsWith("Get:"):
-                    getNode.VarName = content.Title.Substring("Get:".Length).Trim();
-                    break;
-                case SetNode setNode when content.Title.StartsWith("Set:"):
-                    setNode.VarName = content.Title.Substring("Set:".Length).Trim();
-                    break;
-            }
+            ApplyDisplayTitleToNode(blueprintNode, content.Title);
         }
 
         // Copy pins - use Name as identifier, cast to PinViewModel to access Direction
@@ -590,6 +526,59 @@ public partial class BlueprintEditorViewModel : ObservableObject
         }
 
         return blueprintNode;
+    }
+
+    /// <summary>
+    /// Infers BlueprintNodeType from a node's display name
+    /// </summary>
+    private static BlueprintNodeType InferNodeTypeFromName(string name) => name switch
+    {
+        "Entry" => BlueprintNodeType.Entry,
+        "Branch" => BlueprintNodeType.Branch,
+        "Loop" => BlueprintNodeType.Loop,
+        "Break" => BlueprintNodeType.Break,
+        "Const" or _ when name.StartsWith("Const:") => BlueprintNodeType.Const,
+        "Call" or _ when name.StartsWith("Call:") => BlueprintNodeType.Call,
+        "CallHelper" or _ when name.StartsWith("Helper:") => BlueprintNodeType.CallHelper,
+        "Print" => BlueprintNodeType.Print,
+        "Pause" => BlueprintNodeType.Pause,
+        "Get" or _ when name.StartsWith("Get:") => BlueprintNodeType.Get,
+        "Set" or _ when name.StartsWith("Set:") => BlueprintNodeType.Set,
+        _ => BlueprintNodeType.Entry
+    };
+
+    /// <summary>
+    /// Applies display title to extract type-specific properties from a node
+    /// </summary>
+    private static void ApplyDisplayTitleToNode(BlueprintNode node, string title)
+    {
+        switch (node)
+        {
+            case ConstNode constNode when title.StartsWith("Const:"):
+                constNode.ConstName = title["Const:".Length..].Trim();
+                break;
+            case CallNode callNode when title.StartsWith("Call:"):
+                var callParts = title["Call:".Length..].Trim().Split('.');
+                if (callParts.Length >= 2)
+                {
+                    callNode.PluginName = callParts[0];
+                    callNode.FunctionName = string.Join(".", callParts.Skip(1));
+                }
+                else
+                {
+                    callNode.FunctionName = callParts[0];
+                }
+                break;
+            case CallHelperNode helperNode when title.StartsWith("Helper:"):
+                helperNode.HelperFunctionName = title["Helper:".Length..].Trim();
+                break;
+            case GetNode getNode when title.StartsWith("Get:"):
+                getNode.VarName = title["Get:".Length..].Trim();
+                break;
+            case SetNode setNode when title.StartsWith("Set:"):
+                setNode.VarName = title["Set:".Length..].Trim();
+                break;
+        }
     }
 
     /// <summary>
@@ -724,32 +713,32 @@ public partial class BlueprintEditorViewModel : ObservableObject
     #region Node Creation Methods
 
     /// <summary>
-    /// Adds a node to the canvas from a template
+    /// Adds a node to the canvas from a descriptor
     /// </summary>
     private void AddNodeFromTemplate(BlueprintNodeType type, string? contentTitle = null)
     {
-        var template = _nodeTemplateProvider.GetTemplates()[type];
+        var descriptor = _nodeRegistry.GetDescriptor(type);
 
         var node = new NodeViewModel
         {
-            Name = template.Name,
+            Name = descriptor.DisplayName,
             X = 100,
             Y = 100,
-            Width = template.Width,
-            Height = template.Height,
-            Content = new BlueprintNodeContentViewModel { Title = contentTitle ?? template.Name },
+            Width = descriptor.Width,
+            Height = descriptor.Height,
+            Content = new BlueprintNodeContentViewModel { Title = contentTitle ?? descriptor.DisplayName },
             Pins = new ObservableCollection<IPin>()
         };
 
-        // Add input pins using template positions
-        foreach (var pinTemplate in template.InputPins)
+        // Add input pins using descriptor positions
+        foreach (var pinDesc in descriptor.InputPins)
         {
-            node.AddPin(0, pinTemplate.RelativeY, 10, 10, PinAlignment.Left, pinTemplate.Name);
+            node.AddPin(0, pinDesc.RelativeY, 10, 10, PinAlignment.Left, pinDesc.Name);
         }
-        // Add output pins using template positions
-        foreach (var pinTemplate in template.OutputPins)
+        // Add output pins using descriptor positions
+        foreach (var pinDesc in descriptor.OutputPins)
         {
-            node.AddPin(template.Width, pinTemplate.RelativeY, 10, 10, PinAlignment.Right, pinTemplate.Name);
+            node.AddPin(descriptor.Width, pinDesc.RelativeY, 10, 10, PinAlignment.Right, pinDesc.Name);
         }
 
         node.Parent = Drawing;
