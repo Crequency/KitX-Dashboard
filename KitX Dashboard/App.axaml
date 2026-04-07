@@ -11,92 +11,7 @@
     <Application.DataTemplates>
         <local:ViewLocator/>
 
-        <!-- Blueprint Node Content: Two-part (Title Bar + Port Body) -->
-        <!-- Port shapes are rendered by the overridden Pin ControlTheme -->
-        <!-- This template only provides: title bar + port name labels + default values -->
-        <DataTemplate DataType="vm:BlueprintNodeContentViewModel">
-            <Border CornerRadius="6" ClipToBounds="True"
-                    BorderThickness="1.5"
-                    BorderBrush="{Binding CategoryColor}"
-                    Background="{Binding CategoryColorLight}">
-                <DockPanel>
-                    <!-- Title Bar (docked to top, auto-height) -->
-                    <Border DockPanel.Dock="Top"
-                            Background="{Binding CategoryColor}" Padding="12,6"
-                            CornerRadius="6,6,0,0">
-                        <TextBlock Text="{Binding Title}"
-                                   Foreground="White"
-                                   FontWeight="SemiBold"
-                                   FontSize="12"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                    </Border>
-
-                    <!-- Port Body (fills remaining space, no gap possible) -->
-                    <Border Background="{Binding CategoryColorLight}" Opacity="0.85" Padding="16,4">
-                        <Grid ColumnDefinitions="*,*">
-                            <!-- Input Pin Names (left side) -->
-                            <ItemsControl ItemsSource="{Binding InputPins}" Grid.Column="0" Margin="0,0,8,0">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel>
-                                            <!-- Pin name row (fixed height = RowHeight to align with Pin Y) -->
-                                            <Border Height="22">
-                                                <TextBlock Text="{Binding Name}"
-                                                           Foreground="#DDDDDD"
-                                                           FontSize="10"
-                                                           VerticalAlignment="Center" />
-                                            </Border>
-                                            <!-- Default value editor (only for disconnected non-execution pins) -->
-                                            <TextBox Text="{Binding DefaultValue, Mode=TwoWay}"
-                                                     FontSize="9"
-                                                     Foreground="#AAAAAA"
-                                                     Background="#1A1A1A"
-                                                     BorderThickness="1"
-                                                     BorderBrush="#444444"
-                                                     Padding="4,1,2,1"
-                                                     Margin="0,0,0,2"
-                                                     IsVisible="{Binding ShowDefaultValue}"
-                                                     Watermark="default..." />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                            <!-- Output Pin Names (right side) -->
-                            <ItemsControl ItemsSource="{Binding OutputPins}" Grid.Column="1" Margin="8,0,0,0">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel HorizontalAlignment="Right">
-                                            <!-- Pin name row (fixed height = RowHeight) -->
-                                            <Border Height="22">
-                                                <TextBlock Text="{Binding Name}"
-                                                           Foreground="#DDDDDD"
-                                                           FontSize="10"
-                                                           VerticalAlignment="Center"
-                                                           HorizontalAlignment="Right" />
-                                            </Border>
-                                            <!-- Default value editor for output pins -->
-                                            <TextBox Text="{Binding DefaultValue, Mode=TwoWay}"
-                                                     FontSize="9"
-                                                     Foreground="#AAAAAA"
-                                                     Background="#1A1A1A"
-                                                     BorderThickness="1"
-                                                     BorderBrush="#444444"
-                                                     Padding="4,1,2,1"
-                                                     Margin="0,0,0,2"
-                                                     IsVisible="{Binding ShowDefaultValue}"
-                                                     Watermark="default..."
-                                                     HorizontalAlignment="Right" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Grid>
-                    </Border>
-                </DockPanel>
-            </Border>
-        </DataTemplate>
+        <!-- Blueprint Node templates are now defined inline in BlueprintEditorWindow.axaml -->
     </Application.DataTemplates>
 
     <Application.Resources>
@@ -132,7 +47,7 @@
 
         <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml"/>
         <StyleInclude Source="avares://AvaloniaProgressRing/Styles/ProgressRing.xaml"/>
-        <StyleInclude Source="avares://NodeEditorAvalonia/Themes/NodeEditorTheme.axaml"/>
+        <StyleInclude Source="avares://NodifyM.Avalonia/Styles/ControlStyles.axaml"/>
         <StyleInclude Source="/Styles/BlueprintNodeStyles.axaml"/>
         <StyleInclude Source="/Styles/FontsStyles.axaml"/>
     </Application.Styles>
