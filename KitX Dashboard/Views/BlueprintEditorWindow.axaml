@@ -75,9 +75,14 @@
 
                             <!-- Data -->
                             <Expander Header="Data" IsExpanded="True" Margin="0,5">
-                                <Button Content="Const"
-                                        HorizontalAlignment="Stretch" Margin="5"
-                                        Command="{Binding AddConstNodeCommand}"/>
+                                <StackPanel>
+                                    <Button Content="Const"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddConstNodeCommand}"/>
+                                    <Button Content="Variable"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddVariableNodeCommand}"/>
+                                </StackPanel>
                             </Expander>
 
                             <!-- Actions -->
@@ -208,38 +213,59 @@
                                     </Border>
                                 </controls:Node.Header>
 
-                                <!-- Const Node: Type selector + Value editor -->
-                                <StackPanel IsVisible="{Binding ShowConstTypeSelector}">
-                                    <StackPanel Orientation="Horizontal"
-                                                Spacing="4"
-                                                Margin="8,4,8,0">
-                                        <TextBlock Text="Type:"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="10"
-                                                   Foreground="#AAAAAA"/>
-                                        <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
-                                                  SelectedItem="{Binding ConstType, Mode=TwoWay}"
-                                                  FontSize="10"
-                                                  MinWidth="70"
-                                                  Padding="4,2"
-                                                  HorizontalAlignment="Left"/>
+                                <!-- Node body content: type selectors + value editors -->
+                                <StackPanel>
+                                    <!-- Const Node: Type selector + Value editor -->
+                                    <StackPanel IsVisible="{Binding ShowConstTypeSelector}">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="4"
+                                                    Margin="8,4,8,0">
+                                            <TextBlock Text="Type:"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="10"
+                                                       Foreground="#AAAAAA"/>
+                                            <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
+                                                      SelectedItem="{Binding ConstType, Mode=TwoWay}"
+                                                      FontSize="10"
+                                                      MinWidth="70"
+                                                      Padding="4,2"
+                                                      HorizontalAlignment="Left"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="4"
+                                                    Margin="8,2,8,4">
+                                            <TextBlock Text="Value:"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="10"
+                                                       Foreground="#AAAAAA"/>
+                                            <TextBox Text="{Binding ConstValue, Mode=TwoWay}"
+                                                     FontSize="10"
+                                                     Watermark="value..."
+                                                     MinWidth="80"
+                                                     Padding="4,2"
+                                                     Background="#333333"
+                                                     Foreground="White"
+                                                     BorderThickness="1"
+                                                     BorderBrush="#555555"/>
+                                        </StackPanel>
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal"
-                                                Spacing="4"
-                                                Margin="8,2,8,4">
-                                        <TextBlock Text="Value:"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="10"
-                                                   Foreground="#AAAAAA"/>
-                                        <TextBox Text="{Binding ConstValue, Mode=TwoWay}"
-                                                 FontSize="10"
-                                                 Watermark="value..."
-                                                 MinWidth="80"
-                                                 Padding="4,2"
-                                                 Background="#333333"
-                                                 Foreground="White"
-                                                 BorderThickness="1"
-                                                 BorderBrush="#555555"/>
+
+                                    <!-- Variable Node: Type selector only (no value editor) -->
+                                    <StackPanel IsVisible="{Binding ShowVarTypeSelector}">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="4"
+                                                    Margin="8,4,8,4">
+                                            <TextBlock Text="Type:"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="10"
+                                                       Foreground="#AAAAAA"/>
+                                            <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
+                                                      SelectedItem="{Binding VarType, Mode=TwoWay}"
+                                                      FontSize="10"
+                                                      MinWidth="70"
+                                                      Padding="4,2"
+                                                      HorizontalAlignment="Left"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
 

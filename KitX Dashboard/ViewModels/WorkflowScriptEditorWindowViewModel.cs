@@ -231,6 +231,27 @@ return v1 + v2;"
     }
 
     /// <summary>
+    /// Builds a dictionary of user-edited constant values that differ from defaults.
+    /// Used to sync UI edits into the execution pipeline.
+    /// </summary>
+    private Dictionary<string, object?>? GetUserConstantOverrides()
+    {
+        if (VariableConstants.Count == 0) return null;
+
+        var overrides = new Dictionary<string, object?>();
+        foreach (var constant in VariableConstants)
+        {
+            // Only include values that the user has changed
+            if (!object.Equals(constant.UserValue, constant.DefaultValue))
+            {
+                overrides[constant.Name] = constant.UserValue;
+            }
+        }
+
+        return overrides.Count > 0 ? overrides : null;
+    }
+
+    /// <summary>
     /// 加载KCS文件
     /// </summary>
     internal async Task LoadKcsFileAsync(string filePath)
@@ -376,10 +397,12 @@ return v1 + v2;"
 
                 if (UseBlockMode)
                 {
-                    // BlockScript模式执行
+                    // BlockScript模式执行 — pass user-edited constant values
+                    var constantOverrides = GetUserConstantOverrides();
                     var executionResult = await _workflowService.ExecuteBlockScriptAsync(
                         codeText,
                         HelperFunctions.ToList(),
+                        constantOverrides,
                         tokenSource.Token
                     );
 

@@ -415,6 +415,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         // === Phase 4: Rebuild ScopeBlocks from BlockScopes ===
         RebuildScopeBlocksFromBlockScopes(blueprint);
 
+        // === Phase 5: Resolve dynamic pin types for Get/Set nodes ===
+        ResolveAllGetSetPinTypes();
+
         RefreshCounts();
         Log.Information("Loaded blueprint: {NodeCount} nodes, {ConnCount} connections, {ScopeCount} scope blocks",
             Nodes.Count, Connections.Count, ScopeBlocks.Count);
@@ -585,6 +588,30 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             // Preserve ConstName in Metadata
             if (!string.IsNullOrEmpty(constNode.ConstName))
                 nodeVm.Metadata["ConstName"] = constNode.ConstName;
+            // Wire type propagation callback
+            nodeVm.ConstTypeChangedCallback = OnNodeTypeChanged;
+            // Explicitly update output connector PinType (OnConstTypeChanged may not fire
+            // if ConstType equals the field's default value "int")
+            foreach (var conn in nodeVm.Output.OfType<BlueprintConnectorVM>())
+            {
+                if (conn.Title == "Value")
+                {
+                    conn.PinType = BlueprintNodeVM.ConstTypeToPinType(nodeVm.ConstType);
+                    break;
+                }
+            }
+        }
+
+        // Special handling: VariableNode → set VarType + VarName on the VM
+        if (blueprintNode is VariableNode varNode)
+        {
+            if (!string.IsNullOrEmpty(varNode.VarType))
+                nodeVm.VarType = varNode.VarType;
+            if (!string.IsNullOrEmpty(varNode.VarName))
+                nodeVm.VarName = varNode.VarName;
+            nodeVm.Metadata["VarName"] = varNode.VarName;
+            // Wire type propagation callback
+            nodeVm.VarTypeChangedCallback = OnNodeTypeChanged;
         }
 
         // Preserve CallNode metadata for round-trip
@@ -596,11 +623,29 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 nodeVm.Metadata["FunctionName"] = callNode.FunctionName;
         }
 
-        // Preserve CallHelperNode metadata for round-trip
+        // Preserve CallHelperNode metadata for round-trip + infer return type
         if (blueprintNode is CallHelperNode helperNode)
         {
             if (!string.IsNullOrEmpty(helperNode.HelperFunctionName))
+            {
                 nodeVm.Metadata["HelperFunctionName"] = helperNode.HelperFunctionName;
+
+                // Infer return type for the Return output connector
+                var helper = _currentBlueprint?.HelperFunctions
+                    .FirstOrDefault(h => h.Name == helperNode.HelperFunctionName);
+                if (helper != null && !string.IsNullOrEmpty(helper.ReturnType))
+                {
+                    var returnPinType = TypeStringToPinType(helper.ReturnType);
+                    foreach (var conn in nodeVm.Output.OfType<BlueprintConnectorVM>())
+                    {
+                        if (conn.Title == "Return")
+                        {
+                            conn.PinType = returnPinType;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         return nodeVm;
@@ -663,10 +708,31 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             blueprint.HelperFunctions = new List<HelperFunction>(CurrentBlueprint.HelperFunctions);
         }
 
-        // Preserve ConstValues from the original blueprint
-        if (CurrentBlueprint?.ConstValues != null && CurrentBlueprint.ConstValues.Count > 0)
+        // Rebuild ConstValues from current ConstNode and VariableNode VMs
+        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
         {
-            blueprint.ConstValues = new List<VariableConstant>(CurrentBlueprint.ConstValues);
+            if (node.NodeType == BlueprintNodeType.Const)
+            {
+                var constName = node.Metadata.TryGetValue("ConstName", out var cn) ? cn
+                    : node.DisplayTitle.StartsWith("Const:") ? node.DisplayTitle["Const:".Length..].Trim() : node.DisplayTitle;
+                blueprint.ConstValues.Add(new VariableConstant
+                {
+                    Name = constName,
+                    DefaultValue = !string.IsNullOrEmpty(node.ConstValue) ? node.ConstValue : null,
+                    Type = node.ConstType ?? "string"
+                });
+            }
+            else if (node.NodeType == BlueprintNodeType.Variable)
+            {
+                var varName = node.Metadata.TryGetValue("VarName", out var vn) ? vn
+                    : node.DisplayTitle.StartsWith("Var:") ? node.DisplayTitle["Var:".Length..].Trim() : node.DisplayTitle;
+                blueprint.ConstValues.Add(new VariableConstant
+                {
+                    Name = varName,
+                    DefaultValue = null,
+                    Type = node.VarType ?? "int"
+                });
+            }
         }
 
         // Convert nodes
@@ -782,6 +848,12 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         ApplyDisplayTitleToNode(blueprintNode, nodeVm.DisplayTitle, nodeVm);
 
+        // Special handling: VariableNode → preserve VarType from VM
+        if (blueprintNode is VariableNode vNode && !string.IsNullOrEmpty(nodeVm.VarType))
+        {
+            vNode.VarType = nodeVm.VarType;
+        }
+
         // Clear auto-generated pins from constructor's InitializePinsFromDescriptor()
         // to prevent duplicates — we add pins from UI connectors instead.
         blueprintNode.InputPins.Clear();
@@ -854,7 +926,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         _ => BlueprintNodeType.Entry
     };
 
-    private static void ApplyDisplayTitleToNode(BlueprintNode node, string title, BlueprintNodeVM? nodeVm = null)
+    private void ApplyDisplayTitleToNode(BlueprintNode node, string title, BlueprintNodeVM? nodeVm = null)
     {
         switch (node)
         {
@@ -886,9 +958,26 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 break;
             case GetNode getNode when title.StartsWith("Get:"):
                 getNode.VarName = title["Get:".Length..].Trim();
+                // Re-resolve pin type when VarName changes
+                if (nodeVm != null)
+                {
+                    var pinType = ResolveVariablePinType(getNode.VarName);
+                    UpdateNodeValuePinType(nodeVm, pinType);
+                }
                 break;
             case SetNode setNode when title.StartsWith("Set:"):
                 setNode.VarName = title["Set:".Length..].Trim();
+                // Re-resolve pin type when VarName changes
+                if (nodeVm != null)
+                {
+                    var pinType = ResolveVariablePinType(setNode.VarName);
+                    UpdateNodeValuePinType(nodeVm, pinType);
+                }
+                break;
+            case VariableNode vNode when title.StartsWith("Var:"):
+                vNode.VarName = title["Var:".Length..].Trim();
+                if (nodeVm != null)
+                    nodeVm.VarName = vNode.VarName;
                 break;
         }
     }
@@ -956,6 +1045,145 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         }
 
         return PinType.Any;
+    }
+
+    // ─── Dynamic Type Inference & Propagation ────────────────────────────
+
+    /// <summary>
+    /// Resolves the PinType for a named variable by searching ConstNodes, VariableNodes,
+    /// and CurrentBlueprint.ConstValues.
+    /// </summary>
+    private PinType ResolveVariablePinType(string varName)
+    {
+        if (string.IsNullOrEmpty(varName)) return PinType.Any;
+
+        // 1. Search ConstNode VMs in canvas
+        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+        {
+            if (node.NodeType == BlueprintNodeType.Const)
+            {
+                var constName = node.Metadata.TryGetValue("ConstName", out var cn) ? cn
+                    : node.DisplayTitle.StartsWith("Const:") ? node.DisplayTitle["Const:".Length..].Trim() : "";
+                if (constName == varName)
+                    return BlueprintNodeVM.ConstTypeToPinType(node.ConstType);
+            }
+        }
+
+        // 2. Search VariableNode VMs in canvas
+        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+        {
+            if (node.NodeType == BlueprintNodeType.Variable)
+            {
+                var vName = node.Metadata.TryGetValue("VarName", out var vn) ? vn
+                    : node.DisplayTitle.StartsWith("Var:") ? node.DisplayTitle["Var:".Length..].Trim() : "";
+                if (vName == varName)
+                    return BlueprintNodeVM.ConstTypeToPinType(node.VarType);
+            }
+        }
+
+        // 3. Search CurrentBlueprint.ConstValues
+        if (CurrentBlueprint?.ConstValues != null)
+        {
+            var constVal = CurrentBlueprint.ConstValues.FirstOrDefault(cv => cv.Name == varName);
+            if (constVal != null)
+                return TypeStringToPinType(constVal.Type);
+        }
+
+        return PinType.Any;
+    }
+
+    /// <summary>
+    /// Propagates a resolved type to all Get/Set node VMs that reference the given variable.
+    /// Updates pin types and connection colors.
+    /// </summary>
+    private void PropagateTypeToGetSetNodes(string varName, PinType pinType)
+    {
+        if (string.IsNullOrEmpty(varName)) return;
+
+        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+        {
+            if (node.NodeType is not (BlueprintNodeType.Get or BlueprintNodeType.Set)) continue;
+
+            // Extract VarName from display title ("Get: myVar" or "Set: myVar")
+            var nodeVarName = node.DisplayTitle.Contains(':')
+                ? node.DisplayTitle[(node.DisplayTitle.IndexOf(':') + 1)..].Trim()
+                : "";
+
+            if (nodeVarName != varName) continue;
+
+            // Find the Value connector and update its PinType
+            UpdateNodeValuePinType(node, pinType);
+        }
+    }
+
+    /// <summary>
+    /// Updates the Value pin's PinType on a Get/Set node VM and refreshes connection colors.
+    /// </summary>
+    private void UpdateNodeValuePinType(BlueprintNodeVM node, PinType pinType)
+    {
+        // For GetNode: Value is an output connector
+        // For SetNode: Value is an input connector
+        var connectors = node.NodeType == BlueprintNodeType.Get
+            ? node.Output.OfType<BlueprintConnectorVM>()
+            : node.Input.OfType<BlueprintConnectorVM>();
+
+        foreach (var conn in connectors)
+        {
+            if (conn.Title == "Value")
+            {
+                conn.PinType = pinType;
+                // Connection colors will update automatically if BlueprintConnectionVM
+                // subscribes to PinType changes (see Issue 2.2)
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Callback invoked when a ConstNode or VariableNode changes its type.
+    /// Propagates the new type to all dependent Get/Set nodes.
+    /// </summary>
+    private void OnNodeTypeChanged(BlueprintNodeVM changedNode)
+    {
+        string varName;
+        PinType pinType;
+
+        if (changedNode.NodeType == BlueprintNodeType.Const)
+        {
+            varName = changedNode.Metadata.TryGetValue("ConstName", out var cn) ? cn
+                : changedNode.DisplayTitle.StartsWith("Const:") ? changedNode.DisplayTitle["Const:".Length..].Trim() : "";
+            pinType = BlueprintNodeVM.ConstTypeToPinType(changedNode.ConstType);
+        }
+        else if (changedNode.NodeType == BlueprintNodeType.Variable)
+        {
+            varName = changedNode.Metadata.TryGetValue("VarName", out var vn) ? vn
+                : changedNode.DisplayTitle.StartsWith("Var:") ? changedNode.DisplayTitle["Var:".Length..].Trim() : "";
+            pinType = BlueprintNodeVM.ConstTypeToPinType(changedNode.VarType);
+        }
+        else return;
+
+        PropagateTypeToGetSetNodes(varName, pinType);
+    }
+
+    /// <summary>
+    /// Performs an initial type resolution pass on all Get/Set nodes.
+    /// Called after loading a blueprint.
+    /// </summary>
+    private void ResolveAllGetSetPinTypes()
+    {
+        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+        {
+            if (node.NodeType is not (BlueprintNodeType.Get or BlueprintNodeType.Set)) continue;
+
+            var varName = node.DisplayTitle.Contains(':')
+                ? node.DisplayTitle[(node.DisplayTitle.IndexOf(':') + 1)..].Trim()
+                : "";
+
+            if (string.IsNullOrEmpty(varName)) continue;
+
+            var pinType = ResolveVariablePinType(varName);
+            UpdateNodeValuePinType(node, pinType);
+        }
     }
 
     // ─── Node Creation ───────────────────────────────────────────────────
@@ -1089,7 +1317,29 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     public void AddBreakNode() => AddNodeFromTemplate(BlueprintNodeType.Break);
 
     [RelayCommand]
-    public void AddConstNode() => AddNodeFromTemplate(BlueprintNodeType.Const, "Const: NewConst");
+    public void AddConstNode()
+    {
+        AddNodeFromTemplate(BlueprintNodeType.Const, "Const: NewConst");
+        // Initialize output connector PinType from default ConstType
+        var constNode = Nodes.OfType<BlueprintNodeVM>().Last(n => n.NodeType == BlueprintNodeType.Const);
+        foreach (var conn in constNode.Output.OfType<BlueprintConnectorVM>())
+        {
+            if (conn.Title == "Value")
+            {
+                conn.PinType = BlueprintNodeVM.ConstTypeToPinType(constNode.ConstType);
+                break;
+            }
+        }
+        constNode.ConstTypeChangedCallback = OnNodeTypeChanged;
+    }
+
+    [RelayCommand]
+    public void AddVariableNode()
+    {
+        AddNodeFromTemplate(BlueprintNodeType.Variable, "Var: NewVar");
+        var varNode = Nodes.OfType<BlueprintNodeVM>().Last();
+        varNode.VarTypeChangedCallback = OnNodeTypeChanged;
+    }
 
     [RelayCommand]
     public void AddCallNode() => AddNodeFromTemplate(BlueprintNodeType.Call, "Call: Plugin.Function");

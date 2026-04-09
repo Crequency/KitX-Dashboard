@@ -55,6 +55,28 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     /// <summary>Whether this node should show the ConstType selector (only Const nodes)</summary>
     public bool ShowConstTypeSelector => NodeType == BlueprintNodeType.Const;
 
+    /// <summary>Whether this node should show the VariableType selector (only Variable nodes)</summary>
+    public bool ShowVarTypeSelector => NodeType == BlueprintNodeType.Variable;
+
+    /// <summary>
+    /// Variable type for Variable nodes. Bound to a ComboBox in the node body.
+    /// Changing this propagates the type to all Get/Set nodes referencing this variable.
+    /// </summary>
+    [ObservableProperty]
+    private string _varType = "int";
+
+    /// <summary>
+    /// Variable name for Variable nodes (and Get/Set nodes for type resolution).
+    /// </summary>
+    [ObservableProperty]
+    private string _varName = string.Empty;
+
+    /// <summary>
+    /// Callback invoked when VarType changes — used by BlueprintEditorViewModel
+    /// to propagate the type to all Get/Set nodes referencing this variable.
+    /// </summary>
+    internal System.Action<BlueprintNodeVM>? VarTypeChangedCallback { get; set; }
+
     /// <summary>
     /// Extra metadata for round-trip preservation.
     /// Keyed by property name, e.g. "ConstType" → "int", "ConstValue" → "5".
@@ -93,6 +115,12 @@ public partial class BlueprintNodeVM : NodeViewModelBase
         }
     }
 
+    partial void OnVarTypeChanged(string value)
+    {
+        Metadata["VarType"] = value;
+        VarTypeChangedCallback?.Invoke(this);
+    }
+
     /// <summary>Converts a ConstType string to the corresponding PinType</summary>
     public static PinType ConstTypeToPinType(string constType) => constType?.ToLowerInvariant() switch
     {
@@ -107,7 +135,10 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     {
         base.OnPropertyChanged(e);
         if (e.PropertyName == nameof(NodeType))
+        {
             OnPropertyChanged(nameof(ShowConstTypeSelector));
+            OnPropertyChanged(nameof(ShowVarTypeSelector));
+        }
     }
 
     /// <summary>Returns (Primary, Light) hex color pair for a node category</summary>
@@ -118,6 +149,7 @@ public partial class BlueprintNodeVM : NodeViewModelBase
             or BlueprintNodeType.Break => ("#FF9800", "#BF6E00"),   // Orange
         BlueprintNodeType.Const or BlueprintNodeType.Get
             or BlueprintNodeType.Set => ("#2196F3", "#1565C0"),     // Blue
+        BlueprintNodeType.Variable => ("#009688", "#00796B"),       // Teal
         BlueprintNodeType.Call or BlueprintNodeType.CallHelper
             or BlueprintNodeType.Print or BlueprintNodeType.Pause => ("#9C27B0", "#7B1FA2"), // Purple
         _ => ("#607D8B", "#455A64")                                 // Gray fallback
