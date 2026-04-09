@@ -15,28 +15,25 @@ namespace KitX.Dashboard.Views;
 public partial class BlueprintEditorWindow : Window, IView
 {
     private readonly BlueprintEditorViewModel _viewModel;
-    private string? _pendingSourceCode;
-    private List<HelperFunction>? _pendingHelperFunctions;
+    private readonly IWorkflowEditorBridge? _bridge;
     private Popup? _contextPopup;
 
-    public BlueprintEditorWindow()
+    /// <summary>
+    /// Creates a BlueprintEditorWindow associated with a WorkflowEditor via bridge.
+    /// </summary>
+    /// <param name="bridge">Bridge to the associated WorkflowEditor (required)</param>
+    public BlueprintEditorWindow(IWorkflowEditorBridge bridge)
     {
         InitializeComponent();
 
+        _bridge = bridge;
+
         // Use DI to get the ViewModel
         _viewModel = App.GetService<BlueprintEditorViewModel>();
+        _viewModel.SetBridge(bridge);
         DataContext = _viewModel;
 
         Loaded += OnLoaded;
-    }
-
-    /// <summary>
-    /// Sets the BlockScript source code to import when the window loads
-    /// </summary>
-    public void SetSourceCode(string sourceCode, List<HelperFunction>? helperFunctions = null)
-    {
-        _pendingSourceCode = sourceCode;
-        _pendingHelperFunctions = helperFunctions;
     }
 
     private void OnLoaded(object? sender, EventArgs e)
@@ -48,14 +45,12 @@ public partial class BlueprintEditorWindow : Window, IView
             editor.ContextRequested += OnEditorContextRequested;
         }
 
-        // If there's pending source code, import it
-        if (!string.IsNullOrEmpty(_pendingSourceCode))
-        {
-            var sourceCode = _pendingSourceCode;
-            var helpers = _pendingHelperFunctions;
-            _pendingSourceCode = null;
-            _pendingHelperFunctions = null;
+        // Auto-import current script from WorkflowEditor via bridge
+        var sourceCode = _bridge?.GetCurrentScript();
+        var helpers = _bridge?.GetHelperFunctions();
 
+        if (!string.IsNullOrEmpty(sourceCode))
+        {
             Dispatcher.UIThread.Post(async () =>
             {
                 await _viewModel.ImportFromBlockScriptCommand.ExecuteAsync((sourceCode, helpers));

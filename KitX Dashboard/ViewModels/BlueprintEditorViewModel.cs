@@ -41,6 +41,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private Blueprint? _currentBlueprint;
     private string _statusText = "Ready";
     private bool _isExecuting;
+    private string _executionResult = string.Empty;
 
     public Blueprint? CurrentBlueprint
     {
@@ -58,6 +59,15 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         get => _isExecuting;
         set => SetProperty(ref _isExecuting, value);
+    }
+
+    /// <summary>
+    /// Execution output displayed in the Output panel
+    /// </summary>
+    public string ExecutionResult
+    {
+        get => _executionResult;
+        set => SetProperty(ref _executionResult, value);
     }
 
     private int _nodeCount;
@@ -85,6 +95,17 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// Nodes not in this map belong to MainBlock.
     /// </summary>
     public Dictionary<string, string> NodeToScopeMap { get; } = [];
+
+    private IWorkflowEditorBridge? _bridge;
+
+    /// <summary>
+    /// Sets the bridge to the associated WorkflowEditor.
+    /// Called by BlueprintEditorWindow after construction.
+    /// </summary>
+    public void SetBridge(IWorkflowEditorBridge bridge)
+    {
+        _bridge = bridge;
+    }
 
     /// <summary>
     /// Constructor with DI injection
@@ -552,6 +573,36 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             nodeVm.Output.Add(connector);
         }
 
+        // Special handling: ConstNode → set ConstType + ConstValue on the VM
+        if (blueprintNode is ConstNode constNode)
+        {
+            // Initialize ConstType from domain model (triggers OnConstTypeChanged → Metadata + PinType)
+            if (!string.IsNullOrEmpty(constNode.ConstType))
+                nodeVm.ConstType = constNode.ConstType;
+            // Initialize ConstValue (triggers OnConstValueChanged → output connector DefaultValue)
+            if (constNode.ConstValue != null)
+                nodeVm.ConstValue = constNode.ConstValue;
+            // Preserve ConstName in Metadata
+            if (!string.IsNullOrEmpty(constNode.ConstName))
+                nodeVm.Metadata["ConstName"] = constNode.ConstName;
+        }
+
+        // Preserve CallNode metadata for round-trip
+        if (blueprintNode is CallNode callNode)
+        {
+            if (!string.IsNullOrEmpty(callNode.PluginName))
+                nodeVm.Metadata["PluginName"] = callNode.PluginName;
+            if (!string.IsNullOrEmpty(callNode.FunctionName))
+                nodeVm.Metadata["FunctionName"] = callNode.FunctionName;
+        }
+
+        // Preserve CallHelperNode metadata for round-trip
+        if (blueprintNode is CallHelperNode helperNode)
+        {
+            if (!string.IsNullOrEmpty(helperNode.HelperFunctionName))
+                nodeVm.Metadata["HelperFunctionName"] = helperNode.HelperFunctionName;
+        }
+
         return nodeVm;
     }
 
@@ -605,6 +656,18 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         var blueprint = _blueprintService.CreateBlueprint();
         blueprint.Name = CurrentBlueprint?.Name ?? "Untitled";
+
+        // Preserve HelperFunctions from the original blueprint (imported from BlockScript)
+        if (CurrentBlueprint?.HelperFunctions != null && CurrentBlueprint.HelperFunctions.Count > 0)
+        {
+            blueprint.HelperFunctions = new List<HelperFunction>(CurrentBlueprint.HelperFunctions);
+        }
+
+        // Preserve ConstValues from the original blueprint
+        if (CurrentBlueprint?.ConstValues != null && CurrentBlueprint.ConstValues.Count > 0)
+        {
+            blueprint.ConstValues = new List<VariableConstant>(CurrentBlueprint.ConstValues);
+        }
 
         // Convert nodes
         foreach (var node in Nodes)
@@ -717,7 +780,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         blueprintNode.X = nodeVm.Location.X;
         blueprintNode.Y = nodeVm.Location.Y;
 
-        ApplyDisplayTitleToNode(blueprintNode, nodeVm.DisplayTitle);
+        ApplyDisplayTitleToNode(blueprintNode, nodeVm.DisplayTitle, nodeVm);
 
         // Clear auto-generated pins from constructor's InitializePinsFromDescriptor()
         // to prevent duplicates — we add pins from UI connectors instead.
@@ -791,12 +854,20 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         _ => BlueprintNodeType.Entry
     };
 
-    private static void ApplyDisplayTitleToNode(BlueprintNode node, string title)
+    private static void ApplyDisplayTitleToNode(BlueprintNode node, string title, BlueprintNodeVM? nodeVm = null)
     {
         switch (node)
         {
             case ConstNode constNode when title.StartsWith("Const:"):
                 constNode.ConstName = title["Const:".Length..].Trim();
+                if (nodeVm != null)
+                {
+                    // Restore ConstValue from the VM's ConstValue property
+                    if (!string.IsNullOrEmpty(nodeVm.ConstValue))
+                        constNode.ConstValue = nodeVm.ConstValue;
+                    // Restore ConstType from the VM's ConstType property
+                    constNode.ConstType = nodeVm.ConstType;
+                }
                 break;
             case CallNode callNode when title.StartsWith("Call:"):
                 var callParts = title["Call:".Length..].Trim().Split('.');
@@ -1063,18 +1134,26 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
             if (result.IsSuccess)
             {
+                var output = result.Output != null && result.Output.Count > 0
+                    ? string.Join("\n", result.Output)
+                    : string.Empty;
+                ExecutionResult = $"Blocks executed: {result.ExecutedBlockCount}\n" +
+                                  $"Execution time: {result.ExecutionTimeMs}ms\n" +
+                                  (string.IsNullOrEmpty(output) ? "" : $"Output:\n{output}");
                 StatusText = $"Executed: {result.ExecutedBlockCount} blocks, {result.ExecutionTimeMs}ms";
                 Log.Information("Blueprint executed successfully: {BlockCount} blocks, {Time}ms",
                     result.ExecutedBlockCount, result.ExecutionTimeMs);
             }
             else
             {
+                ExecutionResult = $"Error: {result.ErrorMessage}";
                 StatusText = $"Execution failed: {result.ErrorMessage}";
                 Log.Error("Blueprint execution failed: {Error}", result.ErrorMessage);
             }
         }
         catch (Exception ex)
         {
+            ExecutionResult = $"Execution error: {ex.Message}\n{ex.StackTrace}";
             StatusText = $"Execution error: {ex.Message}";
             Log.Error(ex, "Blueprint execution error");
         }
@@ -1209,17 +1288,20 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             {
                 CurrentBlueprint = blueprint;
                 LoadBlueprintIntoDrawing(blueprint);
+                ExecutionResult = $"Import successful: {blueprint.Nodes.Count} nodes, {blueprint.Connections.Count} connections";
                 StatusText = $"Import successful: {blueprint.Nodes.Count} nodes, {blueprint.Connections.Count} connections";
                 Log.Information("Blueprint imported successfully with {NodeCount} nodes", blueprint.Nodes.Count);
             }
             else
             {
+                ExecutionResult = "Import failed";
                 StatusText = "Import failed";
                 Log.Warning("Blueprint import returned null");
             }
         }
         catch (Exception ex)
         {
+            ExecutionResult = $"Import error: {ex.Message}";
             StatusText = $"Import error: {ex.Message}";
             Log.Error(ex, "Blueprint import error");
         }
@@ -1240,11 +1322,13 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         {
             var blueprint = ExportDrawingToBlueprint();
             LastExportedSourceCode = _blueprintService.ExportToBlockScript(blueprint);
+            ExecutionResult = $"Export successful: {blueprint.Nodes.Count} nodes\n\n{LastExportedSourceCode}";
             StatusText = $"Export successful: {blueprint.Nodes.Count} nodes";
             Log.Information("Blueprint exported successfully with {NodeCount} nodes", blueprint.Nodes.Count);
         }
         catch (Exception ex)
         {
+            ExecutionResult = $"Export error: {ex.Message}";
             StatusText = $"Export error: {ex.Message}";
             Log.Error(ex, "Blueprint export error");
         }
@@ -1286,24 +1370,92 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     [RelayCommand]
     private async Task ImportFromBSAsync()
     {
-        var sourceCode = await _fileDialogService.ShowTextInputDialogAsync(
-            "Import from BlockScript",
-            "Paste BlockScript source code:",
-            string.Empty);
+        // Import directly from WorkflowEditor via bridge
+        if (_bridge == null)
+        {
+            StatusText = "No WorkflowEditor connected";
+            return;
+        }
 
-        if (string.IsNullOrWhiteSpace(sourceCode)) return;
+        var sourceCode = _bridge.GetCurrentScript();
+        var helpers = _bridge.GetHelperFunctions();
 
-        await ImportFromBlockScriptCommand.ExecuteAsync((sourceCode, (List<HelperFunction>?)null));
+        if (string.IsNullOrWhiteSpace(sourceCode))
+        {
+            ExecutionResult = "No script found in Workflow Editor";
+            StatusText = "No script to import";
+            return;
+        }
+
+        await ImportFromBlockScriptCommand.ExecuteAsync((sourceCode, helpers));
     }
 
     [RelayCommand]
     private async Task ExportToBSAsync()
     {
+        if (_bridge == null)
+        {
+            StatusText = "No WorkflowEditor connected";
+            return;
+        }
+
+        // Export and write back to WorkflowEditor
         ExportToBlockScriptCommand.Execute(null);
 
         if (!string.IsNullOrEmpty(LastExportedSourceCode))
         {
-            await _fileDialogService.ShowTextOutputDialogAsync("Exported BlockScript", LastExportedSourceCode);
+            var blueprint = CurrentBlueprint;
+            var helpers = blueprint?.HelperFunctions;
+
+            _bridge.SetScript(LastExportedSourceCode, helpers);
+            ExecutionResult = $"Exported to Workflow Editor: {LastExportedSourceCode.Length} chars";
+            StatusText = "Exported to Workflow Editor";
+        }
+    }
+
+    /// <summary>
+    /// Run: Export to WorkflowEditor, then trigger execution.
+    /// Output appears in both editors' Output panels.
+    /// </summary>
+    [RelayCommand]
+    private async Task RunViaBridgeAsync()
+    {
+        if (_bridge == null)
+        {
+            // Fallback to standalone execution
+            await ExecuteBlueprintCommand.ExecuteAsync(null);
+            return;
+        }
+
+        // Step 1: Export BS to WorkflowEditor
+        if (Nodes.Count == 0)
+        {
+            ExecutionResult = "No nodes to run";
+            StatusText = "No nodes to run";
+            return;
+        }
+
+        try
+        {
+            var blueprint = ExportDrawingToBlueprint();
+            LastExportedSourceCode = _blueprintService.ExportToBlockScript(blueprint);
+            var helpers = blueprint.HelperFunctions;
+
+            // Step 2: Write back to WorkflowEditor
+            _bridge.SetScript(LastExportedSourceCode, helpers);
+
+            // Step 3: Trigger execution in WorkflowEditor
+            ExecutionResult = $"Script exported, triggering execution...\n";
+            _bridge.TriggerExecution();
+
+            StatusText = "Script exported and executed via Workflow Editor";
+            Log.Information("Blueprint run via bridge: exported {NodeCount} nodes", blueprint.Nodes.Count);
+        }
+        catch (Exception ex)
+        {
+            ExecutionResult = $"Run error: {ex.Message}";
+            StatusText = $"Run error: {ex.Message}";
+            Log.Error(ex, "Blueprint run via bridge error");
         }
     }
 }

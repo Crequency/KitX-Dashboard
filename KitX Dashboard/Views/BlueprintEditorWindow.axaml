@@ -31,7 +31,7 @@
             <Button Content="Save" Margin="0,0,10,0" Command="{Binding SaveBlueprintAsCommand}"/>
             <Button Content="Import BS" Margin="0,0,10,0" Command="{Binding ImportFromBSCommand}"/>
             <Button Content="Export BS" Margin="0,0,10,0" Command="{Binding ExportToBSCommand}"/>
-            <Button Content="Run" Margin="20,0,10,0" Command="{Binding ExecuteBlueprintCommand}"/>
+            <Button Content="Run" Margin="20,0,10,0" Command="{Binding RunViaBridgeCommand}"/>
             <Button Content="Stop" Margin="0,0,10,0" Command="{Binding CancelExecutionCommand}" IsEnabled="{Binding !IsExecuting}"/>
         </StackPanel>
 
@@ -208,6 +208,41 @@
                                     </Border>
                                 </controls:Node.Header>
 
+                                <!-- Const Node: Type selector + Value editor -->
+                                <StackPanel IsVisible="{Binding ShowConstTypeSelector}">
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="4"
+                                                Margin="8,4,8,0">
+                                        <TextBlock Text="Type:"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="10"
+                                                   Foreground="#AAAAAA"/>
+                                        <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
+                                                  SelectedItem="{Binding ConstType, Mode=TwoWay}"
+                                                  FontSize="10"
+                                                  MinWidth="70"
+                                                  Padding="4,2"
+                                                  HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="4"
+                                                Margin="8,2,8,4">
+                                        <TextBlock Text="Value:"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="10"
+                                                   Foreground="#AAAAAA"/>
+                                        <TextBox Text="{Binding ConstValue, Mode=TwoWay}"
+                                                 FontSize="10"
+                                                 Watermark="value..."
+                                                 MinWidth="80"
+                                                 Padding="4,2"
+                                                 Background="#333333"
+                                                 Foreground="White"
+                                                 BorderThickness="1"
+                                                 BorderBrush="#555555"/>
+                                    </StackPanel>
+                                </StackPanel>
+
                                 <!-- Input connector template -->
                                 <controls:Node.InputConnectorTemplate>
                                     <DataTemplate DataType="{x:Type viewModels:BlueprintConnectorVM}">
@@ -265,16 +300,19 @@
             <!-- Second splitter -->
             <Border Grid.Column="3" Background="#3F3F3F" Width="5"/>
 
-            <!-- Right: Properties panel -->
+            <!-- Right: Output panel -->
             <Border Grid.Column="4" Background="#252525" Margin="5" CornerRadius="5">
                 <DockPanel Margin="10">
-                    <TextBlock DockPanel.Dock="Top" Text="Properties" FontWeight="Bold" Margin="0,0,0,10"/>
-                    <ScrollViewer>
-                        <StackPanel>
-                            <TextBlock Text="Select a node to view properties"
-                                       Foreground="Gray"
-                                       TextWrapping="Wrap"/>
-                        </StackPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Output" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <TextBox Text="{Binding ExecutionResult}"
+                                 IsReadOnly="True"
+                                 FontFamily="Consolas"
+                                 FontSize="11"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Background="Transparent"
+                                 BorderThickness="0"/>
                     </ScrollViewer>
                 </DockPanel>
             </Border>

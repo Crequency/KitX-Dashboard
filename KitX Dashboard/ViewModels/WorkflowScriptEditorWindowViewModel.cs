@@ -62,10 +62,12 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
         _codeDocumentSubscription = this.WhenAnyValue(x => x.CodeDocument)
             .Subscribe(document =>
             {
-                if (document != null && !UseBlockMode)
+                if (document != null)
                 {
-                    // 当主程序代码变化时，解析常量（旧KCS模式）
-                    var constants = _workflowService.ParseConstantsFromCode(document.Text);
+                    // 根据模式选择不同的常量解析方式
+                    var constants = UseBlockMode
+                        ? _workflowService.ParseConstantsFromBlockScript(document.Text)
+                        : _workflowService.ParseConstantsFromCode(document.Text);
                     UpdateVariableConstants(constants);
                 }
             });
@@ -194,12 +196,14 @@ return v1 + v2;"
     public sealed override void InitEvents() { }
 
     /// <summary>
-    /// 解析代码中的常量
+    /// 解析代码中的常量（自动根据当前模式选择解析方式）
     /// </summary>
     /// <param name="code">代码内容</param>
     public void ParseConstantsFromCode(string code)
     {
-        var constants = _workflowService.ParseConstantsFromCode(code);
+        var constants = UseBlockMode
+            ? _workflowService.ParseConstantsFromBlockScript(code)
+            : _workflowService.ParseConstantsFromCode(code);
         UpdateVariableConstants(constants);
     }
 
@@ -343,17 +347,8 @@ return v1 + v2;"
             return;
         }
 
-        // 旧KCS模式：检查代码是否包含禁止的语法
-        if (!UseBlockMode)
-        {
-            var analysisResult = _mainProgramAnalyzer.Analyze(codeText);
-            if (!analysisResult.IsValid)
-            {
-                ExecutionResult = $"Code analysis failed: {analysisResult.ForbiddenReason}";
-                return;
-            }
-        }
-        else
+        // 非Block模式：不做语法限制，直接执行
+        if (UseBlockMode)
         {
             // BlockScript模式：验证块脚本
             var validationResult = _workflowService.ValidateBlockScript(codeText);
@@ -400,11 +395,9 @@ return v1 + v2;"
                 }
                 else
                 {
-                    // 旧KCS模式执行
-                    result = await _workflowService.ExecuteKcsCodesAsync(
+                    // 非Block模式：直接执行C#脚本，无语法限制
+                    result = await _workflowService.ExecuteCodesAsync(
                         codeText,
-                        HelperFunctions.ToList(),
-                        VariableConstants.ToList(),
                         connectedPlugins,
                         true,
                         tokenSource.Token

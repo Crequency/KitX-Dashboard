@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using KitX.Core.Contract.Workflow;
 using NodifyM.Avalonia.ViewModelBase;
@@ -33,6 +34,81 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     /// <summary>Node name used for type inference and round-trip export</summary>
     [ObservableProperty]
     private string _name = string.Empty;
+
+    /// <summary>
+    /// Selected constant type for Const nodes. Bound to a ComboBox in the node body.
+    /// Changing this also updates the output connector's PinType and Metadata.
+    /// </summary>
+    [ObservableProperty]
+    private string _constType = "int";
+
+    /// <summary>
+    /// Constant value for Const nodes. Bound to a TextBox in the node body.
+    /// Synced bidirectionally with the output connector's DefaultValue.
+    /// </summary>
+    [ObservableProperty]
+    private string _constValue = string.Empty;
+
+    /// <summary>Available constant type options for the dropdown</summary>
+    public static List<string> ConstTypeOptions { get; } = ["int", "double", "string", "bool"];
+
+    /// <summary>Whether this node should show the ConstType selector (only Const nodes)</summary>
+    public bool ShowConstTypeSelector => NodeType == BlueprintNodeType.Const;
+
+    /// <summary>
+    /// Extra metadata for round-trip preservation.
+    /// Keyed by property name, e.g. "ConstType" → "int", "ConstValue" → "5".
+    /// Used by ConstNode, CallNode, etc. to preserve domain-specific fields
+    /// that aren't represented in connectors or display title.
+    /// </summary>
+    public Dictionary<string, string> Metadata { get; } = [];
+
+    /// <summary>
+    /// Callback invoked when ConstType changes — used by BlueprintEditorViewModel
+    /// to update the output connector's PinType.
+    /// </summary>
+    internal System.Action<BlueprintNodeVM>? ConstTypeChangedCallback { get; set; }
+
+    partial void OnConstTypeChanged(string value)
+    {
+        Metadata["ConstType"] = value;
+
+        // Update output connector PinType to match
+        var outputConnector = Output?.GetEnumerator();
+        if (outputConnector?.MoveNext() == true && outputConnector.Current is BlueprintConnectorVM conn)
+        {
+            conn.PinType = ConstTypeToPinType(value);
+        }
+
+        ConstTypeChangedCallback?.Invoke(this);
+    }
+
+    partial void OnConstValueChanged(string value)
+    {
+        // Sync to output connector's DefaultValue for round-trip export
+        var outputConnector = Output?.GetEnumerator();
+        if (outputConnector?.MoveNext() == true && outputConnector.Current is BlueprintConnectorVM conn)
+        {
+            conn.DefaultValue = string.IsNullOrEmpty(value) ? null : value;
+        }
+    }
+
+    /// <summary>Converts a ConstType string to the corresponding PinType</summary>
+    public static PinType ConstTypeToPinType(string constType) => constType?.ToLowerInvariant() switch
+    {
+        "int" or "integer" => PinType.Integer,
+        "bool" or "boolean" => PinType.Boolean,
+        "double" or "float" or "number" => PinType.Double,
+        "string" => PinType.String,
+        _ => PinType.Any
+    };
+
+    protected override void OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.PropertyName == nameof(NodeType))
+            OnPropertyChanged(nameof(ShowConstTypeSelector));
+    }
 
     /// <summary>Returns (Primary, Light) hex color pair for a node category</summary>
     public static (string Primary, string Light) GetCategoryColors(BlueprintNodeType type) => type switch

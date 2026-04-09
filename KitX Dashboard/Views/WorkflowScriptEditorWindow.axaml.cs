@@ -14,6 +14,7 @@ using KitX.Core.Contract.Event;
 using KitX.Core.Event;
 using KitX.Core.Contract.Workflow;
 using KitX.Dashboard;
+using KitX.Dashboard.Services;
 
 namespace KitX.Dashboard.Views;
 
@@ -117,31 +118,27 @@ Print(""示例工作流结束"");";
             }
             else
             {
-                // 旧KCS模式模板
-                codeEditor.Text = @"// Workflow Script Example (Main Program)
-// Use WorkflowOutput.WriteLine() to print debug messages
-// This is a restricted C# script - no if/else, for/while, try/catch allowed
-// Only the following syntax is supported:
-// - Variable and constant declarations (e.g. int x = 5;)
-// - Variable assignments (e.g. x = 10;)
-// - Method calls (e.g. MyHelperFunction();)
+                // C# Script模式模板（无语法限制）
+                codeEditor.Text = @"// Workflow Script Example (Full C# Script Mode)
+	// Full C# syntax is supported: if/else, for/while, try/catch, etc.
+	// Use WorkflowOutput.WriteLine() to print messages
 
-// Define constants (will appear in the Variable Constants panel)
-const string greeting = ""Hello from workflow script!"";
-const int count = 3;
+	var greeting = ""Hello from workflow script!"";
+	var count = 3;
 
-// Call helper functions
-// var result = MyHelperFunction();
+	WorkflowOutput.WriteLine(greeting);
+	WorkflowOutput.WriteLine($""Count: {count}"");
 
-// Use the constants
-WorkflowOutput.WriteLine(greeting);
-WorkflowOutput.WriteLine($""Count: {count}"");
+	// You can use any C# constructs:
+	for (int i = 0; i < count; i++)
+	{
+	    WorkflowOutput.WriteLine($""  Step {i + 1}"");
+	}
 
-// You can call plugin functions directly like this:
-// TestPlugin.WPF.Core.HelloKitX();
+	// You can call plugin functions directly:
+	// TestPlugin.WPF.Core.HelloKitX();
 
-// Output after the plugin call will still execute
-WorkflowOutput.WriteLine(""Plugin call completed!"");";
+	WorkflowOutput.WriteLine(""Done!"");";
             }
 
             // 订阅代码变化事件
@@ -449,16 +446,23 @@ WorkflowOutput.WriteLine(""Plugin call completed!"");";
 
     private void OpenBlueprintEditorButton_Click(object? sender, RoutedEventArgs e)
     {
-        var blueprintEditorWindow = new BlueprintEditorWindow();
+        var codeEditor = this.FindControl<TextEditor>("CodeEditor");
 
-        // Pass the current BlockScript source code to the blueprint editor
-        var sourceCode = viewModel?.MainProgramCode;
-        var helpers = viewModel?.HelperFunctions?.ToList();
-        if (!string.IsNullOrEmpty(sourceCode))
-        {
-            blueprintEditorWindow.SetSourceCode(sourceCode, helpers);
-        }
+        // Create bridge connecting BlueprintEditor to this WorkflowEditor
+        var bridge = new WorkflowEditorBridge(
+            viewModel,
+            code => { if (codeEditor != null) codeEditor.Text = code; },
+            () =>
+            {
+                // Trigger execution via the Run button's logic
+                if (viewModel.CodeDocument != null)
+                {
+                    viewModel.SubmitCodes(viewModel.CodeDocument);
+                }
+            }
+        );
 
+        var blueprintEditorWindow = new BlueprintEditorWindow(bridge);
         blueprintEditorWindow.Show();
     }
 
