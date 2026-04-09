@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using KitX.Dashboard.ViewModels;
 using AvaloniaEdit;
 using Avalonia.Interactivity;
@@ -23,6 +25,7 @@ public partial class WorkflowScriptEditorWindow : Window, IView
     private readonly WorkflowScriptEditorWindowViewModel viewModel;
     private bool _isEditingHelperFunction = false;
     private bool _isUpdatingOutput = false;
+    private CancellationTokenSource? _debounceCts;
 
     public WorkflowScriptEditorWindow()
     {
@@ -141,32 +144,41 @@ Print(""示例工作流结束"");";
 	WorkflowOutput.WriteLine(""Done!"");";
             }
 
-            // 订阅代码变化事件
+            // 订阅代码变化事件（带防抖）
             codeEditor.TextChanged += (s, e) =>
             {
-                if (codeEditor.Document != null)
+                if (codeEditor.Document == null) return;
+
+                // Helper function editing: sync immediately (no debounce needed)
+                if (_isEditingHelperFunction)
                 {
-                    if (_isEditingHelperFunction)
+                    if (viewModel.SelectedHelperFunction != null)
                     {
-                        // 正在编辑辅助函数，同步代码到 SelectedHelperFunction.Code
-                        if (viewModel.SelectedHelperFunction != null)
-                        {
-                            viewModel.SelectedHelperFunction.Code = codeEditor.Document.Text;
-                        }
+                        viewModel.SelectedHelperFunction.Code = codeEditor.Document.Text;
                     }
-                    else
+                    return;
+                }
+
+                // Main program editing: debounce parse-heavy operations
+                viewModel.MainProgramCode = codeEditor.Document.Text;
+
+                _debounceCts?.Cancel();
+                _debounceCts = new CancellationTokenSource();
+                var token = _debounceCts.Token;
+
+                _ = Task.Delay(500, token).ContinueWith(t =>
+                {
+                    if (t.IsCanceled) return;
+                    Dispatcher.UIThread.InvokeAsync(() =>
                     {
-                        // 正在编辑主程序
-                        viewModel.MainProgramCode = codeEditor.Document.Text;
-                        // 解析常量
+                        if (codeEditor.Document == null) return;
                         viewModel.ParseConstantsFromCode(codeEditor.Document.Text);
-                        // 更新UI
                         if (constantsItemsControl != null)
                         {
                             constantsItemsControl.ItemsSource = viewModel.VariableConstants;
                         }
-                    }
-                }
+                    });
+                }, token);
             };
         }
 

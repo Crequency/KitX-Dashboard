@@ -544,10 +544,16 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             Output = new ObservableCollection<object>()
         };
 
-        // Add input connectors (execution pins first, then data pins)
+        // Build RelativeY lookup from descriptor for correct pin ordering
+        var inputRelativeY = descriptor.InputPins
+            .ToDictionary(p => p.Name, p => p.RelativeY);
+        var outputRelativeY = descriptor.OutputPins
+            .ToDictionary(p => p.Name, p => p.RelativeY);
+
+        // Add input connectors (execution pins first, then data pins, ordered by RelativeY)
         foreach (var pin in blueprintNode.InputPins
             .OrderByDescending(p => p.Type == PinType.Execution)
-            .ThenBy(p => p.Name))
+            .ThenBy(p => inputRelativeY.GetValueOrDefault(p.Name, 0)))
         {
             var connector = new BlueprintConnectorVM
             {
@@ -560,10 +566,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             nodeVm.Input.Add(connector);
         }
 
-        // Add output connectors
+        // Add output connectors (ordered by RelativeY to match descriptor layout)
         foreach (var pin in blueprintNode.OutputPins
             .OrderByDescending(p => p.Type == PinType.Execution)
-            .ThenBy(p => p.Name))
+            .ThenBy(p => outputRelativeY.GetValueOrDefault(p.Name, 0)))
         {
             var connector = new BlueprintConnectorVM
             {
