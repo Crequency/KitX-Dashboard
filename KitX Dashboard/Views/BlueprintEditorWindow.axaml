@@ -6,6 +6,7 @@
         xmlns:controls="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
         xmlns:viewModelBase="clr-namespace:NodifyM.Avalonia.ViewModelBase;assembly=NodifyM.Avalonia"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
+        xmlns:localControls="using:KitX.Dashboard.Controls"
         xmlns:converters="using:KitX.Dashboard.Converters"
         mc:Ignorable="d"
         d:DesignHeight="700"
@@ -17,6 +18,10 @@
     <Window.Resources>
         <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
     </Window.Resources>
+
+    <Window.Styles>
+        <StyleInclude Source="/Styles/ScopeBlockStyles.axaml"/>
+    </Window.Styles>
 
     <DockPanel LastChildFill="True">
         <!-- Toolbar -->
@@ -156,11 +161,36 @@
                     </controls:NodifyEditor.PendingConnectionTemplate>
 
                     <controls:NodifyEditor.ItemTemplate>
-                        <DataTemplate DataType="{x:Type viewModels:BlueprintNodeVM}">
-                            <controls:Node Location="{Binding Location, Mode=TwoWay}"
+                        <controls:NodeTemplateSelector>
+                            <!-- Scope Block → ScopeBlockControl -->
+                            <DataTemplate DataType="{x:Type viewModels:BlueprintScopeBlockVM}">
+                                <localControls:ScopeBlockControl Location="{Binding Location, Mode=TwoWay}"
+                                                                 Size="{Binding GroupSize, Mode=TwoWay}"
+                                                                 CanResize="True">
+                                    <localControls:ScopeBlockControl.HeaderBrush>
+                                        <Binding Path="HeaderColor"
+                                                 Converter="{StaticResource HexToBrushConverter}" />
+                                    </localControls:ScopeBlockControl.HeaderBrush>
+                                    <localControls:ScopeBlockControl.Header>
+                                        <TextBlock Foreground="White" FontWeight="SemiBold" FontSize="12">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0} ({1} nodes)">
+                                                    <Binding Path="DisplayName" />
+                                                    <Binding Path="ContainedNodeIds.Count" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </localControls:ScopeBlockControl.Header>
+                                </localControls:ScopeBlockControl>
+                            </DataTemplate>
+
+                            <!-- Blueprint Node → Node -->
+                            <DataTemplate DataType="{x:Type viewModels:BlueprintNodeVM}">
+                                <controls:Node Location="{Binding Location, Mode=TwoWay}"
                                            Input="{Binding Input}"
                                            Output="{Binding Output}"
-                                           IsResize="False">
+                                           IsResize="False"
+                                           ZIndex="1">
 
                                 <!-- Node Header with category color -->
                                 <controls:Node.Header>
@@ -224,16 +254,9 @@
                                     </DataTemplate>
                                 </controls:Node.OutputConnectorTemplate>
 
-                                <!-- Node context menu -->
-                                <controls:Node.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="_Delete"
-                                                  Command="{Binding $parent[controls:NodifyEditor].DataContext.DeleteSelectedNodesCommand}"/>
-                                    </ContextMenu>
-                                </controls:Node.ContextMenu>
-
-                            </controls:Node>
-                        </DataTemplate>
+</controls:Node>
+                            </DataTemplate>
+                        </controls:NodeTemplateSelector>
                     </controls:NodifyEditor.ItemTemplate>
 
                 </controls:NodifyEditor>

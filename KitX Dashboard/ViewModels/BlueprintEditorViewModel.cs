@@ -75,6 +75,18 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     }
 
     /// <summary>
+    /// Scope blocks in this blueprint — each corresponds to a #Block in BlockScript.
+    /// Created automatically when adding Branch/Loop nodes.
+    /// </summary>
+    public ObservableCollection<BlueprintScopeBlockVM> ScopeBlocks { get; } = [];
+
+    /// <summary>
+    /// Maps node BlueprintNodeId → scope ScopeId for tracking scope membership.
+    /// Nodes not in this map belong to MainBlock.
+    /// </summary>
+    public Dictionary<string, string> NodeToScopeMap { get; } = [];
+
+    /// <summary>
     /// Constructor with DI injection
     /// </summary>
     public BlueprintEditorViewModel(
@@ -193,12 +205,95 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 Connections.Remove(conn);
             }
 
+            // Remove node from any scope block's ContainedNodeIds
+            foreach (var scope in ScopeBlocks)
+            {
+                scope.ContainedNodeIds.Remove(node.BlueprintNodeId);
+            }
+
             Nodes.Remove(node);
+        }
+
+        // Also remove any selected scope blocks (e.g., if user selects and deletes them)
+        foreach (var scope in toRemove.OfType<BlueprintScopeBlockVM>())
+        {
+            scope.UnsubscribeFromChildNodes();
+            ScopeBlocks.Remove(scope);
+            Nodes.Remove(scope);
         }
 
         SelectedNodes.Clear();
         RefreshCounts();
         Log.Information("Deleted {Count} nodes", toRemove.Count);
+    }
+
+    // ─── Scope Block Membership ─────────────────────────────────────────
+
+    /// <summary>
+    /// Moves all selected BlueprintNodeVMs into the specified scope block.
+    /// </summary>
+    [RelayCommand]
+    private void MoveSelectedNodesToScope(string scopeId)
+    {
+        var scope = ScopeBlocks.FirstOrDefault(s => s.ScopeId == scopeId);
+        if (scope == null) return;
+
+        foreach (var node in SelectedNodes.OfType<BlueprintNodeVM>().ToList())
+        {
+            // Remove from any existing scope first
+            RemoveNodeFromAnyScope(node.BlueprintNodeId);
+
+            // Add to target scope
+            if (!scope.ContainedNodeIds.Contains(node.BlueprintNodeId))
+            {
+                scope.ContainedNodeIds.Add(node.BlueprintNodeId);
+                NodeToScopeMap[node.BlueprintNodeId] = scopeId;
+            }
+        }
+
+        scope.RecalculateBounds();
+        Log.Information("Moved {Count} nodes to scope '{ScopeId}'", SelectedNodes.Count, scopeId);
+    }
+
+    /// <summary>
+    /// Removes all selected BlueprintNodeVMs from their current scope block.
+    /// </summary>
+    [RelayCommand]
+    private void RemoveSelectedNodesFromScope()
+    {
+        foreach (var node in SelectedNodes.OfType<BlueprintNodeVM>().ToList())
+        {
+            RemoveNodeFromAnyScope(node.BlueprintNodeId);
+        }
+
+        // Recalculate bounds for all affected scopes
+        foreach (var scope in ScopeBlocks)
+            scope.RecalculateBounds();
+
+        Log.Information("Removed {Count} nodes from their scope blocks", SelectedNodes.Count);
+    }
+
+    /// <summary>
+    /// Gets the scope ID that a node currently belongs to, or null if none.
+    /// </summary>
+    public string? GetNodeScopeId(string nodeId)
+    {
+        return NodeToScopeMap.TryGetValue(nodeId, out var scopeId) ? scopeId : null;
+    }
+
+    private void RemoveNodeFromAnyScope(string nodeId)
+    {
+        if (!NodeToScopeMap.TryGetValue(nodeId, out var currentScopeId))
+            return;
+
+        var currentScope = ScopeBlocks.FirstOrDefault(s => s.ScopeId == currentScopeId);
+        if (currentScope != null)
+        {
+            currentScope.ContainedNodeIds.Remove(nodeId);
+            currentScope.RecalculateBounds();
+        }
+
+        NodeToScopeMap.Remove(nodeId);
     }
 
     // ─── Connection Validation ───────────────────────────────────────────
@@ -248,6 +343,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         // Clear existing
         Nodes.Clear();
         Connections.Clear();
+        ScopeBlocks.Clear();
+        NodeToScopeMap.Clear();
 
         var connectorMap = new Dictionary<string, BlueprintConnectorVM>();
         var pinTypeMap = new Dictionary<string, PinType>();
@@ -294,9 +391,110 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         // Update IsConnected on all connectors
         UpdateAllConnectorStates();
 
+        // === Phase 4: Rebuild ScopeBlocks from BlockScopes ===
+        RebuildScopeBlocksFromBlockScopes(blueprint);
+
         RefreshCounts();
-        Log.Information("Loaded blueprint: {NodeCount} nodes, {ConnCount} connections",
-            Nodes.Count, Connections.Count);
+        Log.Information("Loaded blueprint: {NodeCount} nodes, {ConnCount} connections, {ScopeCount} scope blocks",
+            Nodes.Count, Connections.Count, ScopeBlocks.Count);
+    }
+
+    /// <summary>
+    /// Rebuilds ScopeBlocks from the loaded blueprint's BlockScopes.
+    /// Only processes non-MainBlock scopes that have an OwnerNodeId.
+    /// </summary>
+    private void RebuildScopeBlocksFromBlockScopes(Blueprint blueprint)
+    {
+        if (blueprint.BlockScopes == null || blueprint.BlockScopes.Count == 0)
+        {
+            Log.Debug("No BlockScopes to rebuild");
+            return;
+        }
+
+        // Calculate bounding boxes for each scope to position the NodeGroups
+        var nodePositions = new Dictionary<string, BlueprintNodeVM>();
+        foreach (var nodeVm in Nodes.OfType<BlueprintNodeVM>())
+            nodePositions[nodeVm.BlueprintNodeId] = nodeVm;
+
+        foreach (var scope in blueprint.BlockScopes)
+        {
+            // Skip MainBlock — it has no visual container
+            if (scope.IsMainBlock) continue;
+            if (string.IsNullOrEmpty(scope.OwnerNodeId)) continue;
+
+            var scopeId = $"{scope.OwnerArmName}_{scope.OwnerNodeId}";
+            var displayName = scope.Name;
+            var armName = scope.OwnerArmName ?? string.Empty;
+            var headerColor = BlueprintScopeBlockVM.GetHeaderColor(armName);
+
+            // Calculate bounding box from contained nodes
+            var bounds = CalculateScopeBounds(scope.NodeIds, nodePositions);
+
+            var scopeBlock = new BlueprintScopeBlockVM
+            {
+                ScopeId = scopeId,
+                DisplayName = displayName,
+                ArmName = armName,
+                OwnerNodeId = scope.OwnerNodeId,
+                Location = bounds.Location,
+                GroupSize = bounds.Size,
+                HeaderColor = headerColor,
+            };
+
+            foreach (var nodeId in scope.NodeIds)
+            {
+                scopeBlock.ContainedNodeIds.Add(nodeId);
+                NodeToScopeMap[nodeId] = scopeId;
+            }
+
+            ScopeBlocks.Add(scopeBlock);
+            // Also add to Nodes so NodifyEditor renders the NodeGroup
+            Nodes.Add(scopeBlock);
+
+            // Set Editor reference for drag propagation and auto-sizing
+            scopeBlock.Editor = this;
+            scopeBlock.SubscribeToChildNodes();
+
+            Log.Debug("Rebuilt scope block '{Name}' with {Count} nodes, owner={OwnerId}",
+                displayName, scope.NodeIds.Count, scope.OwnerNodeId);
+        }
+
+        Log.Information("Rebuilt {Count} scope blocks from BlockScopes", ScopeBlocks.Count);
+    }
+
+    /// <summary>
+    /// Calculates the bounding rectangle for a set of nodes,
+    /// with padding to create the scope block visual container.
+    /// </summary>
+    private static (Avalonia.Point Location, Avalonia.Size Size) CalculateScopeBounds(
+        List<string> nodeIds,
+        Dictionary<string, BlueprintNodeVM> nodePositions)
+    {
+        if (nodeIds.Count == 0)
+            return (new Avalonia.Point(300, 200), new Avalonia.Size(400, 250));
+
+        double minX = double.MaxValue, minY = double.MaxValue;
+        double maxX = double.MinValue, maxY = double.MinValue;
+
+        foreach (var nodeId in nodeIds)
+        {
+            if (nodePositions.TryGetValue(nodeId, out var node))
+            {
+                minX = Math.Min(minX, node.Location.X);
+                minY = Math.Min(minY, node.Location.Y);
+                maxX = Math.Max(maxX, node.Location.X + 200); // approximate node width
+                maxY = Math.Max(maxY, node.Location.Y + 100); // approximate node height
+            }
+        }
+
+        if (minX == double.MaxValue)
+            return (new Avalonia.Point(300, 200), new Avalonia.Size(400, 250));
+
+        const double padding = 30;
+        return (
+            new Avalonia.Point(minX - padding, minY - padding - 30), // extra top for header
+            new Avalonia.Size(maxX - minX + padding * 2, maxY - minY + padding * 2 + 30)
+        );
     }
 
     /// <summary>
@@ -313,6 +511,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             Location = new Avalonia.Point(blueprintNode.X, blueprintNode.Y),
             BlueprintNodeId = blueprintNode.Id,
             NodeType = blueprintNode.NodeType,
+            Name = blueprintNode.Name,
             DisplayTitle = displayTitle,
             CategoryColor = primaryColor,
             CategoryColorLight = lightColor,
@@ -445,7 +644,60 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         Log.Information("Exported drawing: {NodeCount} nodes, {ConnectionCount} connections",
             blueprint.Nodes.Count, blueprint.Connections.Count);
 
+        // Build BlockScopes from ScopeBlocks
+        BuildBlockScopesFromScopeBlocks(blueprint);
+
         return blueprint;
+    }
+
+    /// <summary>
+    /// Builds BlockScopes from the current ScopeBlocks state.
+    /// MainBlock contains all nodes not assigned to any scope block.
+    /// Named blocks contain nodes from their respective ScopeBlocks.
+    /// </summary>
+    private void BuildBlockScopesFromScopeBlocks(Blueprint blueprint)
+    {
+        var assignedNodeIds = new HashSet<string>();
+
+        // Build named scope blocks
+        foreach (var scope in ScopeBlocks)
+        {
+            var blockScope = new BlueprintBlockScope
+            {
+                Name = scope.DisplayName,
+                NodeIds = scope.ContainedNodeIds.ToList(),
+                OwnerNodeId = scope.OwnerNodeId,
+                OwnerArmName = scope.ArmName,
+                IsMainBlock = false
+            };
+            blueprint.BlockScopes.Add(blockScope);
+
+            foreach (var nodeId in scope.ContainedNodeIds)
+                assignedNodeIds.Add(nodeId);
+        }
+
+        // Build MainBlock scope from unassigned nodes
+        var mainBlockNodeIds = new List<string>();
+        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+        {
+            if (!assignedNodeIds.Contains(node.BlueprintNodeId))
+                mainBlockNodeIds.Add(node.BlueprintNodeId);
+        }
+
+        if (mainBlockNodeIds.Count > 0 || blueprint.Nodes.Count > 0)
+        {
+            var mainScope = new BlueprintBlockScope
+            {
+                Name = "MainBlock",
+                NodeIds = mainBlockNodeIds,
+                IsMainBlock = true
+            };
+            // Insert at beginning so MainBlock is first
+            blueprint.BlockScopes.Insert(0, mainScope);
+        }
+
+        Log.Information("Built {ScopeCount} block scopes from ScopeBlocks ({MainNodes} main, {Assigned} assigned)",
+            blueprint.BlockScopes.Count, mainBlockNodeIds.Count, assignedNodeIds.Count);
     }
 
     /// <summary>
@@ -453,14 +705,24 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     private BlueprintNode ConvertViewModelToBlueprintNode(BlueprintNodeVM nodeVm)
     {
-        var nodeType = InferNodeTypeFromName(nodeVm.Name ?? nodeVm.DisplayTitle);
-        var blueprintNode = _nodeRegistry.Create(nodeType);
+        // Use NodeType from VM directly (more reliable than name-based inference)
+        var blueprintNode = _nodeRegistry.Create(nodeVm.NodeType);
 
-        blueprintNode.Name = nodeVm.Name ?? nodeVm.DisplayTitle;
+        // Preserve original node ID so connections can reference it
+        blueprintNode.Id = nodeVm.BlueprintNodeId;
+
+        blueprintNode.Name = !string.IsNullOrEmpty(nodeVm.Name)
+            ? nodeVm.Name
+            : nodeVm.DisplayTitle;
         blueprintNode.X = nodeVm.Location.X;
         blueprintNode.Y = nodeVm.Location.Y;
 
         ApplyDisplayTitleToNode(blueprintNode, nodeVm.DisplayTitle);
+
+        // Clear auto-generated pins from constructor's InitializePinsFromDescriptor()
+        // to prevent duplicates — we add pins from UI connectors instead.
+        blueprintNode.InputPins.Clear();
+        blueprintNode.OutputPins.Clear();
 
         // Convert input connectors
         foreach (var input in nodeVm.Input.OfType<BlueprintConnectorVM>())
@@ -503,6 +765,13 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         return Nodes.OfType<BlueprintNodeVM>()
             .FirstOrDefault(n => n.Input.Contains(connector) || n.Output.Contains(connector));
     }
+
+    /// <summary>
+    /// Finds a BlueprintNodeVM by its BlueprintNodeId.
+    /// Used by scope blocks to look up contained child nodes.
+    /// </summary>
+    public BlueprintNodeVM? FindNodeById(string nodeId)
+        => Nodes.OfType<BlueprintNodeVM>().FirstOrDefault(n => n.BlueprintNodeId == nodeId);
 
     // ─── Node Type Inference ─────────────────────────────────────────────
 
@@ -621,6 +890,42 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     // ─── Node Creation ───────────────────────────────────────────────────
 
     /// <summary>
+    /// Creates a scope block for a Branch/Loop node's output arm.
+    /// The scope block is positioned to the right of the owner node.
+    /// </summary>
+    private void CreateScopeBlockForNode(BlueprintNodeVM ownerNode, string armName)
+    {
+        var scopeId = $"{armName}_{ownerNode.BlueprintNodeId}";
+        var displayName = BlueprintScopeBlockVM.GetDefaultDisplayName(armName);
+        var headerColor = BlueprintScopeBlockVM.GetHeaderColor(armName);
+
+        // Position scope blocks to the right of the owner node
+        var yOffset = armName is "True" or "LoopBody" ? -200 : 200;
+        var scopeBlock = new BlueprintScopeBlockVM
+        {
+            ScopeId = scopeId,
+            DisplayName = displayName,
+            ArmName = armName,
+            OwnerNodeId = ownerNode.BlueprintNodeId,
+            Location = new Avalonia.Point(
+                ownerNode.Location.X + 300,
+                ownerNode.Location.Y + yOffset),
+            GroupSize = new Avalonia.Size(400, 250),
+            HeaderColor = headerColor,
+        };
+
+        ScopeBlocks.Add(scopeBlock);
+        // Also add to Nodes collection so NodifyEditor renders it
+        Nodes.Add(scopeBlock);
+
+        // Set Editor reference for drag propagation and auto-sizing
+        scopeBlock.Editor = this;
+        scopeBlock.SubscribeToChildNodes();
+
+        Log.Information("Created scope block '{DisplayName}' for node {NodeId}", displayName, ownerNode.BlueprintNodeId);
+    }
+
+    /// <summary>
     /// Adds a node to the canvas from a descriptor
     /// </summary>
     private void AddNodeFromTemplate(BlueprintNodeType type, string? contentTitle = null)
@@ -643,25 +948,29 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             Output = new ObservableCollection<object>()
         };
 
-        // Add input connectors
+        // Add input connectors (with stable pin IDs for round-trip export)
         foreach (var pinDesc in descriptor.InputPins)
         {
+            var pinId = Guid.NewGuid().ToString();
             node.Input.Add(new BlueprintConnectorVM
             {
                 Title = pinDesc.Name,
                 Flow = ConnectorViewModelBase.ConnectorFlow.Input,
-                PinType = pinDesc.Type
+                PinType = pinDesc.Type,
+                OriginalPinId = pinId
             });
         }
 
-        // Add output connectors
+        // Add output connectors (with stable pin IDs for round-trip export)
         foreach (var pinDesc in descriptor.OutputPins)
         {
+            var pinId = Guid.NewGuid().ToString();
             node.Output.Add(new BlueprintConnectorVM
             {
                 Title = pinDesc.Name,
                 Flow = ConnectorViewModelBase.ConnectorFlow.Output,
-                PinType = pinDesc.Type
+                PinType = pinDesc.Type,
+                OriginalPinId = pinId
             });
         }
 
@@ -672,7 +981,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     private void RefreshCounts()
     {
-        NodeCount = Nodes?.Count ?? 0;
+        NodeCount = Nodes?.OfType<BlueprintNodeVM>().Count() ?? 0;
         ConnectionCount = Connections?.Count ?? 0;
     }
 
@@ -680,10 +989,30 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     public void AddEntryNode() => AddNodeFromTemplate(BlueprintNodeType.Entry);
 
     [RelayCommand]
-    public void AddBranchNode() => AddNodeFromTemplate(BlueprintNodeType.Branch);
+    public void AddBranchNode()
+    {
+        AddNodeFromTemplate(BlueprintNodeType.Branch);
+        var branchNode = Nodes.OfType<BlueprintNodeVM>().Last();
+
+        // Create True scope block
+        CreateScopeBlockForNode(branchNode, "True");
+
+        // Create False scope block
+        CreateScopeBlockForNode(branchNode, "False");
+    }
 
     [RelayCommand]
-    public void AddLoopNode() => AddNodeFromTemplate(BlueprintNodeType.Loop);
+    public void AddLoopNode()
+    {
+        AddNodeFromTemplate(BlueprintNodeType.Loop);
+        var loopNode = Nodes.OfType<BlueprintNodeVM>().Last();
+
+        // Create LoopBody scope block
+        CreateScopeBlockForNode(loopNode, "LoopBody");
+
+        // Create LoopEnd scope block
+        CreateScopeBlockForNode(loopNode, "LoopEnd");
+    }
 
     [RelayCommand]
     public void AddBreakNode() => AddNodeFromTemplate(BlueprintNodeType.Break);
@@ -822,6 +1151,16 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             if (kcs.BlueprintData != null)
             {
                 blueprint = kcs.BlueprintData;
+
+                // Fallback: if BlueprintData has empty BlockScopes but BlockScriptSource
+                // is available, re-import to rebuild BlockScopes with proper ownership
+                if ((blueprint.BlockScopes == null || blueprint.BlockScopes.Count == 0)
+                    && !string.IsNullOrEmpty(kcs.BlockScriptSource))
+                {
+                    Log.Information("BlockScopes empty in BlueprintData, re-importing from BlockScriptSource");
+                    blueprint = _blueprintService.ImportFromBlockScript(
+                        kcs.BlockScriptSource, kcs.HelperFunctions);
+                }
             }
             else if (!string.IsNullOrEmpty(kcs.BlockScriptSource))
             {
