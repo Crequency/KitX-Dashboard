@@ -12,7 +12,6 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using FluentAvalonia.Styling;
-using FluentAvalonia.UI.Media;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
 using KitX.Core.Event;
@@ -63,7 +62,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
                     );
             });
 
-            _configService.AppConfig.App.ThemeColor = themeColor.ToHexString();
+            _configService.AppConfig.App.ThemeColor = themeColor.ToString();
 
             _configService.SaveAll();
         });
@@ -103,9 +102,9 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
             ?? SupportedThemes.FirstOrDefault(); // Fallback to first theme if not found
     }
 
-    private Color2 themeColor = new();
+    private Color themeColor = new();
 
-    internal Color2 ThemeColor
+    internal Color ThemeColor
     {
         get
         {
@@ -114,7 +113,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
             if (obj is not SolidColorBrush brush)
                 return new();
 
-            return new(brush.Color);
+            return brush.Color;
         }
         set => themeColor = value;
     }
