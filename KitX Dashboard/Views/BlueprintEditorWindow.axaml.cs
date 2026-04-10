@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using KitX.Core.Contract.Workflow;
+using KitX.Dashboard.Controls;
 using KitX.Dashboard.ViewModels;
 
 namespace KitX.Dashboard.Views;
@@ -59,8 +60,8 @@ public partial class BlueprintEditorWindow : Window, IView
     }
 
     /// <summary>
-    /// Handles right-click on the editor canvas. Shows a context menu when
-    /// right-clicking on a node (BlueprintNodeVM).
+    /// Handles right-click on the editor canvas. Shows a context menu for
+    /// regular nodes (BlueprintNodeVM) or scope blocks (BlueprintScopeBlockVM).
     /// </summary>
     private void OnEditorContextRequested(object? sender, ContextRequestedEventArgs e)
     {
@@ -70,44 +71,51 @@ public partial class BlueprintEditorWindow : Window, IView
         if (e.Source is not Avalonia.Visual visual)
             return;
 
-        // Walk up the visual tree to find a BaseNode
-        var node = FindAncestor<NodifyM.Avalonia.Controls.BaseNode>(visual);
-        if (node == null) return;
+        // Try both visual tree paths: BaseNode (regular nodes) and ScopeBlockControl (scope blocks)
+        var baseNode = FindAncestor<NodifyM.Avalonia.Controls.BaseNode>(visual);
+        var scopeBlock = FindAncestor<ScopeBlockControl>(visual);
 
-        // Only show menu for BlueprintNodeVM (not for scope blocks)
-        if (node.DataContext is not BlueprintNodeVM nodeVm) return;
+        if (baseNode == null && scopeBlock == null) return;
+
+        e.Handled = true;
+        CloseContextPopup();
+
+        // Path A: Scope block context menu
+        if (scopeBlock != null && scopeBlock.DataContext is BlueprintScopeBlockVM scopeVm)
+        {
+            editor.SelectItem(scopeBlock, false);
+
+            var panel = CreateMenuPanel();
+
+            panel.Children.Add(CreateMenuButton("Rename", _viewModel.RenameScopeBlockCommand, scopeVm));
+
+            panel.Children.Add(CreateSeparator());
+
+            panel.Children.Add(CreateMenuButton("Delete", _viewModel.DeleteSelectedNodesCommand, null));
+
+            ShowContextPopup(panel);
+            return;
+        }
+
+        // Path B: Regular node context menu (BlueprintNodeVM)
+        if (baseNode == null) return;
+        if (baseNode.DataContext is not BlueprintNodeVM nodeVm) return;
 
         // Re-select the node — NodifyEditor.OnPointerPressed already called
         // SelectItem(null, false) which deselected everything on right-click.
-        editor.SelectItem(node, false);
+        editor.SelectItem(baseNode, false);
 
-        e.Handled = true;
-
-        // Close existing popup if open
-        CloseContextPopup();
-
-        // Build menu panel
-        var panel = new StackPanel
-        {
-            Background = Avalonia.Media.Brush.Parse("#2D2D2D"),
-            MinWidth = 180,
-        };
+        var nodePanel = CreateMenuPanel();
 
         // Delete button
-        panel.Children.Add(CreateMenuButton("_Delete", _viewModel.DeleteSelectedNodesCommand, null));
+        nodePanel.Children.Add(CreateMenuButton("Delete", _viewModel.DeleteSelectedNodesCommand, null));
 
-        // Separator
-        panel.Children.Add(new Border
-        {
-            Height = 1,
-            Background = Avalonia.Media.Brush.Parse("#444444"),
-            Margin = new Avalonia.Thickness(4, 2),
-        });
+        nodePanel.Children.Add(CreateSeparator());
 
-        // Move to Scope items (flat list under a header)
+        // Move to Scope items
         if (_viewModel.ScopeBlocks.Count > 0)
         {
-            panel.Children.Add(new TextBlock
+            nodePanel.Children.Add(new TextBlock
             {
                 Text = "Move to Scope:",
                 Foreground = Avalonia.Media.Brush.Parse("#999999"),
@@ -117,25 +125,55 @@ public partial class BlueprintEditorWindow : Window, IView
 
             foreach (var scope in _viewModel.ScopeBlocks)
             {
-                panel.Children.Add(CreateMenuButton(
+                nodePanel.Children.Add(CreateMenuButton(
                     $"  {scope.DisplayName} ({scope.ContainedNodeIds.Count} nodes)",
                     _viewModel.MoveSelectedNodesToScopeCommand,
                     scope.ScopeId));
             }
         }
 
-        // Separator
-        panel.Children.Add(new Border
-        {
-            Height = 1,
-            Background = Avalonia.Media.Brush.Parse("#444444"),
-            Margin = new Avalonia.Thickness(4, 2),
-        });
+        nodePanel.Children.Add(CreateSeparator());
 
         // Remove from Scope
-        panel.Children.Add(CreateMenuButton("Remove from Scope", _viewModel.RemoveSelectedNodesFromScopeCommand, null));
+        nodePanel.Children.Add(CreateMenuButton("Remove from Scope", _viewModel.RemoveSelectedNodesFromScopeCommand, null));
 
-        // Wrap in a border with rounding and shadow
+        // Rename option for Const / Variable / Get / Set nodes
+        if (nodeVm.NodeType is BlueprintNodeType.Const
+            or BlueprintNodeType.Variable
+            or BlueprintNodeType.Get
+            or BlueprintNodeType.Set)
+        {
+            nodePanel.Children.Add(CreateSeparator());
+            nodePanel.Children.Add(CreateMenuButton("Rename", _viewModel.RenameSelectedNodeCommand, nodeVm));
+        }
+
+        ShowContextPopup(nodePanel);
+    }
+
+    /// <summary>
+    /// Creates a styled menu panel for context menus.
+    /// </summary>
+    private static StackPanel CreateMenuPanel() => new()
+    {
+        Background = Avalonia.Media.Brush.Parse("#2D2D2D"),
+        MinWidth = 180,
+    };
+
+    /// <summary>
+    /// Creates a horizontal separator line for context menus.
+    /// </summary>
+    private static Border CreateSeparator() => new()
+    {
+        Height = 1,
+        Background = Avalonia.Media.Brush.Parse("#444444"),
+        Margin = new Avalonia.Thickness(4, 2),
+    };
+
+    /// <summary>
+    /// Shows a styled context popup at the pointer position.
+    /// </summary>
+    private void ShowContextPopup(StackPanel panel)
+    {
         var border = new Border
         {
             Background = Avalonia.Media.Brush.Parse("#2D2D2D"),
@@ -152,7 +190,6 @@ public partial class BlueprintEditorWindow : Window, IView
                 }),
         };
 
-        // Create and show popup at pointer position
         _contextPopup = new Popup
         {
             Placement = PlacementMode.Pointer,
@@ -161,7 +198,6 @@ public partial class BlueprintEditorWindow : Window, IView
             Child = border,
         };
 
-        // Popup must be in the logical tree to work
         ((ISetLogicalParent)_contextPopup).SetParent(this);
         _contextPopup.Open();
     }

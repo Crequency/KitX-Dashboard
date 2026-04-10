@@ -415,6 +415,140 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         Log.Information("Removed {Count} nodes from their scope blocks", SelectedNodes.Count);
     }
 
+    // ─── Rename Commands ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Renames a Const, Variable, Get, or Set node via a text input dialog.
+    /// For Variable renames, propagates the new name to all referencing Get/Set nodes.
+    /// </summary>
+    [RelayCommand]
+    private async Task RenameSelectedNodeAsync(BlueprintNodeVM nodeVm)
+    {
+        string dialogTitle;
+        string dialogPrompt;
+        string currentName;
+
+        switch (nodeVm.NodeType)
+        {
+            case BlueprintNodeType.Const:
+                dialogTitle = "Rename Const";
+                dialogPrompt = "Enter new constant name:";
+                currentName = nodeVm.Metadata.TryGetValue("ConstName", out var cn)
+                    ? cn
+                    : nodeVm.DisplayTitle.StartsWith("Const:")
+                        ? nodeVm.DisplayTitle["Const:".Length..].Trim()
+                        : nodeVm.DisplayTitle;
+                break;
+
+            case BlueprintNodeType.Variable:
+                dialogTitle = "Rename Variable";
+                dialogPrompt = "Enter new variable name:";
+                currentName = nodeVm.Metadata.TryGetValue("VarName", out var vn)
+                    ? vn
+                    : nodeVm.VarName;
+                break;
+
+            case BlueprintNodeType.Get:
+                dialogTitle = "Rename Get Node";
+                dialogPrompt = "Enter new variable name:";
+                currentName = nodeVm.DisplayTitle.StartsWith("Get:")
+                    ? nodeVm.DisplayTitle["Get:".Length..].Trim()
+                    : nodeVm.DisplayTitle;
+                break;
+
+            case BlueprintNodeType.Set:
+                dialogTitle = "Rename Set Node";
+                dialogPrompt = "Enter new variable name:";
+                currentName = nodeVm.DisplayTitle.StartsWith("Set:")
+                    ? nodeVm.DisplayTitle["Set:".Length..].Trim()
+                    : nodeVm.DisplayTitle;
+                break;
+
+            default:
+                return;
+        }
+
+        var newName = await _fileDialogService.ShowTextInputDialogAsync(dialogTitle, dialogPrompt, currentName);
+        if (string.IsNullOrWhiteSpace(newName) || newName == currentName)
+            return;
+
+        switch (nodeVm.NodeType)
+        {
+            case BlueprintNodeType.Const:
+                nodeVm.DisplayTitle = $"Const: {newName}";
+                nodeVm.Metadata["ConstName"] = newName;
+                break;
+
+            case BlueprintNodeType.Variable:
+                var oldVarName = currentName;
+                nodeVm.VarName = newName;
+                nodeVm.DisplayTitle = $"Var: {newName}";
+                nodeVm.Metadata["VarName"] = newName;
+                // Propagate rename to all Get/Set nodes referencing this variable
+                PropagateVariableRename(oldVarName, newName);
+                break;
+
+            case BlueprintNodeType.Get:
+                nodeVm.DisplayTitle = $"Get: {newName}";
+                nodeVm.Metadata["VarName"] = newName;
+                break;
+
+            case BlueprintNodeType.Set:
+                nodeVm.DisplayTitle = $"Set: {newName}";
+                nodeVm.Metadata["VarName"] = newName;
+                break;
+        }
+
+        Log.Information("Renamed {NodeType} node '{OldName}' to '{NewName}'",
+            nodeVm.NodeType, currentName, newName);
+    }
+
+    /// <summary>
+    /// Propagates a variable rename to all Get/Set nodes that reference the old name.
+    /// Updates display titles and re-resolves pin types.
+    /// </summary>
+    private void PropagateVariableRename(string oldName, string newName)
+    {
+        foreach (var n in Nodes.OfType<BlueprintNodeVM>())
+        {
+            if (n.NodeType is not (BlueprintNodeType.Get or BlueprintNodeType.Set))
+                continue;
+
+            var prefix = n.NodeType == BlueprintNodeType.Get ? "Get: " : "Set: ";
+            var currentRef = n.DisplayTitle.StartsWith(prefix)
+                ? n.DisplayTitle[prefix.Length..].Trim()
+                : "";
+
+            if (currentRef != oldName)
+                continue;
+
+            n.DisplayTitle = $"{prefix}{newName}";
+            n.Metadata["VarName"] = newName;
+
+            // Re-resolve pin type for the new variable name
+            var pinType = ResolveVariablePinType(newName);
+            UpdateNodeValuePinType(n, pinType);
+        }
+    }
+
+    /// <summary>
+    /// Renames a scope block via a text input dialog.
+    /// </summary>
+    [RelayCommand]
+    private async Task RenameScopeBlockAsync(BlueprintScopeBlockVM scopeVm)
+    {
+        var newName = await _fileDialogService.ShowTextInputDialogAsync(
+            "Rename Scope Block", "Enter new scope name:", scopeVm.DisplayName);
+
+        if (string.IsNullOrWhiteSpace(newName) || newName == scopeVm.DisplayName)
+            return;
+
+        scopeVm.DisplayName = newName;
+        Log.Information("Renamed scope block to '{NewName}'", newName);
+    }
+
+    // ─── Scope Block Membership ─────────────────────────────────────────
+
     /// <summary>
     /// Gets the scope ID that a node currently belongs to, or null if none.
     /// </summary>
