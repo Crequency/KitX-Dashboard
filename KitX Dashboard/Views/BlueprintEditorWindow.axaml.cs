@@ -206,6 +206,12 @@ public partial class BlueprintEditorWindow : Window, IView
         return null;
     }
 
+    protected override void OnClosed(EventArgs e)
+    {
+        _viewModel.Cleanup();
+        base.OnClosed(e);
+    }
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (e.Key == Key.Delete)

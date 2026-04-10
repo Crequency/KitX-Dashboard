@@ -88,12 +88,50 @@
                             <!-- Actions -->
                             <Expander Header="Actions" IsExpanded="True" Margin="0,5">
                                 <StackPanel>
+                                    <!-- Dynamic Plugin Functions -->
+                                    <Expander Header="Plugin Functions" IsExpanded="False" Margin="5,0"
+                                              IsVisible="{Binding HasPluginFunctions}">
+                                        <ItemsControl ItemsSource="{Binding PluginFunctions}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding DisplayName}"
+                                                            HorizontalAlignment="Stretch" Margin="2,1"
+                                                            FontSize="10"
+                                                            Command="{Binding $parent[Window].DataContext.AddPluginCallNodeCommand}"
+                                                            CommandParameter="{Binding}"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Expander>
+
+                                    <!-- Fallback when no plugin functions available -->
                                     <Button Content="Call (Plugin)"
                                             HorizontalAlignment="Stretch" Margin="5"
-                                            Command="{Binding AddCallNodeCommand}"/>
+                                            Command="{Binding AddCallNodeCommand}"
+                                            IsVisible="{Binding !HasPluginFunctions}"/>
+
+                                    <!-- Dynamic Helper Functions -->
+                                    <Expander Header="Helper Functions" IsExpanded="False" Margin="5,0"
+                                              IsVisible="{Binding HasHelperFunctions}">
+                                        <ItemsControl ItemsSource="{Binding HelperFunctions}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding DisplayName}"
+                                                            HorizontalAlignment="Stretch" Margin="2,1"
+                                                            FontSize="10"
+                                                            Command="{Binding $parent[Window].DataContext.AddHelperCallNodeCommand}"
+                                                            CommandParameter="{Binding}"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Expander>
+
+                                    <!-- Fallback when no helper functions available -->
                                     <Button Content="Call Helper"
                                             HorizontalAlignment="Stretch" Margin="5"
-                                            Command="{Binding AddCallHelperNodeCommand}"/>
+                                            Command="{Binding AddCallHelperNodeCommand}"
+                                            IsVisible="{Binding !HasHelperFunctions}"/>
+
                                     <Button Content="Print"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddPrintNodeCommand}"/>

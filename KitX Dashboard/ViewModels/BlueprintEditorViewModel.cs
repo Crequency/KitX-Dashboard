@@ -9,8 +9,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Contract.Tasks;
+using KitX.Core.Contract.Plugin;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
+using KitX.Shared.CSharp.Plugin;
 using NodifyM.Avalonia.ViewModelBase;
 using Serilog;
 using BlueprintPinDirection = KitX.Core.Contract.Workflow.PinDirection;
@@ -97,6 +99,25 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     public Dictionary<string, string> NodeToScopeMap { get; } = [];
 
     private IWorkflowEditorBridge? _bridge;
+    private IPluginService? _pluginService;
+
+    /// <summary>
+    /// Plugin functions available for dynamic node creation.
+    /// Populated from connected plugins via IPluginService.
+    /// </summary>
+    public ObservableCollection<PluginFunctionPaletteItem> PluginFunctions { get; } = [];
+
+    /// <summary>
+    /// Helper functions available for dynamic node creation.
+    /// Populated from the current script's helper functions via the bridge.
+    /// </summary>
+    public ObservableCollection<HelperFunctionPaletteItem> HelperFunctions { get; } = [];
+
+    /// <summary>Whether any plugin functions are available (controls UI visibility)</summary>
+    public bool HasPluginFunctions => PluginFunctions.Count > 0;
+
+    /// <summary>Whether any helper functions are available (controls UI visibility)</summary>
+    public bool HasHelperFunctions => HelperFunctions.Count > 0;
 
     /// <summary>
     /// Sets the bridge to the associated WorkflowEditor.
@@ -105,6 +126,100 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     public void SetBridge(IWorkflowEditorBridge bridge)
     {
         _bridge = bridge;
+        RefreshHelperFunctions();
+    }
+
+    /// <summary>
+    /// Refreshes the PluginFunctions collection from connected plugins.
+    /// Called on init and when plugin status changes.
+    /// </summary>
+    /// <remarks>
+    /// TODO: 当前从 IPluginServer.Connections（已连接插件）获取函数列表，
+    /// 因为已安装插件的 PluginInfo.Functions 可能为空（安装协议未完善）。
+    /// 待新的插件加载与安装协议完成后，应切换回 IPluginService.GetInstalledPlugins()。
+    /// </remarks>
+    private void RefreshPluginFunctions()
+    {
+        PluginFunctions.Clear();
+
+        // TODO: 待新插件协议完善后，切换为 IPluginService.GetInstalledPlugins()
+        var pluginServer = App.GetService<IPluginServer>();
+        if (pluginServer == null)
+        {
+            Log.Debug("[BlueprintPalette] RefreshPluginFunctions: IPluginServer is null");
+            OnPropertyChanged(nameof(HasPluginFunctions));
+            return;
+        }
+
+        var connections = pluginServer.Connections;
+        Log.Debug("[BlueprintPalette] RefreshPluginFunctions: {ConnCount} connected plugins", connections.Count);
+
+        foreach (var conn in connections)
+        {
+            if (conn.PluginInfo?.Functions == null) continue;
+
+            Log.Debug("[BlueprintPalette] Connected plugin: {Name}, FunctionsCount={FuncCount}",
+                conn.PluginInfo.Name, conn.PluginInfo.Functions.Count);
+
+            foreach (var func in conn.PluginInfo.Functions)
+            {
+                PluginFunctions.Add(new PluginFunctionPaletteItem
+                {
+                    PluginName = conn.PluginInfo.Name,
+                    FunctionName = func.Name,
+                    DisplayName = $"{conn.PluginInfo.Name}.{func.Name}",
+                    Parameters = func.Parameters ?? [],
+                    ReturnValueType = func.ReturnValueType ?? "void"
+                });
+            }
+        }
+
+        Log.Debug("[BlueprintPalette] RefreshPluginFunctions: added {Count} plugin functions", PluginFunctions.Count);
+        OnPropertyChanged(nameof(HasPluginFunctions));
+    }
+
+    /// <summary>
+    /// Refreshes the HelperFunctions collection from the bridge.
+    /// Called when bridge is set.
+    /// </summary>
+    private void RefreshHelperFunctions()
+    {
+        HelperFunctions.Clear();
+        if (_bridge == null) return;
+
+        var helpers = _bridge.GetHelperFunctions();
+        if (helpers == null) return;
+
+        foreach (var helper in helpers)
+        {
+            HelperFunctions.Add(new HelperFunctionPaletteItem
+            {
+                FunctionName = helper.Name,
+                DisplayName = helper.Name,
+                Parameters = helper.Parameters ?? [],
+                ReturnType = helper.ReturnType ?? "object"
+            });
+        }
+
+        OnPropertyChanged(nameof(HasHelperFunctions));
+    }
+
+    private void OnPluginStatusChanged(object? sender, PluginStatusChangedEventArgs e)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            RefreshPluginFunctions();
+        });
+    }
+
+    /// <summary>
+    /// Detaches event handlers to prevent memory leaks.
+    /// Called by BlueprintEditorWindow.OnClosed.
+    /// </summary>
+    public void Cleanup()
+    {
+        if (_pluginService != null)
+            _pluginService.PluginStatusChanged -= OnPluginStatusChanged;
     }
 
     /// <summary>
@@ -129,6 +244,12 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         // Initialize PendingConnection so drag-to-connect works
         PendingConnection = new PendingConnectionViewModelBase(this);
+
+        // Initialize dynamic node palette from plugin service
+        _pluginService = App.GetService<IPluginService>();
+        if (_pluginService != null)
+            _pluginService.PluginStatusChanged += OnPluginStatusChanged;
+        RefreshPluginFunctions();
 
         Log.Information("BlueprintEditorViewModel initialized (NodifyM)");
     }
@@ -1352,6 +1473,170 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     [RelayCommand]
     public void AddCallHelperNode() => AddNodeFromTemplate(BlueprintNodeType.CallHelper, "Helper: Func");
+
+    /// <summary>
+    /// Creates a CallNode from a dynamic palette item with correct PluginName/FunctionName
+    /// and pre-populated parameter pins.
+    /// </summary>
+    [RelayCommand]
+    private void AddPluginCallNode(PluginFunctionPaletteItem item)
+    {
+        if (item == null) return;
+
+        var displayTitle = $"Call: {item.PluginName}.{item.FunctionName}";
+        var descriptor = _nodeRegistry.GetDescriptor(BlueprintNodeType.Call);
+        var (primaryColor, lightColor) = BlueprintNodeVM.GetCategoryColors(BlueprintNodeType.Call);
+
+        var node = new BlueprintNodeVM
+        {
+            Location = new Avalonia.Point(100, 100),
+            BlueprintNodeId = Guid.NewGuid().ToString(),
+            NodeType = BlueprintNodeType.Call,
+            DisplayTitle = displayTitle,
+            CategoryColor = primaryColor,
+            CategoryColorLight = lightColor,
+            Title = displayTitle,
+            Name = descriptor.DisplayName,
+            Input = new ObservableCollection<object>(),
+            Output = new ObservableCollection<object>()
+        };
+
+        node.Metadata["PluginName"] = item.PluginName;
+        node.Metadata["FunctionName"] = item.FunctionName;
+
+        // Input: Exec pin + parameter pins
+        foreach (var pinDesc in descriptor.InputPins)
+            node.Input.Add(new BlueprintConnectorVM
+            {
+                Title = pinDesc.Name,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+                PinType = pinDesc.Type,
+                OriginalPinId = Guid.NewGuid().ToString()
+            });
+
+        foreach (var param in item.Parameters)
+        {
+            node.Input.Add(new BlueprintConnectorVM
+            {
+                Title = param.Name,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+                PinType = TypeStringToPinType(param.Type),
+                OriginalPinId = Guid.NewGuid().ToString()
+            });
+        }
+
+        // Output: Exec pin from descriptor, skip "Return" (we add our own based on actual return type)
+        foreach (var pinDesc in descriptor.OutputPins)
+        {
+            if (pinDesc.Name == "Return") continue;
+            node.Output.Add(new BlueprintConnectorVM
+            {
+                Title = pinDesc.Name,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Output,
+                PinType = pinDesc.Type,
+                OriginalPinId = Guid.NewGuid().ToString()
+            });
+        }
+
+        if (!string.IsNullOrEmpty(item.ReturnValueType)
+            && !item.ReturnValueType.Equals("void", StringComparison.OrdinalIgnoreCase))
+        {
+            node.Output.Add(new BlueprintConnectorVM
+            {
+                Title = "Return",
+                Flow = ConnectorViewModelBase.ConnectorFlow.Output,
+                PinType = TypeStringToPinType(item.ReturnValueType),
+                OriginalPinId = Guid.NewGuid().ToString()
+            });
+        }
+
+        Nodes.Add(node);
+        RefreshCounts();
+        Log.Information("Added CallNode: {Plugin}.{Function} with {ParamCount} params",
+            item.PluginName, item.FunctionName, item.Parameters.Count);
+    }
+
+    /// <summary>
+    /// Creates a CallHelperNode from a dynamic palette item with correct function name
+    /// and pre-populated parameter pins.
+    /// </summary>
+    [RelayCommand]
+    private void AddHelperCallNode(HelperFunctionPaletteItem item)
+    {
+        if (item == null) return;
+
+        var displayTitle = $"Helper: {item.FunctionName}";
+        var descriptor = _nodeRegistry.GetDescriptor(BlueprintNodeType.CallHelper);
+        var (primaryColor, lightColor) = BlueprintNodeVM.GetCategoryColors(BlueprintNodeType.CallHelper);
+
+        var node = new BlueprintNodeVM
+        {
+            Location = new Avalonia.Point(100, 100),
+            BlueprintNodeId = Guid.NewGuid().ToString(),
+            NodeType = BlueprintNodeType.CallHelper,
+            DisplayTitle = displayTitle,
+            CategoryColor = primaryColor,
+            CategoryColorLight = lightColor,
+            Title = displayTitle,
+            Name = descriptor.DisplayName,
+            Input = new ObservableCollection<object>(),
+            Output = new ObservableCollection<object>()
+        };
+
+        node.Metadata["HelperFunctionName"] = item.FunctionName;
+
+        // Input: Exec pin + parameter pins
+        foreach (var pinDesc in descriptor.InputPins)
+            node.Input.Add(new BlueprintConnectorVM
+            {
+                Title = pinDesc.Name,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+                PinType = pinDesc.Type,
+                OriginalPinId = Guid.NewGuid().ToString()
+            });
+
+        foreach (var param in item.Parameters)
+        {
+            node.Input.Add(new BlueprintConnectorVM
+            {
+                Title = param.Name,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+                PinType = TypeStringToPinType(param.Type),
+                OriginalPinId = Guid.NewGuid().ToString()
+            });
+        }
+
+        // Output: Exec pin from descriptor, skip "Return" (we add our own based on actual return type)
+        foreach (var pinDesc in descriptor.OutputPins)
+        {
+            if (pinDesc.Name == "Return") continue;
+            node.Output.Add(new BlueprintConnectorVM
+            {
+                Title = pinDesc.Name,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Output,
+                PinType = pinDesc.Type,
+                OriginalPinId = Guid.NewGuid().ToString()
+            });
+        }
+
+        if (!string.IsNullOrEmpty(item.ReturnType)
+            && !item.ReturnType.Equals("void", StringComparison.OrdinalIgnoreCase)
+            && !item.ReturnType.Equals("object", StringComparison.OrdinalIgnoreCase))
+        {
+            node.Output.Add(new BlueprintConnectorVM
+            {
+                Title = "Return",
+                Flow = ConnectorViewModelBase.ConnectorFlow.Output,
+                PinType = TypeStringToPinType(item.ReturnType),
+                OriginalPinId = Guid.NewGuid().ToString()
+            });
+        }
+
+        Nodes.Add(node);
+        RefreshCounts();
+        Log.Information("Added CallHelperNode: {Function} with {ParamCount} params",
+            item.FunctionName, item.Parameters.Count);
+    }
 
     [RelayCommand]
     public void AddPrintNode() => AddNodeFromTemplate(BlueprintNodeType.Print);
