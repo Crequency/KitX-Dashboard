@@ -16,7 +16,6 @@ using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
 using KitX.Core.DI;
 using KitX.Core.Event;
-using KitX.Core.Contract.Event;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.ViewModels.Pages.Controls;
@@ -69,7 +68,7 @@ public partial class App : Application
     /// </summary>
     public static T GetService<T>() where T : class
     {
-        Log.Information($"Getting service: {typeof(T).Name}");
+        Log.Debug($"Getting service: {typeof(T).Name}");
 
         if (_serviceProvider == null)
         {
@@ -82,7 +81,7 @@ public partial class App : Application
         {
             var result = _serviceProvider!.GetRequiredService<T>();
 
-            Log.Information($"Got service: {typeof(T).Name}");
+            Log.Debug($"Got service: {typeof(T).Name}");
 
             return result;
         }
@@ -90,11 +89,11 @@ public partial class App : Application
         {
             // Type not registered - try auto-resolution via ActivatorUtilities
             // This allows constructor injection without explicit registration
-            Log.Information($"Auto-resolving unregistered service: {typeof(T).Name}");
+            Log.Debug($"Auto-resolving unregistered service: {typeof(T).Name}");
 
             var result = ActivatorUtilities.CreateInstance<T>(_serviceProvider!);
 
-            Log.Information($"Auto-resolved service: {typeof(T).Name}");
+            Log.Debug($"Auto-resolved service: {typeof(T).Name}");
 
             return result;
         }
