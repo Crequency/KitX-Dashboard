@@ -113,6 +113,16 @@
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">Autoriser le dispositif et échanger les clés</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">Révoquer l'autorisation de ce dispositif (générer une nouvelle clé locale et l'échanger avec d'autres appareils)</x:String>
     <x:String x:Key="Text_Workflow_Count">Vous avez $count workflows</x:String>
+    <x:String x:Key="Text_Workflow_No">Aucun workflow, créez votre premier !</x:String>
+    <x:String x:Key="Text_Workflow_Search">Rechercher des workflows...</x:String>
+    <x:String x:Key="Text_Workflow_Create">Nouveau workflow</x:String>
+    <x:String x:Key="Text_Workflow_Refresh">Actualiser</x:String>
+    <x:String x:Key="Text_Workflow_Run">Exécuter</x:String>
+    <x:String x:Key="Text_Workflow_Stop">Arrêter</x:String>
+    <x:String x:Key="Text_Workflow_Rename">Renommer</x:String>
+    <x:String x:Key="Text_Workflow_Delete">Supprimer</x:String>
+    <x:String x:Key="Text_Workflow_Stopped">Arrêté</x:String>
+    <x:String x:Key="Text_Workflow_Running">En cours</x:String>
     <sys:String x:Key="Text_Settings_General">Universel</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">répertoire local des plugins</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">Répertoire de données du plug-in local</sys:String>

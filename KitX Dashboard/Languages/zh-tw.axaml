@@ -113,6 +113,16 @@
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">授權該裝置並交換金鑰</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">取消此裝置的授權（產生新的本機金鑰並與其他裝置進行交換）</x:String>
     <x:String x:Key="Text_Workflow_Count">您有 $count 個工作流</x:String>
+    <x:String x:Key="Text_Workflow_No">還沒有工作流，建立你的第一個吧！</x:String>
+    <x:String x:Key="Text_Workflow_Search">搜尋工作流...</x:String>
+    <x:String x:Key="Text_Workflow_Create">新建工作流</x:String>
+    <x:String x:Key="Text_Workflow_Refresh">重新整理</x:String>
+    <x:String x:Key="Text_Workflow_Run">執行</x:String>
+    <x:String x:Key="Text_Workflow_Stop">停止</x:String>
+    <x:String x:Key="Text_Workflow_Rename">重新命名</x:String>
+    <x:String x:Key="Text_Workflow_Delete">刪除</x:String>
+    <x:String x:Key="Text_Workflow_Stopped">已停止</x:String>
+    <x:String x:Key="Text_Workflow_Running">執行中</x:String>
     <sys:String x:Key="Text_Settings_General">通用</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">本機插件的程序路徑</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">本機插件的文件路徑</sys:String>

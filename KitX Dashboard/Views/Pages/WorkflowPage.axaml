@@ -42,14 +42,14 @@
                         Orientation="Horizontal"
                         Spacing="10">
                 <Button Command="{Binding RefreshWorkflowsCommand}"
-                        ToolTip.Tip="Refresh">
+                        ToolTip.Tip="{DynamicResource Text_Workflow_Refresh}">
                     <icon:MaterialIcon Width="20" Height="20" Kind="Refresh" />
                 </Button>
                 <Button Command="{Binding CreateWorkflowCommand}"
-                        ToolTip.Tip="Create Workflow">
+                        ToolTip.Tip="{DynamicResource Text_Workflow_Create}">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <icon:MaterialIcon Width="20" Height="20" Kind="Plus" />
-                        <TextBlock Text="New Workflow" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Text_Workflow_Create}" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -59,19 +59,11 @@
             <!-- Empty State -->
             <Border Height="{Binding NoWorkflow_TipHeight}"
                     DockPanel.Dock="Top">
-                <StackPanel HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="10">
-                    <icon:MaterialIcon Width="48" Height="48"
-                                       Kind="PlaylistPlus"
-                                       HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                    <TextBlock HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               FontSize="16"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                               Text="{DynamicResource Text_Workflow_No}" />
-                </StackPanel>
+                <TextBlock HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontSize="16"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           Text="{DynamicResource Text_Workflow_No}" />
             </Border>
 
             <!-- Workflow Card Grid -->
@@ -125,12 +117,12 @@
                                                          Height="10"
                                                          IsVisible="{Binding !IsRunning}"
                                                          Fill="Red"
-                                                         ToolTip.Tip="Stopped" />
+                                                         ToolTip.Tip="{DynamicResource Text_Workflow_Stopped}" />
                                                 <Ellipse Width="10"
                                                          Height="10"
                                                          IsVisible="{Binding IsRunning}"
                                                          Fill="Green"
-                                                         ToolTip.Tip="Running" />
+                                                         ToolTip.Tip="{DynamicResource Text_Workflow_Running}" />
                                                 <TextBlock FontSize="11"
                                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                            VerticalAlignment="Center"
@@ -147,7 +139,7 @@
                                                         IsVisible="{Binding !IsRunning}"
                                                         Command="{Binding #RunWorkflowCommandProvider.Command}"
                                                         CommandParameter="{Binding}"
-                                                        ToolTip.Tip="Run">
+                                                        ToolTip.Tip="{DynamicResource Text_Workflow_Run}">
                                                     <icon:MaterialIcon Width="16" Height="16" Kind="Play" />
                                                 </Button>
                                                 <Button Width="28" Height="28"
@@ -155,14 +147,14 @@
                                                         IsVisible="{Binding IsRunning}"
                                                         Command="{Binding #StopWorkflowCommandProvider.Command}"
                                                         CommandParameter="{Binding}"
-                                                        ToolTip.Tip="Stop">
+                                                        ToolTip.Tip="{DynamicResource Text_Workflow_Stop}">
                                                     <icon:MaterialIcon Width="16" Height="16" Kind="Stop" />
                                                 </Button>
                                                 <Button Width="28" Height="28"
                                                         Padding="0"
                                                         Command="{Binding #DeleteWorkflowCommandProvider.Command}"
                                                         CommandParameter="{Binding}"
-                                                        ToolTip.Tip="Delete">
+                                                        ToolTip.Tip="{DynamicResource Text_Workflow_Delete}">
                                                     <icon:MaterialIcon Width="16" Height="16" Kind="Delete" />
                                                 </Button>
                                             </StackPanel>

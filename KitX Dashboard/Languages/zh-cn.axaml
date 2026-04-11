@@ -113,6 +113,16 @@
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">授权该设备并交换密钥</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">取消授权该设备 (生成新的本机密钥并与其他设备交换)</x:String>
     <x:String x:Key="Text_Workflow_Count">您有 $count 个工作流</x:String>
+    <x:String x:Key="Text_Workflow_No">还没有工作流，创建你的第一个吧！</x:String>
+    <x:String x:Key="Text_Workflow_Search">搜索工作流...</x:String>
+    <x:String x:Key="Text_Workflow_Create">新建工作流</x:String>
+    <x:String x:Key="Text_Workflow_Refresh">刷新</x:String>
+    <x:String x:Key="Text_Workflow_Run">运行</x:String>
+    <x:String x:Key="Text_Workflow_Stop">停止</x:String>
+    <x:String x:Key="Text_Workflow_Rename">重命名</x:String>
+    <x:String x:Key="Text_Workflow_Delete">删除</x:String>
+    <x:String x:Key="Text_Workflow_Stopped">已停止</x:String>
+    <x:String x:Key="Text_Workflow_Running">运行中</x:String>
     <sys:String x:Key="Text_Settings_General">通用</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">本地插件程序目录</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">本地插件数据目录</sys:String>

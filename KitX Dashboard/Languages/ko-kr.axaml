@@ -113,6 +113,16 @@
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">장치를 권한을 부여하고 키를 교환하세요</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">이 장치의 권한을 취소하고(새로운 로컬 키를 생성하여 다른 장치와 교환) 합니다</x:String>
     <x:String x:Key="Text_Workflow_Count">워크플로가 $count개 있습니다</x:String>
+    <x:String x:Key="Text_Workflow_No">워크플로가 없습니다. 첫 번째를 만들어 보세요!</x:String>
+    <x:String x:Key="Text_Workflow_Search">워크플로 검색...</x:String>
+    <x:String x:Key="Text_Workflow_Create">새 워크플로</x:String>
+    <x:String x:Key="Text_Workflow_Refresh">새로고침</x:String>
+    <x:String x:Key="Text_Workflow_Run">실행</x:String>
+    <x:String x:Key="Text_Workflow_Stop">중지</x:String>
+    <x:String x:Key="Text_Workflow_Rename">이름 변경</x:String>
+    <x:String x:Key="Text_Workflow_Delete">삭제</x:String>
+    <x:String x:Key="Text_Workflow_Stopped">중지됨</x:String>
+    <x:String x:Key="Text_Workflow_Running">실행 중</x:String>
     <sys:String x:Key="Text_Settings_General">만능인</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">로컬 플러그인 디렉토리</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">로컬 플러그인 데이터 디렉토리</sys:String>

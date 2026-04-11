@@ -104,17 +104,17 @@ NextBlock = Branch(
 
 #Block LessThanLogic
 Print(""猜小了"");  // 其实用Print()也行
-vaaa0001 = HelperFuncCompare(""BLE"", Get(""currentLoop""), loopMax);  // 原先Loop中的内置嵌套condition表达式由于被拆分，需要在LoopBodyEnd被调用前进行结算，以保持逻辑一致性
-NextBlock = LoopBodyEnd(""MainBlock"");  // 返回到 MainBlock 的 Loop
+vaaa0001 = HelperFuncCompare(""BLE"", Get(""currentLoop""), loopMax);  // 原先Loop中的内置嵌套condition表达式由于被拆分，需要在ToLoopCond被调用前进行结算，以保持逻辑一致性
+NextBlock = ToLoopCond(""MainBlock"");  // 返回到 MainBlock 的 Loop
 
 #Block GreaterThanLogic
 Print(""猜大了"");
-vaaa0001 = HelperFuncCompare(""BLE"", Get(""currentLoop""), loopMax);  // 原先Loop中的内置嵌套condition表达式由于被拆分，需要在LoopBodyEnd被调用前进行结算，以保持逻辑一致性
+vaaa0001 = HelperFuncCompare(""BLE"", Get(""currentLoop""), loopMax);  // 原先Loop中的内置嵌套condition表达式由于被拆分，需要在ToLoopCond被调用前进行结算，以保持逻辑一致性
 // 这里仍是vaaa0001是因为在蓝图中实际上是一条边：CallHelper:HelperFuncCompare(BLE).Return --> Loop.Condition | PubVar=vaaa0001
-NextBlock = LoopBodyEnd(""MainBlock"");  // 返回到 MainBlock 的 Loop
+NextBlock = ToLoopCond(""MainBlock"");  // 返回到 MainBlock 的 Loop
 
 #Block SuccessLogic
-Print(""猜对啦！""); // 这个Block没有Branch/Loop/LoopBodyEnd，自然进入下一行
+Print(""猜对啦！""); // 这个Block没有Branch/Loop/ToLoopCond，自然进入下一行
 
 #Block EndLogic
 Print(""示例工作流结束"");";

@@ -1,0 +1,649 @@
+<Window x:Class="KitX.Dashboard.Views.WorkflowEditorWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avalonedit="using:AvaloniaEdit"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:controls="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
+        xmlns:viewModels="using:KitX.Dashboard.ViewModels"
+        xmlns:localControls="using:KitX.Dashboard.Controls"
+        xmlns:converters="using:KitX.Dashboard.Converters"
+        mc:Ignorable="d"
+        d:DesignHeight="700"
+        d:DesignWidth="1200"
+        Title="Workflow Editor"
+        Width="1200"
+        Height="800">
+
+    <Window.Resources>
+        <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
+    </Window.Resources>
+
+    <Window.Styles>
+        <StyleInclude Source="/Styles/ScopeBlockStyles.axaml"/>
+    </Window.Styles>
+
+    <DockPanel LastChildFill="True">
+        <!-- Unified Toolbar -->
+        <Border DockPanel.Dock="Top"
+                BorderBrush="#3F3F3F"
+                BorderThickness="0,0,0,1"
+                Padding="10,8">
+            <DockPanel>
+                <!-- Left: Back to Dashboard -->
+                <Button DockPanel.Dock="Left"
+                        Command="{Binding ShowDashboardCommand}"
+                        ToolTip.Tip="Back to Dashboard"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="ArrowLeft" />
+                        <TextBlock Text="Dashboard" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Right: Run/Stop -->
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                    <Button Name="RunButton"
+                            ToolTip.Tip="Run"
+                            IsEnabled="{Binding !IsExecuting}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="Play" />
+                            <TextBlock Text="Run" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Name="StopButton"
+                            ToolTip.Tip="Stop"
+                            IsEnabled="{Binding IsExecuting}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="Stop" />
+                            <TextBlock Text="Stop" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Center: Mode toggle + metadata -->
+                <StackPanel HorizontalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <!-- Workflow Name -->
+                    <TextBox Text="{Binding WorkflowName, Mode=TwoWay}"
+                             FontSize="16"
+                             FontWeight="SemiBold"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             MinWidth="150"
+                             MaxWidth="300"
+                             VerticalAlignment="Center" />
+
+                    <!-- Metadata toggle -->
+                    <ToggleButton Name="MetadataToggleButton"
+                                  VerticalAlignment="Center"
+                                  Padding="4"
+                                  ToolTip.Tip="Description and Author">
+                        <icon:MaterialIcon Width="16" Height="16" Kind="InformationOutline" />
+                    </ToggleButton>
+
+                    <!-- Separator -->
+                    <Border Width="1" Height="24" Background="#3F3F3F" />
+
+                    <!-- BS/BP Toggle -->
+                    <StackPanel Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
+                        <Button Name="BlockScriptModeButton"
+                                Padding="12,6"
+                                CornerRadius="4,0,0,4"
+                                Command="{Binding SwitchToBlockScriptCommand}"
+                                IsEnabled="{Binding !IsBlockScriptMode}">
+                            <TextBlock Text="BlockScript" />
+                        </Button>
+                        <Button Name="BlueprintModeButton"
+                                Padding="12,6"
+                                CornerRadius="0,4,4,0"
+                                Command="{Binding SwitchToBlueprintCommand}"
+                                IsEnabled="{Binding !IsBlueprintMode}">
+                            <TextBlock Text="Blueprint" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Collapsible metadata panel (Description + Author) -->
+        <Border DockPanel.Dock="Top"
+                BorderBrush="#3F3F3F"
+                BorderThickness="0,0,0,1"
+                Padding="15,6"
+                IsVisible="{Binding #MetadataToggleButton.IsChecked, Mode=OneWay}">
+            <Grid ColumnDefinitions="Auto,*,Auto,*" Margin="10,0,10,0">
+                <TextBlock Text="Description: " VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                <TextBox Grid.Column="1"
+                         Text="{Binding WorkflowDescription, Mode=TwoWay}"
+                         Watermark="Workflow description..."
+                         Background="Transparent"
+                         BorderThickness="0,0,0,1"
+                         Margin="0,0,20,0" />
+                <TextBlock Grid.Column="2" Text="Author: " VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                <TextBox Grid.Column="3"
+                         Text="{Binding WorkflowAuthor, Mode=TwoWay}"
+                         Watermark="Author name..."
+                         Background="Transparent"
+                         BorderThickness="0,0,0,1" />
+            </Grid>
+        </Border>
+
+        <!-- Bottom status bar -->
+        <Border DockPanel.Dock="Bottom"
+                BorderBrush="#3F3F3F"
+                BorderThickness="0,1,0,0"
+                Padding="10,4">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left"
+                            Orientation="Horizontal"
+                            Spacing="20">
+                    <TextBlock Name="StatusText"
+                               Text="Ready"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="20"
+                            HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding Mode, StringFormat='Mode: {0}'}"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Name="NodeCountText"
+                               IsVisible="{Binding IsBlueprintMode}"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Content Area: Three columns -->
+        <Grid ColumnDefinitions="200,5,*,5,250">
+            <!-- ==================== BS Mode: Left Panel (Helper Functions) ==================== -->
+            <DockPanel Grid.Column="0"
+                       IsVisible="{Binding IsBlockScriptMode}"
+                       Margin="5">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="Code Sections"
+                           FontWeight="Bold"
+                           Margin="5,5,5,10" />
+                <Button DockPanel.Dock="Top"
+                        Name="AddHelperFunctionListButton"
+                        Content="+ Add Helper Function"
+                        HorizontalAlignment="Stretch"
+                        Margin="5" Padding="5,2" />
+                <Button DockPanel.Dock="Top"
+                        Name="BackToMainProgramButton"
+                        Content="Main Program"
+                        HorizontalAlignment="Stretch"
+                        Margin="5" Padding="5,2" />
+                <ListBox Name="HelperFunctionsListBox">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding Name, Mode=TwoWay}"
+                                         VerticalAlignment="Center"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         MinWidth="80" />
+                                <Button Grid.Column="1"
+                                        Content="X"
+                                        Tag="{Binding}"
+                                        Padding="5,2"
+                                        Margin="5,0,0,0" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <!-- ==================== BP Mode: Left Panel (Node Palette) ==================== -->
+            <Border Grid.Column="0"
+                    IsVisible="{Binding IsBlueprintMode}"
+                    Background="#252525"
+                    Margin="5" CornerRadius="5">
+                <DockPanel Margin="10">
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Node Palette"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10" />
+                    <ScrollViewer>
+                        <StackPanel DataContext="{Binding BlueprintVM}">
+                            <!-- Entry -->
+                            <Expander Header="Entry" IsExpanded="True" Margin="0,5">
+                                <Button Content="Entry"
+                                        HorizontalAlignment="Stretch" Margin="5"
+                                        Command="{Binding AddEntryNodeCommand}" />
+                            </Expander>
+
+                            <!-- Flow Control -->
+                            <Expander Header="Flow Control" IsExpanded="True" Margin="0,5">
+                                <StackPanel>
+                                    <Button Content="Branch"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddBranchNodeCommand}" />
+                                    <Button Content="Loop"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddLoopNodeCommand}" />
+                                    <Button Content="Break"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddBreakNodeCommand}" />
+                                </StackPanel>
+                            </Expander>
+
+                            <!-- Data -->
+                            <Expander Header="Data" IsExpanded="True" Margin="0,5">
+                                <StackPanel>
+                                    <Button Content="Const"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddConstNodeCommand}" />
+                                    <Button Content="Variable"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddVariableNodeCommand}" />
+                                </StackPanel>
+                            </Expander>
+
+                            <!-- Actions -->
+                            <Expander Header="Actions" IsExpanded="True" Margin="0,5">
+                                <StackPanel>
+                                    <!-- Dynamic Plugin Functions -->
+                                    <Expander Header="Plugin Functions"
+                                              IsExpanded="False" Margin="5,0"
+                                              IsVisible="{Binding HasPluginFunctions}">
+                                        <ItemsControl ItemsSource="{Binding PluginFunctions}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding DisplayName}"
+                                                            HorizontalAlignment="Stretch" Margin="2,1"
+                                                            FontSize="10"
+                                                            Command="{Binding $parent[Window].DataContext.BlueprintVM.AddPluginCallNodeCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Expander>
+
+                                    <Button Content="Call (Plugin)"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddCallNodeCommand}"
+                                            IsVisible="{Binding !HasPluginFunctions}" />
+
+                                    <!-- Dynamic Helper Functions -->
+                                    <Expander Header="Helper Functions"
+                                              IsExpanded="False" Margin="5,0"
+                                              IsVisible="{Binding HasHelperFunctions}">
+                                        <ItemsControl ItemsSource="{Binding HelperFunctions}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding DisplayName}"
+                                                            HorizontalAlignment="Stretch" Margin="2,1"
+                                                            FontSize="10"
+                                                            Command="{Binding $parent[Window].DataContext.BlueprintVM.AddHelperCallNodeCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Expander>
+
+                                    <Button Content="Call Helper"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddCallHelperNodeCommand}"
+                                            IsVisible="{Binding !HasHelperFunctions}" />
+
+                                    <Button Content="Print"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddPrintNodeCommand}" />
+                                    <Button Content="Pause"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddPauseNodeCommand}" />
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Column 1: Splitter -->
+            <Border Grid.Column="1" Background="#3F3F3F" Width="5" />
+
+            <!-- ==================== Column 2: Main Editor Area ==================== -->
+            <Grid Grid.Column="2">
+                <!-- BS Mode: Code Editor + Constants Panel -->
+                <Grid IsVisible="{Binding IsBlockScriptMode}"
+                      RowDefinitions="*,5,200">
+
+                    <!-- Code Editor -->
+                    <DockPanel Grid.Row="0" Margin="5">
+                        <StackPanel DockPanel.Dock="Top"
+                                    Orientation="Horizontal"
+                                    Margin="5">
+                            <TextBlock Name="CodeEditorTitle"
+                                       Text="Main Program"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <avalonedit:TextEditor Name="CodeEditor"
+                                               FontFamily="Consolas"
+                                               FontSize="12"
+                                               ShowLineNumbers="True"
+                                               SyntaxHighlighting="C#"
+                                               HorizontalScrollBarVisibility="Auto"
+                                               VerticalScrollBarVisibility="Auto" />
+                    </DockPanel>
+
+                    <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
+
+                    <!-- Variable Constants / Helper Function Settings Panel -->
+                    <DockPanel Grid.Row="2" Margin="5">
+                        <!-- Header: Variable Constants -->
+                        <StackPanel DockPanel.Dock="Top"
+                                    Orientation="Horizontal"
+                                    Margin="5"
+                                    IsVisible="{Binding ScriptVM.IsEditingHelperFunction, Converter={x:Static BoolConverters.Not}}">
+                            <TextBlock Text="Variable Constants"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center" />
+                            <Button Name="ResetAllConstantsButton"
+                                    Content="Reset All"
+                                    Margin="10,0,0,0" Padding="5,2" />
+                        </StackPanel>
+
+                        <!-- Header: Helper Function Settings -->
+                        <StackPanel DockPanel.Dock="Top"
+                                    Orientation="Horizontal"
+                                    Margin="5"
+                                    IsVisible="{Binding ScriptVM.IsEditingHelperFunction}">
+                            <TextBlock Text="Helper Function Settings"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <!-- Content: Variable Constants -->
+                        <ScrollViewer IsVisible="{Binding ScriptVM.IsEditingHelperFunction, Converter={x:Static BoolConverters.Not}}">
+                            <ItemsControl Name="ConstantsItemsControl">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Orientation="Vertical">
+                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                                                <TextBlock Text="{Binding Type}" Foreground="Gray" FontSize="10" />
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding UserValue, Mode=TwoWay}"
+                                                     Margin="5,0" />
+                                            <Button Grid.Column="2"
+                                                    Content="R"
+                                                    Tag="{Binding}"
+                                                    ToolTip.Tip="Reset to default"
+                                                    Padding="5,2" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <!-- Content: Helper Function Settings -->
+                        <ScrollViewer IsVisible="{Binding ScriptVM.IsEditingHelperFunction}">
+                            <StackPanel Spacing="5" Margin="5"
+                                        DataContext="{Binding ScriptVM}">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="Return:" VerticalAlignment="Center" Width="60" />
+                                    <TextBox Text="{Binding SelectedHelperFunction.ReturnType, Mode=TwoWay}"
+                                             Width="120" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
+                                    <TextBlock Text="Params:" VerticalAlignment="Center" Width="60" />
+                                    <Button Name="AddParameterButton"
+                                            Content="+" Padding="5,2"
+                                            ToolTip.Tip="Add Parameter" />
+                                </StackPanel>
+                                <ItemsControl Name="ParametersItemsControl" Margin="0,5,0,0"
+                                              ItemsSource="{Binding Parameters}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2">
+                                                <TextBox Text="{Binding Type, Mode=TwoWay}"
+                                                         Width="50" ToolTip.Tip="Type" />
+                                                <TextBox Text="{Binding Name, Mode=TwoWay}"
+                                                         Width="70" ToolTip.Tip="Name" />
+                                                <Button Content="X" Padding="5,2"
+                                                        Tag="{Binding}" ToolTip.Tip="Remove" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Grid>
+
+                <!-- BP Mode: NodifyM Editor Canvas -->
+                <Border IsVisible="{Binding IsBlueprintMode}"
+                        Background="#1E1E1E" Margin="5" CornerRadius="5">
+                    <controls:NodifyEditor x:Name="EditorControl"
+                                           DataContext="{Binding BlueprintVM}"
+                                           SelectedItems="{Binding SelectedNodes}"
+                                           ItemsSource="{Binding Nodes}"
+                                           Connections="{Binding Connections}"
+                                           PendingConnection="{Binding PendingConnection}"
+                                           DisconnectConnectorCommand="{Binding DisconnectConnectorCommand}"
+                                           Background="Transparent">
+
+                        <controls:NodifyEditor.KeyBindings>
+                            <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedNodesCommand}" />
+                        </controls:NodifyEditor.KeyBindings>
+
+                        <controls:NodifyEditor.GridLineTemplate>
+                            <DataTemplate>
+                                <controls:LargeGridLine Width="{Binding $parent[controls:NodifyEditor].Bounds.Width}"
+                                                        Height="{Binding $parent[controls:NodifyEditor].Bounds.Height}"
+                                                        OffsetX="{Binding $parent[controls:NodifyEditor].OffsetX}"
+                                                        OffsetY="{Binding $parent[controls:NodifyEditor].OffsetY}"
+                                                        Zoom="{Binding $parent[controls:NodifyEditor].Zoom}"
+                                                        Spacing="15"
+                                                        Thickness="0.5"
+                                                        Brush="#3F3F3F" />
+                            </DataTemplate>
+                        </controls:NodifyEditor.GridLineTemplate>
+
+                        <controls:NodifyEditor.ConnectionTemplate>
+                            <DataTemplate>
+                                <controls:Connection Source="{Binding Source.Anchor}"
+                                                     Target="{Binding Target.Anchor}"
+                                                     StrokeThickness="2.5"
+                                                     Spacing="20"
+                                                     Direction="Forward">
+                                    <controls:Connection.Stroke>
+                                        <Binding Path="StrokeColorHex"
+                                                 Converter="{StaticResource HexToBrushConverter}" />
+                                    </controls:Connection.Stroke>
+                                </controls:Connection>
+                            </DataTemplate>
+                        </controls:NodifyEditor.ConnectionTemplate>
+
+                        <controls:NodifyEditor.PendingConnectionTemplate>
+                            <DataTemplate>
+                                <controls:PendingConnection
+                                    StartedCommand="{Binding StartCommand}"
+                                    CompletedCommand="{Binding FinishCommand}"
+                                    Direction="Forward">
+                                    <controls:PendingConnection.Stroke>
+                                        <SolidColorBrush Color="White" Opacity="0.5" />
+                                    </controls:PendingConnection.Stroke>
+                                </controls:PendingConnection>
+                            </DataTemplate>
+                        </controls:NodifyEditor.PendingConnectionTemplate>
+
+                        <controls:NodifyEditor.ItemTemplate>
+                            <controls:NodeTemplateSelector>
+                                <!-- Scope Block -->
+                                <DataTemplate DataType="{x:Type viewModels:BlueprintScopeBlockVM}">
+                                    <localControls:ScopeBlockControl Location="{Binding Location, Mode=TwoWay}"
+                                                                     Size="{Binding GroupSize, Mode=TwoWay}"
+                                                                     CanResize="True">
+                                        <localControls:ScopeBlockControl.HeaderBrush>
+                                            <Binding Path="HeaderColor"
+                                                     Converter="{StaticResource HexToBrushConverter}" />
+                                        </localControls:ScopeBlockControl.HeaderBrush>
+                                        <localControls:ScopeBlockControl.Header>
+                                            <TextBlock Foreground="White" FontWeight="SemiBold" FontSize="12">
+                                                <TextBlock.Text>
+                                                    <MultiBinding StringFormat="{}{0} ({1} nodes)">
+                                                        <Binding Path="DisplayName" />
+                                                        <Binding Path="ContainedNodeIds.Count" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </localControls:ScopeBlockControl.Header>
+                                    </localControls:ScopeBlockControl>
+                                </DataTemplate>
+
+                                <!-- Blueprint Node -->
+                                <DataTemplate DataType="{x:Type viewModels:BlueprintNodeVM}">
+                                    <controls:Node Location="{Binding Location, Mode=TwoWay}"
+                                                   Input="{Binding Input}"
+                                                   Output="{Binding Output}"
+                                                   IsResize="False"
+                                                   ZIndex="1">
+
+                                        <controls:Node.Header>
+                                            <Border CornerRadius="4,4,0,0"
+                                                    Padding="10,4"
+                                                    HorizontalAlignment="Stretch">
+                                                <Border.Background>
+                                                    <Binding Path="CategoryColor"
+                                                             Converter="{StaticResource HexToBrushConverter}" />
+                                                </Border.Background>
+                                                <TextBlock Text="{Binding DisplayTitle}"
+                                                           Foreground="White"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="12" />
+                                            </Border>
+                                        </controls:Node.Header>
+
+                                        <StackPanel>
+                                            <!-- Const Node: Type + Value -->
+                                            <StackPanel IsVisible="{Binding ShowConstTypeSelector}">
+                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,0">
+                                                    <TextBlock Text="Type:" VerticalAlignment="Center"
+                                                               FontSize="10" Foreground="#AAAAAA" />
+                                                    <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
+                                                              SelectedItem="{Binding ConstType, Mode=TwoWay}"
+                                                              FontSize="10" MinWidth="70" Padding="4,2"
+                                                              HorizontalAlignment="Left" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,2,8,4">
+                                                    <TextBlock Text="Value:" VerticalAlignment="Center"
+                                                               FontSize="10" Foreground="#AAAAAA" />
+                                                    <TextBox Text="{Binding ConstValue, Mode=TwoWay}"
+                                                             FontSize="10" Watermark="value..."
+                                                             MinWidth="80" Padding="4,2"
+                                                             Background="#333333" Foreground="White"
+                                                             BorderThickness="1" BorderBrush="#555555" />
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Variable Node: Type selector only -->
+                                            <StackPanel IsVisible="{Binding ShowVarTypeSelector}">
+                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,4">
+                                                    <TextBlock Text="Type:" VerticalAlignment="Center"
+                                                               FontSize="10" Foreground="#AAAAAA" />
+                                                    <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
+                                                              SelectedItem="{Binding VarType, Mode=TwoWay}"
+                                                              FontSize="10" MinWidth="70" Padding="4,2"
+                                                              HorizontalAlignment="Left" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Input connector template -->
+                                        <controls:Node.InputConnectorTemplate>
+                                            <DataTemplate DataType="{x:Type viewModels:BlueprintConnectorVM}">
+                                                <controls:NodeInput IsConnected="{Binding IsConnected}"
+                                                                    Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                                                    <controls:NodeInput.BorderBrush>
+                                                        <Binding Path="PinTypeColorHex"
+                                                                 Converter="{StaticResource HexToBrushConverter}" />
+                                                    </controls:NodeInput.BorderBrush>
+                                                    <controls:NodeInput.Header>
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <TextBlock Text="{Binding Title}"
+                                                                       VerticalAlignment="Center" FontSize="11" />
+                                                            <TextBox Text="{Binding DefaultValue, Mode=TwoWay}"
+                                                                     IsVisible="{Binding ShowDefaultValue}"
+                                                                     FontSize="9" Watermark="value..."
+                                                                     Width="60" Padding="2,0"
+                                                                     VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </controls:NodeInput.Header>
+                                                </controls:NodeInput>
+                                            </DataTemplate>
+                                        </controls:Node.InputConnectorTemplate>
+
+                                        <!-- Output connector template -->
+                                        <controls:Node.OutputConnectorTemplate>
+                                            <DataTemplate DataType="{x:Type viewModels:BlueprintConnectorVM}">
+                                                <controls:NodeOutput IsConnected="{Binding IsConnected}"
+                                                                     Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                                                    <controls:NodeOutput.BorderBrush>
+                                                        <Binding Path="PinTypeColorHex"
+                                                                 Converter="{StaticResource HexToBrushConverter}" />
+                                                    </controls:NodeOutput.BorderBrush>
+                                                    <controls:NodeOutput.Header>
+                                                        <TextBlock Text="{Binding Title}"
+                                                                   VerticalAlignment="Center" FontSize="11" />
+                                                    </controls:NodeOutput.Header>
+                                                </controls:NodeOutput>
+                                            </DataTemplate>
+                                        </controls:Node.OutputConnectorTemplate>
+                                    </controls:Node>
+                                </DataTemplate>
+                            </controls:NodeTemplateSelector>
+                        </controls:NodifyEditor.ItemTemplate>
+
+                    </controls:NodifyEditor>
+                </Border>
+            </Grid>
+
+            <!-- Column 3: Splitter -->
+            <Border Grid.Column="3" Background="#3F3F3F" Width="5" />
+
+            <!-- ==================== Column 4: Shared Output Panel ==================== -->
+            <Border Grid.Column="4" Background="#252525" Margin="5" CornerRadius="5">
+                <DockPanel Margin="10">
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Output"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10" />
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto">
+                        <TextBox Text="{Binding ExecutionOutput}"
+                                 IsReadOnly="True"
+                                 FontFamily="Consolas"
+                                 FontSize="11"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Background="Transparent"
+                                 BorderThickness="0" />
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

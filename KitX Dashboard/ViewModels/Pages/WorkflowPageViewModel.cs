@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using KitX.Core.Contract.Event;
@@ -81,6 +82,20 @@ internal class WorkflowPageViewModel : ViewModelBase
         {
             this.RaisePropertyChanged(nameof(WorkflowCountTip));
         });
+
+        // Listen for rename events from editor windows
+        _eventService.Subscribe(EventNames.WorkflowRenamed, (s, e) =>
+        {
+            if (e is WorkflowRenamedEventArgs args)
+                SyncRenamedWorkflow(args.WorkflowId, args.NewName);
+        });
+
+        // Listen for save events to sync name changes
+        _eventService.Subscribe(EventNames.WorkflowDataSaved, (s, e) =>
+        {
+            if (e is WorkflowSavedEventArgs args)
+                SyncRenamedWorkflow(args.WorkflowId, args.WorkflowName);
+        });
     }
 
     private async Task LoadWorkflowsAsync()
@@ -89,6 +104,28 @@ internal class WorkflowPageViewModel : ViewModelBase
         WorkflowCases.Clear();
         foreach (var w in workflows)
             WorkflowCases.Add(w);
+    }
+
+    /// <summary>
+    /// Syncs a renamed workflow in the collection by replacing the item
+    /// to trigger ObservableCollection.CollectionChanged and refresh UI bindings.
+    /// WorkflowCase is a POCO without INotifyPropertyChanged, so simply setting
+    /// Name won't update the card text.
+    /// </summary>
+    private void SyncRenamedWorkflow(string workflowId, string newName)
+    {
+        for (int i = 0; i < WorkflowCases.Count; i++)
+        {
+            if (WorkflowCases[i].Id == workflowId && WorkflowCases[i].Name != newName)
+            {
+                var existing = WorkflowCases[i];
+                existing.Name = newName;
+                // Remove and re-add at same index to trigger CollectionChanged + binding refresh
+                WorkflowCases.RemoveAt(i);
+                WorkflowCases.Insert(i, existing);
+                return;
+            }
+        }
     }
 
     private async void OpenWorkflowEditorAsync(IWorkflowCase workflow)
@@ -100,9 +137,9 @@ internal class WorkflowPageViewModel : ViewModelBase
             return;
         }
 
-        // Create new editor window
-        // TODO: Phase 3 - replace with WorkflowEditorWindow and pass workflowId
-        var editorWindow = new WorkflowScriptEditorWindow();
+        // Create new unified editor window
+        var editorWindow = new WorkflowEditorWindow();
+        await editorWindow.LoadWorkflowAsync(workflow.Id);
 
         // Track the window
         UIStateService.WorkflowEditorWindows[workflow.Id] = editorWindow;

@@ -113,6 +113,16 @@
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">デバイスを承認し、キーを交換する</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">このデバイスの認可を取消し（新しいローカルキーを生成して他のデバイスと交換する）</x:String>
     <x:String x:Key="Text_Workflow_Count">ワークフローが $count あります</x:String>
+    <x:String x:Key="Text_Workflow_No">ワークフローがありません。最初のものを作成しましょう！</x:String>
+    <x:String x:Key="Text_Workflow_Search">ワークフローを検索...</x:String>
+    <x:String x:Key="Text_Workflow_Create">新規ワークフロー</x:String>
+    <x:String x:Key="Text_Workflow_Refresh">更新</x:String>
+    <x:String x:Key="Text_Workflow_Run">実行</x:String>
+    <x:String x:Key="Text_Workflow_Stop">停止</x:String>
+    <x:String x:Key="Text_Workflow_Rename">名前変更</x:String>
+    <x:String x:Key="Text_Workflow_Delete">削除</x:String>
+    <x:String x:Key="Text_Workflow_Stopped">停止中</x:String>
+    <x:String x:Key="Text_Workflow_Running">実行中</x:String>
     <sys:String x:Key="Text_Settings_General">ユニバーサル</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsFileDirectory">ローカル プラグイン ディレクトリ</sys:String>
     <sys:String x:Key="Text_Settings_General_LocalPluginsDataDirectory">ローカル プラグイン データ ディレクトリ</sys:String>

@@ -274,6 +274,28 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         if (alreadyConnected)
             return;
 
+        // Exec output pins may only have one outgoing connection.
+        // Auto-disconnect any existing connection from an Exec output before creating the new one.
+        var execOutput = (src.PinType == PinType.Execution && src.Flow == ConnectorViewModelBase.ConnectorFlow.Output) ? src
+            : (tgt.PinType == PinType.Execution && tgt.Flow == ConnectorViewModelBase.ConnectorFlow.Output) ? tgt
+            : null;
+        if (execOutput != null)
+        {
+            var existing = Connections.OfType<BlueprintConnectionVM>()
+                .FirstOrDefault(c => c.Source == execOutput);
+            if (existing != null)
+            {
+                // Update IsConnected on the counterpart connector
+                var counterpart = existing.Source == execOutput ? existing.Target as BlueprintConnectorVM
+                    : existing.Source as BlueprintConnectorVM;
+                if (counterpart != null)
+                    counterpart.IsConnected = Connections.OfType<BlueprintConnectionVM>()
+                        .Any(c => c != existing && (c.Source == counterpart || c.Target == counterpart));
+                Connections.Remove(existing);
+                Log.Debug("Auto-disconnected existing Exec output connection from {Title}", execOutput.Title);
+            }
+        }
+
         var connection = new BlueprintConnectionVM(this, src, tgt);
         Connections.Add(connection);
 
@@ -909,6 +931,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             }
         }
 
+        // Preserve BuiltinFunctionNode metadata for round-trip
+        if (blueprintNode is BuiltinFunctionNode bfNode && !string.IsNullOrEmpty(bfNode.FunctionName))
+            nodeVm.Metadata["BuiltinFunctionName"] = bfNode.FunctionName;
+
         return nodeVm;
     }
 
@@ -1113,6 +1139,14 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         if (blueprintNode is VariableNode vNode && !string.IsNullOrEmpty(nodeVm.VarType))
         {
             vNode.VarType = nodeVm.VarType;
+        }
+
+        // Special handling: BuiltinFunctionNode → restore FunctionName from Metadata
+        if (blueprintNode is BuiltinFunctionNode bfNode
+            && nodeVm.Metadata.TryGetValue("BuiltinFunctionName", out var funcName)
+            && !string.IsNullOrEmpty(funcName))
+        {
+            bfNode.FunctionName = funcName;
         }
 
         // Clear auto-generated pins from constructor's InitializePinsFromDescriptor()
