@@ -35,7 +35,7 @@ public partial class RepoPage : UserControl
     {
         const string location = $"{nameof(RepoPage)}.{nameof(Drop)}";
 
-        var files = e.Data?.GetFiles()?.Select(x => x.Path.LocalPath).ToArray();
+        var files = e.DataTransfer.TryGetFiles()?.Select(x => x.Path.LocalPath).ToArray();
 
         if (files is not null && files?.Length > 0)
         {
@@ -65,7 +65,7 @@ public partial class RepoPage : UserControl
         e.DragEffects &= (DragDropEffects.Copy | DragDropEffects.Link);
 
         // Only allow if the dragged data's type is file.
-        if (!e.Data.Contains(DataFormats.Files))
+        if (!e.DataTransfer.Formats.Contains(DataFormat.File))
             e.DragEffects = DragDropEffects.None;
     }
 }

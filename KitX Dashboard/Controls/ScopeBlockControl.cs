@@ -20,7 +20,9 @@ namespace KitX.Dashboard.Controls;
 /// </summary>
 public class ScopeBlockControl : NodeGroup
 {
+#pragma warning disable CS0649
     private bool _suppressZIndexManagement;
+#pragma warning restore CS0649
     private bool _isPropagatingDrag;
 
     static ScopeBlockControl()

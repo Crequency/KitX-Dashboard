@@ -37,7 +37,7 @@ internal class PluginBarViewModel : ViewModelBase
         {
             if (Plugin is not null && UIStateService.MainWindow is not null)
                 new PluginDetailWindow() { WindowStartupLocation = WindowStartupLocation.CenterOwner }
-                    .SetPluginInfo(Plugin.PluginInfo)
+                    .SetPluginInfo(Plugin.PluginInfo!)
                     .Show(UIStateService.MainWindow);
         });
 
@@ -177,15 +177,15 @@ internal class PluginBarViewModel : ViewModelBase
             if (Plugin is null)
                 return null;
 
-            return Plugin.PluginInfo.DisplayName.TryGetValue(ConfigService.AppConfig.App.AppLanguage, out var lang)
+            return Plugin.PluginInfo!.DisplayName.TryGetValue(ConfigService.AppConfig.App.AppLanguage, out var lang)
                 ? lang
                 : Plugin.PluginInfo.DisplayName.Values.GetEnumerator().Current;
         }
     }
 
-    internal string? AuthorName => Plugin?.PluginInfo.AuthorName;
+    internal string? AuthorName => Plugin?.PluginInfo?.AuthorName;
 
-    internal string? Version => Plugin?.PluginInfo.Version;
+    internal string? Version => Plugin?.PluginInfo?.Version;
 
     internal ObservableCollection<PluginBar>? PluginBars { get; set; }
 
@@ -198,9 +198,9 @@ internal class PluginBarViewModel : ViewModelBase
             try
             {
                 if (Plugin is null)
-                    return App.DefaultIcon;
+                    return App.DefaultIcon!;
 
-                var src = Convert.FromBase64String(Plugin.PluginInfo.IconInBase64);
+                var src = Convert.FromBase64String(Plugin.PluginInfo!.IconInBase64);
 
                 using var ms = new MemoryStream(src);
 
@@ -215,7 +215,7 @@ internal class PluginBarViewModel : ViewModelBase
                         + $"or create bitmap from `MemoryStream`. {e.Message}"
                 );
 
-                return App.DefaultIcon;
+                return App.DefaultIcon!;
             }
         }
     }

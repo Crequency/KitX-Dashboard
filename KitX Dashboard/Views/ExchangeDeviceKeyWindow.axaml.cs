@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Threading;
 using KitX.Core.Contract.Event;
 using KitX.Core.Event;
@@ -171,7 +172,7 @@ public partial class ExchangeDeviceKeyWindow : Window
             if (clipboard is null)
                 return;
 
-            var text = await clipboard.GetTextAsync();
+            var text = await clipboard.TryGetTextAsync();
 
             var regex = @"[1-9]{8}";
 

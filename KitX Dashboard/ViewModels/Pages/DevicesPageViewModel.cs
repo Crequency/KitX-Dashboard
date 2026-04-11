@@ -67,26 +67,27 @@ internal class DevicesPageViewModel : ViewModelBase
     public sealed override void InitEvents()
     {
         // Subscribe to device discovery events
-        _discoveryService.DeviceDiscovered += (_, e) =>
-        {
-            if (e.DeviceInfo is null) return;
+        if (_discoveryService is not null)
+            _discoveryService.DeviceDiscovered += (_, e) =>
+            {
+                if (e.DeviceInfo is null) return;
 
-            // Check if device already exists using IsSameDevice
-            var existingDevice = DeviceCases
-                .OfType<DeviceCase>()
-                .FirstOrDefault(x => x.DeviceInfo.Device.IsSameDevice(e.DeviceInfo.Device));
-            if (existingDevice is null)
-            {
-                // Add new device case
-                var deviceCase = new DeviceCase(e.DeviceInfo);
-                DeviceCases.Add(deviceCase);
-            }
-            else
-            {
-                // Update existing device info
-                existingDevice.DeviceInfo = e.DeviceInfo;
-            }
-        };
+                // Check if device already exists using IsSameDevice
+                var existingDevice = DeviceCases
+                    .OfType<DeviceCase>()
+                    .FirstOrDefault(x => x.DeviceInfo.Device.IsSameDevice(e.DeviceInfo.Device));
+                if (existingDevice is null)
+                {
+                    // Add new device case
+                    var deviceCase = new DeviceCase(e.DeviceInfo);
+                    DeviceCases.Add(deviceCase);
+                }
+                else
+                {
+                    // Update existing device info
+                    existingDevice.DeviceInfo = e.DeviceInfo;
+                }
+            };
 
         DeviceCases.CollectionChanged += (_, _) =>
         {

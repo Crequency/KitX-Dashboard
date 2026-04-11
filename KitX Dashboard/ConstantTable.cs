@@ -51,7 +51,9 @@ internal static class ConstantTable
 
     internal static bool IsMainMachine = false;
 
+#pragma warning disable CS0649
     internal static string? MainMachineAddress;
+#pragma warning restore CS0649
 
     internal static int MainMachinePort = -1;
 
