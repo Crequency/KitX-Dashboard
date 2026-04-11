@@ -30,6 +30,13 @@ public static class UIStateService
 
     public static List<Window> Windows { get; set; } = [];
 
+    /// <summary>
+    /// Tracks open workflow editor windows by workflow ID.
+    /// Key: workflowId, Value: editor window instance.
+    /// Used to prevent opening duplicate editors for the same workflow.
+    /// </summary>
+    public static Dictionary<string, Window> WorkflowEditorWindows { get; set; } = [];
+
     public static void ShowWindow<T>(T window, Window? owner = null, bool showDialog = false, bool onlyOneInSameTime = false)
         where T : Window
     {
