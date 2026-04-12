@@ -136,7 +136,11 @@ internal partial class WorkflowEditorViewModel : ObservableObject
             {
                 IsDirty = true;
                 _eventService.Publish(EventNames.WorkflowDataSaved,
-                    new WorkflowSavedEventArgs(_workflowId ?? string.Empty, WorkflowName));
+                    new WorkflowSavedEventArgs(
+                        _workflowId ?? string.Empty,
+                        WorkflowName,
+                        WorkflowDescription,
+                        WorkflowAuthor));
             }
         };
     }
@@ -202,9 +206,9 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         await _storageService.SaveWorkflowDataAsync(_workflowId, data);
         IsDirty = false;
 
-        // Notify management panel of name changes
+        // Notify management panel of metadata changes
         _eventService.Publish(EventNames.WorkflowDataSaved,
-            new WorkflowSavedEventArgs(_workflowId, WorkflowName));
+            new WorkflowSavedEventArgs(_workflowId, WorkflowName, WorkflowDescription, WorkflowAuthor));
     }
 
     /// <summary>

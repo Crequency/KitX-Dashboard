@@ -12,7 +12,7 @@
         mc:Ignorable="d"
         d:DesignHeight="700"
         d:DesignWidth="1200"
-        Title="Workflow Editor"
+        Title="{DynamicResource Text_WorkflowEditor_Title}"
         Width="1200"
         Height="800">
 
@@ -34,11 +34,11 @@
                 <!-- Left: Back to Dashboard -->
                 <Button DockPanel.Dock="Left"
                         Command="{Binding ShowDashboardCommand}"
-                        ToolTip.Tip="Back to Dashboard"
+                        ToolTip.Tip="{DynamicResource Text_WorkflowEditor_BackToDashboard}"
                         VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <icon:MaterialIcon Width="18" Height="18" Kind="ArrowLeft" />
-                        <TextBlock Text="Dashboard" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Text_WorkflowEditor_Dashboard}" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
 
@@ -48,19 +48,19 @@
                             Spacing="8"
                             VerticalAlignment="Center">
                     <Button Name="RunButton"
-                            ToolTip.Tip="Run"
+                            ToolTip.Tip="{DynamicResource Text_WorkflowEditor_Run}"
                             IsEnabled="{Binding !IsExecuting}">
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <icon:MaterialIcon Width="18" Height="18" Kind="Play" />
-                            <TextBlock Text="Run" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Text_WorkflowEditor_Run}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Name="StopButton"
-                            ToolTip.Tip="Stop"
+                            ToolTip.Tip="{DynamicResource Text_WorkflowEditor_Stop}"
                             IsEnabled="{Binding IsExecuting}">
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <icon:MaterialIcon Width="18" Height="18" Kind="Stop" />
-                            <TextBlock Text="Stop" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Text_WorkflowEditor_Stop}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -84,7 +84,7 @@
                     <ToggleButton Name="MetadataToggleButton"
                                   VerticalAlignment="Center"
                                   Padding="4"
-                                  ToolTip.Tip="Description and Author">
+                                  ToolTip.Tip="{DynamicResource Text_WorkflowEditor_MetaDataTip}">
                         <icon:MaterialIcon Width="16" Height="16" Kind="InformationOutline" />
                     </ToggleButton>
 
@@ -122,14 +122,14 @@
                 <TextBlock Text="Description: " VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                 <TextBox Grid.Column="1"
                          Text="{Binding WorkflowDescription, Mode=TwoWay}"
-                         Watermark="Workflow description..."
+                         Watermark="{DynamicResource Text_WorkflowEditor_DescriptionWatermark}"
                          Background="Transparent"
                          BorderThickness="0,0,0,1"
                          Margin="0,0,20,0" />
                 <TextBlock Grid.Column="2" Text="Author: " VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                 <TextBox Grid.Column="3"
                          Text="{Binding WorkflowAuthor, Mode=TwoWay}"
-                         Watermark="Author name..."
+                         Watermark="{DynamicResource Text_WorkflowEditor_AuthorWatermark}"
                          Background="Transparent"
                          BorderThickness="0,0,0,1" />
             </Grid>
@@ -145,7 +145,7 @@
                             Orientation="Horizontal"
                             Spacing="20">
                     <TextBlock Name="StatusText"
-                               Text="Ready"
+                               Text="{DynamicResource Text_WorkflowEditor_Ready}"
                                FontSize="11"
                                Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                 </StackPanel>
@@ -171,17 +171,17 @@
                        IsVisible="{Binding IsBlockScriptMode}"
                        Margin="5">
                 <TextBlock DockPanel.Dock="Top"
-                           Text="Code Sections"
+                           Text="{DynamicResource Text_WorkflowEditor_CodeSections}"
                            FontWeight="Bold"
                            Margin="5,5,5,10" />
                 <Button DockPanel.Dock="Top"
                         Name="AddHelperFunctionListButton"
-                        Content="+ Add Helper Function"
+                        Content="{DynamicResource Text_WorkflowEditor_AddHelperFunction}"
                         HorizontalAlignment="Stretch"
                         Margin="5" Padding="5,2" />
                 <Button DockPanel.Dock="Top"
                         Name="BackToMainProgramButton"
-                        Content="Main Program"
+                        Content="{DynamicResource Text_WorkflowEditor_MainProgram}"
                         HorizontalAlignment="Stretch"
                         Margin="5" Padding="5,2" />
                 <ListBox Name="HelperFunctionsListBox">
@@ -215,50 +215,50 @@
                     Margin="5" CornerRadius="5">
                 <DockPanel Margin="10">
                     <TextBlock DockPanel.Dock="Top"
-                               Text="Node Palette"
+                               Text="{DynamicResource Text_WorkflowEditor_NodePalette}"
                                FontWeight="Bold"
                                Margin="0,0,0,10" />
                     <ScrollViewer>
                         <StackPanel DataContext="{Binding BlueprintVM}">
                             <!-- Entry -->
-                            <Expander Header="Entry" IsExpanded="True" Margin="0,5">
-                                <Button Content="Entry"
+                            <Expander Header="{DynamicResource Text_WorkflowEditor_Entry}" IsExpanded="True" Margin="0,5">
+                                <Button Content="{DynamicResource Text_WorkflowEditor_Entry}"
                                         HorizontalAlignment="Stretch" Margin="5"
                                         Command="{Binding AddEntryNodeCommand}" />
                             </Expander>
 
                             <!-- Flow Control -->
-                            <Expander Header="Flow Control" IsExpanded="True" Margin="0,5">
+                            <Expander Header="{DynamicResource Text_WorkflowEditor_FlowControl}" IsExpanded="True" Margin="0,5">
                                 <StackPanel>
-                                    <Button Content="Branch"
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_Branch}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddBranchNodeCommand}" />
-                                    <Button Content="Loop"
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_Loop}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddLoopNodeCommand}" />
-                                    <Button Content="Break"
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_Break}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddBreakNodeCommand}" />
                                 </StackPanel>
                             </Expander>
 
                             <!-- Data -->
-                            <Expander Header="Data" IsExpanded="True" Margin="0,5">
+                            <Expander Header="{DynamicResource Text_WorkflowEditor_Data}" IsExpanded="True" Margin="0,5">
                                 <StackPanel>
-                                    <Button Content="Const"
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_Const}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddConstNodeCommand}" />
-                                    <Button Content="Variable"
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_Variable}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddVariableNodeCommand}" />
                                 </StackPanel>
                             </Expander>
 
                             <!-- Actions -->
-                            <Expander Header="Actions" IsExpanded="True" Margin="0,5">
+                            <Expander Header="{DynamicResource Text_WorkflowEditor_Actions}" IsExpanded="True" Margin="0,5">
                                 <StackPanel>
                                     <!-- Dynamic Plugin Functions -->
-                                    <Expander Header="Plugin Functions"
+                                    <Expander Header="{DynamicResource Text_WorkflowEditor_PluginFunctions}"
                                               IsExpanded="False" Margin="5,0"
                                               IsVisible="{Binding HasPluginFunctions}">
                                         <ItemsControl ItemsSource="{Binding PluginFunctions}">
@@ -274,13 +274,13 @@
                                         </ItemsControl>
                                     </Expander>
 
-                                    <Button Content="Call (Plugin)"
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_CallPlugin}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddCallNodeCommand}"
                                             IsVisible="{Binding !HasPluginFunctions}" />
 
                                     <!-- Dynamic Helper Functions -->
-                                    <Expander Header="Helper Functions"
+                                    <Expander Header="{DynamicResource Text_WorkflowEditor_HelperFunctions}"
                                               IsExpanded="False" Margin="5,0"
                                               IsVisible="{Binding HasHelperFunctions}">
                                         <ItemsControl ItemsSource="{Binding HelperFunctions}">
@@ -296,15 +296,15 @@
                                         </ItemsControl>
                                     </Expander>
 
-                                    <Button Content="Call Helper"
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_CallHelper}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddCallHelperNodeCommand}"
                                             IsVisible="{Binding !HasHelperFunctions}" />
 
-                                    <Button Content="Print"
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_Print}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddPrintNodeCommand}" />
-                                    <Button Content="Pause"
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_Pause}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddPauseNodeCommand}" />
                                 </StackPanel>
@@ -329,7 +329,7 @@
                                     Orientation="Horizontal"
                                     Margin="5">
                             <TextBlock Name="CodeEditorTitle"
-                                       Text="Main Program"
+                                       Text="{DynamicResource Text_WorkflowEditor_MainProgram}"
                                        FontWeight="Bold"
                                        VerticalAlignment="Center" />
                         </StackPanel>
@@ -351,11 +351,11 @@
                                     Orientation="Horizontal"
                                     Margin="5"
                                     IsVisible="{Binding ScriptVM.IsEditingHelperFunction, Converter={x:Static BoolConverters.Not}}">
-                            <TextBlock Text="Variable Constants"
+                            <TextBlock Text="{DynamicResource Text_WorkflowEditor_VariableConstants}"
                                        FontWeight="Bold"
                                        VerticalAlignment="Center" />
                             <Button Name="ResetAllConstantsButton"
-                                    Content="Reset All"
+                                    Content="{DynamicResource Text_WorkflowEditor_ResetAll}"
                                     Margin="10,0,0,0" Padding="5,2" />
                         </StackPanel>
 
@@ -364,7 +364,7 @@
                                     Orientation="Horizontal"
                                     Margin="5"
                                     IsVisible="{Binding ScriptVM.IsEditingHelperFunction}">
-                            <TextBlock Text="Helper Function Settings"
+                            <TextBlock Text="{DynamicResource Text_WorkflowEditor_HelperFunctionSettings}"
                                        FontWeight="Bold"
                                        VerticalAlignment="Center" />
                         </StackPanel>
@@ -390,7 +390,7 @@
                                             <Button Grid.Column="2"
                                                     Content="R"
                                                     Tag="{Binding}"
-                                                    ToolTip.Tip="Reset to default"
+                                                    ToolTip.Tip="{DynamicResource Text_WorkflowEditor_ResetToDefault}"
                                                     Padding="5,2" />
                                         </Grid>
                                     </DataTemplate>
@@ -403,15 +403,15 @@
                             <StackPanel Spacing="5" Margin="5"
                                         DataContext="{Binding ScriptVM}">
                                 <StackPanel Orientation="Horizontal" Spacing="5">
-                                    <TextBlock Text="Return:" VerticalAlignment="Center" Width="60" />
+                                    <TextBlock Text="{DynamicResource Text_WorkflowEditor_Return}" VerticalAlignment="Center" Width="60" />
                                     <TextBox Text="{Binding SelectedHelperFunction.ReturnType, Mode=TwoWay}"
                                              Width="120" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
                                     <TextBlock Text="Params:" VerticalAlignment="Center" Width="60" />
                                     <Button Name="AddParameterButton"
-                                            Content="+" Padding="5,2"
-                                            ToolTip.Tip="Add Parameter" />
+                                            Content="{DynamicResource Text_WorkflowEditor_AddParameter}" Padding="5,2"
+                                            ToolTip.Tip="{DynamicResource Text_WorkflowEditor_AddParameterTip}" />
                                 </StackPanel>
                                 <ItemsControl Name="ParametersItemsControl" Margin="0,5,0,0"
                                               ItemsSource="{Binding Parameters}">
@@ -419,11 +419,11 @@
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2">
                                                 <TextBox Text="{Binding Type, Mode=TwoWay}"
-                                                         Width="50" ToolTip.Tip="Type" />
+                                                         Width="50" ToolTip.Tip="{DynamicResource Text_WorkflowEditor_TypeTip}" />
                                                 <TextBox Text="{Binding Name, Mode=TwoWay}"
-                                                         Width="70" ToolTip.Tip="Name" />
+                                                         Width="70" ToolTip.Tip="{DynamicResource Text_WorkflowEditor_NameTip}" />
                                                 <Button Content="X" Padding="5,2"
-                                                        Tag="{Binding}" ToolTip.Tip="Remove" />
+                                                        Tag="{Binding}" ToolTip.Tip="{DynamicResource Text_WorkflowEditor_RemoveTip}" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -541,7 +541,7 @@
                                             <!-- Const Node: Type + Value -->
                                             <StackPanel IsVisible="{Binding ShowConstTypeSelector}">
                                                 <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,0">
-                                                    <TextBlock Text="Type:" VerticalAlignment="Center"
+                                                    <TextBlock Text="{DynamicResource Text_WorkflowEditor_Type}" VerticalAlignment="Center"
                                                                FontSize="10" Foreground="#AAAAAA" />
                                                     <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
                                                               SelectedItem="{Binding ConstType, Mode=TwoWay}"
@@ -549,10 +549,10 @@
                                                               HorizontalAlignment="Left" />
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,2,8,4">
-                                                    <TextBlock Text="Value:" VerticalAlignment="Center"
+                                                    <TextBlock Text="{DynamicResource Text_WorkflowEditor_Value}" VerticalAlignment="Center"
                                                                FontSize="10" Foreground="#AAAAAA" />
                                                     <TextBox Text="{Binding ConstValue, Mode=TwoWay}"
-                                                             FontSize="10" Watermark="value..."
+                                                             FontSize="10" Watermark="{DynamicResource Text_WorkflowEditor_ValueWatermark}"
                                                              MinWidth="80" Padding="4,2"
                                                              Background="#333333" Foreground="White"
                                                              BorderThickness="1" BorderBrush="#555555" />
@@ -562,7 +562,7 @@
                                             <!-- Variable Node: Type selector only -->
                                             <StackPanel IsVisible="{Binding ShowVarTypeSelector}">
                                                 <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,4">
-                                                    <TextBlock Text="Type:" VerticalAlignment="Center"
+                                                    <TextBlock Text="{DynamicResource Text_WorkflowEditor_Type}" VerticalAlignment="Center"
                                                                FontSize="10" Foreground="#AAAAAA" />
                                                     <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
                                                               SelectedItem="{Binding VarType, Mode=TwoWay}"
@@ -587,7 +587,7 @@
                                                                        VerticalAlignment="Center" FontSize="11" />
                                                             <TextBox Text="{Binding DefaultValue, Mode=TwoWay}"
                                                                      IsVisible="{Binding ShowDefaultValue}"
-                                                                     FontSize="9" Watermark="value..."
+                                                                     FontSize="9" Watermark="{DynamicResource Text_WorkflowEditor_ValueWatermark}"
                                                                      Width="60" Padding="2,0"
                                                                      VerticalAlignment="Center" />
                                                         </StackPanel>
@@ -628,7 +628,7 @@
             <Border Grid.Column="4" Background="#252525" Margin="5" CornerRadius="5">
                 <DockPanel Margin="10">
                     <TextBlock DockPanel.Dock="Top"
-                               Text="Output"
+                               Text="{DynamicResource Text_WorkflowEditor_Output}"
                                FontWeight="Bold"
                                Margin="0,0,0,10" />
                     <ScrollViewer HorizontalScrollBarVisibility="Auto"

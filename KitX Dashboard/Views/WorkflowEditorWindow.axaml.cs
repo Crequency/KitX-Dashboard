@@ -33,6 +33,9 @@ public partial class WorkflowEditorWindow : Window, IView
     private Popup? _contextPopup;
     private string _workflowId = string.Empty;
 
+    private static string? GetResource(string key) =>
+        Application.Current?.TryFindResource(key, out var v) == true ? v as string : null;
+
     public WorkflowEditorWindow()
     {
         InitializeComponent();
@@ -247,7 +250,9 @@ public partial class WorkflowEditorWindow : Window, IView
                 codeEditor.Text = selectedFunction.Code;
 
             if (codeEditorTitle != null)
-                codeEditorTitle.Text = $"Helper Function: {selectedFunction.Name}";
+                codeEditorTitle.Text = (GetResource("Text_WorkflowEditor_HelperFunctionTitle") ?? "Helper Function: {0}")
+                    .Replace("$name", selectedFunction.Name)
+                    .Replace("{0}", selectedFunction.Name);
         }
     }
 
@@ -263,7 +268,7 @@ public partial class WorkflowEditorWindow : Window, IView
             codeEditor.Text = _viewModel.ScriptVM.MainProgramCode ?? string.Empty;
 
         if (codeEditorTitle != null)
-            codeEditorTitle.Text = "Main Program";
+            codeEditorTitle.Text = GetResource("Text_WorkflowEditor_MainProgram") ?? "Main Program";
 
         var helperFunctionsListBox = this.FindControl<ListBox>("HelperFunctionsListBox");
         if (helperFunctionsListBox != null)
@@ -306,7 +311,7 @@ public partial class WorkflowEditorWindow : Window, IView
                     if (codeEditor != null)
                         codeEditor.Text = _viewModel.ScriptVM.MainProgramCode ?? string.Empty;
                     if (codeEditorTitle != null)
-                        codeEditorTitle.Text = "Main Program";
+                        codeEditorTitle.Text = GetResource("Text_WorkflowEditor_MainProgram") ?? "Main Program";
                 }
             }
         }
@@ -419,7 +424,7 @@ public partial class WorkflowEditorWindow : Window, IView
 
         var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
         if (codeEditorTitle != null)
-            codeEditorTitle.Text = "Main Program";
+            codeEditorTitle.Text = GetResource("Text_WorkflowEditor_MainProgram") ?? "Main Program";
 
         await Task.Delay(50);
 
@@ -446,7 +451,9 @@ public partial class WorkflowEditorWindow : Window, IView
                 {
                     var statusText = this.FindControl<TextBlock>("StatusText");
                     if (statusText != null)
-                        statusText.Text = _viewModel.ScriptVM.IsExecuting ? "Running..." : "Ready";
+                        statusText.Text = _viewModel.ScriptVM.IsExecuting
+                            ? (GetResource("Text_WorkflowEditor_Running") ?? "Running...")
+                            : (GetResource("Text_WorkflowEditor_Ready") ?? "Ready");
                 });
             }
         };
@@ -461,8 +468,10 @@ public partial class WorkflowEditorWindow : Window, IView
                     var nodeCountText = this.FindControl<TextBlock>("NodeCountText");
                     if (nodeCountText != null)
                     {
-                        nodeCountText.Text = $"Nodes: {_viewModel.BlueprintVM.NodeCount}  " +
-                                             $"Connections: {_viewModel.BlueprintVM.ConnectionCount}";
+                        nodeCountText.Text = (GetResource("Text_WorkflowEditor_NodesConnectionsFormat")
+                            ?? "Nodes: $nodes  Connections: $connections")
+                            .Replace("$nodes", _viewModel.BlueprintVM.NodeCount.ToString())
+                            .Replace("$connections", _viewModel.BlueprintVM.ConnectionCount.ToString());
                     }
                 });
             }
@@ -508,7 +517,7 @@ public partial class WorkflowEditorWindow : Window, IView
                 }
 
                 if (codeEditorTitle != null)
-                    codeEditorTitle.Text = "Main Program";
+                    codeEditorTitle.Text = GetResource("Text_WorkflowEditor_MainProgram") ?? "Main Program";
 
                 // Refresh constants display from the newly converted code
                 if (codeEditor?.Document != null)
@@ -545,9 +554,11 @@ public partial class WorkflowEditorWindow : Window, IView
         {
             editor.SelectItem(scopeBlock, false);
             var panel = CreateMenuPanel();
-            panel.Children.Add(CreateMenuButton("Rename", bpVM.RenameScopeBlockCommand, scopeVm));
+            panel.Children.Add(CreateMenuButton(
+                GetResource("Text_WorkflowEditor_Rename") ?? "Rename", bpVM.RenameScopeBlockCommand, scopeVm));
             panel.Children.Add(CreateSeparator());
-            panel.Children.Add(CreateMenuButton("Delete", bpVM.DeleteSelectedNodesCommand, null));
+            panel.Children.Add(CreateMenuButton(
+                GetResource("Text_WorkflowEditor_Delete") ?? "Delete", bpVM.DeleteSelectedNodesCommand, null));
             ShowContextPopup(panel);
             return;
         }
@@ -558,14 +569,15 @@ public partial class WorkflowEditorWindow : Window, IView
 
         editor.SelectItem(baseNode, false);
         var nodePanel = CreateMenuPanel();
-        nodePanel.Children.Add(CreateMenuButton("Delete", bpVM.DeleteSelectedNodesCommand, null));
+        nodePanel.Children.Add(CreateMenuButton(
+            GetResource("Text_WorkflowEditor_Delete") ?? "Delete", bpVM.DeleteSelectedNodesCommand, null));
         nodePanel.Children.Add(CreateSeparator());
 
         if (bpVM.ScopeBlocks.Count > 0)
         {
             nodePanel.Children.Add(new TextBlock
             {
-                Text = "Move to Scope:",
+                Text = GetResource("Text_WorkflowEditor_MoveToScope") ?? "Move to Scope:",
                 Foreground = Avalonia.Media.Brush.Parse("#999999"),
                 FontSize = 11,
                 Margin = new Thickness(8, 4, 8, 2),
@@ -582,7 +594,8 @@ public partial class WorkflowEditorWindow : Window, IView
         }
 
         nodePanel.Children.Add(CreateSeparator());
-        nodePanel.Children.Add(CreateMenuButton("Remove from Scope", bpVM.RemoveSelectedNodesFromScopeCommand, null));
+        nodePanel.Children.Add(CreateMenuButton(
+            GetResource("Text_WorkflowEditor_RemoveFromScope") ?? "Remove from Scope", bpVM.RemoveSelectedNodesFromScopeCommand, null));
 
         if (nodeVm.NodeType is BlueprintNodeType.Const
             or BlueprintNodeType.Variable
@@ -590,7 +603,8 @@ public partial class WorkflowEditorWindow : Window, IView
             or BlueprintNodeType.Set)
         {
             nodePanel.Children.Add(CreateSeparator());
-            nodePanel.Children.Add(CreateMenuButton("Rename", bpVM.RenameSelectedNodeCommand, nodeVm));
+            nodePanel.Children.Add(CreateMenuButton(
+                GetResource("Text_WorkflowEditor_Rename") ?? "Rename", bpVM.RenameSelectedNodeCommand, nodeVm));
         }
 
         ShowContextPopup(nodePanel);

@@ -24,7 +24,7 @@ public abstract class ViewModelBase : ReactiveObject
     protected static IAnnouncementService AnnouncementService =>
         App.GetService<IAnnouncementService>();
 
-    protected static string? Translate(
+    public static string? Translate(
         string key = "",
         string prefix = "",
         string suffix = "",
@@ -48,9 +48,9 @@ public abstract class ViewModelBase : ReactiveObject
         return null;
     }
 
-    protected static string? TranslateText(string key = "", Application? app = null) => Translate(key, "Text", separator: "_", app: app);
+    public static string? TranslateText(string key = "", Application? app = null) => Translate(key, "Text", separator: "_", app: app);
 
-    protected static string? TranslateTextWithSuffix(string key = "", string suffix = "", Application? app = null) =>
+    public static string? TranslateTextWithSuffix(string key = "", string suffix = "", Application? app = null) =>
         Translate(key, "Text", suffix, "_", app);
 
     public abstract void InitCommands();

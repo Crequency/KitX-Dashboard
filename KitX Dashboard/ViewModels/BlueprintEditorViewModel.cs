@@ -41,7 +41,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     public string? CurrentFilePath { get; private set; }
 
     private Blueprint? _currentBlueprint;
-    private string _statusText = "Ready";
+    private string _statusText = ViewModelBase.TranslateTextWithSuffix("WorkflowEditor", "Ready") ?? "Ready";
     private bool _isExecuting;
     private string _executionResult = string.Empty;
 
@@ -453,8 +453,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         switch (nodeVm.NodeType)
         {
             case BlueprintNodeType.Const:
-                dialogTitle = "Rename Const";
-                dialogPrompt = "Enter new constant name:";
+                dialogTitle = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameConst") ?? "Rename Const";
+                dialogPrompt = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameConstPrompt") ?? "Enter new constant name:";
                 currentName = nodeVm.Metadata.TryGetValue("ConstName", out var cn)
                     ? cn
                     : nodeVm.DisplayTitle.StartsWith("Const:")
@@ -463,24 +463,24 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 break;
 
             case BlueprintNodeType.Variable:
-                dialogTitle = "Rename Variable";
-                dialogPrompt = "Enter new variable name:";
+                dialogTitle = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameVariable") ?? "Rename Variable";
+                dialogPrompt = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameVariablePrompt") ?? "Enter new variable name:";
                 currentName = nodeVm.Metadata.TryGetValue("VarName", out var vn)
                     ? vn
                     : nodeVm.VarName;
                 break;
 
             case BlueprintNodeType.Get:
-                dialogTitle = "Rename Get Node";
-                dialogPrompt = "Enter new variable name:";
+                dialogTitle = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameGetNode") ?? "Rename Get Node";
+                dialogPrompt = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameVariablePrompt") ?? "Enter new variable name:";
                 currentName = nodeVm.DisplayTitle.StartsWith("Get:")
                     ? nodeVm.DisplayTitle["Get:".Length..].Trim()
                     : nodeVm.DisplayTitle;
                 break;
 
             case BlueprintNodeType.Set:
-                dialogTitle = "Rename Set Node";
-                dialogPrompt = "Enter new variable name:";
+                dialogTitle = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameSetNode") ?? "Rename Set Node";
+                dialogPrompt = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameVariablePrompt") ?? "Enter new variable name:";
                 currentName = nodeVm.DisplayTitle.StartsWith("Set:")
                     ? nodeVm.DisplayTitle["Set:".Length..].Trim()
                     : nodeVm.DisplayTitle;
@@ -560,7 +560,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private async Task RenameScopeBlockAsync(BlueprintScopeBlockVM scopeVm)
     {
         var newName = await _fileDialogService.ShowTextInputDialogAsync(
-            "Rename Scope Block", "Enter new scope name:", scopeVm.DisplayName);
+            ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameScopeBlock") ?? "Rename Scope Block",
+            ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameScopePrompt") ?? "Enter new scope name:",
+            scopeVm.DisplayName);
 
         if (string.IsNullOrWhiteSpace(newName) || newName == scopeVm.DisplayName)
             return;

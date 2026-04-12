@@ -39,7 +39,8 @@ internal class WorkflowPageViewModel : ViewModelBase
     {
         CreateWorkflowCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            var workflow = await _storageService.CreateWorkflowAsync("New Workflow");
+            var workflow = await _storageService.CreateWorkflowAsync(
+                TranslateTextWithSuffix("Workflow", "NewWorkflow") ?? "New Workflow");
             WorkflowCases.Add(workflow);
             _eventService.Publish(EventNames.WorkflowCreated, EventArgs.Empty);
         });
@@ -87,14 +88,14 @@ internal class WorkflowPageViewModel : ViewModelBase
         _eventService.Subscribe(EventNames.WorkflowRenamed, (s, e) =>
         {
             if (e is WorkflowRenamedEventArgs args)
-                SyncRenamedWorkflow(args.WorkflowId, args.NewName);
+                SyncWorkflowMetadata(args.WorkflowId, args.NewName, null, null);
         });
 
-        // Listen for save events to sync name changes
+        // Listen for save events to sync metadata changes
         _eventService.Subscribe(EventNames.WorkflowDataSaved, (s, e) =>
         {
             if (e is WorkflowSavedEventArgs args)
-                SyncRenamedWorkflow(args.WorkflowId, args.WorkflowName);
+                SyncWorkflowMetadata(args.WorkflowId, args.WorkflowName, args.Description, args.Author);
         });
     }
 
@@ -107,22 +108,28 @@ internal class WorkflowPageViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Syncs a renamed workflow in the collection by replacing the item
+    /// Syncs workflow metadata in the collection by replacing the item
     /// to trigger ObservableCollection.CollectionChanged and refresh UI bindings.
     /// WorkflowCase is a POCO without INotifyPropertyChanged, so simply setting
-    /// Name won't update the card text.
+    /// properties won't update the card text.
     /// </summary>
-    private void SyncRenamedWorkflow(string workflowId, string newName)
+    private static void SyncWorkflowMetadata(string workflowId, string? newName, string? description, string? author)
     {
         for (int i = 0; i < WorkflowCases.Count; i++)
         {
-            if (WorkflowCases[i].Id == workflowId && WorkflowCases[i].Name != newName)
+            if (WorkflowCases[i].Id == workflowId)
             {
                 var existing = WorkflowCases[i];
-                existing.Name = newName;
-                // Remove and re-add at same index to trigger CollectionChanged + binding refresh
-                WorkflowCases.RemoveAt(i);
-                WorkflowCases.Insert(i, existing);
+                bool changed = false;
+                if (newName != null && existing.Name != newName) { existing.Name = newName; changed = true; }
+                if (description != null && existing.Description != description) { existing.Description = description; changed = true; }
+                if (author != null && existing.Author != author) { existing.Author = author; changed = true; }
+                if (changed)
+                {
+                    // Remove and re-add at same index to trigger CollectionChanged + binding refresh
+                    WorkflowCases.RemoveAt(i);
+                    WorkflowCases.Insert(i, existing);
+                }
                 return;
             }
         }
@@ -154,8 +161,9 @@ internal class WorkflowPageViewModel : ViewModelBase
     private async void DeleteWorkflowAsync(IWorkflowCase workflow)
     {
         var result = await MessageBoxManager.GetMessageBoxStandard(
-            "Delete Workflow",
-            $"Are you sure you want to delete \"{workflow.Name}\"?",
+            TranslateTextWithSuffix("Workflow", "DeleteWorkflow") ?? "Delete Workflow",
+            (TranslateTextWithSuffix("Workflow", "DeleteConfirm") ?? "Are you sure you want to delete \"$name\"?")
+                .Replace("$name", workflow.Name),
             ButtonEnum.YesNo,
             Icon.Warning
         ).ShowWindowAsync();
@@ -178,7 +186,8 @@ internal class WorkflowPageViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            await MessageBoxManager.GetMessageBoxStandard("Error", ex.Message, icon: Icon.Error)
+            await MessageBoxManager.GetMessageBoxStandard(
+                TranslateTextWithSuffix("Workflow", "Error") ?? "Error", ex.Message, icon: Icon.Error)
                 .ShowWindowAsync();
         }
     }
@@ -193,7 +202,8 @@ internal class WorkflowPageViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            await MessageBoxManager.GetMessageBoxStandard("Error", ex.Message, icon: Icon.Error)
+            await MessageBoxManager.GetMessageBoxStandard(
+                TranslateTextWithSuffix("Workflow", "Error") ?? "Error", ex.Message, icon: Icon.Error)
                 .ShowWindowAsync();
         }
     }
