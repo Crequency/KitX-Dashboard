@@ -37,8 +37,6 @@ internal class RepoPageViewModel : ViewModelBase
         SearchingText = "";
 
         PluginsCount = PluginBars.Count.ToString();
-
-        RefreshPluginsCommand?.Execute(new());
     }
 
     public sealed override void InitCommands()
@@ -96,41 +94,7 @@ internal class RepoPageViewModel : ViewModelBase
             }
         });
 
-        RefreshPluginsCommand = ReactiveCommand.Create(() =>
-        {
-            PluginBars.Clear();
-
-            //lock (PluginsNetwork.PluginsListOperationLock)
-            //{
-
-            //}
-
-            var pluginService = App.GetService<IPluginService>();
-            foreach (var item in pluginService.GetInstalledPlugins())
-            {
-                try
-                {
-                    var plugin = new PluginInstallation()
-                    {
-                        Id = item.Id,
-                        InstallPath = item.InstallPath,
-                        PluginInfo = JsonSerializer.Deserialize<PluginInfo>(
-                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/PluginInfo.json"))
-                        ),
-                        LoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
-                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json"))
-                        ),
-                        InstalledDevices = [],
-                    };
-
-                    PluginBars.Add(new(plugin, ref pluginBars));
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "In RefreshPlugins()");
-                }
-            }
-        });
+        RefreshPluginsCommand = ReactiveCommand.Create(PerformRefresh);
     }
 
     internal RepoPageViewModel SetControl(RepoPage control)
@@ -144,11 +108,77 @@ internal class RepoPageViewModel : ViewModelBase
         var eventService = App.GetService<IEventService>();
         eventService.Subscribe(EventNames.AppConfigChanged, (s, e) => ImportButtonVisibility = _configService.AppConfig.App.DeveloperSetting);
 
+        // Subscribe to plugin status changes for runtime auto-refresh
+        var pluginService = App.GetService<IPluginService>();
+        if (pluginService != null)
+            pluginService.PluginStatusChanged += OnPluginStatusChanged;
+
         PluginBars.CollectionChanged += (_, _) =>
         {
             PluginsCount = PluginBars.Count.ToString();
             NoPlugins_TipHeight = PluginBars.Count == 0 ? 300 : 0;
         };
+    }
+
+    private DateTime _lastRefreshTime = DateTime.MinValue;
+    private static readonly TimeSpan RefreshDebounceInterval = TimeSpan.FromMilliseconds(300);
+
+    private void OnPluginStatusChanged(object? sender, PluginStatusChangedEventArgs e)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            if (DateTime.Now - _lastRefreshTime < RefreshDebounceInterval)
+                return;
+            _lastRefreshTime = DateTime.Now;
+            PerformRefresh();
+        });
+    }
+
+    /// <summary>
+    /// Unsubscribes event handlers to prevent memory leaks.
+    /// Called from RepoPage.Unloaded.
+    /// </summary>
+    internal void Cleanup()
+    {
+        var pluginService = App.GetService<IPluginService>();
+        if (pluginService != null)
+            pluginService.PluginStatusChanged -= OnPluginStatusChanged;
+    }
+
+    /// <summary>
+    /// Synchronously refreshes the plugin list from the plugin service.
+    /// Called directly from Loaded (bypasses ReactiveCommand scheduling)
+    /// and also from RefreshPluginsCommand.
+    /// </summary>
+    internal void PerformRefresh()
+    {
+        PluginBars.Clear();
+
+        var pluginService = App.GetService<IPluginService>();
+        foreach (var item in pluginService.GetInstalledPlugins())
+        {
+            try
+            {
+                var plugin = new PluginInstallation()
+                {
+                    Id = item.Id,
+                    InstallPath = item.InstallPath,
+                    PluginInfo = JsonSerializer.Deserialize<PluginInfo>(
+                        File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/PluginInfo.json"))
+                    ),
+                    LoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
+                        File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json"))
+                    ),
+                    InstalledDevices = [],
+                };
+
+                PluginBars.Add(new(plugin, ref pluginBars));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "In RefreshPlugins()");
+            }
+        }
     }
 
     internal string SearchingText { get; set; }

@@ -29,6 +29,13 @@ public partial class RepoPage : UserControl
         AddHandler(DragDrop.DropEvent, Drop);
 
         AddHandler(DragDrop.DragOverEvent, DragOver);
+
+        // Refresh plugin list when page loads. Uses direct synchronous call
+        // instead of ReactiveCommand.Execute() which schedules asynchronously
+        // and may not complete before the UI renders.
+        Loaded += (_, _) => viewModel.PerformRefresh();
+
+        Unloaded += (_, _) => viewModel.Cleanup();
     }
 
     private void Drop(object? sender, DragEventArgs e)
@@ -39,23 +46,23 @@ public partial class RepoPage : UserControl
 
         if (files is not null && files?.Length > 0)
         {
-            new Thread(() =>
+            _ = System.Threading.Tasks.Task.Run(async () =>
             {
                 try
                 {
                     var pluginService = App.GetService<IPluginService>();
                     foreach (var file in files!)
                     {
-                        _ = pluginService.ImportPluginAsync(file);
+                        await pluginService.ImportPluginAsync(file);
                     }
 
-                    Dispatcher.UIThread.Post(() => viewModel.RefreshPluginsCommand?.Execute());
+                    Dispatcher.UIThread.Post(() => viewModel.PerformRefresh());
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, $"In {location}: {ex.Message}");
                 }
-            }).Start();
+            });
         }
     }
 
