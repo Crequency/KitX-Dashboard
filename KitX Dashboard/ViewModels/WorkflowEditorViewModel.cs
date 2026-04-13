@@ -1,4 +1,6 @@
 using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -35,6 +37,95 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     private bool _isDirty;
     private string _executionOutput = string.Empty;
     private bool _isExecuting;
+
+    // ─── Trigger Configuration ──────────────────────────────────────────
+    private string _triggerType = "Manual";
+    private string? _triggerPluginName;
+    private string? _triggerName;
+
+    /// <summary>Available trigger types for ComboBox binding</summary>
+    public string[] TriggerTypeOptions { get; } = ["Manual", "PluginEvent"];
+
+    /// <summary>Available plugin names from connected plugins</summary>
+    public ObservableCollection<string> AvailablePlugins { get; } = [];
+
+    /// <summary>Available trigger names for the selected plugin</summary>
+    public ObservableCollection<string> AvailableTriggers { get; } = [];
+
+    /// <summary>Trigger type: "Manual" (default) or "PluginEvent"</summary>
+    public string TriggerType
+    {
+        get => _triggerType;
+        set
+        {
+            if (SetProperty(ref _triggerType, value))
+            {
+                OnPropertyChanged(nameof(IsPluginEventTrigger));
+                if (value == "PluginEvent")
+                    RefreshAvailablePlugins();
+                IsDirty = true;
+            }
+        }
+    }
+
+    /// <summary>Whether the trigger type is PluginEvent</summary>
+    public bool IsPluginEventTrigger => _triggerType == "PluginEvent";
+
+    /// <summary>Plugin name for PluginEvent triggers</summary>
+    public string? TriggerPluginName
+    {
+        get => _triggerPluginName;
+        set
+        {
+            if (SetProperty(ref _triggerPluginName, value))
+            {
+                RefreshAvailableTriggers();
+                IsDirty = true;
+            }
+        }
+    }
+
+    /// <summary>Trigger name for PluginEvent triggers</summary>
+    public string? TriggerName
+    {
+        get => _triggerName;
+        set { if (SetProperty(ref _triggerName, value)) IsDirty = true; }
+    }
+
+    /// <summary>
+    /// Refreshes the list of available plugins from connected plugin server.
+    /// </summary>
+    private void RefreshAvailablePlugins()
+    {
+        AvailablePlugins.Clear();
+        var pluginServer = App.GetService<KitX.Core.Contract.Plugin.IPluginServer>();
+        if (pluginServer == null) return;
+
+        foreach (var conn in pluginServer.Connections)
+        {
+            if (!string.IsNullOrEmpty(conn.PluginInfo?.Name))
+                AvailablePlugins.Add(conn.PluginInfo.Name);
+        }
+    }
+
+    /// <summary>
+    /// Refreshes the list of available triggers for the selected plugin.
+    /// </summary>
+    private void RefreshAvailableTriggers()
+    {
+        AvailableTriggers.Clear();
+        if (string.IsNullOrEmpty(_triggerPluginName)) return;
+
+        var pluginServer = App.GetService<KitX.Core.Contract.Plugin.IPluginServer>();
+        if (pluginServer == null) return;
+
+        var conn = pluginServer.Connections
+            .FirstOrDefault(c => c.PluginInfo?.Name == _triggerPluginName);
+        if (conn?.PluginInfo?.SupportedTriggers == null) return;
+
+        foreach (var trigger in conn.PluginInfo.SupportedTriggers)
+            AvailableTriggers.Add(trigger);
+    }
 
     /// <summary>
     /// The BS editor sub-ViewModel
@@ -178,14 +269,58 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         {
             BlueprintVM.CurrentBlueprint = data.BlueprintData;
         }
+
+        // Load trigger configuration
+        if (data.TriggerConfig != null)
+        {
+            TriggerType = data.TriggerConfig.TriggerType ?? "Manual";
+            TriggerPluginName = data.TriggerConfig.PluginName;
+            TriggerName = data.TriggerConfig.TriggerName;
+        }
     }
 
     /// <summary>
-    /// Saves the current workflow to storage
+    /// <summary>
+    /// Saves the current workflow to storage.
+    /// If in BP mode, first exports BP→BS so the BlockScript source stays in sync
+    /// (runtime executor only reads BlockScript).
     /// </summary>
     public async Task SaveAsync()
     {
         if (_workflowId == null) return;
+
+        // If in BP mode, sync BP→BS so runtime executor has up-to-date BlockScript
+        if (IsBlueprintMode && BlueprintVM.Nodes.Count > 0)
+        {
+            try
+            {
+                var blueprint = BlueprintVM.ExportDrawingToBlueprint();
+
+                // Handle trigger node → Entry replacement for conversion (same as SwitchToBlockScriptAsync)
+                var triggerNode = blueprint.Nodes.FirstOrDefault(n => n.NodeType == BlueprintNodeType.PluginTrigger);
+                if (triggerNode is PluginTriggerNode ptNode)
+                {
+                    var entryReplacement = new EntryNode
+                    {
+                        Id = ptNode.Id,
+                        X = ptNode.X,
+                        Y = ptNode.Y
+                    };
+                    if (ptNode.OutputPins.Count > 0 && entryReplacement.OutputPins.Count > 0)
+                        entryReplacement.OutputPins[0].Id = ptNode.OutputPins[0].Id;
+                    var idx = blueprint.Nodes.IndexOf(ptNode);
+                    blueprint.Nodes[idx] = entryReplacement;
+                }
+
+                var sourceCode = _blueprintService.ExportToBlockScript(blueprint);
+                ScriptVM.MainProgramCode = sourceCode;
+                ScriptVM.UseBlockMode = true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[WorkflowEditorVM] BP→BS sync during save failed");
+            }
+        }
 
         var data = new KcsFileFormat
         {
@@ -201,6 +336,12 @@ internal partial class WorkflowEditorViewModel : ObservableObject
                 ? new System.Collections.Generic.Dictionary<string, object?>()
                 : new System.Collections.Generic.Dictionary<string, object?>(),
             BlueprintData = BlueprintVM.CurrentBlueprint,
+            TriggerConfig = new TriggerConfig
+            {
+                TriggerType = TriggerType,
+                PluginName = TriggerPluginName,
+                TriggerName = TriggerName
+            },
         };
 
         await _storageService.SaveWorkflowDataAsync(_workflowId, data);
@@ -233,6 +374,31 @@ internal partial class WorkflowEditorViewModel : ObservableObject
                 var blueprint = _blueprintService.ImportFromBlockScript(sourceCode, helpers);
                 if (blueprint != null)
                 {
+                    // BS → BP trigger conversion: replace Entry with PluginTriggerNode
+                    if (TriggerType == "PluginEvent" && !string.IsNullOrEmpty(TriggerPluginName))
+                    {
+                        var entryNode = blueprint.Nodes.FirstOrDefault(n => n.NodeType == BlueprintNodeType.Entry);
+                        if (entryNode != null)
+                        {
+                            var triggerNode = new PluginTriggerNode
+                            {
+                                Id = entryNode.Id,
+                                X = entryNode.X,
+                                Y = entryNode.Y,
+                                PluginName = TriggerPluginName ?? string.Empty,
+                                TriggerName = TriggerName ?? string.Empty
+                            };
+                            // Constructor already calls InitializePinsFromDescriptor()
+
+                            // Preserve output pin IDs to maintain connections
+                            if (entryNode.OutputPins.Count > 0 && triggerNode.OutputPins.Count > 0)
+                                triggerNode.OutputPins[0].Id = entryNode.OutputPins[0].Id;
+
+                            var idx = blueprint.Nodes.IndexOf(entryNode);
+                            blueprint.Nodes[idx] = triggerNode;
+                        }
+                    }
+
                     BlueprintVM.CurrentBlueprint = blueprint;
                     BlueprintVM.LoadBlueprintIntoDrawing(blueprint);
                 }
@@ -262,6 +428,39 @@ internal partial class WorkflowEditorViewModel : ObservableObject
             try
             {
                 var blueprint = BlueprintVM.ExportDrawingToBlueprint();
+
+                // BP → BS trigger conversion: extract trigger info from PluginTriggerNode
+                var triggerNode = blueprint.Nodes.FirstOrDefault(n => n.NodeType == BlueprintNodeType.PluginTrigger);
+                if (triggerNode is PluginTriggerNode ptNode)
+                {
+                    TriggerType = "PluginEvent";
+                    TriggerPluginName = ptNode.PluginName;
+                    TriggerName = ptNode.TriggerName;
+
+                    // Replace PluginTriggerNode with EntryNode for BS conversion compatibility
+                    var entryReplacement = new EntryNode
+                    {
+                        Id = ptNode.Id,
+                        X = ptNode.X,
+                        Y = ptNode.Y
+                    };
+                    // Constructor already calls InitializePinsFromDescriptor()
+
+                    // Preserve output pin IDs to maintain connections
+                    if (ptNode.OutputPins.Count > 0 && entryReplacement.OutputPins.Count > 0)
+                        entryReplacement.OutputPins[0].Id = ptNode.OutputPins[0].Id;
+
+                    var idx = blueprint.Nodes.IndexOf(ptNode);
+                    blueprint.Nodes[idx] = entryReplacement;
+                }
+                else
+                {
+                    // No PluginTriggerNode → reset to Manual
+                    TriggerType = "Manual";
+                    TriggerPluginName = null;
+                    TriggerName = null;
+                }
+
                 var sourceCode = _blueprintService.ExportToBlockScript(blueprint);
 
                 ScriptVM.MainProgramCode = sourceCode;

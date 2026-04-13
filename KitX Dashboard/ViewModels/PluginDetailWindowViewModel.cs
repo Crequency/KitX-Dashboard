@@ -94,6 +94,13 @@ internal class PluginDetailWindowViewModel : ViewModelBase
 
         foreach (var tag in PluginDetail.Tags)
             Tags.Add($"{{ {tag.Key}: {tag.Value} }}");
+
+        // 展示插件支持的触发器
+        if (PluginDetail.SupportedTriggers?.Count > 0)
+        {
+            foreach (var trigger in PluginDetail.SupportedTriggers)
+                Tags.Add($"{{ Trigger: {trigger} }}");
+        }
     }
 
     internal ObservableCollection<string> Functions { get; set; } = [];

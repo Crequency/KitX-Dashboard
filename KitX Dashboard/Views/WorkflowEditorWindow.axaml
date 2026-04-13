@@ -170,6 +170,28 @@
             <DockPanel Grid.Column="0"
                        IsVisible="{Binding IsBlockScriptMode}"
                        Margin="5">
+                <!-- Trigger Settings -->
+                <Border DockPanel.Dock="Top"
+                        BorderBrush="#3F3F3F" BorderThickness="0,0,0,1"
+                        Padding="5,8" Margin="0,0,0,5">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Trigger" FontWeight="Bold" Margin="0,0,0,4"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                        <ComboBox ItemsSource="{Binding TriggerTypeOptions}"
+                                  SelectedItem="{Binding TriggerType, Mode=TwoWay}"
+                                  HorizontalAlignment="Stretch" />
+                        <StackPanel IsVisible="{Binding IsPluginEventTrigger}" Spacing="4">
+                            <TextBlock Text="Plugin" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <ComboBox ItemsSource="{Binding AvailablePlugins}"
+                                      SelectedItem="{Binding TriggerPluginName, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch" FontSize="11" />
+                            <TextBlock Text="Trigger" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <ComboBox ItemsSource="{Binding AvailableTriggers}"
+                                      SelectedItem="{Binding TriggerName, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch" FontSize="11" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
                 <TextBlock DockPanel.Dock="Top"
                            Text="{DynamicResource Text_WorkflowEditor_CodeSections}"
                            FontWeight="Bold"
@@ -222,9 +244,28 @@
                         <StackPanel DataContext="{Binding BlueprintVM}">
                             <!-- Entry -->
                             <Expander Header="{DynamicResource Text_WorkflowEditor_Entry}" IsExpanded="True" Margin="0,5">
-                                <Button Content="{DynamicResource Text_WorkflowEditor_Entry}"
-                                        HorizontalAlignment="Stretch" Margin="5"
-                                        Command="{Binding AddEntryNodeCommand}" />
+                                <StackPanel>
+                                    <Button Content="{DynamicResource Text_WorkflowEditor_Entry}"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddEntryNodeCommand}" />
+
+                                    <!-- Dynamic Plugin Triggers -->
+                                    <Expander Header="Plugin Triggers"
+                                              IsExpanded="False" Margin="5,0"
+                                              IsVisible="{Binding HasPluginTriggers}">
+                                        <ItemsControl ItemsSource="{Binding PluginTriggers}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding DisplayName}"
+                                                            HorizontalAlignment="Stretch" Margin="2,1"
+                                                            FontSize="10"
+                                                            Command="{Binding $parent[Window].DataContext.BlueprintVM.AddPluginTriggerNodeCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Expander>
+                                </StackPanel>
                             </Expander>
 
                             <!-- Flow Control -->

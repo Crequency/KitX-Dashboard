@@ -83,6 +83,10 @@ public static class Instances
         // Initialize SignalTasksManager
         SignalTasksManager = new SignalTasksManager();
 
+        // Resolve TriggerManager to activate event subscriptions
+        var triggerManager = serviceProvider.GetService<KitX.Core.Workflow.TriggerManager>();
+        Log.Information("TriggerManager resolved: {Resolved}", triggerManager != null);
+
         Log.Information("Instances.Initialize completed.");
     }
 }

@@ -120,6 +120,15 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     public bool HasHelperFunctions => HelperFunctions.Count > 0;
 
     /// <summary>
+    /// Plugin triggers available for dynamic node creation.
+    /// Populated from connected plugins' SupportedTriggers.
+    /// </summary>
+    public ObservableCollection<PluginTriggerPaletteItem> PluginTriggers { get; } = [];
+
+    /// <summary>Whether any plugin triggers are available (controls UI visibility)</summary>
+    public bool HasPluginTriggers => PluginTriggers.Count > 0;
+
+    /// <summary>
     /// Sets the bridge to the associated WorkflowEditor.
     /// Called by BlueprintEditorWindow after construction.
     /// </summary>
@@ -176,6 +185,42 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         Log.Debug("[BlueprintPalette] RefreshPluginFunctions: added {Count} plugin functions", PluginFunctions.Count);
         OnPropertyChanged(nameof(HasPluginFunctions));
+
+        // Also refresh trigger list from the same connections
+        RefreshPluginTriggers();
+    }
+
+    /// <summary>
+    /// Refreshes the PluginTriggers collection from connected plugins' SupportedTriggers.
+    /// Called alongside RefreshPluginFunctions.
+    /// </summary>
+    private void RefreshPluginTriggers()
+    {
+        PluginTriggers.Clear();
+
+        var pluginServer = App.GetService<IPluginServer>();
+        if (pluginServer == null)
+        {
+            OnPropertyChanged(nameof(HasPluginTriggers));
+            return;
+        }
+
+        foreach (var conn in pluginServer.Connections)
+        {
+            if (conn.PluginInfo?.SupportedTriggers == null) continue;
+            foreach (var trigger in conn.PluginInfo.SupportedTriggers)
+            {
+                PluginTriggers.Add(new PluginTriggerPaletteItem
+                {
+                    PluginName = conn.PluginInfo.Name,
+                    TriggerName = trigger,
+                    DisplayName = $"{conn.PluginInfo.Name}.{trigger}"
+                });
+            }
+        }
+
+        Log.Debug("[BlueprintPalette] RefreshPluginTriggers: added {Count} plugin triggers", PluginTriggers.Count);
+        OnPropertyChanged(nameof(HasPluginTriggers));
     }
 
     /// <summary>
@@ -937,6 +982,15 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         if (blueprintNode is BuiltinFunctionNode bfNode && !string.IsNullOrEmpty(bfNode.FunctionName))
             nodeVm.Metadata["BuiltinFunctionName"] = bfNode.FunctionName;
 
+        // Preserve PluginTriggerNode metadata for round-trip
+        if (blueprintNode is PluginTriggerNode ptNode)
+        {
+            if (!string.IsNullOrEmpty(ptNode.PluginName))
+                nodeVm.Metadata["PluginName"] = ptNode.PluginName;
+            if (!string.IsNullOrEmpty(ptNode.TriggerName))
+                nodeVm.Metadata["TriggerName"] = ptNode.TriggerName;
+        }
+
         return nodeVm;
     }
 
@@ -1151,6 +1205,15 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             bfNode.FunctionName = funcName;
         }
 
+        // Special handling: PluginTriggerNode → restore PluginName/TriggerName from Metadata
+        if (blueprintNode is PluginTriggerNode ptNode)
+        {
+            if (nodeVm.Metadata.TryGetValue("PluginName", out var pluginName))
+                ptNode.PluginName = pluginName ?? string.Empty;
+            if (nodeVm.Metadata.TryGetValue("TriggerName", out var triggerName))
+                ptNode.TriggerName = triggerName ?? string.Empty;
+        }
+
         // Clear auto-generated pins from constructor's InitializePinsFromDescriptor()
         // to prevent duplicates — we add pins from UI connectors instead.
         blueprintNode.InputPins.Clear();
@@ -1210,17 +1273,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private static BlueprintNodeType InferNodeTypeFromName(string name) => name switch
     {
         "Entry" => BlueprintNodeType.Entry,
+        "PluginTrigger" or _ when name.StartsWith("Trigger:") => BlueprintNodeType.PluginTrigger,
         "Branch" => BlueprintNodeType.Branch,
-        "Loop" => BlueprintNodeType.Loop,
-        "Break" => BlueprintNodeType.Break,
-        "Const" or _ when name.StartsWith("Const:") => BlueprintNodeType.Const,
-        "Call" or _ when name.StartsWith("Call:") => BlueprintNodeType.Call,
-        "CallHelper" or _ when name.StartsWith("Helper:") => BlueprintNodeType.CallHelper,
-        "Print" => BlueprintNodeType.Print,
-        "Pause" => BlueprintNodeType.Pause,
-        "Get" or _ when name.StartsWith("Get:") => BlueprintNodeType.Get,
-        "Set" or _ when name.StartsWith("Set:") => BlueprintNodeType.Set,
-        _ => BlueprintNodeType.Entry
     };
 
     private void ApplyDisplayTitleToNode(BlueprintNode node, string title, BlueprintNodeVM? nodeVm = null)
@@ -1275,6 +1329,18 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 vNode.VarName = title["Var:".Length..].Trim();
                 if (nodeVm != null)
                     nodeVm.VarName = vNode.VarName;
+                break;
+            case PluginTriggerNode ptNode when title.StartsWith("Trigger:"):
+                var triggerParts = title["Trigger:".Length..].Trim().Split('.');
+                if (triggerParts.Length >= 2)
+                {
+                    ptNode.PluginName = triggerParts[0];
+                    ptNode.TriggerName = string.Join(".", triggerParts.Skip(1));
+                }
+                else
+                {
+                    ptNode.TriggerName = triggerParts[0];
+                }
                 break;
         }
     }
@@ -1724,6 +1790,50 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         RefreshCounts();
         Log.Information("Added CallNode: {Plugin}.{Function} with {ParamCount} params",
             item.PluginName, item.FunctionName, item.Parameters.Count);
+    }
+
+    /// <summary>
+    /// Creates a PluginTriggerNode from a dynamic palette item.
+    /// Trigger nodes are alternative entry points with 0 input pins and 1 Exec output pin.
+    /// </summary>
+    [RelayCommand]
+    private void AddPluginTriggerNode(PluginTriggerPaletteItem item)
+    {
+        if (item == null) return;
+
+        var displayTitle = $"Trigger: {item.PluginName}.{item.TriggerName}";
+        var (primaryColor, lightColor) = BlueprintNodeVM.GetCategoryColors(BlueprintNodeType.Entry);
+
+        var node = new BlueprintNodeVM
+        {
+            Location = new Avalonia.Point(100, 100),
+            BlueprintNodeId = Guid.NewGuid().ToString(),
+            NodeType = BlueprintNodeType.PluginTrigger,
+            DisplayTitle = displayTitle,
+            CategoryColor = primaryColor,
+            CategoryColorLight = lightColor,
+            Title = displayTitle,
+            Name = "PluginTrigger",
+            Input = new ObservableCollection<object>(),
+            Output = new ObservableCollection<object>()
+        };
+
+        node.Metadata["PluginName"] = item.PluginName;
+        node.Metadata["TriggerName"] = item.TriggerName;
+
+        // Single Exec output pin (same structure as Entry)
+        node.Output.Add(new BlueprintConnectorVM
+        {
+            Title = "Exec",
+            Flow = ConnectorViewModelBase.ConnectorFlow.Output,
+            PinType = PinType.Execution,
+            OriginalPinId = Guid.NewGuid().ToString()
+        });
+
+        Nodes.Add(node);
+        RefreshCounts();
+        Log.Information("Added PluginTriggerNode: {Plugin}.{Trigger}",
+            item.PluginName, item.TriggerName);
     }
 
     /// <summary>

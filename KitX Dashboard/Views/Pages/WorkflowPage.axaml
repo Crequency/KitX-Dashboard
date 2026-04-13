@@ -11,6 +11,7 @@
              mc:Ignorable="d">
     <UserControl.Resources>
         <converters:StringOverLengthConverter x:Key="StringOverLengthConverter" />
+        <converters:WorkflowStatusConverter x:Key="WorkflowStatusConverter" />
     </UserControl.Resources>
     <DockPanel>
         <!-- Hidden command providers for DataTemplate bindings -->
@@ -115,14 +116,19 @@
                                                         VerticalAlignment="Center">
                                                 <Ellipse Width="10"
                                                          Height="10"
-                                                         IsVisible="{Binding !IsRunning}"
+                                                         IsVisible="{Binding Converter={StaticResource WorkflowStatusConverter}, ConverterParameter=Stopped}"
                                                          Fill="Red"
                                                          ToolTip.Tip="{DynamicResource Text_Workflow_Stopped}" />
                                                 <Ellipse Width="10"
                                                          Height="10"
-                                                         IsVisible="{Binding IsRunning}"
+                                                         IsVisible="{Binding Converter={StaticResource WorkflowStatusConverter}, ConverterParameter=Running}"
                                                          Fill="Green"
                                                          ToolTip.Tip="{DynamicResource Text_Workflow_Running}" />
+                                                <Ellipse Width="10"
+                                                         Height="10"
+                                                         IsVisible="{Binding Converter={StaticResource WorkflowStatusConverter}, ConverterParameter=Error}"
+                                                         Fill="Yellow"
+                                                         ToolTip.Tip="{Binding ErrorMessage}" />
                                                 <TextBlock FontSize="11"
                                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                            VerticalAlignment="Center"

@@ -144,7 +144,7 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     /// <summary>Returns (Primary, Light) hex color pair for a node category</summary>
     public static (string Primary, string Light) GetCategoryColors(BlueprintNodeType type) => type switch
     {
-        BlueprintNodeType.Entry => ("#4CAF50", "#2E7D32"),          // Green
+        BlueprintNodeType.Entry or BlueprintNodeType.PluginTrigger => ("#4CAF50", "#2E7D32"), // Green
         BlueprintNodeType.Branch or BlueprintNodeType.Loop
             or BlueprintNodeType.Break => ("#FF9800", "#BF6E00"),   // Orange
         BlueprintNodeType.Const or BlueprintNodeType.Get
