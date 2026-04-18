@@ -391,26 +391,29 @@ eventService.Publish(EventNames.LanguageChanged, EventArgs.Empty);
 
 ### 6.1 通信协议
 
-| 服务 | 协议 | 默认端口 |
-|------|------|----------|
-| 设备发现 | UDP | 5231 |
-| 设备服务器 | HTTP | 5232 |
-| 插件服务器 | WebSocket | 5233 |
+> ⚠️ 注意：以下端口为 Legacy 实际值，与旧文档（5231/5232/5233）不符，已按实际代码修正。
+
+| 服务 | 协议 | 默认端口 | 说明 |
+|------|------|----------|------|
+| 设备发现（发送） | UDP | 23404 | AppConfig.Web.UdpPortSend |
+| 设备发现（接收） | UDP | 24040 | AppConfig.Web.UdpPortReceive |
+| 设备服务器 | HTTP | 动态（0） | 运行时分配可用端口；AppConfig.Web.UserSpecifiedDevicesServerPort |
+| 插件服务器 | WebSocket | 动态（0） | 运行时分配可用端口；AppConfig.Web.UserSpecifiedPluginsServerPort |
 
 ### 6.2 网络拓扑
 
 ```mermaid
 flowchart LR
     subgraph DeviceA[Device A]
-        A_UDP[UDP:5231]
-        A_HTTP[HTTP:5232]
-        A_WS[WS:5233]
+        A_UDP[UDP:23404/24040]
+        A_HTTP[HTTP:动态]
+        A_WS[WS:动态]
     end
 
     subgraph DeviceB[Device B]
-        B_UDP[UDP:5231]
-        B_HTTP[HTTP:5232]
-        B_WS[WS:5233]
+        B_UDP[UDP:23404/24040]
+        B_HTTP[HTTP:动态]
+        B_WS[WS:动态]
     end
 
     A_UDP <-->|UDP Broadcast| B_UDP
