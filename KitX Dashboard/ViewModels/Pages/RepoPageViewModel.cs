@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
+using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Event;
 using KitX.Core.Plugin;
 using KitX.Dashboard;

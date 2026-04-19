@@ -19,13 +19,13 @@ namespace KitX.Dashboard.ViewModels.Pages;
 internal class WorkflowPageViewModel : ViewModelBase
 {
     private readonly IWorkflowStorageService _storageService;
-    private readonly IWorkflowService _workflowService;
+    private readonly IWorkflowManagementService _workflowService;
     private readonly IEventService _eventService;
 
     public WorkflowPageViewModel()
     {
         _storageService = App.GetService<IWorkflowStorageService>();
-        _workflowService = App.GetService<IWorkflowService>();
+        _workflowService = App.GetService<IWorkflowManagementService>();
         _eventService = App.GetService<IEventService>();
 
         InitCommands();

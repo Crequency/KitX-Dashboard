@@ -150,9 +150,14 @@ public class MainWindowViewModel : ViewModelBase
 ```csharp
 public static IServiceCollection AddCoreServices(this IServiceCollection services)
 {
-    services.AddSingleton<IConfigService, ConfigManager>();
-    services.AddSingleton<ISecurityService, SecurityManager>();
-    services.AddSingleton<IPluginService, PluginsManager>();
+    services.AddSingleton<IConfigService>(ConfigManager.Instance);
+    services.AddSingleton<IDeviceKeyService>(SecurityManager.Instance);
+    services.AddSingleton<IEncryptionService>(SecurityManager.Instance);
+    services.AddSingleton<IPluginService>(PluginsManager.Instance);
+    services.AddSingleton<IWorkflowManagementService>(WorkflowScriptService.Instance);
+    services.AddSingleton<IScriptExecutionService>(WorkflowScriptService.Instance);
+    services.AddSingleton<IWorkflowPluginService>(WorkflowScriptService.Instance);
+    services.AddSingleton<IBlockScriptService>(WorkflowScriptService.Instance);
     // ... 其他服务
     return services;
 }

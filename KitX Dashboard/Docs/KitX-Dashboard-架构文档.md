@@ -129,7 +129,9 @@ KitX Dashboard/
 ```
 KitX.Core/
 ├── Configuration/                  # 配置管理
-│   ├── ConfigManager.cs           # 实现 IConfigService
+│   ├── ConfigManager.cs           # 实现 IConfigService, 委托给 ConfigLoader/ConfigSaver
+│   ├── ConfigLoader.cs            # 实现 IConfigLoader
+│   ├── ConfigSaver.cs             # 实现 IConfigSaver
 │   └── AppConfig.cs
 ├── Device/                         # 设备管理
 │   ├── DeviceService.cs           # 实现 IDeviceService
@@ -140,19 +142,20 @@ KitX.Core/
 │   ├── DeviceCase.cs
 │   ├── ServerStatus.cs            # 服务器状态枚举
 │   ├── NetworkHelper.cs          # 网络辅助类
-│   └── OperatingSystemHelper.cs   # 操作系统辅助类
+│   ├── OperatingSystemHelper.cs  # 操作系统辅助类
+│   └── ExchangeKeyRequest.cs     # 设备密钥交换请求模型
 ├── Plugin/                         # 插件管理
 │   ├── PluginsManager.cs          # 实现 IPluginService
-│   ├── PluginsServer.cs          # 实现 IPluginServer
-│   └── PluginConnector.cs         # 实现 IPluginConnector
+│   ├── PluginInstallation.cs     # 插件安装记录实现
+│   └── PluginsServer.cs          # 实现 IPluginServer
 ├── Security/                       # 安全管理
-│   └── SecurityManager.cs         # 实现 ISecurityService
+│   └── SecurityManager.cs         # 实现 IDeviceKeyService, IEncryptionService
 ├── Activity/                       # 活动记录
 │   └── ActivityManager.cs         # 实现 IActivityService
 ├── Statistics/                     # 统计服务
 │   └── StatisticsManager.cs       # 实现 IStatisticsService
 ├── Workflow/                       # 工作流
-│   └── WorkflowScriptService.cs   # 实现 IWorkflowService
+│   └── WorkflowScriptService.cs   # 实现 IWorkflowManagementService, IScriptExecutionService, IWorkflowPluginService, IBlockScriptService
 ├── Event/                          # 事件系统
 │   ├── EventService.cs            # 实现 IEventService
 │   ├── EventNames.cs              # 事件名称常量
@@ -175,10 +178,13 @@ KitX.Core/
 
 ### 3.1 配置管理 (Configuration)
 
-**组件**: `ConfigManager`
-**接口**: `IConfigService`
+**组件**: `ConfigManager`, `ConfigLoader`, `ConfigSaver`
+**接口**: `IConfigService`, `IConfigLoader`, `IConfigSaver` (位于 `KitX.Core.Contract`)
 
 **功能**:
+- `ConfigManager` 协调者: 负责配置加载/保存调度、FileSystemWatcher 热重载、事件管理
+- `ConfigLoader`: 负责从 JSON 文件加载配置, 包含 `SecurityConfig` 特殊反序列化逻辑
+- `ConfigSaver`: 负责将配置序列化为 JSON 并写入文件, 更新元数据
 - 应用程序配置的加载、保存、热重载
 - 插件配置、安全配置、市场配置管理
 - 窗口、页面、Web、日志、IO、活动记录等完整配置体系
@@ -244,11 +250,11 @@ KitX.Core/
 ### 3.4 安全管理 (Security)
 
 **组件**: `SecurityManager`
-**接口**: `ISecurityService`
+**接口**: `IDeviceKeyService`, `IEncryptionService`
 
 **功能**:
-- 设备密钥管理
-- RSA/AES 加密解密
+- 设备密钥管理 (`IDeviceKeyService`)
+- RSA/AES 加密解密 (`IEncryptionService`)
 - 设备认证
 
 ### 3.5 活动记录 (Activity)
@@ -286,11 +292,16 @@ KitX.Core/
 | 服务类型 | 生命周期 | 说明 |
 |----------|----------|------|
 | IConfigService | Singleton | 全局配置，整个应用生命周期 |
-| ISecurityService | Singleton | 安全管理，整个应用生命周期 |
+| IDeviceKeyService | Singleton | 设备密钥管理，整个应用生命周期 |
+| IEncryptionService | Singleton | 加密服务，整个应用生命周期 |
 | IPluginService | Singleton | 插件管理，整个应用生命周期 |
 | IDeviceService | Singleton | 设备管理，整个应用生命周期 |
 | IEventService | Singleton | 事件总线，整个应用生命周期 |
 | ITasksService | Singleton | 任务调度，整个应用生命周期 |
+| IWorkflowManagementService | Singleton | 工作流管理，整个应用生命周期 |
+| IScriptExecutionService | Singleton | 脚本执行，整个应用生命周期 |
+| IWorkflowPluginService | Singleton | 工作流插件集成，整个应用生命周期 |
+| IBlockScriptService | Singleton | BlockScript 服务，整个应用生命周期 |
 
 ### 4.3 服务注册
 
@@ -298,10 +309,15 @@ KitX.Core/
 public static IServiceCollection AddCoreServices(this IServiceCollection services)
 {
     // 单例服务
-    services.AddSingleton<IConfigService, ConfigManager>();
-    services.AddSingleton<ISecurityService, SecurityManager>();
-    services.AddSingleton<IPluginService, PluginsManager>();
-    services.AddSingleton<IDeviceService, DeviceService>();
+    services.AddSingleton<IConfigService>(ConfigManager.Instance);
+    services.AddSingleton<IDeviceKeyService>(SecurityManager.Instance);
+    services.AddSingleton<IEncryptionService>(SecurityManager.Instance);
+    services.AddSingleton<IPluginService>(PluginsManager.Instance);
+    services.AddSingleton<IDeviceService>(DeviceService.Instance);
+    services.AddSingleton<IWorkflowManagementService>(WorkflowScriptService.Instance);
+    services.AddSingleton<IScriptExecutionService>(WorkflowScriptService.Instance);
+    services.AddSingleton<IWorkflowPluginService>(WorkflowScriptService.Instance);
+    services.AddSingleton<IBlockScriptService>(WorkflowScriptService.Instance);
     // ...
     return services;
 }

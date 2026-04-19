@@ -23,7 +23,9 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
 
     private readonly IDisposable _codeDocumentSubscription;
 
-    private readonly IWorkflowService _workflowService;
+    private readonly IBlockScriptService _blockScriptService;
+    private readonly IWorkflowPluginService _workflowPluginService;
+    private readonly IScriptExecutionService _scriptExecutionService;
 
     private readonly IKcsFileService _kcsFileService;
 
@@ -34,17 +36,23 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
     /// <summary>
     /// 构造函数，通过DI注入
     /// </summary>
-    /// <param name="workflowService">通过DI注入的Workflow服务</param>
+    /// <param name="blockScriptService">通过DI注入的BlockScript服务</param>
+    /// <param name="workflowPluginService">通过DI注入的Workflow插件服务</param>
+    /// <param name="scriptExecutionService">通过DI注入的脚本执行服务</param>
     /// <param name="kcsFileService">通过DI注入的KCS文件服务</param>
     /// <param name="mainProgramAnalyzer">通过DI注入的主程序分析器</param>
     /// <param name="tasksService">通过DI注入的任务服务</param>
     public WorkflowScriptEditorWindowViewModel(
-        IWorkflowService workflowService,
+        IBlockScriptService blockScriptService,
+        IWorkflowPluginService workflowPluginService,
+        IScriptExecutionService scriptExecutionService,
         IKcsFileService kcsFileService,
         IMainProgramAnalyzer mainProgramAnalyzer,
         ITasksService tasksService)
     {
-        _workflowService = workflowService;
+        _blockScriptService = blockScriptService;
+        _workflowPluginService = workflowPluginService;
+        _scriptExecutionService = scriptExecutionService;
         _kcsFileService = kcsFileService;
         _mainProgramAnalyzer = mainProgramAnalyzer;
         _tasksService = tasksService;
@@ -66,8 +74,8 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
                 {
                     // 根据模式选择不同的常量解析方式
                     var constants = UseBlockMode
-                        ? _workflowService.ParseConstantsFromBlockScript(document.Text)
-                        : _workflowService.ParseConstantsFromCode(document.Text);
+                        ? _blockScriptService.ParseConstantsFromBlockScript(document.Text)
+                        : _workflowPluginService.ParseConstantsFromCode(document.Text);
                     UpdateVariableConstants(constants);
                 }
             });
@@ -202,8 +210,8 @@ return v1 + v2;"
     public void ParseConstantsFromCode(string code)
     {
         var constants = UseBlockMode
-            ? _workflowService.ParseConstantsFromBlockScript(code)
-            : _workflowService.ParseConstantsFromCode(code);
+            ? _blockScriptService.ParseConstantsFromBlockScript(code)
+            : _workflowPluginService.ParseConstantsFromCode(code);
         UpdateVariableConstants(constants);
     }
 
@@ -372,7 +380,7 @@ return v1 + v2;"
         if (UseBlockMode)
         {
             // BlockScript模式：验证块脚本
-            var validationResult = _workflowService.ValidateBlockScript(codeText);
+            var validationResult = _blockScriptService.ValidateBlockScript(codeText);
             if (!validationResult.IsValid)
             {
                 Log.Error("[WorkflowScriptEditorWindowViewModel] Block script validation failed: {Errors}", string.Join("; ", validationResult.Errors));
@@ -399,7 +407,7 @@ return v1 + v2;"
                 {
                     // BlockScript模式执行 — pass user-edited constant values
                     var constantOverrides = GetUserConstantOverrides();
-                    var executionResult = await _workflowService.ExecuteBlockScriptAsync(
+                    var executionResult = await _blockScriptService.ExecuteBlockScriptAsync(
                         codeText,
                         HelperFunctions.ToList(),
                         constantOverrides,
@@ -419,7 +427,7 @@ return v1 + v2;"
                 else
                 {
                     // 非Block模式：直接执行C#脚本，无语法限制
-                    result = await _workflowService.ExecuteCodesAsync(
+                    result = await _scriptExecutionService.ExecuteCodesAsync(
                         codeText,
                         connectedPlugins,
                         true,

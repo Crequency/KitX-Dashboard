@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Contract.Tasks;
 using KitX.Core.Contract.Plugin;
+using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
@@ -26,7 +27,6 @@ namespace KitX.Dashboard.ViewModels;
 public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 {
     private readonly IBlueprintService _blueprintService;
-    private readonly IWorkflowService _workflowService;
     private readonly ITasksService _tasksService;
     private readonly INodeRegistry _nodeRegistry;
     private readonly IKcsFileService _kcsFileService;
@@ -272,7 +272,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     public BlueprintEditorViewModel(
         IBlueprintService blueprintService,
-        IWorkflowService workflowService,
         ITasksService tasksService,
         INodeRegistry nodeRegistry,
         IKcsFileService kcsFileService,
@@ -280,7 +279,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         IFileDialogService fileDialogService)
     {
         _blueprintService = blueprintService;
-        _workflowService = workflowService;
         _tasksService = tasksService;
         _nodeRegistry = nodeRegistry;
         _kcsFileService = kcsFileService;

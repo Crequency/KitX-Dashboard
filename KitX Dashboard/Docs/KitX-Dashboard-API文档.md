@@ -510,51 +510,47 @@ public interface IPluginConnector
 
 ## 4. 安全管理
 
-### 4.1 ISecurityService
+### 4.1 IDeviceKeyService
 
-安全管理服务接口
+设备密钥管理服务接口
 
 ```csharp
 namespace KitX.Core.Contract.Security;
 
-public interface ISecurityService
+public interface IDeviceKeyService
 {
-    /// <summary>
-    /// Gets all device keys
-    /// </summary>
     IReadOnlyList<IDeviceKey> GetDeviceKeys();
-
-    /// <summary>
-    /// Adds a device key
-    /// </summary>
     bool AddDeviceKey(string macAddress, string deviceName, string publicKey);
-
-    /// <summary>
-    /// Removes a device key
-    /// </summary>
     bool RemoveDeviceKey(string macAddress);
-
-    /// <summary>
-    /// Checks if a device is authorized
-    /// </summary>
+    DeviceKey? SearchDeviceKey(DeviceLocator locator);
+    bool IsDeviceKeyCorrect(DeviceLocator locator, DeviceKey key);
     bool IsDeviceAuthorized(DeviceLocator device);
-
-    /// <summary>
-    /// Encrypts a string
-    /// </summary>
-    Task<string> EncryptStringAsync(string content, string targetDeviceMacAddress);
-
-    /// <summary>
-    /// Decrypts a string
-    /// </summary>
-    Task<string> DecryptStringAsync(string encryptedContent, string sourceDeviceMacAddress);
-
-    /// <summary>
-    /// Computes a hash
-    /// </summary>
-    string ComputeHash(string content);
+    DeviceKey? GetPrivateDeviceKey();
 }
 ```
+
+### 4.2 IEncryptionService
+
+加密服务接口
+
+```csharp
+namespace KitX.Core.Contract.Security;
+
+public interface IEncryptionService
+{
+    Task<string> EncryptStringAsync(string content, string targetDeviceMacAddress);
+    Task<string> DecryptStringAsync(string encryptedContent, string sourceDeviceMacAddress);
+    string? RsaEncryptString(DeviceKey key, string data);
+    string? RsaDecryptString(DeviceKey key, string encryptedData);
+    EncryptedContent RsaEncryptContent(DeviceKey key, string content);
+    string RsaDecryptContent(DeviceKey key, EncryptedContent content);
+    string AesEncrypt(string source, string key);
+    string AesDecrypt(string source, string key, bool isSourceInBase64 = true);
+    string GetSHA1(string data);
+}
+```
+
+**注意**: `ISecurityService` 接口已被拆分为 `IDeviceKeyService` 和 `IEncryptionService` 两个独立接口。
 
 ---
 
@@ -625,67 +621,91 @@ public interface IStatisticsService
 
 ## 7. 工作流
 
-### 7.1 IWorkflowService
+**注意**: `IWorkflowService` 接口已被拆分为以下四个独立接口，由 `WorkflowScriptService` 实现。
 
-工作流服务接口
+### 7.1 IWorkflowManagementService
+
+工作流管理接口
 
 ```csharp
 namespace KitX.Core.Contract.Workflow;
 
-public interface IWorkflowService
+public interface IWorkflowManagementService
 {
-    /// <summary>
-    /// Gets the workflow list
-    /// </summary>
     IReadOnlyList<IWorkflowCase> GetWorkflows();
-
-    /// <summary>
-    /// Adds a workflow
-    /// </summary>
     void AddWorkflow(IWorkflowCase workflow);
-
-    /// <summary>
-    /// Removes a workflow
-    /// </summary>
     void RemoveWorkflow(string workflowId);
-
-    /// <summary>
-    /// Runs a workflow
-    /// </summary>
     Task<bool> RunWorkflowAsync(string workflowId);
-
-    /// <summary>
-    /// Stops a workflow
-    /// </summary>
     Task<bool> StopWorkflowAsync(string workflowId);
-
-    /// <summary>
-    /// Executes a workflow script
-    /// </summary>
-    Task<object?> ExecuteScriptAsync(string script, Dictionary<string, object>? parameters = null);
-
-    /// <summary>
-    /// Executes workflow script codes with plugin dependencies
-    /// </summary>
-    Task<string?> ExecuteCodesAsync(
-        string code,
-        List<PluginInfo>? requiredPlugins = null,
-        bool includeTimestamp = true,
-        System.Threading.CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Initializes the plugin manager
-    /// </summary>
-    void InitializePluginManager();
-
-    /// <summary>
-    /// Updates the available plugins list
-    /// </summary>
-    void UpdateAvailablePlugins(List<PluginInfo> plugins);
+    Task<bool> CompileAndPersistWorkflowAsync(string workflowId);
 }
 ```
 
-### 7.2 IPluginServiceProvider
+### 7.2 IScriptExecutionService
+
+脚本执行接口
+
+```csharp
+namespace KitX.Core.Contract.Workflow;
+
+public interface IScriptExecutionService
+{
+    Task<object?> ExecuteScriptAsync(string script, Dictionary<string, object>? parameters = null);
+    Task<string?> ExecuteCodesAsync(string code, List<PluginInfo>? requiredPlugins = null,
+        bool includeTimestamp = true, System.Threading.CancellationToken cancellationToken = default);
+    Task<string?> ExecuteKcsCodesAsync(string mainCode, List<HelperFunction> helperFunctions,
+        List<VariableConstant> constants, List<PluginInfo>? requiredPlugins = null,
+        bool includeTimestamp = true, System.Threading.CancellationToken cancellationToken = default);
+}
+```
+
+### 7.3 IWorkflowPluginService
+
+工作流插件集成接口
+
+```csharp
+namespace KitX.Core.Contract.Workflow;
+
+public interface IWorkflowPluginService
+{
+    void InitializePluginManager();
+    void UpdateAvailablePlugins(List<PluginInfo> plugins);
+    List<VariableConstant> ParseConstantsFromCode(string code);
+    string ApplyConstantsToCode(string code, List<VariableConstant> constants);
+    string MergeHelperFunctions(string mainCode, List<HelperFunction> helperFunctions);
+}
+```
+
+### 7.4 IBlockScriptService
+
+BlockScript 服务接口
+
+```csharp
+namespace KitX.Core.Contract.Workflow;
+
+public interface IBlockScriptService
+{
+    BlockScriptParseResult ParseBlockScript(string sourceCode);
+    Task<BlockScriptParseResult> ParseBlockScriptAsync(string sourceCode);
+    BlockScriptValidationResult ValidateBlockScript(string sourceCode);
+    List<VariableConstant> ParseConstantsFromBlockScript(string sourceCode);
+    Task<BlockScriptExecutionResult> ExecuteBlockScriptAsync(BlockScript script,
+        Dictionary<string, object?>? parameters = null,
+        System.Threading.CancellationToken cancellationToken = default);
+    Task<BlockScriptExecutionResult> ExecuteBlockScriptAsync(string sourceCode,
+        Dictionary<string, object?>? parameters = null,
+        System.Threading.CancellationToken cancellationToken = default);
+    Task<BlockScriptExecutionResult> ExecuteBlockScriptAsync(string sourceCode,
+        List<HelperFunction> helperFunctions,
+        System.Threading.CancellationToken cancellationToken = default);
+    Task<BlockScriptExecutionResult> ExecuteBlockScriptAsync(string sourceCode,
+        List<HelperFunction> helperFunctions,
+        Dictionary<string, object?>? constantOverrides,
+        System.Threading.CancellationToken cancellationToken = default);
+}
+```
+
+### 7.5 IPluginServiceProvider
 
 插件服务提供者接口
 
@@ -719,7 +739,7 @@ public interface IPluginServiceProvider
 }
 ```
 
-### 7.2 IWorkflowCase
+### 7.6 IWorkflowCase
 
 工作流实例接口
 

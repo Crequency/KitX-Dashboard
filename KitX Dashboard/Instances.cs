@@ -33,7 +33,7 @@ public static class Instances
     /// <summary>
     /// Gets the Security service from DI container
     /// </summary>
-    public static ISecurityService? SecurityService { get; set; }
+    public static IDeviceKeyService? SecurityService { get; set; }
 
     /// <summary>
     /// Gets the FileWatcher service from DI container
@@ -66,7 +66,7 @@ public static class Instances
 
         Log.Information("Got IServiceProvider, fetching other services...");
 
-        SecurityService = serviceProvider.GetService<ISecurityService>();
+        SecurityService = serviceProvider.GetService<IDeviceKeyService>();
         FileWatcherService = serviceProvider.GetService<IFileWatcherService>();
         KeyHookService = serviceProvider.GetService<IKeyHookService>();
         PluginsManager = serviceProvider.GetService<KitX.Core.Contract.Plugin.IPluginService>() as KitX.Core.Plugin.PluginsManager;
