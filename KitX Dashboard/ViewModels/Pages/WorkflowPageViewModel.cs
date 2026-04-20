@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Event;
 using KitX.Core.Workflow;
@@ -238,7 +239,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                 && !string.IsNullOrEmpty(workflow.TriggerConfig.PluginName))
             {
                 // Pre-check: is the required plugin connected?
-                var pluginServer = App.GetService<KitX.Core.Contract.Plugin.IPluginServer>();
+                var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Plugin.IPluginServer>();
                 bool pluginConnected = pluginServer?.Connections
                     .Any(c => c.PluginInfo?.Name == workflow.TriggerConfig.PluginName) ?? false;
 
@@ -257,7 +258,7 @@ internal class WorkflowPageViewModel : ViewModelBase
 
                 try
                 {
-                    var triggerManager = App.GetService<KitX.Core.Workflow.TriggerManager>();
+                    var triggerManager = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Workflow.TriggerManager>();
                     triggerManager?.RegisterWorkflowTrigger(workflow.Id, workflow.TriggerConfig);
                 }
                 catch { /* non-critical */ }
@@ -301,7 +302,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                 // PluginEvent: unregister trigger and mark as stopped
                 try
                 {
-                    var triggerManager = App.GetService<KitX.Core.Workflow.TriggerManager>();
+                    var triggerManager = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Workflow.TriggerManager>();
                     triggerManager?.UnregisterWorkflowTrigger(workflow.Id);
                 }
                 catch { /* non-critical */ }
@@ -366,7 +367,7 @@ internal class WorkflowPageViewModel : ViewModelBase
     /// </summary>
     private void OnPluginRegistered(object? sender, EventArgs e)
     {
-        if (e is not KitX.Core.Event.PluginEventArgs pa || pa.PluginInfo?.Name is null) return;
+        if (e is not PluginRegisteredEventArgs pa || pa.PluginInfo?.Name is null) return;
         var pluginName = pa.PluginInfo.Name;
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
@@ -380,7 +381,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                     // Plugin came online → re-register trigger → clear error (green light)
                     try
                     {
-                        var tm = App.GetService<KitX.Core.Workflow.TriggerManager>();
+                        var tm = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Workflow.TriggerManager>();
                         tm?.RegisterWorkflowTrigger(workflow.Id, workflow.TriggerConfig);
                     }
                     catch { /* non-critical */ }
@@ -400,7 +401,7 @@ internal class WorkflowPageViewModel : ViewModelBase
     /// </summary>
     private void OnPluginUnregistered(object? sender, EventArgs e)
     {
-        if (e is not KitX.Core.Event.PluginEventArgs pa || pa.PluginInfo?.Name is null) return;
+        if (e is not PluginUnregisteredEventArgs pa || pa.PluginInfo?.Name is null) return;
         var pluginName = pa.PluginInfo.Name;
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
@@ -415,7 +416,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                     // Plugin went offline → unregister trigger → mark error (yellow light)
                     try
                     {
-                        var tm = App.GetService<KitX.Core.Workflow.TriggerManager>();
+                        var tm = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Workflow.TriggerManager>();
                         tm?.UnregisterWorkflowTrigger(workflow.Id);
                     }
                     catch { /* non-critical */ }

@@ -3,6 +3,7 @@ using Common.BasicHelper.Core.TaskSystem;
 using KitX.Core.Contract.FileWatcher;
 using KitX.Core.Contract.Hotkey;
 using KitX.Core.Contract.Security;
+using KitX.Core.DI;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System;
@@ -57,26 +58,26 @@ public static class Instances
 
     internal static void Initialize()
     {
-        const string location = $"{nameof(Instances)}.{nameof(Initialize)}";
-
         Log.Information("Instances.Initialize started...");
 
-        // Get services from DI container
-        var serviceProvider = App.GetService<IServiceProvider>();
+        // Get services from the single ServiceHost provider
+        var provider = ServiceHost.ServiceProvider;
 
         Log.Information("Got IServiceProvider, fetching other services...");
 
-        SecurityService = serviceProvider.GetService<IDeviceKeyService>();
-        FileWatcherService = serviceProvider.GetService<IFileWatcherService>();
-        KeyHookService = serviceProvider.GetService<IKeyHookService>();
-        PluginsManager = serviceProvider.GetService<KitX.Core.Contract.Plugin.IPluginService>() as KitX.Core.Plugin.PluginsManager;
+        SecurityService = provider.GetService<IDeviceKeyService>();
+        FileWatcherService = provider.GetService<IFileWatcherService>();
+        KeyHookService = provider.GetService<IKeyHookService>();
+        PluginsManager = provider.GetService<KitX.Core.Contract.Plugin.IPluginService>() as KitX.Core.Plugin.PluginsManager;
 
         Log.Information("Fetching network services...");
 
-        // Get network services from DI container
-        PluginsServer = serviceProvider.GetService<KitX.Core.Contract.Plugin.IPluginServer>() as KitX.Core.Device.PluginsServer;
-        DevicesDiscoveryServer = serviceProvider.GetService<KitX.Core.Contract.Device.IDeviceDiscoveryService>() as KitX.Core.Device.DevicesDiscoveryServer;
-        DevicesServer = serviceProvider.GetService<KitX.Core.Contract.Device.IDeviceServer>() as KitX.Core.Device.DevicesServer;
+        // All services now come from the same ServiceProvider via ServiceHost,
+        // so PluginsServer.Instance and provider.GetService<IPluginServer>() return the same object
+        PluginsServer = KitX.Core.Device.PluginsServer.Instance as KitX.Core.Device.PluginsServer;
+        Log.Information("[Instances] PluginsServer from Instance: HashCode={HashCode}", PluginsServer?.GetHashCode());
+        DevicesDiscoveryServer = provider.GetService<KitX.Core.Contract.Device.IDeviceDiscoveryService>() as KitX.Core.Device.DevicesDiscoveryServer;
+        DevicesServer = provider.GetService<KitX.Core.Contract.Device.IDeviceServer>() as KitX.Core.Device.DevicesServer;
 
         Log.Information("Initializing SignalTasksManager...");
 
@@ -84,9 +85,10 @@ public static class Instances
         SignalTasksManager = new SignalTasksManager();
 
         // Resolve TriggerManager to activate event subscriptions
-        var triggerManager = serviceProvider.GetService<KitX.Core.Workflow.TriggerManager>();
+        var triggerManager = provider.GetService<KitX.Core.Workflow.TriggerManager>();
         Log.Information("TriggerManager resolved: {Resolved}", triggerManager != null);
 
         Log.Information("Instances.Initialize completed.");
     }
 }
+

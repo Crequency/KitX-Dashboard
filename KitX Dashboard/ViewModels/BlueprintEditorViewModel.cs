@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -152,7 +152,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         PluginFunctions.Clear();
 
         // TODO: 待新插件协议完善后，切换为 IPluginService.GetInstalledPlugins()
-        var pluginServer = App.GetService<IPluginServer>();
+        // IMPORTANT: Use PluginsServer.Instance instead of App.GetService<IPluginServer>()
+        // to ensure we get the same instance that was initialized by CoreServiceCollectionExtensions
+        var pluginServer = KitX.Core.Device.PluginsServer.Instance as IPluginServer;
         if (pluginServer == null)
         {
             Log.Debug("[BlueprintPalette] RefreshPluginFunctions: IPluginServer is null");
@@ -160,6 +162,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             return;
         }
 
+        Log.Debug("[BlueprintPalette] RefreshPluginFunctions: IPluginServer HashCode: {HashCode}", pluginServer.GetHashCode());
         var connections = pluginServer.Connections;
         Log.Debug("[BlueprintPalette] RefreshPluginFunctions: {ConnCount} connected plugins", connections.Count);
 
@@ -198,7 +201,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         PluginTriggers.Clear();
 
-        var pluginServer = App.GetService<IPluginServer>();
+        var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<IPluginServer>();
         if (pluginServer == null)
         {
             OnPropertyChanged(nameof(HasPluginTriggers));

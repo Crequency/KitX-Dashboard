@@ -342,7 +342,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
             if (SelectedPluginInfo is not null && SelectedFunction is not null && (HavingParameters == false))
             {
-                var pluginServer = App.GetService<IPluginServer>();
+                var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<IPluginServer>();
                 var plugConnector = pluginServer.FindConnector(SelectedPluginInfo);
 
                 if (plugConnector is not null)

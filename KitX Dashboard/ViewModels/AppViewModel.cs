@@ -9,6 +9,7 @@ using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
+using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.Services;
@@ -107,7 +108,7 @@ internal class AppViewModel : ViewModelBase
         eventService.Subscribe<PortChangedEventArgs>(EventNames.PluginsServerPortChanged, (s, e) => UpdateTrayIconText());
 
         // Subscribe to plugin events via EventService to update UIStateService.PluginInfos
-        eventService.Subscribe<PluginEventArgs>(EventNames.PluginRegistered, (s, e) =>
+        eventService.Subscribe<PluginRegisteredEventArgs>(EventNames.PluginRegistered, (s, e) =>
         {
             Log.Information($"[AppViewModel] Received PluginRegistered event for: {e.PluginInfo?.Name}");
             if (e.PluginInfo is not null && !UIStateService.PluginInfos.Any(x => x.Name == e.PluginInfo.Name))
@@ -117,7 +118,7 @@ internal class AppViewModel : ViewModelBase
             }
         });
 
-        eventService.Subscribe<PluginEventArgs>(EventNames.PluginUnregistered, (s, e) =>
+        eventService.Subscribe<PluginUnregisteredEventArgs>(EventNames.PluginUnregistered, (s, e) =>
         {
             Log.Information($"[AppViewModel] Received PluginUnregistered event for: {e.PluginInfo?.Name}");
             if (e.PluginInfo is not null)

@@ -192,6 +192,7 @@ public static class AppFramework
 
                         if (pluginsServer != null)
                         {
+                            // ServiceHost ensures all resolution paths return the same singleton
                             pluginsServer.Run();
                         }
                     }

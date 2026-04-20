@@ -25,15 +25,12 @@ using LiveChartsCore.SkiaSharpView;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
+using ServiceHost = KitX.Core.DI.ServiceHost;
+
 namespace KitX.Dashboard;
 
 public partial class App : Application
 {
-    /// <summary>
-    /// Service provider for dependency injection
-    /// </summary>
-    private static IServiceProvider? _serviceProvider;
-
     /// <summary>
     /// Initialize DI container before UI framework starts
     /// This should be called from AppFramework.RunFramework() before any UI code runs
@@ -41,7 +38,7 @@ public partial class App : Application
     /// </summary>
     internal static void InitializeServiceProvider()
     {
-        if (_serviceProvider != null)
+        if (ServiceHost.IsInitialized)
             return;
 
         Log.Information("Initializing service provider...");
@@ -50,58 +47,48 @@ public partial class App : Application
         var services = new ServiceCollection();
 
         // Register Core services from KitX.Core
-        // ViewModels with constructor dependencies will be auto-resolved via ActivatorUtilities
         services.AddCoreServices();
 
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
 
-        _serviceProvider = services.BuildServiceProvider();
+        // Build the SINGLE IServiceProvider — no duplicate BuildServiceProvider calls
+        var provider = services.BuildServiceProvider();
+
+        // Initialize ServiceHost with the single provider (centralized service access)
+        ServiceHost.Initialize(provider);
+
+        // Pre-resolve singletons and initialize TriggerManager from persisted workflows
+#pragma warning disable CS0618 // InitializeCoreServices is marked Obsolete but still needed for pre-resolution
+        CoreServiceCollectionExtensions.InitializeCoreServices(provider);
+#pragma warning restore CS0618
 
         Log.Information("Service provider initialized.");
     }
 
     /// <summary>
     /// Gets service from DI container
-    /// Supports automatic resolution of unregistered types via constructor injection
-    /// Logger is guaranteed to be initialized when this is called
+    /// Routes through ServiceHost for registered core services.
+    /// Falls back to ActivatorUtilities for unregistered types (e.g. ViewModels).
     /// </summary>
     public static T GetService<T>() where T : class
     {
         Log.Debug($"Getting service: {typeof(T).Name}");
 
-        if (_serviceProvider == null)
+        if (!ServiceHost.IsInitialized)
         {
-            Log.Warning("Service provider is null, initializing now (this should not happen in normal flow)...");
-
+            Log.Warning("ServiceHost not initialized, initializing now (this should not happen in normal flow)...");
             InitializeServiceProvider();
         }
 
-        try
-        {
-            var result = _serviceProvider!.GetRequiredService<T>();
+        // First, try to resolve from DI (registered types)
+        var service = ServiceHost.ServiceProvider.GetService(typeof(T));
+        if (service != null)
+            return (T)service;
 
-            Log.Debug($"Got service: {typeof(T).Name}");
-
-            return result;
-        }
-        catch (InvalidOperationException)
-        {
-            // Type not registered - try auto-resolution via ActivatorUtilities
-            // This allows constructor injection without explicit registration
-            Log.Debug($"Auto-resolving unregistered service: {typeof(T).Name}");
-
-            var result = ActivatorUtilities.CreateInstance<T>(_serviceProvider!);
-
-            Log.Debug($"Auto-resolved service: {typeof(T).Name}");
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, $"Failed to get service: {typeof(T).Name}");
-            throw;
-        }
+        // For unregistered types (ViewModels, etc.), use auto-resolution via ActivatorUtilities
+        Log.Debug($"Auto-resolving unregistered service: {typeof(T).Name}");
+        return ServiceHost.CreateInstance<T>();
     }
 
     public static Bitmap? DefaultIcon

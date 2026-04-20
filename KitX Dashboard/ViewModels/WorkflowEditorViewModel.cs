@@ -98,7 +98,7 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     private void RefreshAvailablePlugins()
     {
         AvailablePlugins.Clear();
-        var pluginServer = App.GetService<KitX.Core.Contract.Plugin.IPluginServer>();
+        var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Plugin.IPluginServer>();
         if (pluginServer == null) return;
 
         foreach (var conn in pluginServer.Connections)
@@ -116,7 +116,7 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         AvailableTriggers.Clear();
         if (string.IsNullOrEmpty(_triggerPluginName)) return;
 
-        var pluginServer = App.GetService<KitX.Core.Contract.Plugin.IPluginServer>();
+        var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Plugin.IPluginServer>();
         if (pluginServer == null) return;
 
         var conn = pluginServer.Connections
