@@ -34,6 +34,11 @@ public static class AppFramework
 {
     private static readonly Queue<Action> actionsInInitialization = [];
 
+    /// <summary>
+    /// Signal event for graceful exit — replaces busy-wait loop in EnsureExit.
+    /// </summary>
+    private static readonly ManualResetEventSlim _exitCompleteEvent = new(false);
+
     public static void ProcessStartupArguments()
     {
         Parser
@@ -66,6 +71,8 @@ public static class AppFramework
         configService.Load();
         var config = configService.TypedAppConfig;
 
+        // TODO: [Architecture] Log system initialization should be moved to Core infrastructure.
+        // Currently kept here because Serilog Logger is a process-level singleton used before DI container init.
         // Step 2: Initialize log system before any DI container operations
         // Logger doesn't depend on DI container, only on ConfigManager singleton
         var logdir = config.Log.LogFilePath.GetFullPath();
@@ -156,12 +163,17 @@ public static class AppFramework
 
         #region Initialize DataBase
 
+        // TODO: [Architecture] Database initialization should be moved to Core Activity module.
+        // Currently kept here because LiteDatabase instance needs to be set on both
+        // Instances.ActivitiesDataBase and ActivityManager.ActivitiesDatabase before DI services use it.
         InitDataBase();
 
         #endregion
 
         #region Initialize WebManager
 
+        // TODO: [Architecture] Network service startup should be managed through a Core-level
+        // INetworkService or similar unified service, rather than orchestrating individual servers here.
         Instances.SignalTasksManager!.SignalRun(
             nameof(SignalsNames.MainWindowInitSignal),
             () =>
@@ -272,7 +284,7 @@ public static class AppFramework
 
     public static void AfterInitailization(Action action) => actionsInInitialization.Enqueue(action);
 
-    private static void ImportPlugin(string kxpPath)
+    private static async void ImportPlugin(string kxpPath)
     {
         const string location = $"{nameof(AppFramework)}.{nameof(ImportPlugin)}";
 
@@ -286,7 +298,7 @@ public static class AppFramework
             }
             else
             {
-                _ = App.GetService<IPluginService>().ImportPluginAsync(kxpPath);
+                await App.GetService<IPluginService>().ImportPluginAsync(kxpPath);
             }
         }
         catch (Exception ex)
@@ -303,6 +315,7 @@ public static class AppFramework
         const string location = $"{nameof(AppFramework)}.{nameof(EnsureExit)}";
 
         ConstantTable.EnsureExiting = true;
+        _exitCompleteEvent.Reset();
 
         new Thread(async () =>
         {
@@ -343,15 +356,16 @@ public static class AppFramework
                 Thread.Sleep(App.GetService<IConfigService>().AppConfig.App.LastBreakAfterExit);
 
                 ConstantTable.EnsureExiting = false;
+                _exitCompleteEvent.Set();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, $"In {location}: {ex.Message}");
+                _exitCompleteEvent.Set();
             }
         }).Start();
 
-        while (ConstantTable.EnsureExiting)
-            ;
+        _exitCompleteEvent.Wait();
 
         Environment.Exit(0);
     }
