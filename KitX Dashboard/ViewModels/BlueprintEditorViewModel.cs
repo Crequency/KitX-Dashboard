@@ -139,47 +139,37 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     }
 
     /// <summary>
-    /// Refreshes the PluginFunctions collection from connected plugins.
+    /// Refreshes the PluginFunctions collection from installed plugins.
     /// Called on init and when plugin status changes.
     /// </summary>
-    /// <remarks>
-    /// TODO: 当前从 IPluginServer.Connections（已连接插件）获取函数列表，
-    /// 因为已安装插件的 PluginInfo.Functions 可能为空（安装协议未完善）。
-    /// 待新的插件加载与安装协议完成后，应切换回 IPluginService.GetInstalledPlugins()。
-    /// </remarks>
     private void RefreshPluginFunctions()
     {
         PluginFunctions.Clear();
 
-        // TODO: 待新插件协议完善后，切换为 IPluginService.GetInstalledPlugins()
-        // IMPORTANT: Use PluginsServer.Instance instead of App.GetService<IPluginServer>()
-        // to ensure we get the same instance that was initialized by CoreServiceCollectionExtensions
-        var pluginServer = KitX.Core.Device.PluginsServer.Instance as IPluginServer;
-        if (pluginServer == null)
+        var installedPlugins = _pluginService?.GetInstalledPlugins();
+        if (installedPlugins == null || installedPlugins.Count == 0)
         {
-            Log.Debug("[BlueprintPalette] RefreshPluginFunctions: IPluginServer is null");
+            Log.Debug("[BlueprintPalette] RefreshPluginFunctions: no installed plugins");
             OnPropertyChanged(nameof(HasPluginFunctions));
             return;
         }
 
-        Log.Debug("[BlueprintPalette] RefreshPluginFunctions: IPluginServer HashCode: {HashCode}", pluginServer.GetHashCode());
-        var connections = pluginServer.Connections;
-        Log.Debug("[BlueprintPalette] RefreshPluginFunctions: {ConnCount} connected plugins", connections.Count);
+        Log.Debug("[BlueprintPalette] RefreshPluginFunctions: {PluginCount} installed plugins", installedPlugins.Count);
 
-        foreach (var conn in connections)
+        foreach (var plugin in installedPlugins)
         {
-            if (conn.PluginInfo?.Functions == null) continue;
+            if (plugin.PluginInfo?.Functions == null) continue;
 
-            Log.Debug("[BlueprintPalette] Connected plugin: {Name}, FunctionsCount={FuncCount}",
-                conn.PluginInfo.Name, conn.PluginInfo.Functions.Count);
+            Log.Debug("[BlueprintPalette] Installed plugin: {Name}, FunctionsCount={FuncCount}",
+                plugin.PluginInfo.Name, plugin.PluginInfo.Functions.Count);
 
-            foreach (var func in conn.PluginInfo.Functions)
+            foreach (var func in plugin.PluginInfo.Functions)
             {
                 PluginFunctions.Add(new PluginFunctionPaletteItem
                 {
-                    PluginName = conn.PluginInfo.Name,
+                    PluginName = plugin.PluginInfo.Name,
                     FunctionName = func.Name,
-                    DisplayName = $"{conn.PluginInfo.Name}.{func.Name}",
+                    DisplayName = $"{plugin.PluginInfo.Name}.{func.Name}",
                     Parameters = func.Parameters ?? [],
                     ReturnValueType = func.ReturnValueType ?? "void"
                 });
@@ -189,35 +179,35 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         Log.Debug("[BlueprintPalette] RefreshPluginFunctions: added {Count} plugin functions", PluginFunctions.Count);
         OnPropertyChanged(nameof(HasPluginFunctions));
 
-        // Also refresh trigger list from the same connections
+        // Also refresh trigger list from the same installed plugins
         RefreshPluginTriggers();
     }
 
     /// <summary>
-    /// Refreshes the PluginTriggers collection from connected plugins' SupportedTriggers.
+    /// Refreshes the PluginTriggers collection from installed plugins' SupportedTriggers.
     /// Called alongside RefreshPluginFunctions.
     /// </summary>
     private void RefreshPluginTriggers()
     {
         PluginTriggers.Clear();
 
-        var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<IPluginServer>();
-        if (pluginServer == null)
+        var installedPlugins = _pluginService?.GetInstalledPlugins();
+        if (installedPlugins == null || installedPlugins.Count == 0)
         {
             OnPropertyChanged(nameof(HasPluginTriggers));
             return;
         }
 
-        foreach (var conn in pluginServer.Connections)
+        foreach (var plugin in installedPlugins)
         {
-            if (conn.PluginInfo?.SupportedTriggers == null) continue;
-            foreach (var trigger in conn.PluginInfo.SupportedTriggers)
+            if (plugin.PluginInfo?.SupportedTriggers == null) continue;
+            foreach (var trigger in plugin.PluginInfo.SupportedTriggers)
             {
                 PluginTriggers.Add(new PluginTriggerPaletteItem
                 {
-                    PluginName = conn.PluginInfo.Name,
+                    PluginName = plugin.PluginInfo.Name,
                     TriggerName = trigger,
-                    DisplayName = $"{conn.PluginInfo.Name}.{trigger}"
+                    DisplayName = $"{plugin.PluginInfo.Name}.{trigger}"
                 });
             }
         }

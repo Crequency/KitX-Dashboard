@@ -20,7 +20,7 @@ using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Statistics;
 using KitX.Core.Plugin;
 using KitX.Core.Statistics;
-using KitX.Core.Tasks;
+using KitX.Core.Contract.Tasks;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Options;
 using KitX.Dashboard.Services;
@@ -49,14 +49,13 @@ public static class AppFramework
                 ConstantTable.EnabledConfigFileHotReload = !opt.DisableConfigHotReload;
                 ConstantTable.SkipNetworkSystemOnStartup = opt.DisableNetworkSystemOnStartup;
 
-                TasksManager.RunTask(
+                App.GetService<ITasksService>().RunTask(
                     () =>
                     {
                         if (opt.PluginPath is not null)
                             ImportPlugin(opt.PluginPath);
                     },
-                    $"{nameof(ImportPlugin)}",
-                    catchException: true
+                    taskName: $"{nameof(ImportPlugin)}"
                 );
             });
     }

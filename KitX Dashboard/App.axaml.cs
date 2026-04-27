@@ -16,6 +16,7 @@ using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
 using KitX.Core.DI;
 using KitX.Core.Event;
+using KitX.Core.Workflow;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.ViewModels.Pages.Controls;
@@ -52,24 +53,33 @@ public partial class App : Application
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
 
+        // Register Dashboard ViewModels (for DI auto-resolution without ActivatorUtilities fallback)
+        services.AddTransient<WorkflowScriptEditorWindowViewModel>();
+        services.AddTransient<DebugWindowViewModel>();
+        services.AddTransient<BlueprintEditorViewModel>();
+        services.AddTransient<Settings_GeneralViewModel>();
+        services.AddTransient<Settings_PerformenceViewModel>();
+
         // Build the SINGLE IServiceProvider — no duplicate BuildServiceProvider calls
         var provider = services.BuildServiceProvider();
 
         // Initialize ServiceHost with the single provider (centralized service access)
         ServiceHost.Initialize(provider);
 
-        // Pre-resolve singletons and initialize TriggerManager from persisted workflows
-#pragma warning disable CS0618 // InitializeCoreServices is marked Obsolete but still needed for pre-resolution
-        CoreServiceCollectionExtensions.InitializeCoreServices(provider);
-#pragma warning restore CS0618
+        // Pre-resolve RealPluginManager to ensure single instance (see AddCoreServices)
+        var rpm = provider.GetRequiredService<RealPluginManager>();
+        Log.Information("RealPluginManager pre-resolved. HashCode: {HashCode}", rpm.GetHashCode());
+
+        // Initialize TriggerManager from persisted workflow configurations
+        var triggerManager = provider.GetRequiredService<TriggerManager>();
+        triggerManager.InitializeFromPersistedWorkflows();
 
         Log.Information("Service provider initialized.");
     }
 
     /// <summary>
-    /// Gets service from DI container
-    /// Routes through ServiceHost for registered core services.
-    /// Falls back to ActivatorUtilities for unregistered types (e.g. ViewModels).
+    /// Gets service from DI container.
+    /// Throws if the service is not registered — all types must be explicitly registered.
     /// </summary>
     public static T GetService<T>() where T : class
     {
@@ -81,14 +91,15 @@ public partial class App : Application
             InitializeServiceProvider();
         }
 
-        // First, try to resolve from DI (registered types)
         var service = ServiceHost.ServiceProvider.GetService(typeof(T));
         if (service != null)
             return (T)service;
 
-        // For unregistered types (ViewModels, etc.), use auto-resolution via ActivatorUtilities
-        Log.Debug($"Auto-resolving unregistered service: {typeof(T).Name}");
-        return ServiceHost.CreateInstance<T>();
+        // Service not registered — throw to make missing registrations visible at runtime
+        throw new InvalidOperationException(
+            $"Service '{typeof(T).Name}' is not registered in the DI container. " +
+            "Ensure it is added via services.AddSingleton/AddTransient/AddScoped in InitializeServiceProvider()."
+        );
     }
 
     public static Bitmap? DefaultIcon
