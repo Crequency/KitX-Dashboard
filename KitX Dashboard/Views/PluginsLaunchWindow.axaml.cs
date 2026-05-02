@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
 using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Hotkey;
 using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.ViewModels;
@@ -12,6 +13,7 @@ namespace KitX.Dashboard.Views;
 public partial class PluginsLaunchWindow : Window
 {
     private readonly PluginsLaunchWindowViewModel viewModel = new();
+    private readonly IKeyHookService _keyHookService;
 
     private readonly Action? OnHideAction;
 
@@ -24,6 +26,8 @@ public partial class PluginsLaunchWindow : Window
         InitializeComponent();
 
         DataContext = viewModel;
+
+        _keyHookService = App.GetService<IKeyHookService>();
 
         OnHideAction = () => pluginsLaunchWindowDisplayed = false;
 
@@ -102,43 +106,46 @@ public partial class PluginsLaunchWindow : Window
 
     private void RegisterGlobalHotKey()
     {
-        Instances.KeyHookManager?.RegisterHotKeyHandler(
-            nameof(PluginsLaunchWindow),
-            codes =>
-            {
-                var count = codes.Length;
-
-                var tmpList = codes;
-
-                if (count < 3)
-                    return;
-
-                if (tmpList[count - 3] != "VcLeftControl")
-                    return;
-
-                if (tmpList[count - 2] != "VcLeftMeta")
-                    return;
-
-                if (tmpList[count - 1] != "VcC")
-                    return;
-
-                Dispatcher.UIThread.Post(() =>
+        if (_keyHookService is KitX.Core.Hotkey.KeyHookManager keyHookManager)
+        {
+            keyHookManager.RegisterHotKeyHandler(
+                nameof(PluginsLaunchWindow),
+                codes =>
                 {
-                    if (pluginsLaunchWindowDisplayed)
-                    {
-                        Activate();
+                    var count = codes.Length;
 
-                        Focus();
-                    }
-                    else
-                    {
-                        Show();
-                    }
+                    var tmpList = codes;
 
-                    pluginsLaunchWindowDisplayed = true;
-                });
-            }
-        );
+                    if (count < 3)
+                        return;
+
+                    if (tmpList[count - 3] != "VcLeftControl")
+                        return;
+
+                    if (tmpList[count - 2] != "VcLeftMeta")
+                        return;
+
+                    if (tmpList[count - 1] != "VcC")
+                        return;
+
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (pluginsLaunchWindowDisplayed)
+                        {
+                            Activate();
+
+                            Focus();
+                        }
+                        else
+                        {
+                            Show();
+                        }
+
+                        pluginsLaunchWindowDisplayed = true;
+                    });
+                }
+            );
+        }
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

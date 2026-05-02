@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Timers;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Common.BasicHelper.Core.TaskSystem;
 using FluentAvalonia.UI.Controls;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
@@ -20,6 +21,7 @@ namespace KitX.Dashboard.Views;
 public partial class MainWindow : Window, IView
 {
     private readonly MainWindowViewModel viewModel = new();
+    private readonly SignalTasksManager _signalTasksManager;
 
     private static IAppConfig AppConfig => App.GetService<IConfigService>().AppConfig;
 
@@ -33,7 +35,9 @@ public partial class MainWindow : Window, IView
 
         DataContext = viewModel;
 
-        Instances.SignalTasksManager?.SignalRun(
+        _signalTasksManager = App.GetService<SignalTasksManager>();
+
+        _signalTasksManager.SignalRun(
             nameof(SignalsNames.MainWindowOpenedSignal),
             () =>
             {
@@ -47,13 +51,13 @@ public partial class MainWindow : Window, IView
 
                 try
                 {
-                    Instances.SignalTasksManager.SignalRun(
+                    _signalTasksManager.SignalRun(
                         nameof(SignalsNames.MainWindowOpenedSignal),
                         () => WindowState = config.WindowState.ToAvalonia()
                     );
 
                     if (config.IsHidden)
-                        Instances.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal), Hide);
+                        _signalTasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal), Hide);
                 }
                 catch (Exception e)
                 {
@@ -68,15 +72,6 @@ public partial class MainWindow : Window, IView
                     config.Size.Width = ClientSize.Width;
                     config.Size.Height = ClientSize.Height;
                 };
-
-                //ClientSizeProperty.Changed.Subscribe(_ =>
-                //{
-                //    if (WindowState == WindowState.Maximized)
-                //        return;
-
-                //    config.Size.Width = ClientSize.Width;
-                //    config.Size.Height = ClientSize.Height;
-                //});
 
                 PositionChanged += (_, _) =>
                 {
@@ -116,7 +111,7 @@ public partial class MainWindow : Window, IView
 
         timer.Start();
 
-        Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
+        _signalTasksManager.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
     }
 
     internal void UpdateGreetingText()
@@ -203,7 +198,7 @@ public partial class MainWindow : Window, IView
     {
         base.OnOpened(e);
 
-        Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
+        _signalTasksManager.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
     }
 
     protected override void OnClosing(WindowClosingEventArgs e)

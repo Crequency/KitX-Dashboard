@@ -35,7 +35,9 @@ public partial class App : Application
     /// <summary>
     /// Initialize DI container before UI framework starts
     /// This should be called from AppFramework.RunFramework() before any UI code runs
-    /// Logger is guaranteed to be initialized before this is called
+    /// Note: This is now called BEFORE Logger initialization (Phase 2 refactoring).
+    /// Log.Debug() calls in service constructors (e.g., ConfigManager) are no-ops
+    /// until Serilog Logger is configured later in RunFramework().
     /// </summary>
     internal static void InitializeServiceProvider()
     {
@@ -52,6 +54,9 @@ public partial class App : Application
 
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
+
+        // Register SignalTasksManager for signal-based coordination
+        services.AddSingleton<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
 
         // Register Dashboard ViewModels (for DI auto-resolution without ActivatorUtilities fallback)
         services.AddTransient<WorkflowScriptEditorWindowViewModel>();

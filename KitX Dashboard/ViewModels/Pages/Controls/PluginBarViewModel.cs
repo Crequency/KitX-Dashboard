@@ -11,6 +11,7 @@ using Avalonia.Media.Imaging;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Core.Contract.Device;
 using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Plugin;
 using KitX.Core.Device;
 using KitX.Core.Event;
 using KitX.Core.Plugin;
@@ -87,8 +88,13 @@ internal class PluginBarViewModel : ViewModelBase
                     var deviceService = App.GetService<IDeviceDiscoveryService>();
 
                     // Get actual port from PluginsServer instead of using ConstantTable
-                    var pluginsServer = Instances.PluginsServer;
-                    var actualPort = pluginsServer?.Port ?? 7777;  // Default to 7777 if not available
+                    var pluginsServer = App.GetService<IPluginServer>() as KitX.Core.Device.PluginsServer;
+                    var actualPort = pluginsServer?.Port;
+                    if (actualPort is null or 0)
+                    {
+                        Log.Error("Cannot launch plugin: PluginsServer is not running");
+                        return;
+                    }
 
                     // Generate a unique connection ID (GUID) for this plugin instance
                     var connectionId = Guid.NewGuid().ToString();

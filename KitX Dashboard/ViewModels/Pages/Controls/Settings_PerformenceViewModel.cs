@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -8,6 +8,7 @@ using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using Common.BasicHelper.Core.TaskSystem;
 using Common.BasicHelper.Utils.Extensions;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
@@ -26,10 +27,13 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 internal class Settings_PerformenceViewModel : ViewModelBase
 {
     private readonly ITasksService _tasksService;
+    private readonly SignalTasksManager _signalTasksManager;
 
     public Settings_PerformenceViewModel(ITasksService tasksService)
     {
         _tasksService = tasksService;
+
+        _signalTasksManager = App.GetService<SignalTasksManager>();
 
         InitCommands();
 
@@ -100,7 +104,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
 
         eventService.Subscribe<PortChangedEventArgs>(EventNames.PluginsServerPortChanged, (s, e) => this.RaisePropertyChanged(nameof(PluginsServerPort)));
 
-        Instances.SignalTasksManager?.SignalRun(
+        _signalTasksManager.SignalRun(
             nameof(SignalsNames.FinishedFindingNetworkInterfacesSignal),
             () =>
             {

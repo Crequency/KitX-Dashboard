@@ -65,15 +65,22 @@ public static class AppFramework
         if (Design.IsDesignMode)
             return;
 
-        // Step 1: Load configuration from ConfigManager singleton
-        var configService = ConfigManager.Instance;
+        // Step 1: Initialize DI container first (Phase 2 refactoring)
+        // DI container must be built before ConfigManager loads configuration,
+        // so that all services can be resolved through DI.
+        App.InitializeServiceProvider();
+
+        // Step 2: Load configuration through DI container
+        // ConfigManager is registered as IConfigService singleton in DI.
+        // Note: Log.Debug() calls in ConfigManager constructor are no-ops
+        // before Logger initialization (handled by Serilog default config).
+        var configService = App.GetService<IConfigService>();
         configService.Load();
-        var config = configService.TypedAppConfig;
+        var config = (AppConfig)configService.AppConfig;
 
         // TODO: [Architecture] Log system initialization should be moved to Core infrastructure.
-        // Currently kept here because Serilog Logger is a process-level singleton used before DI container init.
-        // Step 2: Initialize log system before any DI container operations
-        // Logger doesn't depend on DI container, only on ConfigManager singleton
+        // Currently kept here because Serilog Logger is a process-level singleton.
+        // Step 3: Initialize log system after configuration is loaded
         var logdir = config.Log.LogFilePath.GetFullPath();
 
         if (!Directory.Exists(logdir))
@@ -97,9 +104,6 @@ public static class AppFramework
 
         Log.Information("KitX Dashboard Started.");
 
-        // Step 3: Initialize DI container (Logger is now available)
-        App.InitializeServiceProvider();
-
         // If dump file exists, delete it.
         if (File.Exists("./dump.log".GetFullPath()))
             File.Delete("./dump.log".GetFullPath());
@@ -121,7 +125,7 @@ public static class AppFramework
             File.Delete("restart.lock");
         }
 
-        configService.TypedAppConfig.App.RanTime++;
+        ((AppConfig)configService.AppConfig).App.RanTime++;
 
         ProcessStartupArguments();
 
@@ -135,10 +139,6 @@ public static class AppFramework
                 );
 
         LoadResource();
-
-        Log.Information("Calling Instances.Initialize()...");
-        Instances.Initialize();
-        Log.Information("Instances.Initialize() completed.");
 
         #region Initialize global exception catching
 
@@ -164,7 +164,7 @@ public static class AppFramework
 
         // TODO: [Architecture] Database initialization should be moved to Core Activity module.
         // Currently kept here because LiteDatabase instance needs to be set on both
-        // Instances.ActivitiesDataBase and ActivityManager.ActivitiesDatabase before DI services use it.
+        // ActivityManager.ActivitiesDatabase before DI services use it.
         InitDataBase();
 
         #endregion
@@ -173,7 +173,8 @@ public static class AppFramework
 
         // TODO: [Architecture] Network service startup should be managed through a Core-level
         // INetworkService or similar unified service, rather than orchestrating individual servers here.
-        Instances.SignalTasksManager!.SignalRun(
+        var signalTasksManager = App.GetService<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
+        signalTasksManager.SignalRun(
             nameof(SignalsNames.MainWindowInitSignal),
             () =>
             {
@@ -184,15 +185,18 @@ public static class AppFramework
                     if (!ConstantTable.SkipNetworkSystemOnStartup)
                     {
                         // Use DI services instead of WebManager
-                        var discoveryServer = Instances.DevicesDiscoveryServer;
-                        var devicesServer = Instances.DevicesServer;
-                        var pluginsServer = Instances.PluginsServer;
+                        var discoveryServer = App.GetService<IDeviceDiscoveryService>() as KitX.Core.Device.DevicesDiscoveryServer;
+                        var devicesServer = App.GetService<IDeviceServer>() as KitX.Core.Device.DevicesServer;
+                        var pluginsServer = App.GetService<IPluginServer>() as KitX.Core.Device.PluginsServer;
 
                         if (discoveryServer != null)
                         {
                             discoveryServer.ConfigurePort((int)(config.Web.UserSpecifiedDevicesServerPort ?? 0));
                             discoveryServer.Run();
-                            KitX.Core.Device.DevicesOrganizer.Run();
+
+                            // DevicesOrganizer is now a DI-registered singleton, auto-initialized via constructor
+                            // No need to call Run() - it starts observing on construction
+                            var organizer = App.GetService<KitX.Core.Device.DevicesOrganizer>();
                         }
 
                         if (devicesServer != null)
@@ -204,6 +208,8 @@ public static class AppFramework
                         if (pluginsServer != null)
                         {
                             // ServiceHost ensures all resolution paths return the same singleton
+                            Log.Information("[AppFramework] About to call PluginsServer.Run(). PluginsServer HashCode: {HashCode}", pluginsServer.GetHashCode());
+                            pluginsServer.ConfigurePort((int)(config.Web.UserSpecifiedPluginsServerPort ?? 0));
                             pluginsServer.Run();
                         }
                     }
@@ -221,7 +227,7 @@ public static class AppFramework
 
         #region Initialize persistent windows
 
-        Instances.SignalTasksManager.SignalRun(
+        signalTasksManager.SignalRun(
             nameof(SignalsNames.MainWindowInitSignal),
             () =>
             {
@@ -252,9 +258,7 @@ public static class AppFramework
 
             var db = new LiteDatabase(dbfile);
 
-            Instances.ActivitiesDataBase = db;
-
-            // Also set the database for Core ActivityManager
+            // Set the database for Core ActivityManager
             KitX.Core.Activity.ActivityManager.ActivitiesDatabase = db;
 
             App.GetService<IActivityService>().RecordAppStart();
@@ -322,23 +326,20 @@ public static class AppFramework
             {
                 App.GetService<IActivityService>().RecordAppExit();
 
-                Instances.FileWatcherService?.Clear();
+                App.GetService<KitX.Core.Contract.FileWatcher.IFileWatcherService>()?.Clear();
 
                 App.GetService<IConfigService>().SaveAll();
 
                 Log.CloseAndFlush();
 
                 // Use DI services instead of WebManager
-                var pluginsServer = Instances.PluginsServer;
-                var devicesDiscoveryServer = Instances.DevicesDiscoveryServer;
-                var devicesServer = Instances.DevicesServer;
+                var pluginsServer = App.GetService<IPluginServer>() as KitX.Core.Device.PluginsServer;
+                var devicesDiscoveryServer = App.GetService<IDeviceDiscoveryService>() as KitX.Core.Device.DevicesDiscoveryServer;
+                var devicesServer = App.GetService<IDeviceServer>() as KitX.Core.Device.DevicesServer;
 
                 pluginsServer?.Stop();
                 devicesServer?.Stop();
                 devicesDiscoveryServer?.Stop();
-
-                Instances.ActivitiesDataBase?.Commit();
-                Instances.ActivitiesDataBase?.Dispose();
 
                 ConstantTable.Running = false;
 

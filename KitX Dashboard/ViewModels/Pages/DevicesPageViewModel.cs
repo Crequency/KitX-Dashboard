@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -7,6 +7,7 @@ using KitX.Core.Contract.Device;
 using KitX.Core.Device;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Device;
+using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages;
@@ -78,8 +79,9 @@ internal class DevicesPageViewModel : ViewModelBase
                     .FirstOrDefault(x => x.DeviceInfo.Device.IsSameDevice(e.DeviceInfo.Device));
                 if (existingDevice is null)
                 {
-                    // Add new device case
-                    var deviceCase = new DeviceCase(e.DeviceInfo);
+                    // Add new device case via DI - ActivatorUtilities injects IConfigService, IDeviceKeyService, etc.
+                    var serviceProvider = KitX.Core.DI.ServiceHost.ServiceProvider;
+                    var deviceCase = ActivatorUtilities.CreateInstance<DeviceCase>(serviceProvider, e.DeviceInfo);
                     DeviceCases.Add(deviceCase);
                 }
                 else
