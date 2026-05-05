@@ -25,11 +25,8 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
 
     private readonly IBlockScriptService _blockScriptService;
     private readonly IWorkflowPluginService _workflowPluginService;
-    private readonly IScriptExecutionService _scriptExecutionService;
 
     private readonly IKcsFileService _kcsFileService;
-
-    private readonly IMainProgramAnalyzer _mainProgramAnalyzer;
 
     private readonly ITasksService _tasksService;
 
@@ -45,17 +42,13 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
     public WorkflowScriptEditorWindowViewModel(
         IBlockScriptService blockScriptService,
         IWorkflowPluginService workflowPluginService,
-        IScriptExecutionService scriptExecutionService,
         IKcsFileService kcsFileService,
-        IMainProgramAnalyzer mainProgramAnalyzer,
         ITasksService tasksService)
     {
-        _blockScriptService = blockScriptService;
-        _workflowPluginService = workflowPluginService;
-        _scriptExecutionService = scriptExecutionService;
-        _kcsFileService = kcsFileService;
-        _mainProgramAnalyzer = mainProgramAnalyzer;
-        _tasksService = tasksService;
+                _blockScriptService = blockScriptService;
+                _workflowPluginService = workflowPluginService;
+                _kcsFileService = kcsFileService;
+                _tasksService = tasksService;
 
         InitCommands();
         InitEvents();
@@ -403,36 +396,22 @@ return v1 + v2;"
             {
                 string? result;
 
-                if (UseBlockMode)
-                {
-                    // BlockScript模式执行 — pass user-edited constant values
-                    var constantOverrides = GetUserConstantOverrides();
-                    var executionResult = await _blockScriptService.ExecuteBlockScriptAsync(
-                        codeText,
-                        HelperFunctions.ToList(),
-                        constantOverrides,
-                        tokenSource.Token
-                    );
+                var constantOverrides = GetUserConstantOverrides();
+                var executionResult = await _blockScriptService.ExecuteBlockScriptAsync(
+                    codeText,
+                    HelperFunctions.ToList(),
+                    constantOverrides,
+                    tokenSource.Token
+                );
 
-                    if (executionResult.IsSuccess)
-                    {
-                        var output = string.Join("\n", executionResult.Output);
-                        result = $"Blocks executed: {executionResult.ExecutedBlockCount}\nExecution time: {executionResult.ExecutionTimeMs}ms\nOutput:\n{output}";
-                    }
-                    else
-                    {
-                        result = $"Error: {executionResult.ErrorMessage}";
-                    }
+                if (executionResult.IsSuccess)
+                {
+                    var output = string.Join("\n", executionResult.Output);
+                    result = $"Blocks executed: {executionResult.ExecutedBlockCount}\nExecution time: {executionResult.ExecutionTimeMs}ms\nOutput:\n{output}";
                 }
                 else
                 {
-                    // 非Block模式：直接执行C#脚本，无语法限制
-                    result = await _scriptExecutionService.ExecuteCodesAsync(
-                        codeText,
-                        connectedPlugins,
-                        true,
-                        tokenSource.Token
-                    );
+                    result = $"Error: {executionResult.ErrorMessage}";
                 }
 
                 tokenSource.Dispose();
