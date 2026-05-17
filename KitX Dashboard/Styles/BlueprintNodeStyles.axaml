@@ -5,9 +5,6 @@
 
     <!-- Global Node styling for Blueprint Editor -->
     <Style Selector="controls|Node">
-        <!-- Debug highlighting: bind to ViewModel computed properties -->
-        <Setter Property="BorderBrush" Value="{Binding BorderBrushOverride, TargetNullValue=#3F3F46}"/>
-        <Setter Property="BorderThickness" Value="{Binding BorderThicknessOverride, TargetNullValue=1}"/>
         <Setter Property="CornerRadius" Value="6"/>
         <Setter Property="Padding" Value="0"/>
     </Style>

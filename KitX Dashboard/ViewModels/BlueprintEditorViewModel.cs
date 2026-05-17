@@ -1301,15 +1301,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     public BlueprintNodeVM? FindNodeById(string nodeId)
         => Nodes.OfType<BlueprintNodeVM>().FirstOrDefault(n => n.BlueprintNodeId == nodeId);
 
-    // ─── Node Type Inference ─────────────────────────────────────────────
-
-    private static BlueprintNodeType InferNodeTypeFromName(string name) => name switch
-    {
-        "Entry" => BlueprintNodeType.Entry,
-        "PluginTrigger" or _ when name.StartsWith("Trigger:") => BlueprintNodeType.PluginTrigger,
-        "Branch" => BlueprintNodeType.Branch,
-    };
-
     private void ApplyDisplayTitleToNode(BlueprintNode node, string title, BlueprintNodeVM? nodeVm = null)
     {
         switch (node)
@@ -1388,60 +1379,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         "string" => PinType.String,
         _ => PinType.Any
     };
-
-    /// <summary>
-    /// Determines the effective PinType for a data connection by tracing the source node type.
-    /// </summary>
-    private PinType DetermineEffectivePinType(
-        BlueprintConnection connection,
-        Dictionary<string, PinType> pinTypeMap)
-    {
-        if (pinTypeMap.TryGetValue(connection.SourcePinId, out var pt) && pt == PinType.Execution)
-            return PinType.Execution;
-
-        var blueprint = _currentBlueprint;
-        if (blueprint == null) return PinType.Any;
-
-        var sourceNode = blueprint.GetNodeById(connection.SourceNodeId);
-        if (sourceNode == null) return PinType.Any;
-
-        if (sourceNode is ConstNode constNode)
-            return TypeStringToPinType(constNode.ConstType);
-
-        if (sourceNode is CallNode callNode)
-        {
-            var helper = blueprint.HelperFunctions
-                .FirstOrDefault(h => h.Name == callNode.FunctionName);
-            if (helper != null)
-                return TypeStringToPinType(helper.ReturnType);
-        }
-
-        if (sourceNode is CallHelperNode helperNode2)
-        {
-            var helper = blueprint.HelperFunctions
-                .FirstOrDefault(h => h.Name == helperNode2.HelperFunctionName);
-            if (helper != null)
-                return TypeStringToPinType(helper.ReturnType);
-        }
-
-        if (sourceNode is GetNode getNode)
-        {
-            var constVal = blueprint.ConstValues
-                .FirstOrDefault(cv => cv.Name == getNode.VarName);
-            if (constVal != null)
-                return TypeStringToPinType(constVal.Type);
-        }
-
-        if (!string.IsNullOrEmpty(connection.PubVarName))
-        {
-            var constVal = blueprint.ConstValues
-                .FirstOrDefault(cv => cv.Name == connection.PubVarName);
-            if (constVal != null)
-                return TypeStringToPinType(constVal.Type);
-        }
-
-        return PinType.Any;
-    }
 
     // ─── Dynamic Type Inference & Propagation ────────────────────────────
 
