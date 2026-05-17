@@ -77,7 +77,7 @@ internal class Settings_PerformenceViewModel : ViewModelBase
             var logdir = ConfigService.AppConfig.Log.LogFilePath.GetFullPath();
 
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
+                .MinimumLevel.Is(ConfigService.AppConfig.Log.LogLevel)
                 .WriteTo.File(
                     $"{logdir}Log_.log",
                     outputTemplate: ConfigService.AppConfig.Log.LogTemplate,

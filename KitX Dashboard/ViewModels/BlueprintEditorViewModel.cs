@@ -32,7 +32,12 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private readonly IKcsFileService _kcsFileService;
     private readonly IBlueprintRenderDataService _renderDataService;
     private readonly IFileDialogService _fileDialogService;
+    private readonly IBlockScriptExecutor _executor;
     private CancellationTokenSource? _cancellationTokenSource;
+
+    private IBlueprintDebugController? _debugController;
+    private Dictionary<string, string> _statementToNodeId = new();
+    private Dictionary<string, BlueprintConnectorVM> _variableNameToConnector = new();
 
     /// <summary>Last exported BlockScript source code (for display to user)</summary>
     public string? LastExportedSourceCode { get; private set; }
@@ -44,6 +49,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private string _statusText = ViewModelBase.TranslateTextWithSuffix("WorkflowEditor", "Ready") ?? "Ready";
     private bool _isExecuting;
     private string _executionResult = string.Empty;
+    private bool _isDebugging;
+    private bool _isPaused;
+    private double _executionSpeed = 1.0;
 
     public Blueprint? CurrentBlueprint
     {
@@ -70,6 +78,28 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         get => _executionResult;
         set => SetProperty(ref _executionResult, value);
+    }
+
+    public bool IsDebugging
+    {
+        get => _isDebugging;
+        set => SetProperty(ref _isDebugging, value);
+    }
+
+    public bool IsPaused
+    {
+        get => _isPaused;
+        set => SetProperty(ref _isPaused, value);
+    }
+
+    public double ExecutionSpeed
+    {
+        get => _executionSpeed;
+        set
+        {
+            if (SetProperty(ref _executionSpeed, value) && _debugController != null)
+                _debugController.SetSpeed(value >= 1.0 ? KitX.Core.Contract.Workflow.ExecutionSpeed.RealTime : KitX.Core.Contract.Workflow.ExecutionSpeed.Slow);
+        }
     }
 
     private int _nodeCount;
@@ -269,7 +299,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         INodeRegistry nodeRegistry,
         IKcsFileService kcsFileService,
         IBlueprintRenderDataService renderDataService,
-        IFileDialogService fileDialogService)
+        IFileDialogService fileDialogService,
+        IBlockScriptExecutor executor)
     {
         _blueprintService = blueprintService;
         _tasksService = tasksService;
@@ -277,6 +308,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         _kcsFileService = kcsFileService;
         _renderDataService = renderDataService;
         _fileDialogService = fileDialogService;
+        _executor = executor;
 
         // Initialize PendingConnection so drag-to-connect works
         PendingConnection = new PendingConnectionViewModelBase(this);
@@ -911,8 +943,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 nodeVm.Metadata["ConstName"] = constNode.ConstName;
             // Wire type propagation callback
             nodeVm.ConstTypeChangedCallback = OnNodeTypeChanged;
-            // Explicitly update output connector PinType (OnConstTypeChanged may not fire
-            // if ConstType equals the field's default value "int")
+            // Explicitly update output connector PinType
             foreach (var conn in nodeVm.Output.OfType<BlueprintConnectorVM>())
             {
                 if (conn.Title == "Value")
@@ -921,6 +952,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                     break;
                 }
             }
+            // Register for debug hover: map const name to output connector
+            var constName = !string.IsNullOrEmpty(constNode.ConstName) ? constNode.ConstName : nodeVm.DisplayTitle;
+            foreach (var conn in nodeVm.Output.OfType<BlueprintConnectorVM>())
+                _variableNameToConnector[constName] = conn;
         }
 
         // Special handling: VariableNode → set VarType + VarName on the VM
@@ -933,6 +968,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             nodeVm.Metadata["VarName"] = varNode.VarName;
             // Wire type propagation callback
             nodeVm.VarTypeChangedCallback = OnNodeTypeChanged;
+            // Register for debug hover: map variable name to output connector
+            foreach (var conn in nodeVm.Output.OfType<BlueprintConnectorVM>())
+                _variableNameToConnector[varNode.VarName] = conn;
         }
 
         // Preserve CallNode metadata for round-trip
@@ -1000,6 +1038,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         {
             var connectionVm = new BlueprintConnectionVM(this, sourceConnector, targetConnector);
             Connections.Add(connectionVm);
+
+            // Register PubVar source connector for debug hover
+            if (!string.IsNullOrEmpty(connection.PubVarName))
+                _variableNameToConnector[connection.PubVarName] = sourceConnector;
 
             Log.Debug("  Connection: {Source} -> {Target}", connection.SourcePinId, connection.TargetPinId);
         }
@@ -1942,6 +1984,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         try
         {
+            _executor.SetDebugger(null);
             var result = await _blueprintService.ExecuteBlueprintAsync(CurrentBlueprint);
 
             if (result.IsSuccess)
@@ -1982,7 +2025,224 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         _cancellationTokenSource?.Cancel();
         StatusText = "Execution cancelled";
+
+        _executor.SetDebugger(null);
+        IsDebugging = false;
+        IsPaused = false;
+        IsExecuting = false;
+        CleanupDebugController();
         Log.Information("Blueprint execution cancelled");
+    }
+
+    [RelayCommand]
+    private async Task RunWithDebugAsync()
+    {
+        if (CurrentBlueprint == null) return;
+
+        if (IsDebugging)
+        {
+            CancelExecution();
+            return;
+        }
+
+        IsDebugging = true;
+        IsPaused = true;
+        _executionSpeed = 1.0;
+        ExecutionResult = string.Empty;
+
+        Log.Information("[BlueprintDebug] Starting debug execution");
+        _debugController = new KitX.Core.Workflow.BlockScripting.BlueprintDebugger();
+        _debugController.SetSpeed(KitX.Core.Contract.Workflow.ExecutionSpeed.StepByStep);
+        _debugController.NodeExecuting += OnDebugNodeExecuting;
+        _debugController.NodeExecuted += OnDebugNodeExecuted;
+        _debugController.VariableChanged += OnDebugVariableChanged;
+        _debugController.ExecutionPaused += () =>
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                IsPaused = true;
+                Log.Debug("[BlueprintDebug] UI: IsPaused=true");
+            });
+        _debugController.ExecutionResumed += () =>
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                IsPaused = false;
+                Log.Debug("[BlueprintDebug] UI: IsPaused=false");
+            });
+
+        _executor.SetDebugger(_debugController);
+
+        // Map statement IDs to blueprint node IDs BEFORE execution starts
+        // (execution may pause at checkpoints before the background task returns).
+        var mapping = _blueprintService.GetDebugNodeMapping(CurrentBlueprint!);
+        SetDebugNodeMapping(mapping);
+        Log.Information("[BlueprintDebug] Debug node mapping: {Count} entries", mapping.Count);
+
+        IsExecuting = true;
+        StatusText = "Debugging...";
+
+        _ = System.Threading.Tasks.Task.Run(async () =>
+        {
+            try
+            {
+                Log.Information("[BlueprintDebug] Executing with debugger");
+                var result = await _blueprintService.ExecuteBlueprintAsync(CurrentBlueprint);
+
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    if (result.IsSuccess)
+                    {
+                        StatusText = $"Debug done: {result.ExecutedBlockCount} blocks";
+                        ExecutionResult = $"Debug complete.\nBlocks: {result.ExecutedBlockCount}\nTime: {result.ExecutionTimeMs}ms";
+                    }
+                    else
+                    {
+                        StatusText = $"Debug failed: {result.ErrorMessage}";
+                        ExecutionResult = $"Debug error: {result.ErrorMessage}";
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[BlueprintDebug] Debug execution failed");
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    StatusText = $"Debug error: {ex.Message}";
+                    ExecutionResult = $"Debug error: {ex.Message}";
+                });
+            }
+            finally
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    IsExecuting = false;
+                    IsDebugging = false;
+                    IsPaused = false;
+                    // Clear all runtime values from connectors
+                    foreach (var conn in _variableNameToConnector.Values)
+                        conn.RuntimeValue = null;
+                    Log.Information("[BlueprintDebug] Debug execution complete, cleanup");
+                });
+                _executor.SetDebugger(null);
+                CleanupDebugController();
+            }
+        });
+    }
+
+    [RelayCommand]
+    private void DebugPause()
+    {
+        Log.Debug("[BlueprintDebug] UI: Pause clicked");
+        _debugController?.Pause();
+        StatusText = "Paused";
+    }
+
+    [RelayCommand]
+    private void DebugStep()
+    {
+        Log.Debug("[BlueprintDebug] UI: Step clicked");
+        _debugController?.StepNext();
+        StatusText = "Step";
+    }
+
+    [RelayCommand]
+    private void DebugContinue()
+    {
+        Log.Debug("[BlueprintDebug] UI: Continue clicked");
+        _debugController?.Continue();
+        StatusText = "Debugging...";
+    }
+
+    private void OnDebugNodeExecuting(string statementId)
+    {
+        // Capture output from the PREVIOUS node's execution
+        var output = KitX.Core.Workflow.WorkflowOutput.GetAndClear();
+        if (output.Length > 0)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                ExecutionResult += output;
+            });
+        }
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            Log.Debug("[BlueprintDebug] NodeExecuting: stmtId={StmtId}", statementId);
+            if (_statementToNodeId.TryGetValue(statementId, out var nodeId))
+            {
+                Log.Debug("[BlueprintDebug] NodeExecuting: mapped to nodeId={NodeId}", nodeId);
+                var nodeVm = Nodes.OfType<BlueprintNodeVM>()
+                    .FirstOrDefault(n => n.BlueprintNodeId == nodeId);
+                if (nodeVm != null)
+                {
+                    Log.Debug("[BlueprintDebug] NodeExecuting: found nodeVm, setting IsExecuting=true. Title={Title}", nodeVm.Title);
+                    nodeVm.IsExecuting = true;
+                    Log.Debug("[BlueprintDebug] NodeExecuting: IsExecuting={IsExec}, BorderBrush={Brush}", nodeVm.IsExecuting, nodeVm.BorderBrushOverride);
+                }
+                else
+                {
+                    Log.Warning("[BlueprintDebug] NodeExecuting: nodeVm NOT FOUND for BlueprintNodeId={NodeId}. Node count={Count}", nodeId, Nodes.Count);
+                }
+            }
+            else
+            {
+                Log.Debug("[BlueprintDebug] NodeExecuting: no mapping for stmtId={StmtId}. Mapping count={Count}", statementId, _statementToNodeId.Count);
+            }
+        });
+    }
+
+    private void OnDebugNodeExecuted(string statementId)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            if (_statementToNodeId.TryGetValue(statementId, out var nodeId))
+            {
+                var nodeVm = Nodes.OfType<BlueprintNodeVM>()
+                    .FirstOrDefault(n => n.BlueprintNodeId == nodeId);
+                if (nodeVm != null)
+                {
+                    nodeVm.IsExecuting = false;
+                    nodeVm.ExecutionCompleted = true;
+                }
+            }
+        });
+    }
+
+    private void OnDebugVariableChanged(string name, object? value)
+    {
+        var valStr = value?.ToString() ?? "null";
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            var line = $"[{DateTime.Now:HH:mm:ss.fff}] {name} = {valStr}\n";
+            ExecutionResult += line;
+
+            // Update connector RuntimeValue for hover display
+            if (_variableNameToConnector.TryGetValue(name, out var conn))
+                conn.RuntimeValue = valStr;
+
+            // Also propagate to connected input connectors
+            foreach (var c in Connections.OfType<BlueprintConnectionVM>())
+            {
+                if (c.Source == conn)
+                {
+                    if (c.Target is BlueprintConnectorVM target)
+                        target.RuntimeValue = valStr;
+                }
+            }
+        });
+    }
+
+    private void CleanupDebugController()
+    {
+        if (_debugController == null) return;
+        _debugController.NodeExecuting -= OnDebugNodeExecuting;
+        _debugController.NodeExecuted -= OnDebugNodeExecuted;
+        _debugController.VariableChanged -= OnDebugVariableChanged;
+        _debugController = null;
+    }
+
+    internal void SetDebugNodeMapping(Dictionary<string, string> mapping)
+    {
+        _statementToNodeId = new Dictionary<string, string>(mapping);
     }
 
     public async Task SaveBlueprintAsync(string filePath)

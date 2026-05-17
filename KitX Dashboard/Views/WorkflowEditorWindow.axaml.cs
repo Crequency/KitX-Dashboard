@@ -18,6 +18,7 @@ using KitX.Core.Event;
 using KitX.Dashboard.Controls;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
+using NodifyM.Avalonia.Controls;
 using TextMateSharp.Grammars;
 using AvaloniaEdit.TextMate;
 using Avalonia.Styling;
@@ -85,6 +86,7 @@ public partial class WorkflowEditorWindow : Window, IView
         WireUpConstants();
         WireUpRunStop();
         WireUpOutput();
+        WireUpDebugHighlight();
         WireUpBPContextMenu();
         WireUpModeSwitch();
 
@@ -736,4 +738,68 @@ public partial class WorkflowEditorWindow : Window, IView
         _viewModel.BlueprintVM.Cleanup();
         base.OnClosed(e);
     }
+
+    #region Debug Highlight Wiring
+
+    private void WireUpDebugHighlight()
+    {
+        _viewModel.BlueprintVM.Nodes.CollectionChanged += (s, e) =>
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is BlueprintNodeVM nodeVm)
+                        nodeVm.PropertyChanged += OnNodeDebugPropertyChanged;
+                }
+            }
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is BlueprintNodeVM nodeVm)
+                        nodeVm.PropertyChanged -= OnNodeDebugPropertyChanged;
+                }
+            }
+        };
+
+        foreach (var node in _viewModel.BlueprintVM.Nodes)
+        {
+            if (node is BlueprintNodeVM nodeVm)
+                nodeVm.PropertyChanged += OnNodeDebugPropertyChanged;
+        }
+    }
+
+    private void OnNodeDebugPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (sender is not BlueprintNodeVM nodeVm) return;
+        if (e.PropertyName != nameof(BlueprintNodeVM.IsExecuting)
+            && e.PropertyName != nameof(BlueprintNodeVM.ExecutionCompleted)
+            && e.PropertyName != nameof(BlueprintNodeVM.IsBreakpoint))
+            return;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            var editor = this.FindControl<NodifyEditor>("EditorControl");
+            if (editor == null) return;
+
+            var nodeControl = FindNodeControlByVM(editor, nodeVm);
+            if (nodeControl == null) return;
+
+            nodeControl.SetValue(Border.BorderBrushProperty, nodeVm.BorderBrushOverride);
+            nodeControl.SetValue(Border.BorderThicknessProperty, new Thickness(nodeVm.BorderThicknessOverride));
+        });
+    }
+
+    private static Node? FindNodeControlByVM(NodifyEditor editor, BlueprintNodeVM target)
+    {
+        foreach (var child in editor.GetVisualDescendants())
+        {
+            if (child is Node node && node.DataContext == target)
+                return node;
+        }
+        return null;
+    }
+
+    #endregion
 }

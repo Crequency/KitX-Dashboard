@@ -27,6 +27,8 @@ using KitX.Dashboard.Services;
 using LiteDB;
 using ReactiveUI;
 using Serilog;
+using Serilog.Events;
+using System.Text.Json;
 
 namespace KitX.Dashboard;
 
@@ -65,32 +67,65 @@ public static class AppFramework
         if (Design.IsDesignMode)
             return;
 
-        // Step 1: Initialize DI container first (Phase 2 refactoring)
-        // DI container must be built before ConfigManager loads configuration,
-        // so that all services can be resolved through DI.
+        // Step 1: Initialize DI container first
         App.InitializeServiceProvider();
 
-        // Step 2: Load configuration through DI container
-        // ConfigManager is registered as IConfigService singleton in DI.
-        // Note: Log.Debug() calls in ConfigManager constructor are no-ops
-        // before Logger initialization (handled by Serilog default config).
+        // Step 2: Read LogLevel directly from config file (before full load,
+        // so the logger can capture any deserialization errors during Load).
+        var logLevel = LogEventLevel.Information;
+        try
+        {
+            var cfgPath = Path.GetFullPath(Path.Combine("./Config/", "AppConfig.json"));
+            if (File.Exists(cfgPath))
+            {
+                var finfo = new FileInfo(cfgPath);
+                var trailPath = Path.Combine(finfo.DirectoryName!, "ConfigLoadTrail.log");
+                File.AppendAllText(trailPath, $"[{DateTime.Now:O}] RunFramework START: file size={finfo.Length}, lastWrite={finfo.LastWriteTime:O}\n");
+
+                using var doc = JsonDocument.Parse(File.ReadAllText(cfgPath));
+                if (doc.RootElement.TryGetProperty("Log", out var log) &&
+                    log.TryGetProperty("LogLevel", out var level))
+                    logLevel = (LogEventLevel)level.GetInt32();
+            }
+        }
+        catch { }
+
+        // Step 3: Configure logger before Load() so Load errors are visible
+        var logdir = "./Log/".GetFullPath();
+        if (!Directory.Exists(logdir)) Directory.CreateDirectory(logdir);
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Is(logLevel)
+            .WriteTo.File(
+                $"{logdir}Log_.log",
+                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Hour,
+                fileSizeLimitBytes: 10 * 1024 * 1024,
+                buffered: true,
+                flushToDiskInterval: new(0, 0, 30),
+                restrictedToMinimumLevel: logLevel,
+                rollOnFileSizeLimit: true,
+                retainedFileCountLimit: 50
+            )
+            .CreateLogger();
+
+        // Step 4: Full config load (with logger now active — errors are visible)
+        Log.Information($"[AppFramework] About to call configService.Load(), temp LogLevel={logLevel}");
         var configService = App.GetService<IConfigService>();
         configService.Load();
         var config = (AppConfig)configService.AppConfig;
+        Log.Information($"[AppFramework] Load complete, LogLevel={config.Log.LogLevel}");
 
-        // TODO: [Architecture] Log system initialization should be moved to Core infrastructure.
-        // Currently kept here because Serilog Logger is a process-level singleton.
-        // Step 3: Initialize log system after configuration is loaded
-        var logdir = config.Log.LogFilePath.GetFullPath();
-
-        if (!Directory.Exists(logdir))
-            Directory.CreateDirectory(logdir);
+        // Step 5: Reconfigure logger with full settings from loaded config
+        var configuredLogDir = config.Log.LogFilePath.GetFullPath();
+        if (!Directory.Exists(configuredLogDir))
+            Directory.CreateDirectory(configuredLogDir);
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Is(config.Log.LogLevel)
             .WriteTo.Console(outputTemplate: config.Log.LogTemplate, restrictedToMinimumLevel: config.Log.LogLevel)
             .WriteTo.File(
-                $"{logdir}Log_.log",
+                $"{configuredLogDir}Log_.log",
                 outputTemplate: config.Log.LogTemplate,
                 rollingInterval: RollingInterval.Hour,
                 fileSizeLimitBytes: config.Log.LogFileSingleMaxSize,

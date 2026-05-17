@@ -42,7 +42,7 @@
                     </StackPanel>
                 </Button>
 
-                <!-- Right: Run/Stop -->
+                <!-- Right: Run/Stop/Debug -->
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             Spacing="8"
@@ -55,6 +55,16 @@
                             <TextBlock Text="{DynamicResource Text_WorkflowEditor_Run}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Button Name="DebugButton"
+                            ToolTip.Tip="Debug Mode (Step/History)"
+                            IsEnabled="{Binding !IsExecuting}"
+                            IsVisible="{Binding IsBlueprintMode}"
+                            Command="{Binding DebugRunCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="BugOutline" />
+                            <TextBlock Text="Debug" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Button Name="StopButton"
                             ToolTip.Tip="{DynamicResource Text_WorkflowEditor_Stop}"
                             IsEnabled="{Binding IsExecuting}">
@@ -63,6 +73,16 @@
                             <TextBlock Text="{DynamicResource Text_WorkflowEditor_Stop}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Separator Width="2" Background="#555" IsVisible="{Binding IsDebugging}"/>
+                    <Button Content="⏸" ToolTip.Tip="Pause"
+                            IsVisible="{Binding IsDebugging}" IsEnabled="{Binding !IsPaused}"
+                            Command="{Binding DebugPauseCommand}"/>
+                    <Button Content="▶" ToolTip.Tip="Step (Execute one node)"
+                            IsVisible="{Binding IsDebugging}" IsEnabled="{Binding IsPaused}"
+                            Command="{Binding DebugStepCommand}"/>
+                    <Button Content="⏭" ToolTip.Tip="Continue (Run to completion)"
+                            IsVisible="{Binding IsDebugging}" IsEnabled="{Binding IsPaused}"
+                            Command="{Binding DebugContinueCommand}"/>
                 </StackPanel>
 
                 <!-- Center: Mode toggle + metadata -->
@@ -616,8 +636,9 @@
                                         <!-- Input connector template -->
                                         <controls:Node.InputConnectorTemplate>
                                             <DataTemplate DataType="{x:Type viewModels:BlueprintConnectorVM}">
-                                                <controls:NodeInput IsConnected="{Binding IsConnected}"
-                                                                    Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                                                 <controls:NodeInput IsConnected="{Binding IsConnected}"
+                                                                     Anchor="{Binding Anchor, Mode=OneWayToSource}"
+                                                                     ToolTip.Tip="{Binding RuntimeValue}">
                                                     <controls:NodeInput.BorderBrush>
                                                         <Binding Path="PinTypeColorHex"
                                                                  Converter="{StaticResource HexToBrushConverter}" />
@@ -640,8 +661,9 @@
                                         <!-- Output connector template -->
                                         <controls:Node.OutputConnectorTemplate>
                                             <DataTemplate DataType="{x:Type viewModels:BlueprintConnectorVM}">
-                                                <controls:NodeOutput IsConnected="{Binding IsConnected}"
-                                                                     Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                                                 <controls:NodeOutput IsConnected="{Binding IsConnected}"
+                                                                      Anchor="{Binding Anchor, Mode=OneWayToSource}"
+                                                                      ToolTip.Tip="{Binding RuntimeValue}">
                                                     <controls:NodeOutput.BorderBrush>
                                                         <Binding Path="PinTypeColorHex"
                                                                  Converter="{StaticResource HexToBrushConverter}" />

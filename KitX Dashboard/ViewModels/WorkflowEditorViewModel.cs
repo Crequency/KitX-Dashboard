@@ -37,6 +37,8 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     private bool _isDirty;
     private string _executionOutput = string.Empty;
     private bool _isExecuting;
+    private bool _isDebugging;
+    private bool _isPaused;
 
     // ─── Trigger Configuration ──────────────────────────────────────────
     private string _triggerType = "Manual";
@@ -189,6 +191,18 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         set => SetProperty(ref _isExecuting, value);
     }
 
+    public bool IsDebugging
+    {
+        get => _isDebugging;
+        set => SetProperty(ref _isDebugging, value);
+    }
+
+    public bool IsPaused
+    {
+        get => _isPaused;
+        set => SetProperty(ref _isPaused, value);
+    }
+
     public WorkflowEditorViewModel(
         IWorkflowStorageService storageService,
         IBlueprintService blueprintService,
@@ -218,6 +232,10 @@ internal partial class WorkflowEditorViewModel : ObservableObject
                 ExecutionOutput = BlueprintVM.ExecutionResult;
             if (e.PropertyName == nameof(BlueprintVM.IsExecuting))
                 IsExecuting = BlueprintVM.IsExecuting;
+            if (e.PropertyName == nameof(BlueprintVM.IsDebugging))
+                IsDebugging = BlueprintVM.IsDebugging;
+            if (e.PropertyName == nameof(BlueprintVM.IsPaused))
+                IsPaused = BlueprintVM.IsPaused;
         };
 
         // Publish metadata changes immediately so management panel syncs
@@ -486,4 +504,16 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     {
         Services.UIStateService.MainWindow?.Activate();
     }
+
+    [RelayCommand]
+    private void DebugRun() => BlueprintVM.RunWithDebugCommand.Execute(null);
+
+    [RelayCommand]
+    private void DebugPause() => BlueprintVM.DebugPauseCommand.Execute(null);
+
+    [RelayCommand]
+    private void DebugStep() => BlueprintVM.DebugStepCommand.Execute(null);
+
+    [RelayCommand]
+    private void DebugContinue() => BlueprintVM.DebugContinueCommand.Execute(null);
 }

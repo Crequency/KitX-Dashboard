@@ -71,6 +71,31 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     [ObservableProperty]
     private string _varName = string.Empty;
 
+    /// <summary>True while this node is the current execution point during debug</summary>
+    [ObservableProperty]
+    private bool _isExecuting;
+
+    /// <summary>True after this node has been executed during debug</summary>
+    [ObservableProperty]
+    private bool _executionCompleted;
+
+    /// <summary>True if a debug breakpoint is set on this node</summary>
+    [ObservableProperty]
+    private bool _isBreakpoint;
+
+    /// <summary>Border brush override for debug highlighting</summary>
+    public Avalonia.Media.IBrush? BorderBrushOverride =>
+        IsExecuting ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.LimeGreen, 0.9) :
+        IsBreakpoint ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Red, 0.7) :
+        ExecutionCompleted ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Gray, 0.4) :
+        null;
+
+    /// <summary>Border thickness override for debug highlighting</summary>
+    public double BorderThicknessOverride =>
+        IsExecuting ? 3.0 :
+        IsBreakpoint ? 2.0 :
+        0.0;
+
     /// <summary>
     /// Callback invoked when VarType changes — used by BlueprintEditorViewModel
     /// to propagate the type to all Get/Set nodes referencing this variable.
@@ -83,7 +108,7 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     /// Used by ConstNode, CallNode, etc. to preserve domain-specific fields
     /// that aren't represented in connectors or display title.
     /// </summary>
-    public Dictionary<string, string> Metadata { get; } = [];
+    public Dictionary<string, string> Metadata { get; } = new();
 
     /// <summary>
     /// Callback invoked when ConstType changes — used by BlueprintEditorViewModel
@@ -119,6 +144,23 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     {
         Metadata["VarType"] = value;
         VarTypeChangedCallback?.Invoke(this);
+    }
+
+    partial void OnIsExecutingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(BorderBrushOverride));
+        OnPropertyChanged(nameof(BorderThicknessOverride));
+    }
+
+    partial void OnExecutionCompletedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(BorderBrushOverride));
+    }
+
+    partial void OnIsBreakpointChanged(bool value)
+    {
+        OnPropertyChanged(nameof(BorderBrushOverride));
+        OnPropertyChanged(nameof(BorderThicknessOverride));
     }
 
     /// <summary>Converts a ConstType string to the corresponding PinType</summary>

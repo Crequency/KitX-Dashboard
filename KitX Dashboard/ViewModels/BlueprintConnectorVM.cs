@@ -22,6 +22,10 @@ public partial class BlueprintConnectorVM : ConnectorViewModelBase
     [ObservableProperty]
     private string? _defaultValue;
 
+    /// <summary>Runtime value set during debug execution, shown on hover</summary>
+    [ObservableProperty]
+    private string? _runtimeValue;
+
     /// <summary>Whether this is an execution flow pin (triangle shape)</summary>
     public bool IsExecution => PinType == PinType.Execution;
 
