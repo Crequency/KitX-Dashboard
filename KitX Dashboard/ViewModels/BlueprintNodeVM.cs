@@ -59,6 +59,12 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     public bool ShowVarTypeSelector => NodeType == BlueprintNodeType.Variable;
 
     /// <summary>
+    /// Builtin function name, if this node is a BuiltinFunction node.
+    /// Used for logic that previously checked specific BlueprintNodeType values.
+    /// </summary>
+    public string? BuiltinFunctionName { get; set; }
+
+    /// <summary>
     /// Variable type for Variable nodes. Bound to a ComboBox in the node body.
     /// Changing this propagates the type to all Get/Set nodes referencing this variable.
     /// </summary>
@@ -187,13 +193,18 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     public static (string Primary, string Light) GetCategoryColors(BlueprintNodeType type) => type switch
     {
         BlueprintNodeType.Entry or BlueprintNodeType.PluginTrigger => ("#4CAF50", "#2E7D32"), // Green
-        BlueprintNodeType.Branch or BlueprintNodeType.Loop
-            or BlueprintNodeType.Break => ("#FF9800", "#BF6E00"),   // Orange
-        BlueprintNodeType.Const or BlueprintNodeType.Get
-            or BlueprintNodeType.Set => ("#2196F3", "#1565C0"),     // Blue
-        BlueprintNodeType.Variable => ("#009688", "#00796B"),       // Teal
-        BlueprintNodeType.Call or BlueprintNodeType.CallHelper
-            or BlueprintNodeType.Print or BlueprintNodeType.Pause => ("#9C27B0", "#7B1FA2"), // Purple
-        _ => ("#607D8B", "#455A64")                                 // Gray fallback
+        BlueprintNodeType.Const => ("#2196F3", "#1565C0"),                                     // Blue
+        BlueprintNodeType.Variable => ("#009688", "#00796B"),                                   // Teal
+        BlueprintNodeType.Call or BlueprintNodeType.CallHelper => ("#9C27B0", "#7B1FA2"),      // Purple
+        BlueprintNodeType.BuiltinFunction => ("#FF9800", "#BF6E00"),                            // Orange
+        _ => ("#607D8B", "#455A64")                                                             // Gray fallback
+    };
+
+    /// <summary>Returns (Primary, Light) hex color pair based on builtin function name</summary>
+    public static (string Primary, string Light) GetBuiltinFunctionColors(string functionName) => functionName switch
+    {
+        "Print" or "Pause" => ("#9C27B0", "#7B1FA2"), // Purple - I/O
+        "Get" or "Set" => ("#2196F3", "#1565C0"),     // Blue - data
+        _ => ("#FF9800", "#BF6E00")                    // Orange - control flow
     };
 }

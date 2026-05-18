@@ -538,7 +538,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                     : nodeVm.VarName;
                 break;
 
-            case BlueprintNodeType.Get:
+            case BlueprintNodeType.BuiltinFunction when nodeVm.BuiltinFunctionName == "Get":
                 dialogTitle = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameGetNode") ?? "Rename Get Node";
                 dialogPrompt = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameVariablePrompt") ?? "Enter new variable name:";
                 currentName = nodeVm.DisplayTitle.StartsWith("Get:")
@@ -546,7 +546,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                     : nodeVm.DisplayTitle;
                 break;
 
-            case BlueprintNodeType.Set:
+            case BlueprintNodeType.BuiltinFunction when nodeVm.BuiltinFunctionName == "Set":
                 dialogTitle = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameSetNode") ?? "Rename Set Node";
                 dialogPrompt = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameVariablePrompt") ?? "Enter new variable name:";
                 currentName = nodeVm.DisplayTitle.StartsWith("Set:")
@@ -578,12 +578,12 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 PropagateVariableRename(oldVarName, newName);
                 break;
 
-            case BlueprintNodeType.Get:
+            case BlueprintNodeType.BuiltinFunction when nodeVm.BuiltinFunctionName == "Get":
                 nodeVm.DisplayTitle = $"Get: {newName}";
                 nodeVm.Metadata["VarName"] = newName;
                 break;
 
-            case BlueprintNodeType.Set:
+            case BlueprintNodeType.BuiltinFunction when nodeVm.BuiltinFunctionName == "Set":
                 nodeVm.DisplayTitle = $"Set: {newName}";
                 nodeVm.Metadata["VarName"] = newName;
                 break;
@@ -601,10 +601,11 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         foreach (var n in Nodes.OfType<BlueprintNodeVM>())
         {
-            if (n.NodeType is not (BlueprintNodeType.Get or BlueprintNodeType.Set))
+            if (n.NodeType != BlueprintNodeType.BuiltinFunction
+                || (n.BuiltinFunctionName != "Get" && n.BuiltinFunctionName != "Set"))
                 continue;
 
-            var prefix = n.NodeType == BlueprintNodeType.Get ? "Get: " : "Set: ";
+            var prefix = n.BuiltinFunctionName == "Get" ? "Get: " : "Set: ";
             var currentRef = n.DisplayTitle.StartsWith(prefix)
                 ? n.DisplayTitle[prefix.Length..].Trim()
                 : "";
@@ -1009,7 +1010,26 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         // Preserve BuiltinFunctionNode metadata for round-trip
         if (blueprintNode is BuiltinFunctionNode bfNode && !string.IsNullOrEmpty(bfNode.FunctionName))
+        {
+            nodeVm.BuiltinFunctionName = bfNode.FunctionName;
             nodeVm.Metadata["BuiltinFunctionName"] = bfNode.FunctionName;
+
+            // For Get/Set, build display title from VarName pin's default value
+            if (bfNode.FunctionName is "Get" or "Set")
+            {
+                var varPin = bfNode.InputPins.FirstOrDefault(p => p.Name == "VarName");
+                var varName = varPin?.DefaultValue;
+                if (!string.IsNullOrEmpty(varName))
+                {
+                    nodeVm.DisplayTitle = $"{bfNode.FunctionName}: {varName}";
+                    nodeVm.Title = nodeVm.DisplayTitle;
+                    // Use function-specific colors
+                    var (pc, lc) = BlueprintNodeVM.GetBuiltinFunctionColors(bfNode.FunctionName);
+                    nodeVm.CategoryColor = pc;
+                    nodeVm.CategoryColorLight = lc;
+                }
+            }
+        }
 
         // Preserve PluginTriggerNode metadata for round-trip
         if (blueprintNode is PluginTriggerNode ptNode)
@@ -1210,8 +1230,19 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     private BlueprintNode ConvertViewModelToBlueprintNode(BlueprintNodeVM nodeVm)
     {
-        // Use NodeType from VM directly (more reliable than name-based inference)
-        var blueprintNode = _nodeRegistry.Create(nodeVm.NodeType);
+        // Use CreateBuiltinFunctionNode for builtin function nodes to get proper pins
+        BlueprintNode blueprintNode;
+        if (nodeVm.NodeType == BlueprintNodeType.BuiltinFunction
+            && nodeVm.Metadata.TryGetValue("BuiltinFunctionName", out var funcName)
+            && !string.IsNullOrEmpty(funcName)
+            && funcName is "Get" or "Set" or "Print" or "Pause" or "Branch" or "Loop" or "Break" or "ToLoopCond")
+        {
+            blueprintNode = _nodeRegistry.CreateBuiltinFunctionNode(funcName);
+        }
+        else
+        {
+            blueprintNode = _nodeRegistry.Create(nodeVm.NodeType);
+        }
 
         // Preserve original node ID so connections can reference it
         blueprintNode.Id = nodeVm.BlueprintNodeId;
@@ -1228,14 +1259,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         if (blueprintNode is VariableNode vNode && !string.IsNullOrEmpty(nodeVm.VarType))
         {
             vNode.VarType = nodeVm.VarType;
-        }
-
-        // Special handling: BuiltinFunctionNode → restore FunctionName from Metadata
-        if (blueprintNode is BuiltinFunctionNode bfNode
-            && nodeVm.Metadata.TryGetValue("BuiltinFunctionName", out var funcName)
-            && !string.IsNullOrEmpty(funcName))
-        {
-            bfNode.FunctionName = funcName;
         }
 
         // Special handling: PluginTriggerNode → restore PluginName/TriggerName from Metadata
@@ -1331,21 +1354,19 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             case CallHelperNode helperNode when title.StartsWith("Helper:"):
                 helperNode.HelperFunctionName = title["Helper:".Length..].Trim();
                 break;
-            case GetNode getNode when title.StartsWith("Get:"):
-                getNode.VarName = title["Get:".Length..].Trim();
-                // Re-resolve pin type when VarName changes
+            case BuiltinFunctionNode bfn when title.StartsWith("Get:"):
+                bfn.Properties["VarName"] = title["Get:".Length..].Trim();
                 if (nodeVm != null)
                 {
-                    var pinType = ResolveVariablePinType(getNode.VarName);
+                    var pinType = ResolveVariablePinType(bfn.Properties["VarName"]);
                     UpdateNodeValuePinType(nodeVm, pinType);
                 }
                 break;
-            case SetNode setNode when title.StartsWith("Set:"):
-                setNode.VarName = title["Set:".Length..].Trim();
-                // Re-resolve pin type when VarName changes
+            case BuiltinFunctionNode bfn2 when title.StartsWith("Set:"):
+                bfn2.Properties["VarName"] = title["Set:".Length..].Trim();
                 if (nodeVm != null)
                 {
-                    var pinType = ResolveVariablePinType(setNode.VarName);
+                    var pinType = ResolveVariablePinType(bfn2.Properties["VarName"]);
                     UpdateNodeValuePinType(nodeVm, pinType);
                 }
                 break;
@@ -1435,7 +1456,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         foreach (var node in Nodes.OfType<BlueprintNodeVM>())
         {
-            if (node.NodeType is not (BlueprintNodeType.Get or BlueprintNodeType.Set)) continue;
+            if (node.NodeType != BlueprintNodeType.BuiltinFunction
+                || (node.BuiltinFunctionName != "Get" && node.BuiltinFunctionName != "Set")) continue;
 
             // Extract VarName from display title ("Get: myVar" or "Set: myVar")
             var nodeVarName = node.DisplayTitle.Contains(':')
@@ -1456,7 +1478,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         // For GetNode: Value is an output connector
         // For SetNode: Value is an input connector
-        var connectors = node.NodeType == BlueprintNodeType.Get
+        var connectors = node.BuiltinFunctionName == "Get"
             ? node.Output.OfType<BlueprintConnectorVM>()
             : node.Input.OfType<BlueprintConnectorVM>();
 
@@ -1506,7 +1528,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         foreach (var node in Nodes.OfType<BlueprintNodeVM>())
         {
-            if (node.NodeType is not (BlueprintNodeType.Get or BlueprintNodeType.Set)) continue;
+            if (node.NodeType != BlueprintNodeType.BuiltinFunction
+                || (node.BuiltinFunctionName != "Get" && node.BuiltinFunctionName != "Set")) continue;
 
             var varName = node.DisplayTitle.Contains(':')
                 ? node.DisplayTitle[(node.DisplayTitle.IndexOf(':') + 1)..].Trim()
@@ -1620,34 +1643,80 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     [RelayCommand]
     public void AddEntryNode() => AddNodeFromTemplate(BlueprintNodeType.Entry);
 
+    /// <summary>
+    /// Creates a builtin function node from the registry with proper descriptor and UI setup.
+    /// </summary>
+    private void AddBuiltinFunctionNode(string functionName)
+    {
+        var builtinNode = _nodeRegistry.CreateBuiltinFunctionNode(functionName);
+        var descriptor = builtinNode.GetDescriptor();
+        var title = $"{(functionName == "Get" ? "Get: " : functionName == "Set" ? "Set: " : "")}{functionName}";
+        var (primaryColor, lightColor) = BlueprintNodeVM.GetBuiltinFunctionColors(functionName);
+
+        var node = new BlueprintNodeVM
+        {
+            Location = new Avalonia.Point(100, 100),
+            BlueprintNodeId = Guid.NewGuid().ToString(),
+            NodeType = BlueprintNodeType.BuiltinFunction,
+            BuiltinFunctionName = functionName,
+            DisplayTitle = title,
+            CategoryColor = primaryColor,
+            CategoryColorLight = lightColor,
+            Title = title,
+            Name = functionName,
+            Input = new ObservableCollection<object>(),
+            Output = new ObservableCollection<object>()
+        };
+
+        foreach (var pinDesc in descriptor.InputPins)
+        {
+            var pinId = Guid.NewGuid().ToString();
+            node.Input.Add(new BlueprintConnectorVM
+            {
+                Title = pinDesc.Name,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+                PinType = pinDesc.Type,
+                OriginalPinId = pinId
+            });
+        }
+
+        foreach (var pinDesc in descriptor.OutputPins)
+        {
+            var pinId = Guid.NewGuid().ToString();
+            node.Output.Add(new BlueprintConnectorVM
+            {
+                Title = pinDesc.Name,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Output,
+                PinType = pinDesc.Type,
+                OriginalPinId = pinId
+            });
+        }
+
+        Nodes.Add(node);
+        RefreshCounts();
+        Log.Information("Added BuiltinFunction node: {FunctionName}", functionName);
+    }
+
     [RelayCommand]
     public void AddBranchNode()
     {
-        AddNodeFromTemplate(BlueprintNodeType.Branch);
+        AddBuiltinFunctionNode("Branch");
         var branchNode = Nodes.OfType<BlueprintNodeVM>().Last();
-
-        // Create True scope block
         CreateScopeBlockForNode(branchNode, "True");
-
-        // Create False scope block
         CreateScopeBlockForNode(branchNode, "False");
     }
 
     [RelayCommand]
     public void AddLoopNode()
     {
-        AddNodeFromTemplate(BlueprintNodeType.Loop);
+        AddBuiltinFunctionNode("Loop");
         var loopNode = Nodes.OfType<BlueprintNodeVM>().Last();
-
-        // Create LoopBody scope block
         CreateScopeBlockForNode(loopNode, "LoopBody");
-
-        // Create LoopEnd scope block
         CreateScopeBlockForNode(loopNode, "LoopEnd");
     }
 
     [RelayCommand]
-    public void AddBreakNode() => AddNodeFromTemplate(BlueprintNodeType.Break);
+    public void AddBreakNode() => AddBuiltinFunctionNode("Break");
 
     [RelayCommand]
     public void AddConstNode()
@@ -1889,10 +1958,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     }
 
     [RelayCommand]
-    public void AddPrintNode() => AddNodeFromTemplate(BlueprintNodeType.Print);
+    public void AddPrintNode() => AddBuiltinFunctionNode("Print");
 
     [RelayCommand]
-    public void AddPauseNode() => AddNodeFromTemplate(BlueprintNodeType.Pause);
+    public void AddPauseNode() => AddBuiltinFunctionNode("Pause");
 
     // ─── Blueprint Commands ──────────────────────────────────────────────
 
@@ -2270,8 +2339,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         }
         catch (Exception ex)
         {
-            StatusText = $"Load error: {ex.Message}";
-            Log.Error(ex, "Blueprint load error");
+            Log.Error(ex, "Failed to load blueprint from {FilePath}", filePath);
+            StatusText = "Failed to load file";
         }
     }
 

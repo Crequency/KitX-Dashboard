@@ -601,8 +601,8 @@ public partial class WorkflowEditorWindow : Window, IView
 
         if (nodeVm.NodeType is BlueprintNodeType.Const
             or BlueprintNodeType.Variable
-            or BlueprintNodeType.Get
-            or BlueprintNodeType.Set)
+            || (nodeVm.NodeType == BlueprintNodeType.BuiltinFunction
+                && nodeVm.BuiltinFunctionName is "Get" or "Set"))
         {
             nodePanel.Children.Add(CreateSeparator());
             nodePanel.Children.Add(CreateMenuButton(

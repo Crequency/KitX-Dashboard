@@ -140,8 +140,8 @@ public partial class BlueprintEditorWindow : Window, IView
         // Rename option for Const / Variable / Get / Set nodes
         if (nodeVm.NodeType is BlueprintNodeType.Const
             or BlueprintNodeType.Variable
-            or BlueprintNodeType.Get
-            or BlueprintNodeType.Set)
+            || (nodeVm.NodeType == BlueprintNodeType.BuiltinFunction
+                && nodeVm.BuiltinFunctionName is "Get" or "Set"))
         {
             nodePanel.Children.Add(CreateSeparator());
             nodePanel.Children.Add(CreateMenuButton("Rename", _viewModel.RenameSelectedNodeCommand, nodeVm));
