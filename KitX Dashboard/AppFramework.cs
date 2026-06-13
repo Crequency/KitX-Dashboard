@@ -215,38 +215,45 @@ public static class AppFramework
             {
                 new Thread(async () =>
                 {
-                    Thread.Sleep(Convert.ToInt32(config.Web.DelayStartSeconds * 1000));
-
-                    if (!ConstantTable.SkipNetworkSystemOnStartup)
+                    try
                     {
-                        // Use DI services instead of WebManager
-                        var discoveryServer = App.GetService<IDeviceDiscoveryService>() as KitX.Core.Device.DevicesDiscoveryServer;
-                        var devicesServer = App.GetService<IDeviceServer>() as KitX.Core.Device.DevicesServer;
-                        var pluginsServer = App.GetService<IPluginServer>() as KitX.Core.Device.PluginsServer;
+                        Thread.Sleep(Convert.ToInt32(config.Web.DelayStartSeconds * 1000));
 
-                        if (discoveryServer != null)
+                        if (!ConstantTable.SkipNetworkSystemOnStartup)
                         {
-                            discoveryServer.ConfigurePort((int)(config.Web.UserSpecifiedDevicesServerPort ?? 0));
-                            discoveryServer.Run();
+                            // Use DI services instead of WebManager
+                            var discoveryServer = App.GetService<IDeviceDiscoveryService>() as KitX.Core.Device.DevicesDiscoveryServer;
+                            var devicesServer = App.GetService<IDeviceServer>() as KitX.Core.Device.DevicesServer;
+                            var pluginsServer = App.GetService<IPluginServer>() as KitX.Core.Device.PluginsServer;
 
-                            // DevicesOrganizer is now a DI-registered singleton, auto-initialized via constructor
-                            // No need to call Run() - it starts observing on construction
-                            var organizer = App.GetService<KitX.Core.Device.DevicesOrganizer>();
-                        }
+                            if (discoveryServer != null)
+                            {
+                                discoveryServer.ConfigurePort((int)(config.Web.UserSpecifiedDevicesServerPort ?? 0));
+                                discoveryServer.Run();
 
-                        if (devicesServer != null)
-                        {
-                            devicesServer.ConfigurePort((int)(config.Web.UserSpecifiedPluginsServerPort ?? 0));
-                            devicesServer.Run();
-                        }
+                                // DevicesOrganizer is now a DI-registered singleton, auto-initialized via constructor
+                                // No need to call Run() - it starts observing on construction
+                                var organizer = App.GetService<KitX.Core.Device.DevicesOrganizer>();
+                            }
 
-                        if (pluginsServer != null)
-                        {
-                            // ServiceHost ensures all resolution paths return the same singleton
-                            Log.Information("[AppFramework] About to call PluginsServer.Run(). PluginsServer HashCode: {HashCode}", pluginsServer.GetHashCode());
-                            pluginsServer.ConfigurePort((int)(config.Web.UserSpecifiedPluginsServerPort ?? 0));
-                            pluginsServer.Run();
+                            if (devicesServer != null)
+                            {
+                                devicesServer.ConfigurePort((int)(config.Web.UserSpecifiedPluginsServerPort ?? 0));
+                                devicesServer.Run();
+                            }
+
+                            if (pluginsServer != null)
+                            {
+                                // ServiceHost ensures all resolution paths return the same singleton
+                                Log.Information("[AppFramework] About to call PluginsServer.Run(). PluginsServer HashCode: {HashCode}", pluginsServer.GetHashCode());
+                                pluginsServer.ConfigurePort((int)(config.Web.UserSpecifiedPluginsServerPort ?? 0));
+                                pluginsServer.Run();
+                            }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, $"In {nameof(AppFramework)}.NetworkStartup: {ex.Message}");
                     }
                 }).Start();
             }

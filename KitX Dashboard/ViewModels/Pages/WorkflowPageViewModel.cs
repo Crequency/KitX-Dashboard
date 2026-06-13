@@ -189,42 +189,60 @@ internal class WorkflowPageViewModel : ViewModelBase
 
     private async void OpenWorkflowEditorAsync(IWorkflowCase workflow)
     {
-        // Check if an editor window is already open for this workflow
-        if (UIStateService.WorkflowEditorWindows.TryGetValue(workflow.Id, out var existingWindow))
+        try
         {
-            existingWindow.Activate();
-            return;
+            // Check if an editor window is already open for this workflow
+            if (UIStateService.WorkflowEditorWindows.TryGetValue(workflow.Id, out var existingWindow))
+            {
+                existingWindow.Activate();
+                return;
+            }
+
+            // Create new unified editor window
+            var editorWindow = new WorkflowEditorWindow();
+            await editorWindow.LoadWorkflowAsync(workflow.Id);
+
+            // Track the window
+            UIStateService.WorkflowEditorWindows[workflow.Id] = editorWindow;
+            editorWindow.Closed += (_, _) =>
+            {
+                UIStateService.WorkflowEditorWindows.Remove(workflow.Id);
+            };
+
+            UIStateService.ShowWindow(editorWindow);
         }
-
-        // Create new unified editor window
-        var editorWindow = new WorkflowEditorWindow();
-        await editorWindow.LoadWorkflowAsync(workflow.Id);
-
-        // Track the window
-        UIStateService.WorkflowEditorWindows[workflow.Id] = editorWindow;
-        editorWindow.Closed += (_, _) =>
+        catch (Exception ex)
         {
-            UIStateService.WorkflowEditorWindows.Remove(workflow.Id);
-        };
-
-        UIStateService.ShowWindow(editorWindow);
+            await MessageBoxManager.GetMessageBoxStandard(
+                TranslateTextWithSuffix("Workflow", "Error") ?? "Error", ex.Message, icon: Icon.Error)
+                .ShowWindowAsync();
+        }
     }
 
     private async void DeleteWorkflowAsync(IWorkflowCase workflow)
     {
-        var result = await MessageBoxManager.GetMessageBoxStandard(
-            TranslateTextWithSuffix("Workflow", "DeleteWorkflow") ?? "Delete Workflow",
-            (TranslateTextWithSuffix("Workflow", "DeleteConfirm") ?? "Are you sure you want to delete \"$name\"?")
-                .Replace("$name", workflow.Name),
-            ButtonEnum.YesNo,
-            Icon.Warning
-        ).ShowWindowAsync();
-
-        if (result == ButtonResult.Yes)
+        try
         {
-            await _storageService.DeleteWorkflowAsync(workflow.Id);
-            WorkflowCases.Remove(workflow);
-            _eventService.Publish(EventNames.WorkflowDeleted, EventArgs.Empty);
+            var result = await MessageBoxManager.GetMessageBoxStandard(
+                TranslateTextWithSuffix("Workflow", "DeleteWorkflow") ?? "Delete Workflow",
+                (TranslateTextWithSuffix("Workflow", "DeleteConfirm") ?? "Are you sure you want to delete \"$name\"?")
+                    .Replace("$name", workflow.Name),
+                ButtonEnum.YesNo,
+                Icon.Warning
+            ).ShowWindowAsync();
+
+            if (result == ButtonResult.Yes)
+            {
+                await _storageService.DeleteWorkflowAsync(workflow.Id);
+                WorkflowCases.Remove(workflow);
+                _eventService.Publish(EventNames.WorkflowDeleted, EventArgs.Empty);
+            }
+        }
+        catch (Exception ex)
+        {
+            await MessageBoxManager.GetMessageBoxStandard(
+                TranslateTextWithSuffix("Workflow", "Error") ?? "Error", ex.Message, icon: Icon.Error)
+                .ShowWindowAsync();
         }
     }
 
