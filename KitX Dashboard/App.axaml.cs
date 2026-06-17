@@ -14,9 +14,9 @@ using KitX.Core.Announcement;
 using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Workflow;
 using KitX.Core.DI;
 using KitX.Core.Event;
-using KitX.Core.Workflow;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.ViewModels.Pages.Controls;
@@ -71,12 +71,18 @@ public partial class App : Application
         // Initialize ServiceHost with the single provider (centralized service access)
         ServiceHost.Initialize(provider);
 
-        // Pre-resolve RealPluginManager to ensure single instance (see AddCoreServices)
-        var rpm = provider.GetRequiredService<RealPluginManager>();
+        // Initialize the workflow library's own service locator with the same provider,
+        // so workflow code created outside DI (builtin functions, lazy singletons) can
+        // resolve shared services (IPluginService, IDeviceServer, workflow services, ...).
+        KitX.Workflow.Hosting.ServiceLocator.Initialize(provider);
+
+        // Pre-resolve the plugin manager bridge to force eager singleton construction
+        // (the concrete RealPluginManager subscribes to plugin events in its ctor).
+        var rpm = provider.GetRequiredService<IRealPluginManagerBridge>();
         Log.Information("RealPluginManager pre-resolved. HashCode: {HashCode}", rpm.GetHashCode());
 
         // Initialize TriggerManager from persisted workflow configurations
-        var triggerManager = provider.GetRequiredService<TriggerManager>();
+        var triggerManager = provider.GetRequiredService<ITriggerManager>();
         triggerManager.InitializeFromPersistedWorkflows();
 
         Log.Information("Service provider initialized.");

@@ -14,6 +14,7 @@ using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
+using KitX.Workflow.Contract;
 using NodifyM.Avalonia.ViewModelBase;
 using Serilog;
 using BlueprintPinDirection = KitX.Core.Contract.Workflow.PinDirection;
@@ -2057,7 +2058,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         ExecutionResult = string.Empty;
 
         Log.Information("[BlueprintDebug] Starting debug execution");
-        _debugController = new KitX.Core.Workflow.BlockScripting.BlueprintDebugger();
+        _debugController = new KitX.Workflow.BlockScripting.BlueprintDebugger();
         _debugController.SetSpeed(KitX.Core.Contract.Workflow.ExecutionSpeed.StepByStep);
         _debugController.NodeExecuting += OnDebugNodeExecuting;
         _debugController.NodeExecuted += OnDebugNodeExecuted;
@@ -2161,7 +2162,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private void OnDebugNodeExecuting(string statementId)
     {
         // Capture output from the PREVIOUS node's execution
-        var output = KitX.Core.Workflow.WorkflowOutput.GetAndClear();
+        var output = KitX.Workflow.WorkflowOutput.GetAndClear();
         if (output.Length > 0)
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
