@@ -10,8 +10,6 @@
 
     <Application.DataTemplates>
         <local:ViewLocator/>
-
-        <!-- Blueprint Node templates are now defined inline in BlueprintEditorWindow.axaml -->
     </Application.DataTemplates>
 
     <Application.Resources>

@@ -30,7 +30,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private readonly IBlueprintService _blueprintService;
     private readonly ITasksService _tasksService;
     private readonly INodeRegistry _nodeRegistry;
-    private readonly IKcsFileService _kcsFileService;
     private readonly IBlueprintRenderDataService _renderDataService;
     private readonly IFileDialogService _fileDialogService;
     private readonly IBlockScriptExecutor _executor;
@@ -39,12 +38,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private IBlueprintDebugController? _debugController;
     private Dictionary<string, string> _statementToNodeId = new();
     private Dictionary<string, BlueprintConnectorVM> _variableNameToConnector = new();
-
-    /// <summary>Last exported BlockScript source code (for display to user)</summary>
-    public string? LastExportedSourceCode { get; private set; }
-
-    /// <summary>Current file path (null if never saved)</summary>
-    public string? CurrentFilePath { get; private set; }
 
     private Blueprint? _currentBlueprint;
     private string _statusText = ViewModelBase.TranslateTextWithSuffix("WorkflowEditor", "Ready") ?? "Ready";
@@ -129,7 +122,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     public Dictionary<string, string> NodeToScopeMap { get; } = [];
 
-    private IWorkflowEditorBridge? _bridge;
     private IPluginService? _pluginService;
 
     /// <summary>
@@ -140,7 +132,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     /// <summary>
     /// Helper functions available for dynamic node creation.
-    /// Populated from the current script's helper functions via the bridge.
+    /// Populated by WorkflowEditorViewModel from the BS-mode helper list.
     /// </summary>
     public ObservableCollection<HelperFunctionPaletteItem> HelperFunctions { get; } = [];
 
@@ -158,16 +150,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     /// <summary>Whether any plugin triggers are available (controls UI visibility)</summary>
     public bool HasPluginTriggers => PluginTriggers.Count > 0;
-
-    /// <summary>
-    /// Sets the bridge to the associated WorkflowEditor.
-    /// Called by BlueprintEditorWindow after construction.
-    /// </summary>
-    public void SetBridge(IWorkflowEditorBridge bridge)
-    {
-        _bridge = bridge;
-        RefreshHelperFunctions();
-    }
 
     /// <summary>
     /// Refreshes the PluginFunctions collection from installed plugins.
@@ -247,32 +229,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         OnPropertyChanged(nameof(HasPluginTriggers));
     }
 
-    /// <summary>
-    /// Refreshes the HelperFunctions collection from the bridge.
-    /// Called when bridge is set.
-    /// </summary>
-    private void RefreshHelperFunctions()
-    {
-        HelperFunctions.Clear();
-        if (_bridge == null) return;
-
-        var helpers = _bridge.GetHelperFunctions();
-        if (helpers == null) return;
-
-        foreach (var helper in helpers)
-        {
-            HelperFunctions.Add(new HelperFunctionPaletteItem
-            {
-                FunctionName = helper.Name,
-                DisplayName = helper.Name,
-                Parameters = helper.Parameters ?? [],
-                ReturnType = helper.ReturnType ?? "object"
-            });
-        }
-
-        OnPropertyChanged(nameof(HasHelperFunctions));
-    }
-
     private void OnPluginStatusChanged(object? sender, PluginStatusChangedEventArgs e)
     {
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
@@ -283,7 +239,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     /// <summary>
     /// Detaches event handlers to prevent memory leaks.
-    /// Called by BlueprintEditorWindow.OnClosed.
+    /// Called by WorkflowEditorWindow.OnClosed.
     /// </summary>
     public void Cleanup()
     {
@@ -298,7 +254,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         IBlueprintService blueprintService,
         ITasksService tasksService,
         INodeRegistry nodeRegistry,
-        IKcsFileService kcsFileService,
         IBlueprintRenderDataService renderDataService,
         IFileDialogService fileDialogService,
         IBlockScriptExecutor executor)
@@ -306,7 +261,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         _blueprintService = blueprintService;
         _tasksService = tasksService;
         _nodeRegistry = nodeRegistry;
-        _kcsFileService = kcsFileService;
         _renderDataService = renderDataService;
         _fileDialogService = fileDialogService;
         _executor = executor;
@@ -1967,67 +1921,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     // ─── Blueprint Commands ──────────────────────────────────────────────
 
     [RelayCommand]
-    private void NewBlueprint()
-    {
-        CurrentBlueprint = _blueprintService.CreateBlueprint();
-        StatusText = "New blueprint created";
-        Nodes.Clear();
-        Connections.Clear();
-        RefreshCounts();
-        Log.Information("Created new blueprint");
-    }
-
-    [RelayCommand]
-    private async Task ExecuteBlueprintAsync()
-    {
-        if (CurrentBlueprint == null)
-        {
-            StatusText = "No blueprint to execute";
-            return;
-        }
-
-        IsExecuting = true;
-        StatusText = "Executing...";
-
-        try
-        {
-            _executor.SetDebugger(null);
-            var result = await _blueprintService.ExecuteBlueprintAsync(CurrentBlueprint);
-
-            if (result.IsSuccess)
-            {
-                var output = result.Output != null && result.Output.Count > 0
-                    ? string.Join("\n", result.Output)
-                    : string.Empty;
-                ExecutionResult = $"Blocks executed: {result.ExecutedBlockCount}\n" +
-                                  $"Execution time: {result.ExecutionTimeMs}ms\n" +
-                                  (string.IsNullOrEmpty(output) ? "" : $"Output:\n{output}");
-                StatusText = $"Executed: {result.ExecutedBlockCount} blocks, {result.ExecutionTimeMs}ms";
-                Log.Information("Blueprint executed successfully: {BlockCount} blocks, {Time}ms",
-                    result.ExecutedBlockCount, result.ExecutionTimeMs);
-            }
-            else
-            {
-                ExecutionResult = $"Error: {result.ErrorMessage}";
-                StatusText = $"Execution failed: {result.ErrorMessage}";
-                Log.Error("Blueprint execution failed: {Error}", result.ErrorMessage);
-            }
-        }
-        catch (Exception ex)
-        {
-            ExecutionResult = $"Execution error: {ex.Message}\n{ex.StackTrace}";
-            StatusText = $"Execution error: {ex.Message}";
-            Log.Error(ex, "Blueprint execution error");
-        }
-        finally
-        {
-            IsExecuting = false;
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = null;
-        }
-    }
-
-    [RelayCommand]
     private void CancelExecution()
     {
         _cancellationTokenSource?.Cancel();
@@ -2250,291 +2143,5 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     internal void SetDebugNodeMapping(Dictionary<string, string> mapping)
     {
         _statementToNodeId = new Dictionary<string, string>(mapping);
-    }
-
-    public async Task SaveBlueprintAsync(string filePath)
-    {
-        if (Nodes.Count == 0)
-        {
-            StatusText = "No nodes to save";
-            return;
-        }
-
-        StatusText = "Saving...";
-
-        try
-        {
-            var blueprint = ExportDrawingToBlueprint();
-            var sourceCode = _blueprintService.ExportToBlockScript(blueprint);
-
-            var kcs = new KcsFileFormat
-            {
-                UseBlockMode = true,
-                BlockScriptSource = sourceCode,
-                BlueprintData = blueprint,
-                HelperFunctions = blueprint.HelperFunctions ?? new List<HelperFunction>(),
-                VariableConstants = new Dictionary<string, object?>()
-            };
-
-            await _kcsFileService.SaveKcsFileAsync(filePath, kcs);
-
-            CurrentFilePath = filePath;
-            CurrentBlueprint = blueprint;
-            StatusText = $"Saved: {blueprint.Nodes.Count} nodes to {System.IO.Path.GetFileName(filePath)}";
-            Log.Information("Blueprint saved successfully to {FilePath}", filePath);
-        }
-        catch (Exception ex)
-        {
-            StatusText = $"Save error: {ex.Message}";
-            Log.Error(ex, "Blueprint save error");
-        }
-    }
-
-    public async Task LoadBlueprintAsync(string filePath)
-    {
-        StatusText = "Loading...";
-
-        try
-        {
-            var kcs = await _kcsFileService.LoadKcsFileAsync(filePath);
-
-            if (kcs == null)
-            {
-                StatusText = "Failed to load file";
-                return;
-            }
-
-            Blueprint? blueprint = null;
-
-            if (kcs.BlueprintData != null)
-            {
-                blueprint = kcs.BlueprintData;
-
-                // Fallback: if BlueprintData has empty BlockScopes but BlockScriptSource
-                // is available, re-import to rebuild BlockScopes with proper ownership
-                if ((blueprint.BlockScopes == null || blueprint.BlockScopes.Count == 0)
-                    && !string.IsNullOrEmpty(kcs.BlockScriptSource))
-                {
-                    Log.Information("BlockScopes empty in BlueprintData, re-importing from BlockScriptSource");
-                    blueprint = _blueprintService.ImportFromBlockScript(
-                        kcs.BlockScriptSource, kcs.HelperFunctions);
-                }
-            }
-            else if (!string.IsNullOrEmpty(kcs.BlockScriptSource))
-            {
-                blueprint = _blueprintService.ImportFromBlockScript(kcs.BlockScriptSource, kcs.HelperFunctions);
-            }
-
-            if (blueprint != null)
-            {
-                CurrentBlueprint = blueprint;
-                CurrentFilePath = filePath;
-                LoadBlueprintIntoDrawing(blueprint);
-                StatusText = $"Loaded: {blueprint.Nodes.Count} nodes, {blueprint.Connections.Count} connections";
-                Log.Information("Blueprint loaded successfully from {FilePath}", filePath);
-            }
-            else
-            {
-                StatusText = "No blueprint data found in file";
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to load blueprint from {FilePath}", filePath);
-            StatusText = "Failed to load file";
-        }
-    }
-
-    [RelayCommand]
-    private async Task ImportFromBlockScriptAsync((string SourceCode, List<HelperFunction>? Helpers) args)
-    {
-        var sourceCode = args.SourceCode;
-        var helperFunctions = args.Helpers;
-
-        if (string.IsNullOrWhiteSpace(sourceCode))
-        {
-            StatusText = "Empty source code";
-            return;
-        }
-
-        StatusText = "Importing...";
-
-        try
-        {
-            var blueprint = _blueprintService.ImportFromBlockScript(sourceCode, helperFunctions);
-
-            if (blueprint != null)
-            {
-                CurrentBlueprint = blueprint;
-                LoadBlueprintIntoDrawing(blueprint);
-                ExecutionResult = $"Import successful: {blueprint.Nodes.Count} nodes, {blueprint.Connections.Count} connections";
-                StatusText = $"Import successful: {blueprint.Nodes.Count} nodes, {blueprint.Connections.Count} connections";
-                Log.Information("Blueprint imported successfully with {NodeCount} nodes", blueprint.Nodes.Count);
-            }
-            else
-            {
-                ExecutionResult = "Import failed";
-                StatusText = "Import failed";
-                Log.Warning("Blueprint import returned null");
-            }
-        }
-        catch (Exception ex)
-        {
-            ExecutionResult = $"Import error: {ex.Message}";
-            StatusText = $"Import error: {ex.Message}";
-            Log.Error(ex, "Blueprint import error");
-        }
-    }
-
-    [RelayCommand]
-    private void ExportToBlockScript()
-    {
-        if (Nodes.Count == 0)
-        {
-            StatusText = "No nodes to export";
-            return;
-        }
-
-        StatusText = "Exporting...";
-
-        try
-        {
-            var blueprint = ExportDrawingToBlueprint();
-            LastExportedSourceCode = _blueprintService.ExportToBlockScript(blueprint);
-            ExecutionResult = $"Export successful: {blueprint.Nodes.Count} nodes\n\n{LastExportedSourceCode}";
-            StatusText = $"Export successful: {blueprint.Nodes.Count} nodes";
-            Log.Information("Blueprint exported successfully with {NodeCount} nodes", blueprint.Nodes.Count);
-        }
-        catch (Exception ex)
-        {
-            ExecutionResult = $"Export error: {ex.Message}";
-            StatusText = $"Export error: {ex.Message}";
-            Log.Error(ex, "Blueprint export error");
-        }
-    }
-
-    [RelayCommand]
-    private async Task OpenBlueprintAsync()
-    {
-        var filters = new List<FileDialogFilter>
-        {
-            new() { Name = "KCS Files", Extensions = ["kcs"] },
-            new() { Name = "All Files", Extensions = ["*"] }
-        };
-
-        var filePath = await _fileDialogService.ShowOpenDialogAsync("Open Blueprint", filters);
-        if (filePath == null) return;
-
-        await LoadBlueprintAsync(filePath);
-    }
-
-    [RelayCommand]
-    private async Task SaveBlueprintAsAsync()
-    {
-        var filters = new List<FileDialogFilter>
-        {
-            new() { Name = "KCS Files", Extensions = ["kcs"] }
-        };
-
-        var suggestedName = !string.IsNullOrEmpty(CurrentFilePath)
-            ? System.IO.Path.GetFileName(CurrentFilePath)
-            : null;
-
-        var filePath = await _fileDialogService.ShowSaveDialogAsync("Save Blueprint", "kcs", filters, suggestedName);
-        if (filePath == null) return;
-
-        await SaveBlueprintAsync(filePath);
-    }
-
-    [RelayCommand]
-    private async Task ImportFromBSAsync()
-    {
-        // Import directly from WorkflowEditor via bridge
-        if (_bridge == null)
-        {
-            StatusText = "No WorkflowEditor connected";
-            return;
-        }
-
-        var sourceCode = _bridge.GetCurrentScript();
-        var helpers = _bridge.GetHelperFunctions();
-
-        if (string.IsNullOrWhiteSpace(sourceCode))
-        {
-            ExecutionResult = "No script found in Workflow Editor";
-            StatusText = "No script to import";
-            return;
-        }
-
-        await ImportFromBlockScriptCommand.ExecuteAsync((sourceCode, helpers));
-    }
-
-    [RelayCommand]
-    private async Task ExportToBSAsync()
-    {
-        if (_bridge == null)
-        {
-            StatusText = "No WorkflowEditor connected";
-            return;
-        }
-
-        // Export and write back to WorkflowEditor
-        ExportToBlockScriptCommand.Execute(null);
-
-        if (!string.IsNullOrEmpty(LastExportedSourceCode))
-        {
-            var blueprint = CurrentBlueprint;
-            var helpers = blueprint?.HelperFunctions;
-
-            _bridge.SetScript(LastExportedSourceCode, helpers);
-            ExecutionResult = $"Exported to Workflow Editor: {LastExportedSourceCode.Length} chars";
-            StatusText = "Exported to Workflow Editor";
-        }
-    }
-
-    /// <summary>
-    /// Run: Export to WorkflowEditor, then trigger execution.
-    /// Output appears in both editors' Output panels.
-    /// </summary>
-    [RelayCommand]
-    private async Task RunViaBridgeAsync()
-    {
-        if (_bridge == null)
-        {
-            // Fallback to standalone execution
-            await ExecuteBlueprintCommand.ExecuteAsync(null);
-            return;
-        }
-
-        // Step 1: Export BS to WorkflowEditor
-        if (Nodes.Count == 0)
-        {
-            ExecutionResult = "No nodes to run";
-            StatusText = "No nodes to run";
-            return;
-        }
-
-        try
-        {
-            var blueprint = ExportDrawingToBlueprint();
-            LastExportedSourceCode = _blueprintService.ExportToBlockScript(blueprint);
-            var helpers = blueprint.HelperFunctions;
-
-            // Step 2: Write back to WorkflowEditor
-            _bridge.SetScript(LastExportedSourceCode, helpers);
-
-            // Step 3: Trigger execution in WorkflowEditor
-            ExecutionResult = $"Script exported, triggering execution...\n";
-            _bridge.TriggerExecution();
-
-            StatusText = "Script exported and executed via Workflow Editor";
-            Log.Information("Blueprint run via bridge: exported {NodeCount} nodes", blueprint.Nodes.Count);
-        }
-        catch (Exception ex)
-        {
-            ExecutionResult = $"Run error: {ex.Message}";
-            StatusText = $"Run error: {ex.Message}";
-            Log.Error(ex, "Blueprint run via bridge error");
-        }
     }
 }

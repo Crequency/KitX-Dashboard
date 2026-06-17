@@ -26,8 +26,6 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
     private readonly IBlockScriptService _blockScriptService;
     private readonly IWorkflowPluginService _workflowPluginService;
 
-    private readonly IKcsFileService _kcsFileService;
-
     private readonly ITasksService _tasksService;
 
     /// <summary>
@@ -42,12 +40,10 @@ internal class WorkflowScriptEditorWindowViewModel : ViewModelBase
     public WorkflowScriptEditorWindowViewModel(
         IBlockScriptService blockScriptService,
         IWorkflowPluginService workflowPluginService,
-        IKcsFileService kcsFileService,
         ITasksService tasksService)
     {
                 _blockScriptService = blockScriptService;
                 _workflowPluginService = workflowPluginService;
-                _kcsFileService = kcsFileService;
                 _tasksService = tasksService;
 
         InitCommands();
@@ -126,24 +122,6 @@ return v1 + v2;"
     public sealed override void InitCommands()
     {
         CancelExecutionCommand = ReactiveCommand.Create(() => _cancellationTokenSource?.Cancel());
-
-        // 加载工作流文件命令
-        LoadWorkflowCommand = ReactiveCommand.CreateFromTask(async (string? filePath) =>
-        {
-            if (!string.IsNullOrEmpty(filePath))
-            {
-                await LoadKcsFileAsync(filePath);
-            }
-        });
-
-        // 保存工作流文件命令
-        SaveWorkflowCommand = ReactiveCommand.CreateFromTask(async (string? filePath) =>
-        {
-            if (!string.IsNullOrEmpty(filePath))
-            {
-                await SaveKcsFileAsync(filePath);
-            }
-        });
 
         // 添加辅助函数命令
         AddHelperFunctionCommand = ReactiveCommand.Create(() =>
@@ -250,89 +228,6 @@ return v1 + v2;"
         }
 
         return overrides.Count > 0 ? overrides : null;
-    }
-
-    /// <summary>
-    /// 加载KCS文件
-    /// </summary>
-    internal async Task LoadKcsFileAsync(string filePath)
-    {
-        try
-        {
-            var kcs = await _kcsFileService.LoadKcsFileAsync(filePath);
-
-            if (kcs != null)
-            {
-                // 检查是否使用块脚本模式
-                UseBlockMode = kcs.UseBlockMode;
-
-                if (kcs.UseBlockMode)
-                {
-                    // 块脚本模式：加载 BlockScriptSource
-                    MainProgramCode = kcs.BlockScriptSource ?? string.Empty;
-                }
-                else
-                {
-                    // 旧KCS模式：加载 MainProgram
-                    MainProgramCode = kcs.MainProgram;
-                }
-
-                // 加载辅助函数（两种模式都支持）
-                HelperFunctions.Clear();
-                foreach (var func in kcs.HelperFunctions)
-                {
-                    HelperFunctions.Add(func);
-                }
-
-                // 加载可变常量（旧KCS模式）
-                VariableConstants.Clear();
-                foreach (var kvp in kcs.VariableConstants)
-                {
-                    VariableConstants.Add(new VariableConstant
-                    {
-                        Name = kvp.Key,
-                        DefaultValue = kvp.Value,
-                        UserValue = kvp.Value,
-                        Type = GetTypeName(kvp.Value)
-                    });
-                }
-
-                // 默认选中主程序（不选中任何辅助函数）
-                SelectedHelperFunction = null;
-                CurrentFilePath = filePath;
-            }
-        }
-        catch (Exception ex)
-        {
-            ExecutionResult = $"Error loading file: {ex.Message}";
-        }
-    }
-
-    /// <summary>
-    /// 保存KCS文件
-    /// </summary>
-    internal async Task SaveKcsFileAsync(string filePath)
-    {
-        try
-        {
-            var kcs = new KcsFileFormat
-            {
-                UseBlockMode = UseBlockMode,
-                MainProgram = UseBlockMode ? string.Empty : (MainProgramCode ?? string.Empty),
-                BlockScriptSource = UseBlockMode ? (MainProgramCode ?? string.Empty) : null,
-                HelperFunctions = HelperFunctions.ToList(),
-                VariableConstants = UseBlockMode ? new Dictionary<string, object?>() :
-                    VariableConstants.ToDictionary(c => c.Name, c => c.UserValue)
-            };
-
-            await _kcsFileService.SaveKcsFileAsync(filePath, kcs);
-            CurrentFilePath = filePath;
-            ExecutionResult = "File saved successfully.";
-        }
-        catch (Exception ex)
-        {
-            ExecutionResult = $"Error saving file: {ex.Message}";
-        }
     }
 
     /// <summary>
@@ -519,17 +414,6 @@ return v1 + v2;"
     public ObservableCollection<VariableConstant> VariableConstants { get; set; } = [];
 
     /// <summary>
-    /// 当前文件路径
-    /// </summary>
-    private string? _currentFilePath;
-
-    public string? CurrentFilePath
-    {
-        get => _currentFilePath;
-        set => this.RaiseAndSetIfChanged(ref _currentFilePath, value);
-    }
-
-    /// <summary>
     /// 是否使用块脚本模式
     /// </summary>
     private bool _useBlockMode = true;  // 默认开启块脚本模式
@@ -545,16 +429,6 @@ return v1 + v2;"
     #region Commands
 
     internal ReactiveCommand<Unit, Unit>? CancelExecutionCommand { get; set; }
-
-    /// <summary>
-    /// 加载工作流命令
-    /// </summary>
-    internal ReactiveCommand<string?, Unit>? LoadWorkflowCommand { get; set; }
-
-    /// <summary>
-    /// 保存工作流命令
-    /// </summary>
-    internal ReactiveCommand<string?, Unit>? SaveWorkflowCommand { get; set; }
 
     /// <summary>
     /// 添加辅助函数命令

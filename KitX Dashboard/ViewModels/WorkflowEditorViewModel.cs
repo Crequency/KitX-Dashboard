@@ -282,6 +282,10 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         foreach (var func in data.HelperFunctions)
             ScriptVM.HelperFunctions.Add(func);
 
+        // Mirror helpers into the Blueprint palette so BP mode's Helper Functions
+        // panel is populated (replaces the legacy bridge plumbing).
+        SyncBlueprintHelperFunctions();
+
         // Load into BP editor if blueprint data exists
         if (data.BlueprintData != null)
         {
@@ -385,6 +389,9 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         var sourceCode = ScriptVM.MainProgramCode ?? string.Empty;
         var helpers = new System.Collections.Generic.List<HelperFunction>(ScriptVM.HelperFunctions);
 
+        // Refresh the BP palette with the latest helpers before switching mode.
+        SyncBlueprintHelperFunctions();
+
         if (!string.IsNullOrWhiteSpace(sourceCode))
         {
             try
@@ -430,6 +437,26 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         }
 
         Mode = EditorMode.Blueprint;
+    }
+
+    /// <summary>
+    /// Mirrors the BS-mode helper function list into the Blueprint editor's palette.
+    /// Replaces the legacy SetBridge → RefreshHelperFunctions path: the unified editor
+    /// holds both sub-VMs directly, so we copy from ScriptVM whenever helpers change.
+    /// </summary>
+    private void SyncBlueprintHelperFunctions()
+    {
+        BlueprintVM.HelperFunctions.Clear();
+        foreach (var helper in ScriptVM.HelperFunctions)
+        {
+            BlueprintVM.HelperFunctions.Add(new HelperFunctionPaletteItem
+            {
+                FunctionName = helper.Name,
+                DisplayName = helper.Name,
+                Parameters = helper.Parameters ?? [],
+                ReturnType = helper.ReturnType ?? "object"
+            });
+        }
     }
 
     /// <summary>
