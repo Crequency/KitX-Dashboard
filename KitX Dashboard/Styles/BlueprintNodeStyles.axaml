@@ -10,11 +10,11 @@
     </Style>
 
     <Style Selector="controls|Node:pointerover">
-        <Setter Property="BorderBrush" Value="#007ACC"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
     </Style>
 
     <Style Selector="controls|Node[IsSelected=True]">
-        <Setter Property="BorderBrush" Value="#007ACC"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
         <Setter Property="BorderThickness" Value="2"/>
     </Style>
 

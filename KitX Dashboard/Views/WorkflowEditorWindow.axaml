@@ -27,7 +27,7 @@
     <DockPanel LastChildFill="True">
         <!-- Unified Toolbar -->
         <Border DockPanel.Dock="Top"
-                BorderBrush="#3F3F3F"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="10,8">
             <DockPanel>
@@ -73,7 +73,7 @@
                             <TextBlock Text="{DynamicResource Text_WorkflowEditor_Stop}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Separator Width="2" Background="#555" IsVisible="{Binding IsDebugging}"/>
+                    <Separator Width="2" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" IsVisible="{Binding IsDebugging}"/>
                     <Button Content="⏸" ToolTip.Tip="Pause"
                             IsVisible="{Binding IsDebugging}" IsEnabled="{Binding !IsPaused}"
                             Command="{Binding DebugPauseCommand}"/>
@@ -109,7 +109,7 @@
                     </ToggleButton>
 
                     <!-- Separator -->
-                    <Border Width="1" Height="24" Background="#3F3F3F" />
+                    <Border Width="1" Height="24" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" />
 
                     <!-- BS/BP Toggle -->
                     <StackPanel Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
@@ -134,7 +134,7 @@
 
         <!-- Collapsible metadata panel (Description + Author) -->
         <Border DockPanel.Dock="Top"
-                BorderBrush="#3F3F3F"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="15,6"
                 IsVisible="{Binding #MetadataToggleButton.IsChecked, Mode=OneWay}">
@@ -157,7 +157,7 @@
 
         <!-- Bottom status bar -->
         <Border DockPanel.Dock="Bottom"
-                BorderBrush="#3F3F3F"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                 BorderThickness="0,1,0,0"
                 Padding="10,4">
             <DockPanel>
@@ -192,7 +192,7 @@
                        Margin="5">
                 <!-- Trigger Settings -->
                 <Border DockPanel.Dock="Top"
-                        BorderBrush="#3F3F3F" BorderThickness="0,0,0,1"
+                        BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}" BorderThickness="0,0,0,1"
                         Padding="5,8" Margin="0,0,0,5">
                     <StackPanel Spacing="4">
                         <TextBlock Text="Trigger" FontWeight="Bold" Margin="0,0,0,4"
@@ -253,7 +253,7 @@
             <!-- ==================== BP Mode: Left Panel (Node Palette) ==================== -->
             <Border Grid.Column="0"
                     IsVisible="{Binding IsBlueprintMode}"
-                    Background="#252525"
+                    Background="{DynamicResource LayerFillColorDefaultBrush}"
                     Margin="5" CornerRadius="5">
                 <DockPanel Margin="10">
                     <TextBlock DockPanel.Dock="Top"
@@ -376,7 +376,7 @@
             </Border>
 
             <!-- Column 1: Splitter -->
-            <Border Grid.Column="1" Background="#3F3F3F" Width="5" />
+            <Border Grid.Column="1" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" Width="5" />
 
             <!-- ==================== Column 2: Main Editor Area ==================== -->
             <Grid Grid.Column="2">
@@ -443,7 +443,7 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0" Orientation="Vertical">
                                                 <TextBlock Text="{Binding Name}" FontWeight="Bold" />
-                                                <TextBlock Text="{Binding Type}" Foreground="Gray" FontSize="10" />
+                                                <TextBlock Text="{Binding Type}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="10" />
                                             </StackPanel>
                                             <TextBox Grid.Column="1"
                                                      Text="{Binding UserValue, Mode=TwoWay}"
@@ -496,7 +496,7 @@
 
                 <!-- BP Mode: NodifyM Editor Canvas -->
                 <Border IsVisible="{Binding IsBlueprintMode}"
-                        Background="#1E1E1E" Margin="5" CornerRadius="5">
+                        Background="{DynamicResource LayerFillColorDefaultBrush}" Margin="5" CornerRadius="5">
                     <controls:NodifyEditor x:Name="EditorControl"
                                            DataContext="{Binding BlueprintVM}"
                                            SelectedItems="{Binding SelectedNodes}"
@@ -519,7 +519,7 @@
                                                         Zoom="{Binding $parent[controls:NodifyEditor].Zoom}"
                                                         Spacing="15"
                                                         Thickness="0.5"
-                                                        Brush="#3F3F3F" />
+                                                        Brush="{DynamicResource ControlStrokeColorSecondaryBrush}" />
                             </DataTemplate>
                         </controls:NodifyEditor.GridLineTemplate>
 
@@ -563,7 +563,7 @@
                                                      Converter="{StaticResource HexToBrushConverter}" />
                                         </localControls:ScopeBlockControl.HeaderBrush>
                                         <localControls:ScopeBlockControl.Header>
-                                            <TextBlock Foreground="White" FontWeight="SemiBold" FontSize="12">
+                                            <TextBlock Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" FontWeight="SemiBold" FontSize="12">
                                                 <TextBlock.Text>
                                                     <MultiBinding StringFormat="{}{0} ({1} nodes)">
                                                         <Binding Path="DisplayName" />
@@ -592,7 +592,7 @@
                                                              Converter="{StaticResource HexToBrushConverter}" />
                                                 </Border.Background>
                                                 <TextBlock Text="{Binding DisplayTitle}"
-                                                           Foreground="White"
+                                                           Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
                                                            FontWeight="SemiBold"
                                                            FontSize="12" />
                                             </Border>
@@ -603,7 +603,7 @@
                                             <StackPanel IsVisible="{Binding ShowConstTypeSelector}">
                                                 <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,0">
                                                     <TextBlock Text="{DynamicResource Text_WorkflowEditor_Type}" VerticalAlignment="Center"
-                                                               FontSize="10" Foreground="#AAAAAA" />
+                                                               FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                                                     <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
                                                               SelectedItem="{Binding ConstType, Mode=TwoWay}"
                                                               FontSize="10" MinWidth="70" Padding="4,2"
@@ -611,12 +611,13 @@
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,2,8,4">
                                                     <TextBlock Text="{DynamicResource Text_WorkflowEditor_Value}" VerticalAlignment="Center"
-                                                               FontSize="10" Foreground="#AAAAAA" />
+                                                               FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                                                     <TextBox Text="{Binding ConstValue, Mode=TwoWay}"
                                                              FontSize="10" Watermark="{DynamicResource Text_WorkflowEditor_ValueWatermark}"
                                                              MinWidth="80" Padding="4,2"
-                                                             Background="#333333" Foreground="White"
-                                                             BorderThickness="1" BorderBrush="#555555" />
+                                                             Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                             BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" />
                                                 </StackPanel>
                                             </StackPanel>
 
@@ -624,7 +625,7 @@
                                             <StackPanel IsVisible="{Binding ShowVarTypeSelector}">
                                                 <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,4">
                                                     <TextBlock Text="{DynamicResource Text_WorkflowEditor_Type}" VerticalAlignment="Center"
-                                                               FontSize="10" Foreground="#AAAAAA" />
+                                                               FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                                                     <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
                                                               SelectedItem="{Binding VarType, Mode=TwoWay}"
                                                               FontSize="10" MinWidth="70" Padding="4,2"
@@ -685,10 +686,10 @@
             </Grid>
 
             <!-- Column 3: Splitter -->
-            <Border Grid.Column="3" Background="#3F3F3F" Width="5" />
+            <Border Grid.Column="3" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" Width="5" />
 
             <!-- ==================== Column 4: Shared Output Panel ==================== -->
-            <Border Grid.Column="4" Background="#252525" Margin="5" CornerRadius="5">
+            <Border Grid.Column="4" Background="{DynamicResource LayerFillColorDefaultBrush}" Margin="5" CornerRadius="5">
                 <DockPanel Margin="10">
                     <TextBlock DockPanel.Dock="Top"
                                Text="{DynamicResource Text_WorkflowEditor_Output}"

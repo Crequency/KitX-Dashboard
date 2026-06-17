@@ -580,7 +580,7 @@ public partial class WorkflowEditorWindow : Window, IView
             nodePanel.Children.Add(new TextBlock
             {
                 Text = GetResource("Text_WorkflowEditor_MoveToScope") ?? "Move to Scope:",
-                Foreground = Avalonia.Media.Brush.Parse("#999999"),
+                Foreground = ThemeBrush("TextFillColorTertiaryBrush"),
                 FontSize = 11,
                 Margin = new Thickness(8, 4, 8, 2),
             });
@@ -612,16 +612,16 @@ public partial class WorkflowEditorWindow : Window, IView
         ShowContextPopup(nodePanel);
     }
 
-    private static StackPanel CreateMenuPanel() => new()
+    private StackPanel CreateMenuPanel() => new()
     {
-        Background = Avalonia.Media.Brush.Parse("#2D2D2D"),
+        Background = ThemeBrush("LayerFillColorDefaultBrush"),
         MinWidth = 180,
     };
 
-    private static Border CreateSeparator() => new()
+    private Border CreateSeparator() => new()
     {
         Height = 1,
-        Background = Avalonia.Media.Brush.Parse("#444444"),
+        Background = ThemeBrush("ControlStrokeColorSecondaryBrush"),
         Margin = new Thickness(4, 2),
     };
 
@@ -636,17 +636,31 @@ public partial class WorkflowEditorWindow : Window, IView
             HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Left,
             Padding = new Thickness(8, 4),
             Background = Avalonia.Media.Brushes.Transparent,
-            Foreground = Avalonia.Media.Brushes.White,
+            Foreground = ThemeBrush("TextFillColorPrimaryBrush"),
             FontSize = 13,
         };
+    }
+
+    /// <summary>
+    /// Resolves a theme resource brush for the window's current theme variant,
+    /// so the context menu follows Light/Dark switches at runtime.
+    /// </summary>
+    private Avalonia.Media.IBrush? ThemeBrush(string key)
+    {
+        if (Application.Current?.TryFindResource(key, ActualThemeVariant, out var value) == true
+            && value is Avalonia.Media.IBrush brush)
+        {
+            return brush;
+        }
+        return null;
     }
 
     private void ShowContextPopup(StackPanel panel)
     {
         var border = new Border
         {
-            Background = Avalonia.Media.Brush.Parse("#2D2D2D"),
-            BorderBrush = Avalonia.Media.Brush.Parse("#555555"),
+            Background = ThemeBrush("LayerFillColorDefaultBrush"),
+            BorderBrush = ThemeBrush("ControlStrokeColorSecondaryBrush"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
             Padding = new Thickness(2),

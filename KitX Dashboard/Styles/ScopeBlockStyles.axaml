@@ -5,7 +5,7 @@
     <!-- Scope Block visual template: large bordered container behind nodes -->
     <Style Selector="controls|ScopeBlockControl">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/>
@@ -55,7 +55,7 @@
                                     <Thumb.Template>
                                         <ControlTemplate>
                                             <Border Background="Transparent"
-                                                    BorderBrush="#666666"
+                                                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                                     BorderThickness="0,1,1,0"
                                                     CornerRadius="0,0,4,0"
                                                     Opacity="0.5"/>
