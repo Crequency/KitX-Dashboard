@@ -543,4 +543,10 @@ internal partial class WorkflowEditorViewModel : ObservableObject
 
     [RelayCommand]
     private void DebugContinue() => BlueprintVM.DebugContinueCommand.Execute(null);
+
+    /// <summary>
+    /// Clears the shared execution output panel.
+    /// </summary>
+    [RelayCommand]
+    private void ClearOutput() => ExecutionOutput = string.Empty;
 }

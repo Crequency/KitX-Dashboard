@@ -478,6 +478,20 @@ public partial class WorkflowEditorWindow : Window, IView
                 });
             }
         };
+
+        // Auto-scroll the output panel to the bottom whenever new output arrives.
+        _viewModel.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(_viewModel.ExecutionOutput))
+            {
+                Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    var scrollViewer = this.FindControl<ScrollViewer>("OutputScrollViewer");
+                    if (scrollViewer != null)
+                        scrollViewer.ScrollToEnd();
+                });
+            }
+        };
     }
 
     #endregion

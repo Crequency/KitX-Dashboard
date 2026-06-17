@@ -1536,6 +1536,23 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     }
 
     /// <summary>
+    /// Computes a spawn location for a newly added node so that consecutive additions
+    /// don't all stack on top of each other at (100,100). Cascades in an 8-step ring
+    /// around the origin point, then grows outward.
+    /// </summary>
+    private Avalonia.Point GetNextNodeLocation()
+    {
+        const double originX = 100;
+        const double originY = 100;
+        const double step = 30;
+        var ring = Nodes.Count % 8;
+        var lap = Nodes.Count / 8;
+        return new Avalonia.Point(
+            originX + (ring + lap) * step,
+            originY + ring * step);
+    }
+
+    /// <summary>
     /// Adds a node to the canvas from a descriptor
     /// </summary>
     private void AddNodeFromTemplate(BlueprintNodeType type, string? contentTitle = null)
@@ -1546,7 +1563,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         var node = new BlueprintNodeVM
         {
-            Location = new Avalonia.Point(100, 100),
+            Location = GetNextNodeLocation(),
             BlueprintNodeId = Guid.NewGuid().ToString(),
             NodeType = type,
             DisplayTitle = title,
@@ -1610,7 +1627,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         var node = new BlueprintNodeVM
         {
-            Location = new Avalonia.Point(100, 100),
+            Location = GetNextNodeLocation(),
             BlueprintNodeId = Guid.NewGuid().ToString(),
             NodeType = BlueprintNodeType.BuiltinFunction,
             BuiltinFunctionName = functionName,
@@ -1719,7 +1736,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         var node = new BlueprintNodeVM
         {
-            Location = new Avalonia.Point(100, 100),
+            Location = GetNextNodeLocation(),
             BlueprintNodeId = Guid.NewGuid().ToString(),
             NodeType = BlueprintNodeType.Call,
             DisplayTitle = displayTitle,
@@ -1800,7 +1817,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         var node = new BlueprintNodeVM
         {
-            Location = new Avalonia.Point(100, 100),
+            Location = GetNextNodeLocation(),
             BlueprintNodeId = Guid.NewGuid().ToString(),
             NodeType = BlueprintNodeType.PluginTrigger,
             DisplayTitle = displayTitle,
@@ -1845,7 +1862,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         var node = new BlueprintNodeVM
         {
-            Location = new Avalonia.Point(100, 100),
+            Location = GetNextNodeLocation(),
             BlueprintNodeId = Guid.NewGuid().ToString(),
             NodeType = BlueprintNodeType.CallHelper,
             DisplayTitle = displayTitle,

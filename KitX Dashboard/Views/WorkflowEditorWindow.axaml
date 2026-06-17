@@ -375,8 +375,12 @@
                 </DockPanel>
             </Border>
 
-            <!-- Column 1: Splitter -->
-            <Border Grid.Column="1" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" Width="5" />
+            <!-- Column 1: Splitter (resizable divider between left panel and editor) -->
+            <GridSplitter Grid.Column="1"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                          Width="5" />
 
             <!-- ==================== Column 2: Main Editor Area ==================== -->
             <Grid Grid.Column="2">
@@ -395,7 +399,7 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                         <avalonedit:TextEditor Name="CodeEditor"
-                                               FontFamily="Consolas"
+                                               FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
                                                FontSize="12"
                                                ShowLineNumbers="True"
                                                SyntaxHighlighting="C#"
@@ -638,8 +642,13 @@
                                         <controls:Node.InputConnectorTemplate>
                                             <DataTemplate DataType="{x:Type viewModels:BlueprintConnectorVM}">
                                                  <controls:NodeInput IsConnected="{Binding IsConnected}"
-                                                                     Anchor="{Binding Anchor, Mode=OneWayToSource}"
-                                                                     ToolTip.Tip="{Binding RuntimeValue}">
+                                                                     Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                                                    <ToolTip.Tip>
+                                                        <MultiBinding StringFormat="{}{0} ({1})">
+                                                            <Binding Path="Title" />
+                                                            <Binding Path="PinTypeText" />
+                                                        </MultiBinding>
+                                                    </ToolTip.Tip>
                                                     <controls:NodeInput.BorderBrush>
                                                         <Binding Path="PinTypeColorHex"
                                                                  Converter="{StaticResource HexToBrushConverter}" />
@@ -663,8 +672,13 @@
                                         <controls:Node.OutputConnectorTemplate>
                                             <DataTemplate DataType="{x:Type viewModels:BlueprintConnectorVM}">
                                                  <controls:NodeOutput IsConnected="{Binding IsConnected}"
-                                                                      Anchor="{Binding Anchor, Mode=OneWayToSource}"
-                                                                      ToolTip.Tip="{Binding RuntimeValue}">
+                                                                      Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                                                    <ToolTip.Tip>
+                                                        <MultiBinding StringFormat="{}{0} ({1})">
+                                                            <Binding Path="Title" />
+                                                            <Binding Path="PinTypeText" />
+                                                        </MultiBinding>
+                                                    </ToolTip.Tip>
                                                     <controls:NodeOutput.BorderBrush>
                                                         <Binding Path="PinTypeColorHex"
                                                                  Converter="{StaticResource HexToBrushConverter}" />
@@ -685,21 +699,36 @@
                 </Border>
             </Grid>
 
-            <!-- Column 3: Splitter -->
-            <Border Grid.Column="3" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" Width="5" />
+            <!-- Column 3: Splitter (resizable divider between editor and output panel) -->
+            <GridSplitter Grid.Column="3"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                          Width="5" />
 
             <!-- ==================== Column 4: Shared Output Panel ==================== -->
             <Border Grid.Column="4" Background="{DynamicResource LayerFillColorDefaultBrush}" Margin="5" CornerRadius="5">
                 <DockPanel Margin="10">
-                    <TextBlock DockPanel.Dock="Top"
-                               Text="{DynamicResource Text_WorkflowEditor_Output}"
-                               FontWeight="Bold"
-                               Margin="0,0,0,10" />
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <TextBlock Text="{DynamicResource Text_WorkflowEditor_Output}"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <Button Name="ClearOutputButton"
+                                DockPanel.Dock="Right"
+                                Command="{Binding ClearOutputCommand}"
+                                ToolTip.Tip="{DynamicResource Text_WorkflowEditor_ClearOutput}"
+                                Padding="8,2"
+                                HorizontalAlignment="Right">
+                            <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
+                        </Button>
+                    </DockPanel>
+                    <ScrollViewer Name="OutputScrollViewer"
+                                  HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto">
-                        <TextBox Text="{Binding ExecutionOutput}"
+                        <TextBox Name="OutputTextBox"
+                                 Text="{Binding ExecutionOutput}"
                                  IsReadOnly="True"
-                                 FontFamily="Consolas"
+                                 FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
                                  FontSize="11"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"

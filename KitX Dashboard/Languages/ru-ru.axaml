@@ -169,6 +169,7 @@
     <x:String x:Key="Text_WorkflowEditor_Print">Печать</x:String>
     <x:String x:Key="Text_WorkflowEditor_Pause">Пауза</x:String>
     <x:String x:Key="Text_WorkflowEditor_Output">Вывод</x:String>
+    <x:String x:Key="Text_WorkflowEditor_ClearOutput">Очистить вывод</x:String>
     <x:String x:Key="Text_WorkflowEditor_Type">Тип:</x:String>
     <x:String x:Key="Text_WorkflowEditor_Value">Значение:</x:String>
     <x:String x:Key="Text_WorkflowEditor_ValueWatermark">значение...</x:String>

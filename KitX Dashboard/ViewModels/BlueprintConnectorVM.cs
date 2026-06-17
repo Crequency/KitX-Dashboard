@@ -32,6 +32,9 @@ public partial class BlueprintConnectorVM : ConnectorViewModelBase
     /// <summary>Hex color derived from PinType for binding</summary>
     public string PinTypeColorHex => GetHexColorForPinType(PinType);
 
+    /// <summary>Human-readable pin type name, for tooltips.</summary>
+    public string PinTypeText => PinType.ToString();
+
     /// <summary>Show default value editor: only for disconnected non-execution data pins</summary>
     public bool ShowDefaultValue => !IsConnected && !IsExecution;
 

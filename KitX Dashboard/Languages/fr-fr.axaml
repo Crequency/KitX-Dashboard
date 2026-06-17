@@ -169,6 +169,7 @@
     <x:String x:Key="Text_WorkflowEditor_Print">Imprimer</x:String>
     <x:String x:Key="Text_WorkflowEditor_Pause">Pause</x:String>
     <x:String x:Key="Text_WorkflowEditor_Output">Sortie</x:String>
+    <x:String x:Key="Text_WorkflowEditor_ClearOutput">Effacer la sortie</x:String>
     <x:String x:Key="Text_WorkflowEditor_Type">Type :</x:String>
     <x:String x:Key="Text_WorkflowEditor_Value">Valeur :</x:String>
     <x:String x:Key="Text_WorkflowEditor_ValueWatermark">valeur...</x:String>

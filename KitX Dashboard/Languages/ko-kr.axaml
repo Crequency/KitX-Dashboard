@@ -169,6 +169,7 @@
     <x:String x:Key="Text_WorkflowEditor_Print">인쇄</x:String>
     <x:String x:Key="Text_WorkflowEditor_Pause">일시정지</x:String>
     <x:String x:Key="Text_WorkflowEditor_Output">출력</x:String>
+    <x:String x:Key="Text_WorkflowEditor_ClearOutput">출력 지우기</x:String>
     <x:String x:Key="Text_WorkflowEditor_Type">유형:</x:String>
     <x:String x:Key="Text_WorkflowEditor_Value">값:</x:String>
     <x:String x:Key="Text_WorkflowEditor_ValueWatermark">값...</x:String>

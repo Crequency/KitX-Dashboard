@@ -96,7 +96,9 @@
         <PackageReference Include="Markdown.Avalonia" Version="11.0.3-a1" />
         <PackageReference Include="Material.Icons.Avalonia" Version="2.4.1" />
         <PackageReference Include="MessageBox.Avalonia" Version="3.3.1.1" />
-        <PackageReference Include="NodifyM.Avalonia" Version="1.1.9" />
+        <!-- NodifyM.Avalonia: consumed via ProjectReference to the Crequency fork's ava11 branch (see below),
+             which carries the box-select crash fix. NuGet fallback retained for builds without the source tree. -->
+        <PackageReference Include="NodifyM.Avalonia" Version="1.1.9" Condition="!Exists('..\..\..\Reference\NodifyM.Avalonia\NodifyM.Avalonia\NodifyM.Avalonia.csproj')" />
         <PackageReference Include="nulastudio.NetBeauty" Version="2.1.2.1" Condition="$(Is2Publish) == 'True'" />
         <PackageReference Include="ReactiveUI.Avalonia" Version="11.3.8" />
         <PackageReference Include="Serilog" Version="4.3.1" />
@@ -131,6 +133,7 @@
         <ProjectReference Include="..\..\..\Reference\Common.BasicHelper\Common.BasicHelper\Common.BasicHelper.csproj" Condition="Exists('..\..\..\Reference\Common.BasicHelper\Common.BasicHelper\Common.BasicHelper.csproj')" />
         <ProjectReference Include="..\..\..\Reference\Common.Update\Common.Update.Checker\Common.Update.Checker.csproj" Condition="Exists('..\..\..\Reference\Common.Update\Common.Update.Checker\Common.Update.Checker.csproj')" />
     <ProjectReference Include="..\..\..\Reference\Csharpell\Csharpell.Core\Csharpell.Core.csproj" Condition="Exists('..\..\..\Reference\Csharpell\Csharpell.Core\Csharpell.Core.csproj')" />
+    <ProjectReference Include="..\..\..\Reference\NodifyM.Avalonia\NodifyM.Avalonia\NodifyM.Avalonia.csproj" Condition="Exists('..\..\..\Reference\NodifyM.Avalonia\NodifyM.Avalonia\NodifyM.Avalonia.csproj')" />
     </ItemGroup>
 
     <ItemGroup>

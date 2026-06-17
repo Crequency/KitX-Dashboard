@@ -169,6 +169,7 @@
     <x:String x:Key="Text_WorkflowEditor_Print">印刷</x:String>
     <x:String x:Key="Text_WorkflowEditor_Pause">一時停止</x:String>
     <x:String x:Key="Text_WorkflowEditor_Output">出力</x:String>
+    <x:String x:Key="Text_WorkflowEditor_ClearOutput">出力をクリア</x:String>
     <x:String x:Key="Text_WorkflowEditor_Type">型:</x:String>
     <x:String x:Key="Text_WorkflowEditor_Value">値:</x:String>
     <x:String x:Key="Text_WorkflowEditor_ValueWatermark">値...</x:String>
