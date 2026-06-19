@@ -325,8 +325,38 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         src.IsConnected = true;
         tgt.IsConnected = true;
 
+        // StringConcat dynamic pin expansion: when the last data input pin of a
+        // StringConcat node gets connected, auto-append a new String input pin so the
+        // user can chain more parts without manual adding.
+        TryExpandStringConcatPins(tgt);
+
         RefreshCounts();
         Log.Debug("Connection created: {SrcTitle} -> {TgtTitle}", src.Title, tgt.Title);
+    }
+
+    /// <summary>
+    /// If the target connector belongs to a StringConcat node and is the last data input,
+    /// append a fresh String input pin so the node can accept one more concatenation part.
+    /// </summary>
+    private void TryExpandStringConcatPins(BlueprintConnectorVM tgt)
+    {
+        var node = FindParentNode(tgt);
+        if (node == null) return;
+        if (node.BuiltinFunctionName != "StringConcat") return;
+
+        var dataInputs = node.Input.OfType<BlueprintConnectorVM>()
+            .Where(c => !c.IsExecution).ToList();
+        if (dataInputs.Count == 0) return;
+        if (tgt != dataInputs.Last()) return; // only expand when the LAST pin is connected
+
+        // Append a new input pin
+        node.Input.Add(new BlueprintConnectorVM
+        {
+            Title = $"Input {dataInputs.Count + 1}",
+            Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+            PinType = PinType.String,
+            OriginalPinId = Guid.NewGuid().ToString()
+        });
     }
 
     // ─── Connection Disconnection (NodifyM override) ────────────────────
@@ -1190,7 +1220,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         if (nodeVm.NodeType == BlueprintNodeType.BuiltinFunction
             && nodeVm.Metadata.TryGetValue("BuiltinFunctionName", out var funcName)
             && !string.IsNullOrEmpty(funcName)
-            && funcName is "Get" or "Set" or "Print" or "Pause" or "Branch" or "Loop" or "Break" or "ToLoopCond")
+            && funcName is "Get" or "Set" or "Print" or "Pause" or "Branch" or "Loop" or "Break" or "ToLoopCond" or "StringConcat")
         {
             blueprintNode = _nodeRegistry.CreateBuiltinFunctionNode(funcName);
         }
@@ -1931,6 +1961,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     [RelayCommand]
     public void AddPrintNode() => AddBuiltinFunctionNode("Print");
+
+    [RelayCommand]
+    public void AddStringConcatNode() => AddBuiltinFunctionNode("StringConcat");
 
     [RelayCommand]
     public void AddPauseNode() => AddBuiltinFunctionNode("Pause");

@@ -365,6 +365,10 @@
                                     <Button Content="{DynamicResource Text_WorkflowEditor_Print}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddPrintNodeCommand}" />
+                                    <Button Content="String Concat"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddStringConcatNodeCommand}"
+                                            ToolTip.Tip="StringConcat: concatenate multiple string inputs" />
                                     <Button Content="{DynamicResource Text_WorkflowEditor_Pause}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddPauseNodeCommand}" />
