@@ -31,9 +31,20 @@ internal class WorkflowPageViewModel : ViewModelBase
 #if DEBUG
     public ObservableCollection<string> ExecutionLog { get; } = new();
     public bool IsDebugLogVisible => true;
+
+    // Log panel height cycles through these three sizes on each button click.
+    private static readonly double[] _logHeights = { 160, 300, 80 };
+    private int _logHeightIndex = 0;
+    private double _logPanelHeight = _logHeights[0];
+    public double LogPanelHeight
+    {
+        get => _logPanelHeight;
+        set => this.RaiseAndSetIfChanged(ref _logPanelHeight, value);
+    }
 #else
     public ObservableCollection<string> ExecutionLog { get; } = new();
     public bool IsDebugLogVisible => false;
+    public double LogPanelHeight => 160;
 #endif
 
     private const int MaxLogEntries = 500;
@@ -106,6 +117,12 @@ internal class WorkflowPageViewModel : ViewModelBase
         ClearLogCommand = ReactiveCommand.Create(() =>
         {
             ExecutionLog.Clear();
+        });
+
+        ToggleLogHeightCommand = ReactiveCommand.Create(() =>
+        {
+            _logHeightIndex = (_logHeightIndex + 1) % _logHeights.Length;
+            LogPanelHeight = _logHeights[_logHeightIndex];
         });
     }
 
@@ -347,10 +364,11 @@ internal class WorkflowPageViewModel : ViewModelBase
                 // if the response callback needs the same SynchronizationContext.
                 await Task.Run(async () =>
                 {
-                    bool success = await _workflowService.RunWorkflowAsync(workflow.Id);
+                    var runResult = await _workflowService.RunWorkflowWithDetailsAsync(workflow.Id);
                     _eventService.Publish(EventNames.WorkflowExecutionResult,
-                        new WorkflowExecutionResultEventArgs(workflow.Id, success,
-                            success ? null : "Workflow execution failed"));
+                        new WorkflowExecutionResultEventArgs(workflow.Id, runResult.IsSuccess,
+                            runResult.IsSuccess ? null : runResult.ErrorMessage ?? "Workflow execution failed",
+                            runResult.Output));
                 });
             }
         }
@@ -419,6 +437,13 @@ internal class WorkflowPageViewModel : ViewModelBase
                     workflow.IsRunning = false;
                 RefreshWorkflowInList(workflow);
                 AppendLog($"[Done] '{workflow.Name}' completed successfully");
+
+                // Surface Print() output lines — indented for readability.
+                if (args.Output is { Count: > 0 })
+                {
+                    foreach (var line in args.Output)
+                        AppendLog($"       │ {line}");
+                }
             }
             else
             {
@@ -430,6 +455,13 @@ internal class WorkflowPageViewModel : ViewModelBase
                     workflow.IsRunning = false;
                 RefreshWorkflowInList(workflow);
                 AppendLog($"[Error] '{workflow.Name}' failed: {args.ErrorMessage}");
+
+                // Show output even on failure — it may contain diagnostic prints.
+                if (args.Output is { Count: > 0 })
+                {
+                    foreach (var line in args.Output)
+                        AppendLog($"       │ {line}");
+                }
             }
         });
     }
@@ -539,4 +571,7 @@ internal class WorkflowPageViewModel : ViewModelBase
 
     /// <summary>Clears the Debug activity log. Bound from the broom button in the log panel.</summary>
     internal ReactiveCommand<Unit, Unit>? ClearLogCommand { get; set; }
+
+    /// <summary>Cycles the log panel height through 3 sizes (160/300/80).</summary>
+    internal ReactiveCommand<Unit, Unit>? ToggleLogHeightCommand { get; set; }
 }

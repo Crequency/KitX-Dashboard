@@ -57,10 +57,11 @@
         </Grid>
 
         <!-- Real-time activity log (Debug builds only).
-             Shows mounted/triggered/run/complete/error events so users can see which
-             workflow fired, when, and why it failed — without digging through Log/. -->
+             Height toggles between 3 sizes via the expand/collapse button
+             (GridSplitter doesn't work inside DockPanel). Shows mounted/triggered/
+             run/complete/error events plus Print() output. -->
         <Border DockPanel.Dock="Bottom"
-                Height="160"
+                Height="{Binding LogPanelHeight}"
                 IsVisible="{Binding IsDebugLogVisible}"
                 BorderBrush="{DynamicResource ControlElevationBorderBrush}"
                 BorderThickness="1,1,0,0"
@@ -74,13 +75,21 @@
                     <TextBlock DockPanel.Dock="Left"
                                FontWeight="SemiBold"
                                Text="Activity Log (Debug)" />
-                    <Button DockPanel.Dock="Right"
-                            HorizontalAlignment="Right"
-                            Padding="6,2"
-                            Command="{Binding ClearLogCommand}"
-                            ToolTip.Tip="Clear log">
-                        <icon:MaterialIcon Width="14" Height="14" Kind="Broom" />
-                    </Button>
+                    <StackPanel DockPanel.Dock="Right"
+                                HorizontalAlignment="Right"
+                                Orientation="Horizontal"
+                                Spacing="4">
+                        <Button Padding="6,2"
+                                Command="{Binding ToggleLogHeightCommand}"
+                                ToolTip.Tip="切换日志面板高度">
+                            <icon:MaterialIcon Width="14" Height="14" Kind="Resize" />
+                        </Button>
+                        <Button Padding="6,2"
+                                Command="{Binding ClearLogCommand}"
+                                ToolTip.Tip="清空日志">
+                            <icon:MaterialIcon Width="14" Height="14" Kind="Broom" />
+                        </Button>
+                    </StackPanel>
                 </DockPanel>
                 <ListBox Grid.Row="1"
                          x:Name="ActivityLogList"
