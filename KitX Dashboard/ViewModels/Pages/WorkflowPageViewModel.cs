@@ -23,6 +23,38 @@ internal class WorkflowPageViewModel : ViewModelBase
     private readonly IWorkflowManagementService _workflowService;
     private readonly IEventService _eventService;
 
+    /// <summary>
+    /// Real-time activity log shown at the bottom of the Workflow page. Only populated
+    /// in Debug builds so Release users get a clean UI. Each entry is a timestamped line.
+    /// Capped at 500 entries (older trimmed) to bound memory.
+    /// </summary>
+#if DEBUG
+    public ObservableCollection<string> ExecutionLog { get; } = new();
+    public bool IsDebugLogVisible => true;
+#else
+    public ObservableCollection<string> ExecutionLog { get; } = new();
+    public bool IsDebugLogVisible => false;
+#endif
+
+    private const int MaxLogEntries = 500;
+
+    /// <summary>
+    /// Appends a timestamped line to <see cref="ExecutionLog"/>. Safe to call from any
+    /// thread; marshals onto the UI thread. No-op unless DEBUG.
+    /// </summary>
+    private void AppendLog(string message)
+    {
+#if DEBUG
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            var line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+            ExecutionLog.Add(line);
+            while (ExecutionLog.Count > MaxLogEntries)
+                ExecutionLog.RemoveAt(0);
+        });
+#endif
+    }
+
     public WorkflowPageViewModel()
     {
         _storageService = App.GetService<IWorkflowStorageService>();
@@ -69,6 +101,11 @@ internal class WorkflowPageViewModel : ViewModelBase
         RefreshWorkflowsCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             await LoadWorkflowsAsync();
+        });
+
+        ClearLogCommand = ReactiveCommand.Create(() =>
+        {
+            ExecutionLog.Clear();
         });
     }
 
@@ -138,7 +175,11 @@ internal class WorkflowPageViewModel : ViewModelBase
             }
 
             WorkflowCases.Add(w);
+            AppendLog($"Mounted workflow '{w.Name}' (id={w.Id}, trigger={w.TriggerType}" +
+                (w.TriggerConfig?.PluginName is { } pn && !string.IsNullOrEmpty(pn)
+                    ? $":{pn}/{w.TriggerConfig.TriggerName}" : "") + ")");
         }
+        AppendLog($"Loaded {workflows.Count} workflow(s)");
     }
 
     /// <summary>
@@ -236,6 +277,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                 await _storageService.DeleteWorkflowAsync(workflow.Id);
                 WorkflowCases.Remove(workflow);
                 _eventService.Publish(EventNames.WorkflowDeleted, EventArgs.Empty);
+                AppendLog($"[Delete] Removed workflow '{workflow.Name}' (id={workflow.Id})");
             }
         }
         catch (Exception ex)
@@ -267,6 +309,8 @@ internal class WorkflowPageViewModel : ViewModelBase
                     workflow.IsError = true;
                     workflow.ErrorMessage = $"Plugin '{workflow.TriggerConfig.PluginName}' is not connected";
                     RefreshWorkflowInList(workflow);
+                    AppendLog($"[Trigger] '{workflow.Name}' requires plugin " +
+                        $"'{workflow.TriggerConfig.PluginName}' which is NOT connected — trigger not armed");
                     return;
                 }
 
@@ -278,8 +322,14 @@ internal class WorkflowPageViewModel : ViewModelBase
                 {
                     var triggerManager = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Workflow.ITriggerManager>();
                     triggerManager?.RegisterWorkflowTrigger(workflow.Id, workflow.TriggerConfig);
+                    AppendLog($"[Trigger] '{workflow.Name}' armed — fires on " +
+                        $"'{workflow.TriggerConfig.PluginName}/{workflow.TriggerConfig.TriggerName}'");
                 }
-                catch { /* non-critical */ }
+                catch (Exception trigEx)
+                {
+                    AppendLog($"[Trigger] '{workflow.Name}' failed to register trigger: {trigEx.Message}");
+                    /* non-critical */
+                }
 
                 RefreshWorkflowInList(workflow);
             }
@@ -289,6 +339,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                 workflow.IsError = false;
                 workflow.ErrorMessage = null;
                 RefreshWorkflowInList(workflow);
+                AppendLog($"[Run] Manual run of '{workflow.Name}' (id={workflow.Id}) started");
 
                 // Offload to thread pool to prevent UI deadlock — script execution
                 // may synchronously wait for plugin responses (PluginCall uses
@@ -335,6 +386,8 @@ internal class WorkflowPageViewModel : ViewModelBase
             workflow.ErrorMessage = null;
             workflow.IsRunning = false;
             RefreshWorkflowInList(workflow);
+            AppendLog($"[Stop] '{workflow.Name}' stopped" +
+                (workflow.TriggerConfig?.TriggerType == "PluginEvent" ? " (trigger disarmed)" : ""));
         }
         catch (Exception ex)
         {
@@ -365,6 +418,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                 if (workflow.TriggerConfig?.TriggerType != "PluginEvent")
                     workflow.IsRunning = false;
                 RefreshWorkflowInList(workflow);
+                AppendLog($"[Done] '{workflow.Name}' completed successfully");
             }
             else
             {
@@ -375,6 +429,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                 if (workflow.TriggerConfig?.TriggerType != "PluginEvent")
                     workflow.IsRunning = false;
                 RefreshWorkflowInList(workflow);
+                AppendLog($"[Error] '{workflow.Name}' failed: {args.ErrorMessage}");
             }
         });
     }
@@ -481,4 +536,7 @@ internal class WorkflowPageViewModel : ViewModelBase
     internal ReactiveCommand<IWorkflowCase, Unit>? StopWorkflowCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? RefreshWorkflowsCommand { get; set; }
+
+    /// <summary>Clears the Debug activity log. Bound from the broom button in the log panel.</summary>
+    internal ReactiveCommand<Unit, Unit>? ClearLogCommand { get; set; }
 }

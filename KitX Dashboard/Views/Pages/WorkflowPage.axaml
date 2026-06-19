@@ -56,6 +56,46 @@
             </StackPanel>
         </Grid>
 
+        <!-- Real-time activity log (Debug builds only).
+             Shows mounted/triggered/run/complete/error events so users can see which
+             workflow fired, when, and why it failed — without digging through Log/. -->
+        <Border DockPanel.Dock="Bottom"
+                Height="160"
+                IsVisible="{Binding IsDebugLogVisible}"
+                BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                BorderThickness="1,1,0,0"
+                Background="{DynamicResource LayerFillColorDefaultBrush}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <DockPanel Grid.Row="0" Margin="10,4">
+                    <TextBlock DockPanel.Dock="Left"
+                               FontWeight="SemiBold"
+                               Text="Activity Log (Debug)" />
+                    <Button DockPanel.Dock="Right"
+                            HorizontalAlignment="Right"
+                            Padding="6,2"
+                            Command="{Binding ClearLogCommand}"
+                            ToolTip.Tip="Clear log">
+                        <icon:MaterialIcon Width="14" Height="14" Kind="Broom" />
+                    </Button>
+                </DockPanel>
+                <ListBox Grid.Row="1"
+                         x:Name="ActivityLogList"
+                         Margin="0"
+                         Padding="4,0"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         FontFamily="Cascadia Mono,Consolas,Courier New"
+                         FontSize="11"
+                         ItemsSource="{Binding ExecutionLog}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto" />
+            </Grid>
+        </Border>
+
         <DockPanel Margin="10">
             <!-- Empty State -->
             <Border Height="{Binding NoWorkflow_TipHeight}"
