@@ -325,38 +325,91 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         src.IsConnected = true;
         tgt.IsConnected = true;
 
-        // StringConcat dynamic pin expansion: when the last data input pin of a
-        // StringConcat node gets connected, auto-append a new String input pin so the
-        // user can chain more parts without manual adding.
-        TryExpandStringConcatPins(tgt);
+        // Variadic pin expansion: when a node declares a variadic input/output group and the
+        // last pin of that group is connected, auto-append a fresh pin so the user can chain
+        // more inputs/outputs (e.g. StringConcat inputs, Switch output arms) without manual adding.
+        TryExpandVariadicPins(src, tgt);
 
         RefreshCounts();
         Log.Debug("Connection created: {SrcTitle} -> {TgtTitle}", src.Title, tgt.Title);
     }
 
     /// <summary>
-    /// If the target connector belongs to a StringConcat node and is the last data input,
-    /// append a fresh String input pin so the node can accept one more concatenation part.
+    /// Generic variadic-pin expansion. For each connected connector that belongs to a node
+    /// declaring a variadic group on its side (input/target or output/source), if the connector
+    /// is the last pin of that group, append one fresh pin of the group's type.
+    /// Replaces the former StringConcat-name-matched <c>TryExpandStringConcatPins</c>.
     /// </summary>
-    private void TryExpandStringConcatPins(BlueprintConnectorVM tgt)
+    private void TryExpandVariadicPins(BlueprintConnectorVM src, BlueprintConnectorVM tgt)
     {
-        var node = FindParentNode(tgt);
+        // Output side grows when an output connector is the drag source; input side grows
+        // when an input connector is the drop target.
+        TryExpandVariadicSide(src, isOutput: true);
+        TryExpandVariadicSide(tgt, isOutput: false);
+    }
+
+    private void TryExpandVariadicSide(BlueprintConnectorVM connector, bool isOutput)
+    {
+        var node = FindParentNode(connector);
         if (node == null) return;
-        if (node.BuiltinFunctionName != "StringConcat") return;
 
-        var dataInputs = node.Input.OfType<BlueprintConnectorVM>()
-            .Where(c => !c.IsExecution).ToList();
-        if (dataInputs.Count == 0) return;
-        if (tgt != dataInputs.Last()) return; // only expand when the LAST pin is connected
+        var spec = GetVariadicSpec(node, isOutput);
+        if (spec == null) return;
 
-        // Append a new input pin
-        node.Input.Add(new BlueprintConnectorVM
+        // Collect the node's pins that belong to this variadic group (matching PinType).
+        var pins = (isOutput ? node.Output : node.Input).OfType<BlueprintConnectorVM>()
+            .Where(c => c.PinType == spec.PinType)
+            .ToList();
+        if (pins.Count == 0) return;
+        // Only expand when the LAST pin of the group is the one just connected.
+        if (connector != pins[^1]) return;
+
+        // Derive the new pin's index from how many pins of this group the descriptor declares
+        // statically (base) vs how many exist now. Next appended = StartIndex + (now - base).
+        var baseCount = GetBaseGroupPinCount(node, spec, isOutput);
+        var nextIndex = spec.StartIndex + (pins.Count - baseCount);
+        var name = string.IsNullOrEmpty(spec.BasePinName)
+            ? nextIndex.ToString()
+            : $"{spec.BasePinName}{nextIndex}";
+
+        (isOutput ? node.Output : node.Input).Add(new BlueprintConnectorVM
         {
-            Title = $"Input {dataInputs.Count + 1}",
-            Flow = ConnectorViewModelBase.ConnectorFlow.Input,
-            PinType = PinType.String,
+            Title = name,
+            Flow = isOutput ? ConnectorViewModelBase.ConnectorFlow.Output : ConnectorViewModelBase.ConnectorFlow.Input,
+            PinType = spec.PinType,
             OriginalPinId = Guid.NewGuid().ToString()
         });
+    }
+
+    /// <summary>
+    /// Looks up the variadic-growth spec declared on a node's descriptor. For builtin-function
+    /// nodes the descriptor is rebuilt from the registry by function name (cheap; cached in the
+    /// registry). Returns null for non-variadic nodes.
+    /// </summary>
+    private VariadicPinSpec? GetVariadicSpec(BlueprintNodeVM node, bool isOutput)
+    {
+        var descriptor = GetBuiltinDescriptor(node);
+        return isOutput ? descriptor?.OutputVariadic : descriptor?.InputVariadic;
+    }
+
+    /// <summary>
+    /// Number of pins of the variadic group's type that the descriptor statically declares
+    /// (before any editor-driven expansion). Used to keep appended pin numbering sequential.
+    /// </summary>
+    private int GetBaseGroupPinCount(BlueprintNodeVM node, VariadicPinSpec spec, bool isOutput)
+    {
+        var descriptor = GetBuiltinDescriptor(node);
+        if (descriptor == null) return 0;
+        var basePins = isOutput ? descriptor.OutputPins : descriptor.InputPins;
+        return basePins.Count(p => p.Type == spec.PinType);
+    }
+
+    private NodeDescriptor? GetBuiltinDescriptor(BlueprintNodeVM node)
+    {
+        if (string.IsNullOrEmpty(node.BuiltinFunctionName)) return null;
+        // Rebuild the descriptor for this builtin function (registry-driven, cheap).
+        var tmp = _nodeRegistry.CreateBuiltinFunctionNode(node.BuiltinFunctionName);
+        return tmp.GetDescriptor();
     }
 
     // ─── Connection Disconnection (NodifyM override) ────────────────────
@@ -1964,6 +2017,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     [RelayCommand]
     public void AddStringConcatNode() => AddBuiltinFunctionNode("StringConcat");
+
+    [RelayCommand]
+    public void AddSwitchNode() => AddBuiltinFunctionNode("Switch");
 
     [RelayCommand]
     public void AddPauseNode() => AddBuiltinFunctionNode("Pause");

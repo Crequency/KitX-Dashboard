@@ -369,6 +369,10 @@
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddStringConcatNodeCommand}"
                                             ToolTip.Tip="StringConcat: concatenate multiple string inputs" />
+                                    <Button Content="Switch"
+                                            HorizontalAlignment="Stretch" Margin="5"
+                                            Command="{Binding AddSwitchNodeCommand}"
+                                            ToolTip.Tip="Switch: N-way dispatch by integer index (default on out-of-range)" />
                                     <Button Content="{DynamicResource Text_WorkflowEditor_Pause}"
                                             HorizontalAlignment="Stretch" Margin="5"
                                             Command="{Binding AddPauseNodeCommand}" />
