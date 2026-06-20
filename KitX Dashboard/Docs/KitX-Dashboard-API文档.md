@@ -668,7 +668,6 @@ namespace KitX.Core.Contract.Workflow;
 
 public interface IWorkflowPluginService
 {
-    void InitializePluginManager();
     void UpdateAvailablePlugins(List<PluginInfo> plugins);
     List<VariableConstant> ParseConstantsFromCode(string code);
     string ApplyConstantsToCode(string code, List<VariableConstant> constants);

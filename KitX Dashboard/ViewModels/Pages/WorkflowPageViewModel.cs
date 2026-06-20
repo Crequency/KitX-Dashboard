@@ -192,7 +192,7 @@ internal class WorkflowPageViewModel : ViewModelBase
             }
 
             WorkflowCases.Add(w);
-            AppendLog($"Mounted workflow '{w.Name}' (id={w.Id}, trigger={w.TriggerType}" +
+            AppendLog($"Mounted workflow '{w.Name}' (id={w.Id}, trigger={w.TriggerConfig?.TriggerType ?? "Manual"}" +
                 (w.TriggerConfig?.PluginName is { } pn && !string.IsNullOrEmpty(pn)
                     ? $":{pn}/{w.TriggerConfig.TriggerName}" : "") + ")");
         }
