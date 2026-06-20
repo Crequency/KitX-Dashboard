@@ -2161,7 +2161,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private void OnDebugNodeExecuting(string statementId)
     {
         // Capture output from the PREVIOUS node's execution
-        var output = KitX.Workflow.WorkflowOutput.GetAndClear();
+        var output = KitX.Workflow.Services.WorkflowOutput.GetAndClear();
         if (output.Length > 0)
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
