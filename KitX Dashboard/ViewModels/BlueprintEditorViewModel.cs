@@ -14,7 +14,7 @@ using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
-using KitX.Workflow.Contract;
+using KitX.Workflow.Abstractions;
 using NodifyM.Avalonia.ViewModelBase;
 using Serilog;
 using BlueprintPinDirection = KitX.Core.Contract.Workflow.PinDirection;
