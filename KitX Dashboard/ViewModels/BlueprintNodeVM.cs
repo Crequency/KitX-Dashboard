@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Workflow;
 using NodifyM.Avalonia.ViewModelBase;
 
@@ -52,11 +53,44 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     /// <summary>Available constant type options for the dropdown</summary>
     public static List<string> ConstTypeOptions { get; } = ["int", "double", "string", "bool"];
 
+    /// <summary>
+    /// Storage tier for Variable nodes (v5.0). Bound to a ComboBox in the node body.
+    /// Changing this updates Metadata["VarKind"].
+    /// </summary>
+    [ObservableProperty]
+    private string _varKind = "PubVar";
+
+    /// <summary>Available VarKind options for the dropdown</summary>
+    public static List<string> VarKindOptions { get; } = ["PubVar", "Const", "BlockVar", "LoopIndex"];
+
     /// <summary>Whether this node should show the ConstType selector (only Const nodes)</summary>
     public bool ShowConstTypeSelector => NodeType == BlueprintNodeType.Const;
 
     /// <summary>Whether this node should show the VariableType selector (only Variable nodes)</summary>
     public bool ShowVarTypeSelector => NodeType == BlueprintNodeType.Variable;
+
+    /// <summary>Whether this node should show the VarKind selector (only Variable nodes)</summary>
+    public bool ShowVarKindSelector => NodeType == BlueprintNodeType.Variable;
+
+    /// <summary>Whether this node has a non-empty comment (for UI indicator visibility)</summary>
+    public bool HasComment => !string.IsNullOrEmpty(Comment);
+
+    /// <summary>Whether this node is a BlockNode (for DataTemplate routing)</summary>
+    public bool IsBlockNode => NodeType == BlueprintNodeType.Block;
+
+    /// <summary>
+    /// Block scope ViewModel for BlockNode sub-graph management (v5.0).
+    /// Null for non-BlockNode types.
+    /// </summary>
+    public BlockNodeScopeVM? BlockScope { get; set; }
+
+    /// <summary>
+    /// Whether this node is visible on the canvas.
+    /// Used to hide EntryPoint/ExitPoint nodes when their parent BlockNode is collapsed.
+    /// Defaults to true.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isVisible = true;
 
     /// <summary>
     /// Builtin function name, if this node is a BuiltinFunction node.
@@ -88,6 +122,21 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     /// <summary>True if a debug breakpoint is set on this node</summary>
     [ObservableProperty]
     private bool _isBreakpoint;
+
+    /// <summary>
+    /// User-facing comment attached to this node (v5.0 bidirectional comment retention).
+    /// Sourced from BS <c>//</c> comments. Null or empty means no comment.
+    /// </summary>
+    [ObservableProperty]
+    private string? _comment;
+
+    /// <summary>Whether inline comment editing is active</summary>
+    [ObservableProperty]
+    private bool _isEditingComment;
+
+    /// <summary>Temporary text during inline comment editing</summary>
+    [ObservableProperty]
+    private string _commentEditText = string.Empty;
 
     /// <summary>Border brush override for debug highlighting</summary>
     public Avalonia.Media.IBrush? BorderBrushOverride =>
@@ -152,6 +201,40 @@ public partial class BlueprintNodeVM : NodeViewModelBase
         VarTypeChangedCallback?.Invoke(this);
     }
 
+    partial void OnVarKindChanged(string value)
+    {
+        Metadata["VarKind"] = value;
+    }
+
+    partial void OnCommentChanged(string? value)
+    {
+        OnPropertyChanged(nameof(HasComment));
+    }
+
+    /// <summary>Begins inline editing of the node comment</summary>
+    [RelayCommand]
+    private void StartEditComment()
+    {
+        CommentEditText = Comment ?? string.Empty;
+        IsEditingComment = true;
+    }
+
+    /// <summary>Commits the inline comment edit</summary>
+    [RelayCommand]
+    private void CommitComment()
+    {
+        var trimmed = CommentEditText?.Trim();
+        Comment = string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+        IsEditingComment = false;
+    }
+
+    /// <summary>Cancels inline comment editing without saving</summary>
+    [RelayCommand]
+    private void CancelEditComment()
+    {
+        IsEditingComment = false;
+    }
+
     partial void OnIsExecutingChanged(bool value)
     {
         OnPropertyChanged(nameof(BorderBrushOverride));
@@ -186,6 +269,7 @@ public partial class BlueprintNodeVM : NodeViewModelBase
         {
             OnPropertyChanged(nameof(ShowConstTypeSelector));
             OnPropertyChanged(nameof(ShowVarTypeSelector));
+            OnPropertyChanged(nameof(ShowVarKindSelector));
         }
     }
 
@@ -197,6 +281,9 @@ public partial class BlueprintNodeVM : NodeViewModelBase
         BlueprintNodeType.Variable => ("#009688", "#00796B"),                                   // Teal
         BlueprintNodeType.Call or BlueprintNodeType.CallHelper => ("#9C27B0", "#7B1FA2"),      // Purple
         BlueprintNodeType.BuiltinFunction => ("#FF9800", "#BF6E00"),                            // Orange
+        BlueprintNodeType.Block => ("#FF5722", "#BF360C"),                                      // Deep Orange
+        BlueprintNodeType.EntryPoint => ("#8BC34A", "#558B2F"),                                 // Light Green
+        BlueprintNodeType.ExitPoint => ("#FF7043", "#D84315"),                                  // Orange-red
         _ => ("#607D8B", "#455A64")                                                             // Gray fallback
     };
 
@@ -204,7 +291,6 @@ public partial class BlueprintNodeVM : NodeViewModelBase
     public static (string Primary, string Light) GetBuiltinFunctionColors(string functionName) => functionName switch
     {
         "Print" or "Pause" => ("#9C27B0", "#7B1FA2"), // Purple - I/O
-        "Get" or "Set" => ("#2196F3", "#1565C0"),     // Blue - data
-        _ => ("#FF9800", "#BF6E00")                    // Orange - control flow
+        _ => ("#FF9800", "#BF6E00")                    // Orange - control flow / generic
     };
 }

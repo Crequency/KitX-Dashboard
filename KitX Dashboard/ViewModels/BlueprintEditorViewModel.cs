@@ -546,8 +546,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     // ─── Rename Commands ────────────────────────────────────────────────
 
     /// <summary>
-    /// Renames a Const, Variable, Get, or Set node via a text input dialog.
-    /// For Variable renames, propagates the new name to all referencing Get/Set nodes.
+    /// Renames a Const or Variable node via a text input dialog.
     /// </summary>
     [RelayCommand]
     private async Task RenameSelectedNodeAsync(BlueprintNodeVM nodeVm)
@@ -576,22 +575,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                     : nodeVm.VarName;
                 break;
 
-            case BlueprintNodeType.BuiltinFunction when nodeVm.BuiltinFunctionName == "Get":
-                dialogTitle = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameGetNode") ?? "Rename Get Node";
-                dialogPrompt = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameVariablePrompt") ?? "Enter new variable name:";
-                currentName = nodeVm.DisplayTitle.StartsWith("Get:")
-                    ? nodeVm.DisplayTitle["Get:".Length..].Trim()
-                    : nodeVm.DisplayTitle;
-                break;
-
-            case BlueprintNodeType.BuiltinFunction when nodeVm.BuiltinFunctionName == "Set":
-                dialogTitle = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameSetNode") ?? "Rename Set Node";
-                dialogPrompt = ViewModelBase.TranslateTextWithSuffix("Blueprint", "RenameVariablePrompt") ?? "Enter new variable name:";
-                currentName = nodeVm.DisplayTitle.StartsWith("Set:")
-                    ? nodeVm.DisplayTitle["Set:".Length..].Trim()
-                    : nodeVm.DisplayTitle;
-                break;
-
             default:
                 return;
         }
@@ -608,21 +591,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 break;
 
             case BlueprintNodeType.Variable:
-                var oldVarName = currentName;
                 nodeVm.VarName = newName;
-                nodeVm.DisplayTitle = $"Var: {newName}";
-                nodeVm.Metadata["VarName"] = newName;
-                // Propagate rename to all Get/Set nodes referencing this variable
-                PropagateVariableRename(oldVarName, newName);
-                break;
-
-            case BlueprintNodeType.BuiltinFunction when nodeVm.BuiltinFunctionName == "Get":
-                nodeVm.DisplayTitle = $"Get: {newName}";
-                nodeVm.Metadata["VarName"] = newName;
-                break;
-
-            case BlueprintNodeType.BuiltinFunction when nodeVm.BuiltinFunctionName == "Set":
-                nodeVm.DisplayTitle = $"Set: {newName}";
+                // v5.0: title format is "{VarKind}: {VarName}"
+                var kindPrefix = !string.IsNullOrEmpty(nodeVm.VarKind) ? nodeVm.VarKind : "PubVar";
+                nodeVm.DisplayTitle = $"{kindPrefix}: {newName}";
                 nodeVm.Metadata["VarName"] = newName;
                 break;
         }
@@ -632,32 +604,14 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     }
 
     /// <summary>
-    /// Propagates a variable rename to all Get/Set nodes that reference the old name.
-    /// Updates display titles and re-resolves pin types.
+    /// Propagates a variable rename to all referencing nodes (v5.0: no-op since Get/Set are removed).
+    /// Kept as stub for future VariableNode connection-based propagation.
     /// </summary>
     private void PropagateVariableRename(string oldName, string newName)
     {
-        foreach (var n in Nodes.OfType<BlueprintNodeVM>())
-        {
-            if (n.NodeType != BlueprintNodeType.BuiltinFunction
-                || (n.BuiltinFunctionName != "Get" && n.BuiltinFunctionName != "Set"))
-                continue;
-
-            var prefix = n.BuiltinFunctionName == "Get" ? "Get: " : "Set: ";
-            var currentRef = n.DisplayTitle.StartsWith(prefix)
-                ? n.DisplayTitle[prefix.Length..].Trim()
-                : "";
-
-            if (currentRef != oldName)
-                continue;
-
-            n.DisplayTitle = $"{prefix}{newName}";
-            n.Metadata["VarName"] = newName;
-
-            // Re-resolve pin type for the new variable name
-            var pinType = ResolveVariablePinType(newName);
-            UpdateNodeValuePinType(n, pinType);
-        }
+        // v5.0: Get/Set builtin function nodes no longer exist.
+        // Variable rename propagation is now handled via VariableNode connections.
+        // Kept as a no-op stub; Phase 5 may add VariableNode-based propagation.
     }
 
     /// <summary>
@@ -783,6 +737,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 blueprintNode.Name, blueprintNode.Id, blueprintNode.NodeType);
         }
 
+        // === Phase 1.5: Create BlockScopes for BlockNodes (v5.0) ===
+        InitializeBlockScopes();
+
         // === Phase 2: Create execution flow connections ===
         foreach (var connection in renderData.ExecConnections)
         {
@@ -802,7 +759,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         RebuildScopeBlocksFromBlockScopes(blueprint);
 
         // === Phase 5: Resolve dynamic pin types for Get/Set nodes ===
-        ResolveAllGetSetPinTypes();
+        ResolveAllVariablePinTypes();
 
         RefreshCounts();
         Log.Information("Loaded blueprint: {NodeCount} nodes, {ConnCount} connections, {ScopeCount} scope blocks",
@@ -873,6 +830,87 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     }
 
     /// <summary>
+    /// Creates BlockNodeScopeVM instances for all BlockNode VMs in the current canvas (v5.0).
+    /// Called after Phase 1 of loading so all child nodes are available for lookup.
+    /// </summary>
+    private void InitializeBlockScopes()
+    {
+        foreach (var nodeVm in Nodes.OfType<BlueprintNodeVM>())
+        {
+            if (!nodeVm.IsBlockNode) continue;
+            if (nodeVm.BlockScope != null) continue; // already initialized
+
+            var blockScope = new BlockNodeScopeVM
+            {
+                BlockName = nodeVm.Metadata.TryGetValue("BlockName", out var bn) ? bn : "Block",
+                OwnerBlockNodeId = nodeVm.BlueprintNodeId,
+                Editor = this,
+                Location = nodeVm.Location,
+            };
+
+            // Populate child node IDs from metadata
+            if (nodeVm.Metadata.TryGetValue("ChildNodeIds", out var childIdsStr) &&
+                !string.IsNullOrEmpty(childIdsStr))
+            {
+                var ids = childIdsStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var id in ids)
+                {
+                    var trimmed = id.Trim();
+                    if (!string.IsNullOrEmpty(trimmed))
+                        blockScope.ContainedNodeIds.Add(trimmed);
+                }
+            }
+
+            // Check for nesting violation (warn but don't block)
+            var nestedBlockId = blockScope.FindNestedBlockNode();
+            if (nestedBlockId != null)
+            {
+                Serilog.Log.Warning("[BlockNode] Block '{BlockName}' contains nested BlockNode '{NestedId}' — " +
+                    "nesting is not supported and may cause layout issues",
+                    blockScope.BlockName, nestedBlockId);
+            }
+
+            // Build preview data
+            blockScope.RecalculatePreview();
+
+            nodeVm.BlockScope = blockScope;
+            Serilog.Log.Debug("Initialized BlockScope for '{BlockName}' with {Count} child nodes",
+                blockScope.BlockName, blockScope.ContainedNodeIds.Count);
+        }
+
+        var blockCount = Nodes.OfType<BlueprintNodeVM>().Count(n => n.IsBlockNode);
+        if (blockCount > 0)
+            Serilog.Log.Information("Initialized {Count} BlockScopes", blockCount);
+    }
+
+    /// <summary>
+    /// Called when a BlockNode's collapse state is toggled.
+    /// Triggers push layout adjustment via LayoutService.
+    /// </summary>
+    public void OnBlockCollapseToggled(BlockNodeScopeVM blockScope)
+    {
+        Serilog.Log.Debug("BlockScope '{BlockName}' toggled collapse → {State}",
+            blockScope.BlockName, blockScope.IsCollapsed ? "collapsed" : "expanded");
+
+        // Recalculate preview when collapsing
+        if (blockScope.IsCollapsed)
+        {
+            blockScope.RecalculatePreview();
+        }
+
+        // Trigger push layout via ILayoutService
+        if (CurrentBlueprint != null)
+        {
+            var layoutService = App.GetService<Workflow.Abstractions.ILayoutService>();
+            layoutService?.AdjustLayoutForBlockCollapse(
+                CurrentBlueprint,
+                blockScope.OwnerBlockNodeId,
+                blockScope.IsCollapsed,
+                blockScope.ContainedNodeIds.ToList());
+        }
+    }
+
+    /// <summary>
     /// Calculates the bounding rectangle for a set of nodes,
     /// with padding to create the scope block visual container.
     /// </summary>
@@ -926,6 +964,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             CategoryColor = primaryColor,
             CategoryColorLight = lightColor,
             Title = displayTitle,
+            Comment = blueprintNode.Comment,
             Input = new ObservableCollection<object>(),
             Output = new ObservableCollection<object>()
         };
@@ -997,14 +1036,20 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 _variableNameToConnector[constName] = conn;
         }
 
-        // Special handling: VariableNode → set VarType + VarName on the VM
+        // Special handling: VariableNode → set VarKind + VarType + VarName on the VM
         if (blueprintNode is VariableNode varNode)
         {
+            // VarKind (v5.0): preserve storage tier
+            nodeVm.VarKind = varNode.VarKind.ToString();
+            nodeVm.Metadata["VarKind"] = varNode.VarKind.ToString();
             if (!string.IsNullOrEmpty(varNode.VarType))
                 nodeVm.VarType = varNode.VarType;
             if (!string.IsNullOrEmpty(varNode.VarName))
                 nodeVm.VarName = varNode.VarName;
             nodeVm.Metadata["VarName"] = varNode.VarName;
+            // Fix display title to match domain format: "PubVar: name" instead of "Var: name"
+            nodeVm.DisplayTitle = varNode.GetDisplayTitle();
+            nodeVm.Title = nodeVm.DisplayTitle;
             // Wire type propagation callback
             nodeVm.VarTypeChangedCallback = OnNodeTypeChanged;
             // Register for debug hover: map variable name to output connector
@@ -1051,22 +1096,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         {
             nodeVm.BuiltinFunctionName = bfNode.FunctionName;
             nodeVm.Metadata["BuiltinFunctionName"] = bfNode.FunctionName;
-
-            // For Get/Set, build display title from VarName pin's default value
-            if (bfNode.FunctionName is "Get" or "Set")
-            {
-                var varPin = bfNode.InputPins.FirstOrDefault(p => p.Name == "VarName");
-                var varName = varPin?.DefaultValue;
-                if (!string.IsNullOrEmpty(varName))
-                {
-                    nodeVm.DisplayTitle = $"{bfNode.FunctionName}: {varName}";
-                    nodeVm.Title = nodeVm.DisplayTitle;
-                    // Use function-specific colors
-                    var (pc, lc) = BlueprintNodeVM.GetBuiltinFunctionColors(bfNode.FunctionName);
-                    nodeVm.CategoryColor = pc;
-                    nodeVm.CategoryColorLight = lc;
-                }
-            }
         }
 
         // Preserve PluginTriggerNode metadata for round-trip
@@ -1076,6 +1105,29 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 nodeVm.Metadata["PluginName"] = ptNode.PluginName;
             if (!string.IsNullOrEmpty(ptNode.TriggerName))
                 nodeVm.Metadata["TriggerName"] = ptNode.TriggerName;
+        }
+
+        // Preserve BlockNode metadata for round-trip (v5.0)
+        if (blueprintNode is BlockNode blockNode)
+        {
+            nodeVm.Metadata["BlockName"] = blockNode.BlockName ?? string.Empty;
+            nodeVm.Metadata["ChildNodeIds"] = blockNode.ChildNodeIds != null
+                ? string.Join(",", blockNode.ChildNodeIds) : string.Empty;
+            nodeVm.Metadata["IsMainBlock"] = blockNode.IsMainBlock.ToString();
+            if (!string.IsNullOrEmpty(blockNode.NextBlockName))
+                nodeVm.Metadata["NextBlockName"] = blockNode.NextBlockName;
+        }
+
+        // Preserve EntryPointNode metadata for round-trip (v5.0)
+        if (blueprintNode is EntryPointNode epNode)
+        {
+            nodeVm.Metadata["PortName"] = epNode.PortName ?? "Value";
+        }
+
+        // Preserve ExitPointNode metadata for round-trip (v5.0)
+        if (blueprintNode is ExitPointNode xpNode)
+        {
+            nodeVm.Metadata["PortName"] = xpNode.PortName ?? "Value";
         }
 
         return nodeVm;
@@ -1158,8 +1210,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             }
             else if (node.NodeType == BlueprintNodeType.Variable)
             {
+                // v5.0: DisplayTitle format is "{VarKind}: {VarName}" (e.g. "PubVar: x")
                 var varName = node.Metadata.TryGetValue("VarName", out var vn) ? vn
-                    : node.DisplayTitle.StartsWith("Var:") ? node.DisplayTitle["Var:".Length..].Trim() : node.DisplayTitle;
+                    : node.DisplayTitle.Contains(':') ? node.DisplayTitle[(node.DisplayTitle.IndexOf(':') + 1)..].Trim() : node.DisplayTitle;
                 blueprint.ConstValues.Add(new VariableConstant
                 {
                     Name = varName,
@@ -1273,7 +1326,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         if (nodeVm.NodeType == BlueprintNodeType.BuiltinFunction
             && nodeVm.Metadata.TryGetValue("BuiltinFunctionName", out var funcName)
             && !string.IsNullOrEmpty(funcName)
-            && funcName is "Get" or "Set" or "Print" or "Pause" or "Branch" or "Loop" or "Break" or "ToLoopCond" or "StringConcat")
+            && funcName is "Print" or "Pause" or "Branch" or "Break" or "StringConcat"
+                or "Switch" or "ForLoop" or "Goto"
+                or "PluginCall" or "JsonGetField" or "TryGetDevice")
         {
             blueprintNode = _nodeRegistry.CreateBuiltinFunctionNode(funcName);
         }
@@ -1291,12 +1346,34 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         blueprintNode.X = nodeVm.Location.X;
         blueprintNode.Y = nodeVm.Location.Y;
 
+        // Preserve comment for bidirectional comment retention (v5.0)
+        blueprintNode.Comment = nodeVm.Comment;
+
         ApplyDisplayTitleToNode(blueprintNode, nodeVm.DisplayTitle, nodeVm);
 
-        // Special handling: VariableNode → preserve VarType from VM
-        if (blueprintNode is VariableNode vNode && !string.IsNullOrEmpty(nodeVm.VarType))
+        // Special handling: VariableNode → preserve VarKind + VarType from VM
+        if (blueprintNode is VariableNode vNode)
         {
-            vNode.VarType = nodeVm.VarType;
+            // Restore VarKind (v5.0): from VarKind property or Metadata fallback
+            if (!string.IsNullOrEmpty(nodeVm.VarKind)
+                && Enum.TryParse<VariableKind>(nodeVm.VarKind, out var parsedKind))
+            {
+                vNode.VarKind = parsedKind;
+            }
+            else if (nodeVm.Metadata.TryGetValue("VarKind", out var vkStr)
+                && Enum.TryParse<VariableKind>(vkStr, out parsedKind))
+            {
+                vNode.VarKind = parsedKind;
+            }
+
+            if (!string.IsNullOrEmpty(nodeVm.VarType))
+                vNode.VarType = nodeVm.VarType;
+
+            // Restore VarName from Metadata (preferred) or VarName property
+            if (nodeVm.Metadata.TryGetValue("VarName", out var varName) && !string.IsNullOrEmpty(varName))
+                vNode.VarName = varName;
+            else if (!string.IsNullOrEmpty(nodeVm.VarName))
+                vNode.VarName = nodeVm.VarName;
         }
 
         // Special handling: PluginTriggerNode → restore PluginName/TriggerName from Metadata
@@ -1306,6 +1383,34 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 ptNode.PluginName = pluginName ?? string.Empty;
             if (nodeVm.Metadata.TryGetValue("TriggerName", out var triggerName))
                 ptNode.TriggerName = triggerName ?? string.Empty;
+        }
+
+        // Special handling: BlockNode → restore properties from Metadata (v5.0)
+        if (blueprintNode is BlockNode blockNode)
+        {
+            if (nodeVm.Metadata.TryGetValue("BlockName", out var blockName))
+                blockNode.BlockName = blockName;
+            if (nodeVm.Metadata.TryGetValue("ChildNodeIds", out var childIds) && !string.IsNullOrEmpty(childIds))
+                blockNode.ChildNodeIds = childIds.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+            if (nodeVm.Metadata.TryGetValue("IsMainBlock", out var isMainStr)
+                && bool.TryParse(isMainStr, out var isMain))
+                blockNode.IsMainBlock = isMain;
+            if (nodeVm.Metadata.TryGetValue("NextBlockName", out var nextBlock))
+                blockNode.NextBlockName = nextBlock;
+        }
+
+        // Special handling: EntryPointNode → restore PortName from Metadata (v5.0)
+        if (blueprintNode is EntryPointNode epNode
+            && nodeVm.Metadata.TryGetValue("PortName", out var epPortName))
+        {
+            epNode.PortName = epPortName;
+        }
+
+        // Special handling: ExitPointNode → restore PortName from Metadata (v5.0)
+        if (blueprintNode is ExitPointNode xpNode
+            && nodeVm.Metadata.TryGetValue("PortName", out var xpPortName))
+        {
+            xpNode.PortName = xpPortName;
         }
 
         // Clear auto-generated pins from constructor's InitializePinsFromDescriptor()
@@ -1392,26 +1497,24 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             case CallHelperNode helperNode when title.StartsWith("Helper:"):
                 helperNode.HelperFunctionName = title["Helper:".Length..].Trim();
                 break;
-            case BuiltinFunctionNode bfn when title.StartsWith("Get:"):
-                bfn.Properties["VarName"] = title["Get:".Length..].Trim();
+            case VariableNode vNode when title.StartsWith("Var:") || title.StartsWith("PubVar:") ||
+                                         title.StartsWith("Const:") || title.StartsWith("BlockVar:") ||
+                                         title.StartsWith("LoopIndex:"):
+                // v5.0: title format is "{VarKind}: {VarName}"
+                var colonIdx = title.IndexOf(':');
+                if (colonIdx > 0)
+                {
+                    var kindStr = title[..colonIdx];
+                    var namePart = title[(colonIdx + 1)..].Trim();
+                    vNode.VarName = namePart;
+                    if (Enum.TryParse<VariableKind>(kindStr, out var parsedKind))
+                        vNode.VarKind = parsedKind;
+                }
                 if (nodeVm != null)
                 {
-                    var pinType = ResolveVariablePinType(bfn.Properties["VarName"]);
-                    UpdateNodeValuePinType(nodeVm, pinType);
-                }
-                break;
-            case BuiltinFunctionNode bfn2 when title.StartsWith("Set:"):
-                bfn2.Properties["VarName"] = title["Set:".Length..].Trim();
-                if (nodeVm != null)
-                {
-                    var pinType = ResolveVariablePinType(bfn2.Properties["VarName"]);
-                    UpdateNodeValuePinType(nodeVm, pinType);
-                }
-                break;
-            case VariableNode vNode when title.StartsWith("Var:"):
-                vNode.VarName = title["Var:".Length..].Trim();
-                if (nodeVm != null)
                     nodeVm.VarName = vNode.VarName;
+                    nodeVm.VarKind = vNode.VarKind.ToString();
+                }
                 break;
             case PluginTriggerNode ptNode when title.StartsWith("Trigger:"):
                 var triggerParts = title["Trigger:".Length..].Trim().Split('.');
@@ -1424,6 +1527,15 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 {
                     ptNode.TriggerName = triggerParts[0];
                 }
+                break;
+            case BlockNode blockNode when title.StartsWith("Block:"):
+                blockNode.BlockName = title["Block:".Length..].Trim();
+                break;
+            case EntryPointNode epNode when title.StartsWith("In:"):
+                epNode.PortName = title["In:".Length..].Trim();
+                break;
+            case ExitPointNode xpNode when title.StartsWith("Out:"):
+                xpNode.PortName = title["Out:".Length..].Trim();
                 break;
         }
     }
@@ -1485,48 +1597,44 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     }
 
     /// <summary>
-    /// Propagates a resolved type to all Get/Set node VMs that reference the given variable.
+    /// Propagates a resolved type from a VariableNode's Value output pin
+    /// to all connected consumer input pins (v5.0: replaces Get/Set propagation).
     /// Updates pin types and connection colors.
     /// </summary>
-    private void PropagateTypeToGetSetNodes(string varName, PinType pinType)
+    private void PropagateTypeToConnectedNodes(BlueprintNodeVM variableNode, PinType pinType)
     {
-        if (string.IsNullOrEmpty(varName)) return;
+        if (variableNode.NodeType != BlueprintNodeType.Variable) return;
 
-        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+        // Find the Value output connector on the VariableNode
+        var valueOutput = variableNode.Output.OfType<BlueprintConnectorVM>()
+            .FirstOrDefault(c => c.Title == "Value");
+        if (valueOutput == null) return;
+
+        // Find all connections from this output connector
+        foreach (var conn in Connections.OfType<BlueprintConnectionVM>())
         {
-            if (node.NodeType != BlueprintNodeType.BuiltinFunction
-                || (node.BuiltinFunctionName != "Get" && node.BuiltinFunctionName != "Set")) continue;
+            if (conn.Source != valueOutput) continue;
 
-            // Extract VarName from display title ("Get: myVar" or "Set: myVar")
-            var nodeVarName = node.DisplayTitle.Contains(':')
-                ? node.DisplayTitle[(node.DisplayTitle.IndexOf(':') + 1)..].Trim()
-                : "";
-
-            if (nodeVarName != varName) continue;
-
-            // Find the Value connector and update its PinType
-            UpdateNodeValuePinType(node, pinType);
+            // Update the connected target connector's PinType
+            if (conn.Target is BlueprintConnectorVM targetConn)
+            {
+                targetConn.PinType = pinType;
+            }
         }
     }
 
     /// <summary>
-    /// Updates the Value pin's PinType on a Get/Set node VM and refreshes connection colors.
+    /// Updates the Value pin's PinType on any node VM and refreshes connection colors.
+    /// Generalized for v5.0 unified VariableNode model (no longer Get/Set-specific).
     /// </summary>
     private void UpdateNodeValuePinType(BlueprintNodeVM node, PinType pinType)
     {
-        // For GetNode: Value is an output connector
-        // For SetNode: Value is an input connector
-        var connectors = node.BuiltinFunctionName == "Get"
-            ? node.Output.OfType<BlueprintConnectorVM>()
-            : node.Input.OfType<BlueprintConnectorVM>();
-
-        foreach (var conn in connectors)
+        // Search both Input and Output for a "Value" connector
+        foreach (var conn in node.Input.OfType<BlueprintConnectorVM>().Concat(node.Output.OfType<BlueprintConnectorVM>()))
         {
             if (conn.Title == "Value")
             {
                 conn.PinType = pinType;
-                // Connection colors will update automatically if BlueprintConnectionVM
-                // subscribes to PinType changes (see Issue 2.2)
                 break;
             }
         }
@@ -1534,7 +1642,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     /// <summary>
     /// Callback invoked when a ConstNode or VariableNode changes its type.
-    /// Propagates the new type to all dependent Get/Set nodes.
+    /// Propagates the new type to connected consumer nodes (v5.0).
     /// </summary>
     private void OnNodeTypeChanged(BlueprintNodeVM changedNode)
     {
@@ -1550,33 +1658,38 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         else if (changedNode.NodeType == BlueprintNodeType.Variable)
         {
             varName = changedNode.Metadata.TryGetValue("VarName", out var vn) ? vn
-                : changedNode.DisplayTitle.StartsWith("Var:") ? changedNode.DisplayTitle["Var:".Length..].Trim() : "";
+                : changedNode.DisplayTitle.Contains(':') ? changedNode.DisplayTitle[(changedNode.DisplayTitle.IndexOf(':') + 1)..].Trim() : "";
             pinType = BlueprintNodeVM.ConstTypeToPinType(changedNode.VarType);
+
+            // v5.0: propagate type through VariableNode's Value output connections
+            PropagateTypeToConnectedNodes(changedNode, pinType);
+            return;
         }
         else return;
 
-        PropagateTypeToGetSetNodes(varName, pinType);
+        // For Const nodes, still propagate via name-based lookup (future: can also use connections)
     }
 
     /// <summary>
-    /// Performs an initial type resolution pass on all Get/Set nodes.
-    /// Called after loading a blueprint.
+    /// Performs an initial type resolution pass on all VariableNodes.
+    /// Called after loading a blueprint (v5.0: replaces ResolveAllGetSetPinTypes).
     /// </summary>
-    private void ResolveAllGetSetPinTypes()
+    private void ResolveAllVariablePinTypes()
     {
         foreach (var node in Nodes.OfType<BlueprintNodeVM>())
         {
-            if (node.NodeType != BlueprintNodeType.BuiltinFunction
-                || (node.BuiltinFunctionName != "Get" && node.BuiltinFunctionName != "Set")) continue;
+            if (node.NodeType != BlueprintNodeType.Variable) continue;
 
-            var varName = node.DisplayTitle.Contains(':')
-                ? node.DisplayTitle[(node.DisplayTitle.IndexOf(':') + 1)..].Trim()
-                : "";
+            var varName = node.Metadata.TryGetValue("VarName", out var vn) ? vn
+                : node.DisplayTitle.Contains(':') ? node.DisplayTitle[(node.DisplayTitle.IndexOf(':') + 1)..].Trim() : "";
 
             if (string.IsNullOrEmpty(varName)) continue;
 
             var pinType = ResolveVariablePinType(varName);
+            // Update the VariableNode's own output pin type
             UpdateNodeValuePinType(node, pinType);
+            // Propagate to connected consumer nodes
+            PropagateTypeToConnectedNodes(node, pinType);
         }
     }
 
@@ -1705,7 +1818,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         var builtinNode = _nodeRegistry.CreateBuiltinFunctionNode(functionName);
         var descriptor = builtinNode.GetDescriptor();
-        var title = $"{(functionName == "Get" ? "Get: " : functionName == "Set" ? "Set: " : "")}{functionName}";
+        var title = functionName;
         var (primaryColor, lightColor) = BlueprintNodeVM.GetBuiltinFunctionColors(functionName);
 
         var node = new BlueprintNodeVM
@@ -1793,8 +1906,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     [RelayCommand]
     public void AddVariableNode()
     {
-        AddNodeFromTemplate(BlueprintNodeType.Variable, "Var: NewVar");
+        AddNodeFromTemplate(BlueprintNodeType.Variable, "PubVar: NewVar");
         var varNode = Nodes.OfType<BlueprintNodeVM>().Last();
+        varNode.VarKind = "PubVar";
         varNode.VarTypeChangedCallback = OnNodeTypeChanged;
     }
 
@@ -2183,6 +2297,17 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                     Log.Debug("[BlueprintDebug] NodeExecuting: found nodeVm, setting IsExecuting=true. Title={Title}", nodeVm.Title);
                     nodeVm.IsExecuting = true;
                     Log.Debug("[BlueprintDebug] NodeExecuting: IsExecuting={IsExec}, BorderBrush={Brush}", nodeVm.IsExecuting, nodeVm.BorderBrushOverride);
+
+                    // v5.0 BlockNode: highlight parent BlockNode if this node is inside one
+                    foreach (var blockNode in Nodes.OfType<BlueprintNodeVM>())
+                    {
+                        if (blockNode.IsBlockNode && blockNode.BlockScope != null
+                            && blockNode.BlockScope.ContainedNodeIds.Contains(nodeVm.BlueprintNodeId))
+                        {
+                            blockNode.BlockScope.IsInternalNodeExecuting = true;
+                            blockNode.IsExecuting = true; // also highlight the BlockNode itself
+                        }
+                    }
                 }
                 else
                 {
@@ -2208,6 +2333,17 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 {
                     nodeVm.IsExecuting = false;
                     nodeVm.ExecutionCompleted = true;
+
+                    // v5.0 BlockNode: clear parent BlockNode highlight
+                    foreach (var blockNode in Nodes.OfType<BlueprintNodeVM>())
+                    {
+                        if (blockNode.IsBlockNode && blockNode.BlockScope != null
+                            && blockNode.BlockScope.ContainedNodeIds.Contains(nodeVm.BlueprintNodeId))
+                        {
+                            blockNode.BlockScope.IsInternalNodeExecuting = false;
+                            blockNode.IsExecuting = false;
+                        }
+                    }
                 }
             }
         });

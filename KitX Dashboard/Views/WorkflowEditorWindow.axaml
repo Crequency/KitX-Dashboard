@@ -588,12 +588,27 @@
                                 </DataTemplate>
 
                                 <!-- Blueprint Node -->
+                                <!-- BlueprintNode (regular + BlockNode variants) -->
                                 <DataTemplate DataType="{x:Type viewModels:BlueprintNodeVM}">
-                                    <controls:Node Location="{Binding Location, Mode=TwoWay}"
-                                                   Input="{Binding Input}"
-                                                   Output="{Binding Output}"
-                                                   IsResize="False"
-                                                   ZIndex="1">
+                                    <Panel>
+                                        <!-- BlockNode variant (v5.0) -->
+                                        <controls:BlockNodeContainer IsVisible="{Binding IsBlockNode}"
+                                                                           Location="{Binding Location, Mode=TwoWay}"
+                                                                           IsCollapsed="{Binding BlockScope.IsCollapsed, Mode=TwoWay}"
+                                                                           BlockName="{Binding Metadata[BlockName]}"
+                                                                           ChildCount="{Binding BlockScope.ChildCount}"
+                                                                           IsDebugHighlight="{Binding BlockScope.IsInternalNodeExecuting}"
+                                                                           Size="400,300"
+                                                                           CanResize="True">
+                                        </controls:BlockNodeContainer>
+
+                                        <!-- Regular node variant -->
+                                        <controls:Node Location="{Binding Location, Mode=TwoWay}"
+                                                       IsVisible="{Binding !IsBlockNode}"
+                                                       Input="{Binding Input}"
+                                                       Output="{Binding Output}"
+                                                       IsResize="False"
+                                                       ZIndex="1">
 
                                         <controls:Node.Header>
                                             <Border CornerRadius="4,4,0,0"
@@ -603,10 +618,30 @@
                                                     <Binding Path="CategoryColor"
                                                              Converter="{StaticResource HexToBrushConverter}" />
                                                 </Border.Background>
-                                                <TextBlock Text="{Binding DisplayTitle}"
-                                                           Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="12" />
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <TextBlock Text="{Binding DisplayTitle}"
+                                                               Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="12" />
+                                                    <!-- Comment indicator + inline editor (v5.0) -->
+                                                    <!-- Always visible; opacity 1.0 when has comment, 0.35 when empty -->
+                                                    <TextBlock Text="💬"
+                                                               FontSize="10"
+                                                               Opacity="1.0"
+                                                               VerticalAlignment="Center"
+                                                               ToolTip.Tip="{Binding Comment}"
+                                                               Cursor="Hand"
+                                                               PointerPressed="OnCommentIndicatorPressed" />
+                                                    <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
+                                                             IsVisible="{Binding IsEditingComment}"
+                                                             FontSize="10" MinWidth="80" MaxWidth="200"
+                                                             Padding="2,0"
+                                                             VerticalAlignment="Center"
+                                                             Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                             KeyDown="OnCommentEditKeyDown"
+                                                             LostFocus="OnCommentEditLostFocus" />
+                                                </StackPanel>
                                             </Border>
                                         </controls:Node.Header>
 
@@ -633,9 +668,17 @@
                                                 </StackPanel>
                                             </StackPanel>
 
-                                            <!-- Variable Node: Type selector only -->
+                                            <!-- Variable Node: VarKind + Type selector -->
                                             <StackPanel IsVisible="{Binding ShowVarTypeSelector}">
-                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,4">
+                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,2">
+                                                    <TextBlock Text="Kind" VerticalAlignment="Center"
+                                                               FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                                    <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.VarKindOptions}"
+                                                              SelectedItem="{Binding VarKind, Mode=TwoWay}"
+                                                              FontSize="10" MinWidth="75" Padding="4,2"
+                                                              HorizontalAlignment="Left" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,2,8,4">
                                                     <TextBlock Text="{DynamicResource Text_WorkflowEditor_Type}" VerticalAlignment="Center"
                                                                FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                                                     <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
@@ -699,6 +742,7 @@
                                             </DataTemplate>
                                         </controls:Node.OutputConnectorTemplate>
                                     </controls:Node>
+                                    </Panel>
                                 </DataTemplate>
                             </controls:NodeTemplateSelector>
                         </controls:NodifyEditor.ItemTemplate>

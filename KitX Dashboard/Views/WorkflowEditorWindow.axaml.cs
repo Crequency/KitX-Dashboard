@@ -829,5 +829,50 @@ public partial class WorkflowEditorWindow : Window, IView
         return null;
     }
 
+    /// <summary>
+    /// Handles pointer press on the comment indicator (💬) — activates inline editing.
+    /// </summary>
+    private void OnCommentIndicatorPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Control ctrl && ctrl.DataContext is BlueprintNodeVM nodeVm)
+        {
+            nodeVm.StartEditCommentCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Handles KeyDown in the inline comment editor TextBox.
+    /// Enter commits, Escape cancels.
+    /// </summary>
+    private void OnCommentEditKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (sender is Control ctrl && ctrl.DataContext is BlueprintNodeVM nodeVm)
+        {
+            if (e.Key == Key.Enter)
+            {
+                nodeVm.CommitCommentCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                nodeVm.CancelEditCommentCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handles LostFocus on the inline comment editor — commits on focus loss.
+    /// </summary>
+    private void OnCommentEditLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control ctrl && ctrl.DataContext is BlueprintNodeVM nodeVm)
+        {
+            if (nodeVm.IsEditingComment)
+                nodeVm.CommitCommentCommand.Execute(null);
+        }
+    }
+
     #endregion
 }
