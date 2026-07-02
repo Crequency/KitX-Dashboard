@@ -27,7 +27,8 @@ namespace KitX.Dashboard.ViewModels;
 /// </summary>
 public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 {
-    private readonly IBlueprintService _blueprintService;
+    // v5.2: IBlueprintService removed; replace with IWorkflowSession + IBsSyncService + IBpEditApplier + ICfgBpRenderer
+    // private readonly IBlueprintService _blueprintService;
     private readonly ITasksService _tasksService;
     private readonly INodeRegistry _nodeRegistry;
     private readonly IBlueprintRenderDataService _renderDataService;
@@ -251,14 +252,14 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// Constructor with DI injection
     /// </summary>
     public BlueprintEditorViewModel(
-        IBlueprintService blueprintService,
+        /*IBlueprintService blueprintService,*/ // v5.2: removed
         ITasksService tasksService,
         INodeRegistry nodeRegistry,
         IBlueprintRenderDataService renderDataService,
         IFileDialogService fileDialogService,
         IBlockScriptExecutor executor)
     {
-        _blueprintService = blueprintService;
+        // _blueprintService = blueprintService; // v5.2: removed
         _tasksService = tasksService;
         _nodeRegistry = nodeRegistry;
         _renderDataService = renderDataService;
@@ -1185,7 +1186,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     public Blueprint ExportDrawingToBlueprint()
     {
-        var blueprint = _blueprintService.CreateBlueprint();
+        // v5.2: IBlueprintService removed — ExportDrawingToBlueprint needs migration to new CFG session
+        // var blueprint = _blueprintService.CreateBlueprint();
+        // ... (migration needed: populate from nodify graph directly)
+        throw new NotImplementedException("ExportDrawingToBlueprint: v5.2 migration — use CFG session");
         blueprint.Name = CurrentBlueprint?.Name ?? "Untitled";
 
         // Preserve HelperFunctions from the original blueprint (imported from BlockScript)
@@ -2191,11 +2195,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         _executor.SetDebugger(_debugController);
 
-        // Map statement IDs to blueprint node IDs BEFORE execution starts
-        // (execution may pause at checkpoints before the background task returns).
-        var mapping = _blueprintService.GetDebugNodeMapping(CurrentBlueprint!);
-        SetDebugNodeMapping(mapping);
-        Log.Information("[BlueprintDebug] Debug node mapping: {Count} entries", mapping.Count);
+        // v5.2: IBlueprintService removed — debug mapping and execution need migration to ICfgExecutor
+        // var mapping = _blueprintService.GetDebugNodeMapping(CurrentBlueprint!);
+        // SetDebugNodeMapping(mapping);
+        // Log.Information("[BlueprintDebug] Debug node mapping: {Count} entries", mapping.Count);
 
         IsExecuting = true;
         StatusText = "Debugging...";
@@ -2204,10 +2207,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         {
             try
             {
-                Log.Information("[BlueprintDebug] Executing with debugger");
-                var result = await _blueprintService.ExecuteBlueprintAsync(CurrentBlueprint);
+                Log.Information("[BlueprintDebug] Executing with debugger (v5.2: execution path needs migration)");
+                // var result = await _blueprintService.ExecuteBlueprintAsync(CurrentBlueprint);
 
-                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                /* await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     if (result.IsSuccess)
                     {
@@ -2219,7 +2222,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                         StatusText = $"Debug failed: {result.ErrorMessage}";
                         ExecutionResult = $"Debug error: {result.ErrorMessage}";
                     }
-                });
+                }); */
             }
             catch (Exception ex)
             {

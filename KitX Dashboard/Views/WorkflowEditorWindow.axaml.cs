@@ -46,7 +46,7 @@ public partial class WorkflowEditorWindow : Window, IView
 
         _viewModel = new WorkflowEditorViewModel(
             App.GetService<IWorkflowStorageService>(),
-            App.GetService<IBlueprintService>(),
+            // App.GetService<IBlueprintService>(), // v5.2: removed
             App.GetService<ITasksService>(),
             scriptVM,
             blueprintVM

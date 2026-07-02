@@ -25,7 +25,7 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     public enum EditorMode { BlockScript, Blueprint }
 
     private readonly IWorkflowStorageService _storageService;
-    private readonly IBlueprintService _blueprintService;
+    // private readonly IBlueprintService _blueprintService; // v5.2: removed
     private readonly ITasksService _tasksService;
     private readonly IEventService _eventService;
 
@@ -205,13 +205,13 @@ internal partial class WorkflowEditorViewModel : ObservableObject
 
     public WorkflowEditorViewModel(
         IWorkflowStorageService storageService,
-        IBlueprintService blueprintService,
+        /*IBlueprintService blueprintService,*/ // v5.2: removed
         ITasksService tasksService,
         WorkflowScriptEditorWindowViewModel scriptVM,
         BlueprintEditorViewModel blueprintVM)
     {
         _storageService = storageService;
-        _blueprintService = blueprintService;
+        // _blueprintService = blueprintService; // v5.2: removed
         _tasksService = tasksService;
         _eventService = App.GetService<IEventService>();
         ScriptVM = scriptVM;
@@ -334,7 +334,8 @@ internal partial class WorkflowEditorViewModel : ObservableObject
                     blueprint.Nodes[idx] = entryReplacement;
                 }
 
-                var sourceCode = _blueprintService.ExportToBlockScript(blueprint);
+                // v5.2: _blueprintService removed — BP→BS export needs migration to ICfgBsRenderer
+                var sourceCode = ""; // was: _blueprintService.ExportToBlockScript(blueprint);
                 ScriptVM.MainProgramCode = sourceCode;
                 ScriptVM.UseBlockMode = true;
             }
@@ -396,7 +397,8 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         {
             try
             {
-                var blueprint = _blueprintService.ImportFromBlockScript(sourceCode, helpers);
+                // v5.2: _blueprintService removed — BS→BP import needs migration to IBpSyncService + ICfgBpRenderer
+                var blueprint = (global::KitX.Core.Contract.Workflow.Blueprint?)null; // was: _blueprintService.ImportFromBlockScript(sourceCode, helpers);
                 if (blueprint != null)
                 {
                     // BS → BP trigger conversion: replace Entry with PluginTriggerNode
@@ -506,7 +508,8 @@ internal partial class WorkflowEditorViewModel : ObservableObject
                     TriggerName = null;
                 }
 
-                var sourceCode = _blueprintService.ExportToBlockScript(blueprint);
+                // v5.2: _blueprintService removed — BP→BS export needs migration
+                var sourceCode = ""; // was: _blueprintService.ExportToBlockScript(blueprint);
 
                 ScriptVM.MainProgramCode = sourceCode;
                 ScriptVM.UseBlockMode = true;
