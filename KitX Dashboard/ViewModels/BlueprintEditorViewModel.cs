@@ -14,7 +14,10 @@ using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
-using KitX.Workflow.Abstractions;
+// Phase 12-prep: legacy KitX.Workflow.Abstractions archived. IBlockScriptExecutor
+// is temporarily provided by a local stub (KitX.Dashboard.Services) until the
+// editor migrates to the new KitX.WorkflowIR CFG-session model.
+// using KitX.Workflow.Abstractions;
 using NodifyM.Avalonia.ViewModelBase;
 using Serilog;
 using BlueprintPinDirection = KitX.Core.Contract.Workflow.PinDirection;
@@ -900,14 +903,17 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         }
 
         // Trigger push layout via ILayoutService
+        // Phase 12-prep: legacy KitX.Workflow.Abstractions.ILayoutService archived.
+        // Auto-layout on block collapse will be re-wired to the new KitX.WorkflowIR
+        // layout service once the editor migration lands (TODO).
         if (CurrentBlueprint != null)
         {
-            var layoutService = App.GetService<Workflow.Abstractions.ILayoutService>();
-            layoutService?.AdjustLayoutForBlockCollapse(
-                CurrentBlueprint,
-                blockScope.OwnerBlockNodeId,
-                blockScope.IsCollapsed,
-                blockScope.ContainedNodeIds.ToList());
+            // var layoutService = App.GetService<Workflow.Abstractions.ILayoutService>();
+            // layoutService?.AdjustLayoutForBlockCollapse(
+            //     CurrentBlueprint,
+            //     blockScope.OwnerBlockNodeId,
+            //     blockScope.IsCollapsed,
+            //     blockScope.ContainedNodeIds.ToList());
         }
     }
 
@@ -1186,10 +1192,12 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     public Blueprint ExportDrawingToBlueprint()
     {
-        // v5.2: IBlueprintService removed — ExportDrawingToBlueprint needs migration to new CFG session
-        // var blueprint = _blueprintService.CreateBlueprint();
-        // ... (migration needed: populate from nodify graph directly)
-        throw new NotImplementedException("ExportDrawingToBlueprint: v5.2 migration — use CFG session");
+        // v5.2: IBlueprintService removed — ExportDrawingToBlueprint needs migration to new CFG session.
+        // The body below was dead code after `throw` and referenced an undeclared `blueprint`
+        // local (the old `var blueprint = _blueprintService.CreateBlueprint()` was commented out).
+        // It is preserved as a comment block for the upcoming CFG-session migration.
+        /*
+        var blueprint = _blueprintService.CreateBlueprint();
         blueprint.Name = CurrentBlueprint?.Name ?? "Untitled";
 
         // Preserve HelperFunctions from the original blueprint (imported from BlockScript)
@@ -1268,6 +1276,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         BuildBlockScopesFromScopeBlocks(blueprint);
 
         return blueprint;
+        */
+        throw new NotImplementedException("ExportDrawingToBlueprint: v5.2 migration — use CFG session");
     }
 
     /// <summary>
@@ -2175,7 +2185,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         ExecutionResult = string.Empty;
 
         Log.Information("[BlueprintDebug] Starting debug execution");
-        _debugController = new KitX.Workflow.BlockScripting.BlueprintDebugger();
+        // Phase 12-prep: legacy KitX.Workflow.BlockScripting.BlueprintDebugger archived;
+        // using the local KitX.Dashboard.Services stub until the editor migrates to the
+        // new KitX.WorkflowIR debug surface. The stub throws NotImplementedException.
+        _debugController = new BlueprintDebugger();
         _debugController.SetSpeed(KitX.Core.Contract.Workflow.ExecutionSpeed.StepByStep);
         _debugController.NodeExecuting += OnDebugNodeExecuting;
         _debugController.NodeExecuted += OnDebugNodeExecuted;
@@ -2278,7 +2291,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private void OnDebugNodeExecuting(string statementId)
     {
         // Capture output from the PREVIOUS node's execution
-        var output = KitX.Workflow.Services.WorkflowOutput.GetAndClear();
+        // Phase 12-prep: legacy KitX.Workflow.Services.WorkflowOutput archived;
+        // local KitX.Dashboard.Services stub returns empty until IR backend is wired.
+        var output = WorkflowOutput.GetAndClear();
         if (output.Length > 0)
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>

@@ -74,16 +74,23 @@ public partial class App : Application
         // Initialize the workflow library's own service locator with the same provider,
         // so workflow code created outside DI (builtin functions, lazy singletons) can
         // resolve shared services (IPluginService, IDeviceServer, workflow services, ...).
-        KitX.Workflow.Hosting.ServiceLocator.Initialize(provider);
+        //
+        // Phase 12-prep: legacy KitX.Workflow.Hosting.ServiceLocator archived; the new
+        // KitX.WorkflowIR library will expose its own service-locator / DI entry once the
+        // editor migrates. Workflow eager-resolution is intentionally disabled for now.
+        // KitX.Workflow.Hosting.ServiceLocator.Initialize(provider);
 
         // Pre-resolve the plugin manager bridge to force eager singleton construction
         // (the concrete RealPluginManager subscribes to plugin events in its ctor).
-        var rpm = provider.GetRequiredService<IRealPluginManagerBridge>();
-        Log.Information("RealPluginManager pre-resolved. HashCode: {HashCode}", rpm.GetHashCode());
+        // Phase 12-prep: bridge no longer registered (old lib archived). Re-enable when
+        // the new library's RealPluginManager equivalent is wired.
+        // var rpm = provider.GetRequiredService<IRealPluginManagerBridge>();
+        // Log.Information("RealPluginManager pre-resolved. HashCode: {HashCode}", rpm.GetHashCode());
 
         // Initialize TriggerManager from persisted workflow configurations
-        var triggerManager = provider.GetRequiredService<ITriggerManager>();
-        triggerManager.InitializeFromPersistedWorkflows();
+        // Phase 12-prep: ITriggerManager implementation archived. Re-enable post-migration.
+        // var triggerManager = provider.GetRequiredService<ITriggerManager>();
+        // triggerManager.InitializeFromPersistedWorkflows();
 
         Log.Information("Service provider initialized.");
     }
