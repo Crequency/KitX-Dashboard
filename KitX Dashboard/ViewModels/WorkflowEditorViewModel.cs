@@ -12,7 +12,12 @@ using KitX.Core.Tasks;
 using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
+using KitX.Workflow.Session;
+using KitX.Workflow.Lens.BsTextLens;
+using KitX.Workflow.Lens.BpGraphLens;
 using Serilog;
+using BsTextLens = KitX.Workflow.Lens.BsTextLens.BsTextLens;
+using BpGraphLens = KitX.Workflow.Lens.BpGraphLens.BpGraphLens;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -25,9 +30,14 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     public enum EditorMode { BlockScript, Blueprint }
 
     private readonly IWorkflowStorageService _storageService;
-    // private readonly IBlueprintService _blueprintService; // v5.2: removed
     private readonly ITasksService _tasksService;
     private readonly IEventService _eventService;
+
+    // Phase F1: per-document workflow session (IR as single source of truth).
+    // Constructed from BS source on load; drives BP↔BS round-trip via Lens projection.
+    private WorkflowSession? _session;
+    private readonly BsTextLens _bsTextLens;
+    private readonly BpGraphLens _bpGraphLens;
 
     private EditorMode _mode = EditorMode.BlockScript;
     private string? _workflowId;
@@ -205,17 +215,19 @@ internal partial class WorkflowEditorViewModel : ObservableObject
 
     public WorkflowEditorViewModel(
         IWorkflowStorageService storageService,
-        /*IBlueprintService blueprintService,*/ // v5.2: removed
         ITasksService tasksService,
         WorkflowScriptEditorWindowViewModel scriptVM,
         BlueprintEditorViewModel blueprintVM)
     {
         _storageService = storageService;
-        // _blueprintService = blueprintService; // v5.2: removed
         _tasksService = tasksService;
         _eventService = App.GetService<IEventService>();
         ScriptVM = scriptVM;
         BlueprintVM = blueprintVM;
+
+        // Phase F1: resolve Lens services from DI for BP↔BS round-trip.
+        _bsTextLens = App.GetService<BsTextLens>();
+        _bpGraphLens = App.GetService<BpGraphLens>();
 
         // Forward execution output from sub-VMs
         ScriptVM.PropertyChanged += (s, e) =>
@@ -286,6 +298,24 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         // panel is populated (replaces the legacy bridge plumbing).
         SyncBlueprintHelperFunctions();
 
+        // Phase F1: construct the per-document WorkflowSession from the BS source.
+        // The session holds the IR (single source of truth); BP and BS are projections.
+        try
+        {
+            var bsSource = ScriptVM.MainProgramCode ?? string.Empty;
+            var helpers = ScriptVM.HelperFunctions.ToList();
+            if (!string.IsNullOrWhiteSpace(bsSource) && _bsTextLens != null)
+            {
+                var ir = _bsTextLens.Parse(bsSource, helpers);
+                _session = new WorkflowSession(ir) { HelperFunctions = helpers };
+                BlueprintVM.SetSession(_session);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[WorkflowEditorVM] Failed to construct WorkflowSession from BS source — BP sync will be unavailable until BS is valid");
+        }
+
         // Load into BP editor if blueprint data exists
         if (data.BlueprintData != null)
         {
@@ -334,8 +364,11 @@ internal partial class WorkflowEditorViewModel : ObservableObject
                     blueprint.Nodes[idx] = entryReplacement;
                 }
 
-                // v5.2: _blueprintService removed — BP→BS export needs migration to ICfgBsRenderer
-                var sourceCode = ""; // was: _blueprintService.ExportToBlockScript(blueprint);
+                // Phase F1: BP→BS via BsTextLens.Project(session.Ir).
+                // The session's IR is the canonical state; BS text is a projection.
+                var sourceCode = _session != null && _bsTextLens != null
+                    ? _bsTextLens.Project(_session.Ir)
+                    : "";
                 ScriptVM.MainProgramCode = sourceCode;
                 ScriptVM.UseBlockMode = true;
             }
@@ -397,8 +430,20 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         {
             try
             {
-                // v5.2: _blueprintService removed — BS→BP import needs migration to IBpSyncService + ICfgBpRenderer
-                var blueprint = (global::KitX.Core.Contract.Workflow.Blueprint?)null; // was: _blueprintService.ImportFromBlockScript(sourceCode, helpers);
+                // Phase F1: BS→BP via BpGraphLens.Project(session.Ir).
+                // Re-parse to refresh the session (BS may have changed since load),
+                // then project the IR to a mutable Blueprint for the canvas.
+                if (_bsTextLens != null)
+                {
+                    var ir = _bsTextLens.Parse(sourceCode, helpers);
+                    _session = new WorkflowSession(ir) { HelperFunctions = helpers };
+                    BlueprintVM.SetSession(_session);
+                }
+
+                var blueprint = _session != null && _bpGraphLens != null
+                    ? _bpGraphLens.Project(_session.Ir)
+                    : null;
+
                 if (blueprint != null)
                 {
                     // BS → BP trigger conversion: replace Entry with PluginTriggerNode

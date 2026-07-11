@@ -18,6 +18,7 @@ using KitX.Core.Contract.Workflow;
 using KitX.Core.DI;
 using KitX.Core.Event;
 using KitX.Dashboard.Services;
+using KitX.Workflow.Hosting;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.ViewModels.Pages.Controls;
 using KitX.Dashboard.Views;
@@ -51,6 +52,27 @@ public partial class App : Application
 
         // Register Core services from KitX.Core
         services.AddCoreServices();
+
+        // Phase F1: register the new WorkflowIR library services (IR/Lens/Diff/Backend/Session).
+        // This replaces the archived AddKitXWorkflow() entry (CoreServiceCollectionExtensions.cs:117).
+        services.AddKitXWorkflowIR();
+
+        // NodeFactory: replaces the orphaned INodeRegistry (uses BuiltinFunctionRegistry).
+        services.AddSingleton<KitX.Dashboard.Services.NodeFactory>(sp =>
+            new KitX.Dashboard.Services.NodeFactory(
+                sp.GetRequiredService<KitX.Workflow.Builtin.BuiltinFunctionRegistry>()));
+
+        // IPluginHost adapter: wraps RealPluginManager for workflow PluginCall execution.
+        // Currently registered as a factory that resolves IPluginManager when available;
+        // plugin-call execution requires an IPluginServiceProvider implementation (future work).
+        services.AddSingleton<KitX.Workflow.Backend.Runtime.IPluginHost>(sp =>
+        {
+            // Resolve IPluginManager if registered; otherwise return a no-op host.
+            // The active Kscript RealPluginManager needs IPluginServiceProvider (not yet wired).
+            return new KitX.Dashboard.Services.PluginHostAdapter(
+                sp.GetService<Kscript.CSharp.Parser.Core.IPluginManager>()
+                    ?? new NoOpPluginManager());
+        });
 
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();

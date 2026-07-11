@@ -46,6 +46,7 @@ public partial class BlueprintConnectorVM : ConnectorViewModelBase
         PinType.Integer => "#FFA500",       // Orange
         PinType.Double => "#9370DB",        // MediumPurple
         PinType.String => "#FFFF00",        // Yellow
+        PinType.Json => "#4FC3F7",          // Light Blue (List-Port design §2.1)
         _ => "#FFFFFF"                      // White (Any)
     };
 

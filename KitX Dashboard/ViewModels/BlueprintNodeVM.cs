@@ -259,6 +259,7 @@ public partial class BlueprintNodeVM : NodeViewModelBase
         "bool" or "boolean" => PinType.Boolean,
         "double" or "float" or "number" => PinType.Double,
         "string" => PinType.String,
+        "json" or "jsonelement" => PinType.Json,  // List-Port design §3.3
         _ => PinType.Any
     };
 

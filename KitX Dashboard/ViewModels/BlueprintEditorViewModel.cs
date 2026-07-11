@@ -14,6 +14,12 @@ using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
+using KitX.Workflow.Lens.BsTextLens;
+using KitX.Workflow.Lens.BpGraphLens;
+using KitX.Workflow.Session;
+using KitX.Workflow.Backend;
+using BsTextLens = KitX.Workflow.Lens.BsTextLens.BsTextLens;
+using BpGraphLens = KitX.Workflow.Lens.BpGraphLens.BpGraphLens;
 // Phase 12-prep: legacy KitX.Workflow.Abstractions archived. IBlockScriptExecutor
 // is temporarily provided by a local stub (KitX.Dashboard.Services) until the
 // editor migrates to the new KitX.WorkflowIR CFG-session model.
@@ -30,14 +36,20 @@ namespace KitX.Dashboard.ViewModels;
 /// </summary>
 public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 {
-    // v5.2: IBlueprintService removed; replace with IWorkflowSession + IBsSyncService + IBpEditApplier + ICfgBpRenderer
-    // private readonly IBlueprintService _blueprintService;
+    // Phase F1: INodeRegistry/IBlueprintRenderDataService/IBlockScriptExecutor removed.
+    // NodeFactory replaces INodeRegistry (uses new lib's BuiltinFunctionRegistry).
+    // RenderData split is now inline (Exec/Data classification by pin type).
+    // IExecutionBackend replaces IBlockScriptExecutor for debug execution.
     private readonly ITasksService _tasksService;
-    private readonly INodeRegistry _nodeRegistry;
-    private readonly IBlueprintRenderDataService _renderDataService;
+    private readonly NodeFactory _nodeFactory;
     private readonly IFileDialogService _fileDialogService;
-    private readonly IBlockScriptExecutor _executor;
+    private readonly SyncService _syncService;
+    private readonly BsTextLens _bsTextLens;
+    private readonly BpGraphLens _bpGraphLens;
+    private readonly IExecutionBackend _executionBackend;
     private CancellationTokenSource? _cancellationTokenSource;
+
+    private WorkflowSession? _session;
 
     private IBlueprintDebugController? _debugController;
     private Dictionary<string, string> _statementToNodeId = new();
@@ -255,19 +267,21 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// Constructor with DI injection
     /// </summary>
     public BlueprintEditorViewModel(
-        /*IBlueprintService blueprintService,*/ // v5.2: removed
         ITasksService tasksService,
-        INodeRegistry nodeRegistry,
-        IBlueprintRenderDataService renderDataService,
+        NodeFactory nodeFactory,
         IFileDialogService fileDialogService,
-        IBlockScriptExecutor executor)
+        SyncService syncService,
+        BsTextLens bsTextLens,
+        BpGraphLens bpGraphLens,
+        IExecutionBackend executionBackend)
     {
-        // _blueprintService = blueprintService; // v5.2: removed
         _tasksService = tasksService;
-        _nodeRegistry = nodeRegistry;
-        _renderDataService = renderDataService;
+        _nodeFactory = nodeFactory;
         _fileDialogService = fileDialogService;
-        _executor = executor;
+        _syncService = syncService;
+        _bsTextLens = bsTextLens;
+        _bpGraphLens = bpGraphLens;
+        _executionBackend = executionBackend;
 
         // Initialize PendingConnection so drag-to-connect works
         PendingConnection = new PendingConnectionViewModelBase(this);
@@ -278,7 +292,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             _pluginService.PluginStatusChanged += OnPluginStatusChanged;
         RefreshPluginFunctions();
 
-        Log.Information("BlueprintEditorViewModel initialized (NodifyM)");
+        Log.Information("BlueprintEditorViewModel initialized (NodifyM + WorkflowIR)");
     }
 
     // ─── Connection Creation (NodifyM override) ─────────────────────────
@@ -412,7 +426,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         if (string.IsNullOrEmpty(node.BuiltinFunctionName)) return null;
         // Rebuild the descriptor for this builtin function (registry-driven, cheap).
-        var tmp = _nodeRegistry.CreateBuiltinFunctionNode(node.BuiltinFunctionName);
+        var tmp = _nodeFactory.CreateBuiltinFunctionNode(node.BuiltinFunctionName);
         return tmp.GetDescriptor();
     }
 
@@ -714,13 +728,25 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         var connectorMap = new Dictionary<string, BlueprintConnectorVM>();
         var pinTypeMap = new Dictionary<string, PinType>();
 
-        var renderData = _renderDataService.GetRenderData(blueprint);
+        // Inline Exec/Data split (replaces IBlueprintRenderDataService):
+        // classify each connection by the source pin's PinType.
+        var execConnections = new List<BlueprintConnection>();
+        var dataConnections = new List<BlueprintConnection>();
+        foreach (var conn in blueprint.Connections)
+        {
+            var sourceNode = blueprint.GetNodeById(conn.SourceNodeId);
+            var sourcePin = sourceNode?.OutputPins.FirstOrDefault(p => p.Id == conn.SourcePinId);
+            if (sourcePin?.Type == PinType.Execution)
+                execConnections.Add(conn);
+            else
+                dataConnections.Add(conn);
+        }
 
         Log.Information("Loading blueprint: {NodeCount} nodes, {ExecCount} exec, {DataCount} data connections",
-            renderData.AllNodes.Count, renderData.ExecConnections.Count, renderData.DataConnections.Count);
+            blueprint.Nodes.Count, execConnections.Count, dataConnections.Count);
 
         // === Phase 1: Create all nodes ===
-        foreach (var blueprintNode in renderData.AllNodes)
+        foreach (var blueprintNode in blueprint.Nodes)
         {
             var nodeVm = ConvertBlueprintNodeToViewModel(blueprintNode);
             Nodes.Add(nodeVm);
@@ -745,13 +771,13 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         InitializeBlockScopes();
 
         // === Phase 2: Create execution flow connections ===
-        foreach (var connection in renderData.ExecConnections)
+        foreach (var connection in execConnections)
         {
             CreateConnectionFromBlueprintConnection(connection, connectorMap, blueprint);
         }
 
         // === Phase 3: Create data flow connections ===
-        foreach (var connection in renderData.DataConnections)
+        foreach (var connection in dataConnections)
         {
             CreateConnectionFromBlueprintConnection(connection, connectorMap, blueprint);
         }
@@ -1188,97 +1214,37 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     // ─── Blueprint Export ────────────────────────────────────────────────
 
     /// <summary>
-    /// Exports the current editor state to a Blueprint domain model
+    /// Exports the current editor state to a Blueprint domain model.
+    ///
+    /// Phase F1: with the IR-as-single-source-of-truth architecture, the session's IR
+    /// is the canonical state. BP edits flow back to the IR via SyncService.ApplyBpEdits
+    /// (F1.4); the Blueprint on the canvas is a projection of the IR. This method returns
+    /// the currently loaded Blueprint (CurrentBlueprint) — the canvas state — so callers
+    /// that need the BS text use BsTextLens.Project(session.Ir) directly (see
+    /// WorkflowEditorViewModel.SaveAsync / SwitchToBlockScriptAsync).
     /// </summary>
     public Blueprint ExportDrawingToBlueprint()
     {
-        // v5.2: IBlueprintService removed — ExportDrawingToBlueprint needs migration to new CFG session.
-        // The body below was dead code after `throw` and referenced an undeclared `blueprint`
-        // local (the old `var blueprint = _blueprintService.CreateBlueprint()` was commented out).
-        // It is preserved as a comment block for the upcoming CFG-session migration.
-        /*
-        var blueprint = _blueprintService.CreateBlueprint();
-        blueprint.Name = CurrentBlueprint?.Name ?? "Untitled";
-
-        // Preserve HelperFunctions from the original blueprint (imported from BlockScript)
-        if (CurrentBlueprint?.HelperFunctions != null && CurrentBlueprint.HelperFunctions.Count > 0)
-        {
-            blueprint.HelperFunctions = new List<HelperFunction>(CurrentBlueprint.HelperFunctions);
-        }
-
-        // Rebuild ConstValues from current ConstNode and VariableNode VMs
-        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
-        {
-            if (node.NodeType == BlueprintNodeType.Const)
-            {
-                var constName = node.Metadata.TryGetValue("ConstName", out var cn) ? cn
-                    : node.DisplayTitle.StartsWith("Const:") ? node.DisplayTitle["Const:".Length..].Trim() : node.DisplayTitle;
-                blueprint.ConstValues.Add(new VariableConstant
-                {
-                    Name = constName,
-                    DefaultValue = !string.IsNullOrEmpty(node.ConstValue) ? node.ConstValue : null,
-                    Type = node.ConstType ?? "string"
-                });
-            }
-            else if (node.NodeType == BlueprintNodeType.Variable)
-            {
-                // v5.0: DisplayTitle format is "{VarKind}: {VarName}" (e.g. "PubVar: x")
-                var varName = node.Metadata.TryGetValue("VarName", out var vn) ? vn
-                    : node.DisplayTitle.Contains(':') ? node.DisplayTitle[(node.DisplayTitle.IndexOf(':') + 1)..].Trim() : node.DisplayTitle;
-                blueprint.ConstValues.Add(new VariableConstant
-                {
-                    Name = varName,
-                    DefaultValue = null,
-                    Type = node.VarType ?? "int"
-                });
-            }
-        }
-
-        // Convert nodes
-        foreach (var node in Nodes)
-        {
-            if (node is BlueprintNodeVM nodeVm)
-            {
-                var blueprintNode = ConvertViewModelToBlueprintNode(nodeVm);
-                blueprint.AddNode(blueprintNode);
-            }
-        }
-
-        // Convert connections
-        foreach (var connection in Connections)
-        {
-            if (connection is BlueprintConnectionVM connVm &&
-                connVm.Source is BlueprintConnectorVM sourceConn &&
-                connVm.Target is BlueprintConnectorVM targetConn)
-            {
-                // Find parent nodes
-                var sourceParent = FindParentNode(sourceConn);
-                var targetParent = FindParentNode(targetConn);
-
-                if (sourceParent != null && targetParent != null)
-                {
-                    var bpConnection = new BlueprintConnection
-                    {
-                        SourceNodeId = sourceParent.BlueprintNodeId,
-                        SourcePinId = sourceConn.OriginalPinId ?? sourceConn.Title,
-                        TargetNodeId = targetParent.BlueprintNodeId,
-                        TargetPinId = targetConn.OriginalPinId ?? targetConn.Title
-                    };
-                    blueprint.AddConnection(bpConnection);
-                }
-            }
-        }
-
-        Log.Information("Exported drawing: {NodeCount} nodes, {ConnectionCount} connections",
-            blueprint.Nodes.Count, blueprint.Connections.Count);
-
-        // Build BlockScopes from ScopeBlocks
-        BuildBlockScopesFromScopeBlocks(blueprint);
-
-        return blueprint;
-        */
-        throw new NotImplementedException("ExportDrawingToBlueprint: v5.2 migration — use CFG session");
+        // Return the current blueprint (already projected from IR on load/edit).
+        // When BP edits flow back to IR (F1.4), the session.Ir is the canonical source;
+        // callers that need BS text use BsTextLens.Project(session.Ir) directly.
+        return CurrentBlueprint ?? new Blueprint { Name = "Untitled" };
     }
+
+    /// <summary>
+    /// Sets the per-document workflow session. Called by WorkflowEditorViewModel
+    /// when a document is loaded or BS is re-parsed. The session's IR is the single
+    /// source of truth for BP↔BS round-trip.
+    /// </summary>
+    public void SetSession(WorkflowSession session)
+    {
+        _session = session;
+    }
+
+    /// <summary>
+    /// Gets the current workflow session (null if no document loaded).
+    /// </summary>
+    public WorkflowSession? Session => _session;
 
     /// <summary>
     /// Builds BlockScopes from the current ScopeBlocks state.
@@ -1344,11 +1310,11 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 or "Switch" or "ForLoop" or "Goto"
                 or "PluginCall" or "JsonGetField" or "TryGetDevice")
         {
-            blueprintNode = _nodeRegistry.CreateBuiltinFunctionNode(funcName);
+            blueprintNode = _nodeFactory.CreateBuiltinFunctionNode(funcName);
         }
         else
         {
-            blueprintNode = _nodeRegistry.Create(nodeVm.NodeType);
+            blueprintNode = _nodeFactory.Create(nodeVm.NodeType);
         }
 
         // Preserve original node ID so connections can reference it
@@ -1767,7 +1733,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     private void AddNodeFromTemplate(BlueprintNodeType type, string? contentTitle = null)
     {
-        var descriptor = _nodeRegistry.GetDescriptor(type);
+        var descriptor = _nodeFactory.GetDescriptor(type);
         var title = contentTitle ?? descriptor.DisplayName;
         var (primaryColor, lightColor) = BlueprintNodeVM.GetCategoryColors(type);
 
@@ -1830,7 +1796,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     private void AddBuiltinFunctionNode(string functionName)
     {
-        var builtinNode = _nodeRegistry.CreateBuiltinFunctionNode(functionName);
+        var builtinNode = _nodeFactory.CreateBuiltinFunctionNode(functionName);
         var descriptor = builtinNode.GetDescriptor();
         var title = functionName;
         var (primaryColor, lightColor) = BlueprintNodeVM.GetBuiltinFunctionColors(functionName);
@@ -1942,7 +1908,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         if (item == null) return;
 
         var displayTitle = $"Call: {item.PluginName}.{item.FunctionName}";
-        var descriptor = _nodeRegistry.GetDescriptor(BlueprintNodeType.Call);
+        var descriptor = _nodeFactory.GetDescriptor(BlueprintNodeType.Call);
         var (primaryColor, lightColor) = BlueprintNodeVM.GetCategoryColors(BlueprintNodeType.Call);
 
         var node = new BlueprintNodeVM
@@ -2068,7 +2034,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         if (item == null) return;
 
         var displayTitle = $"Helper: {item.FunctionName}";
-        var descriptor = _nodeRegistry.GetDescriptor(BlueprintNodeType.CallHelper);
+        var descriptor = _nodeFactory.GetDescriptor(BlueprintNodeType.CallHelper);
         var (primaryColor, lightColor) = BlueprintNodeVM.GetCategoryColors(BlueprintNodeType.CallHelper);
 
         var node = new BlueprintNodeVM
@@ -2160,7 +2126,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         _cancellationTokenSource?.Cancel();
         StatusText = "Execution cancelled";
 
-        _executor.SetDebugger(null);
+        // F1.5: debugger lifecycle now managed via IExecutionBackend (SetDebugger stub removed).
         IsDebugging = false;
         IsPaused = false;
         IsExecuting = false;
@@ -2206,7 +2172,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 Log.Debug("[BlueprintDebug] UI: IsPaused=false");
             });
 
-        _executor.SetDebugger(_debugController);
+        // F1.5: debugger is passed to IExecutionBackend.ExecuteAsync (not SetDebugger).
+        // The real debug controller wiring is implemented in F1.5.
 
         // v5.2: IBlueprintService removed — debug mapping and execution need migration to ICfgExecutor
         // var mapping = _blueprintService.GetDebugNodeMapping(CurrentBlueprint!);
@@ -2258,7 +2225,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                         conn.RuntimeValue = null;
                     Log.Information("[BlueprintDebug] Debug execution complete, cleanup");
                 });
-                _executor.SetDebugger(null);
+                // F1.5: debugger cleanup — no SetDebugger on IExecutionBackend.
                 CleanupDebugController();
             }
         });
