@@ -14,6 +14,7 @@ using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
+using KitX.Workflow.Lens;
 using KitX.Workflow.Lens.BsTextLens;
 using KitX.Workflow.Lens.BpGraphLens;
 using KitX.Workflow.Session;
@@ -45,8 +46,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private readonly IFileDialogService _fileDialogService;
     private readonly SyncService _syncService;
     private readonly BsTextLens _bsTextLens;
-    private readonly BpGraphLens _bpGraphLens;
+    private readonly ILens<Blueprint, IReadOnlyList<BpEditAction>> _bpGraphLens;
     private readonly IExecutionBackend _executionBackend;
+    private readonly IPluginService? _pluginService;
     private CancellationTokenSource? _cancellationTokenSource;
 
     private WorkflowSession? _session;
@@ -136,8 +138,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// Nodes not in this map belong to MainBlock.
     /// </summary>
     public Dictionary<string, string> NodeToScopeMap { get; } = [];
-
-    private IPluginService? _pluginService;
 
     /// <summary>
     /// Plugin functions available for dynamic node creation.
@@ -263,7 +263,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     }
 
     /// <summary>
-    /// Constructor with DI injection
+    /// Constructor with DI injection. FT.1/FT.2: Lens params take the ILens
+    /// interface (testable); plugin service + script VM are optional so the VM
+    /// can be constructed in a test host without a bootstrapped DI container.
     /// </summary>
     public BlueprintEditorViewModel(
         ITasksService tasksService,
@@ -271,8 +273,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         IFileDialogService fileDialogService,
         SyncService syncService,
         BsTextLens bsTextLens,
-        BpGraphLens bpGraphLens,
-        IExecutionBackend executionBackend)
+        ILens<Blueprint, IReadOnlyList<BpEditAction>> bpGraphLens,
+        IExecutionBackend executionBackend,
+        IPluginService? pluginService = null)
     {
         _tasksService = tasksService;
         _nodeFactory = nodeFactory;
@@ -281,12 +284,12 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         _bsTextLens = bsTextLens;
         _bpGraphLens = bpGraphLens;
         _executionBackend = executionBackend;
+        _pluginService = pluginService;
 
         // Initialize PendingConnection so drag-to-connect works
         PendingConnection = new PendingConnectionViewModelBase(this);
 
         // Initialize dynamic node palette from plugin service
-        _pluginService = App.GetService<IPluginService>();
         if (_pluginService != null)
             _pluginService.PluginStatusChanged += OnPluginStatusChanged;
         RefreshPluginFunctions();
@@ -2302,6 +2305,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 if (ir == null)
                 {
                     // No session — try to parse from BS source.
+                    // Debug path only: resolve the script VM at runtime (not a test target).
                     var bsSource = App.GetService<WorkflowScriptEditorWindowViewModel>()?.MainProgramCode;
                     if (!string.IsNullOrWhiteSpace(bsSource) && _bsTextLens != null)
                         ir = _bsTextLens.Parse(bsSource);

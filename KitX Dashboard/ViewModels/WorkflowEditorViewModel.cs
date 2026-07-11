@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,12 +8,14 @@ using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Contract.Tasks;
+using KitX.Core.Contract.Plugin;
 using KitX.Core.Event;
 using KitX.Core.Tasks;
 using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using KitX.Workflow.Session;
+using KitX.Workflow.Lens;
 using KitX.Workflow.Lens.BsTextLens;
 using KitX.Workflow.Lens.BpGraphLens;
 using Serilog;
@@ -31,13 +34,15 @@ internal partial class WorkflowEditorViewModel : ObservableObject
 
     private readonly IWorkflowStorageService _storageService;
     private readonly ITasksService _tasksService;
-    private readonly IEventService _eventService;
+    private readonly IEventService? _eventService;
+    private readonly IPluginServer? _pluginServer;
 
     // Phase F1: per-document workflow session (IR as single source of truth).
     // Constructed from BS source on load; drives BP↔BS round-trip via Lens projection.
+    // FT.1: Lens deps take the ILens interface (testable without a DI container).
     private WorkflowSession? _session;
     private readonly BsTextLens _bsTextLens;
-    private readonly BpGraphLens _bpGraphLens;
+    private readonly ILens<Blueprint, IReadOnlyList<BpEditAction>> _bpGraphLens;
 
     private EditorMode _mode = EditorMode.BlockScript;
     private string? _workflowId;
@@ -110,10 +115,9 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     private void RefreshAvailablePlugins()
     {
         AvailablePlugins.Clear();
-        var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Plugin.IPluginServer>();
-        if (pluginServer == null) return;
+        if (_pluginServer == null) return;
 
-        foreach (var conn in pluginServer.Connections)
+        foreach (var conn in _pluginServer.Connections)
         {
             if (!string.IsNullOrEmpty(conn.PluginInfo?.Name))
                 AvailablePlugins.Add(conn.PluginInfo.Name);
@@ -127,11 +131,9 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     {
         AvailableTriggers.Clear();
         if (string.IsNullOrEmpty(_triggerPluginName)) return;
+        if (_pluginServer == null) return;
 
-        var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Plugin.IPluginServer>();
-        if (pluginServer == null) return;
-
-        var conn = pluginServer.Connections
+        var conn = _pluginServer.Connections
             .FirstOrDefault(c => c.PluginInfo?.Name == _triggerPluginName);
         if (conn?.PluginInfo?.SupportedTriggers == null) return;
 
@@ -213,21 +215,32 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         set => SetProperty(ref _isPaused, value);
     }
 
+    /// <summary>
+    /// Constructor with DI injection. FT.1/FT.2: Lens params take the ILens
+    /// interface; event service, plugin server, and Lens services are optional so
+    /// the VM can be constructed in a test host without a bootstrapped DI container.
+    /// </summary>
     public WorkflowEditorViewModel(
         IWorkflowStorageService storageService,
         ITasksService tasksService,
         WorkflowScriptEditorWindowViewModel scriptVM,
-        BlueprintEditorViewModel blueprintVM)
+        BlueprintEditorViewModel blueprintVM,
+        IEventService? eventService = null,
+        IPluginServer? pluginServer = null,
+        BsTextLens? bsTextLens = null,
+        ILens<Blueprint, IReadOnlyList<BpEditAction>>? bpGraphLens = null)
     {
         _storageService = storageService;
         _tasksService = tasksService;
-        _eventService = App.GetService<IEventService>();
+        _eventService = eventService;
+        _pluginServer = pluginServer;
         ScriptVM = scriptVM;
         BlueprintVM = blueprintVM;
 
         // Phase F1: resolve Lens services from DI for BP↔BS round-trip.
-        _bsTextLens = App.GetService<BsTextLens>();
-        _bpGraphLens = App.GetService<BpGraphLens>();
+        // FT.1: fall back to DI when not passed explicitly (production path).
+        _bsTextLens = bsTextLens ?? App.GetService<BsTextLens>();
+        _bpGraphLens = bpGraphLens ?? App.GetService<BpGraphLens>();
 
         // Forward execution output from sub-VMs
         ScriptVM.PropertyChanged += (s, e) =>
@@ -256,7 +269,7 @@ internal partial class WorkflowEditorViewModel : ObservableObject
             if (e.PropertyName is nameof(WorkflowName) or nameof(WorkflowDescription) or nameof(WorkflowAuthor))
             {
                 IsDirty = true;
-                _eventService.Publish(EventNames.WorkflowDataSaved,
+                _eventService?.Publish(EventNames.WorkflowDataSaved,
                     new WorkflowSavedEventArgs(
                         _workflowId ?? string.Empty,
                         WorkflowName,
@@ -404,7 +417,7 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         IsDirty = false;
 
         // Notify management panel of metadata changes
-        _eventService.Publish(EventNames.WorkflowDataSaved,
+        _eventService?.Publish(EventNames.WorkflowDataSaved,
             new WorkflowSavedEventArgs(_workflowId, WorkflowName, WorkflowDescription, WorkflowAuthor));
     }
 
