@@ -52,7 +52,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     private WorkflowSession? _session;
 
     private IBlueprintDebugController? _debugController;
-    private Dictionary<string, string> _statementToNodeId = new();
     private Dictionary<string, BlueprintConnectorVM> _variableNameToConnector = new();
 
     private Blueprint? _currentBlueprint;
@@ -2386,40 +2385,35 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         // F1.5: output is captured at execution end (from BlockScriptExecutionResult.Output),
         // not incrementally. The checkpoint just drives UI node highlight here.
+        //
+        // §2.1 fix: statementId is now the canvas node id itself
+        // ("stmt:" + DeriveStableId), emitted by IrCodegen, so the node can be
+        // looked up directly — no mapping table needed.
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            Log.Debug("[BlueprintDebug] NodeExecuting: stmtId={StmtId}", statementId);
-            if (_statementToNodeId.TryGetValue(statementId, out var nodeId))
+            Log.Debug("[BlueprintDebug] NodeExecuting: nodeId={NodeId}", statementId);
+            var nodeVm = Nodes.OfType<BlueprintNodeVM>()
+                .FirstOrDefault(n => n.BlueprintNodeId == statementId);
+            if (nodeVm != null)
             {
-                Log.Debug("[BlueprintDebug] NodeExecuting: mapped to nodeId={NodeId}", nodeId);
-                var nodeVm = Nodes.OfType<BlueprintNodeVM>()
-                    .FirstOrDefault(n => n.BlueprintNodeId == nodeId);
-                if (nodeVm != null)
-                {
-                    Log.Debug("[BlueprintDebug] NodeExecuting: found nodeVm, setting IsExecuting=true. Title={Title}", nodeVm.Title);
-                    nodeVm.IsExecuting = true;
-                    Log.Debug("[BlueprintDebug] NodeExecuting: IsExecuting={IsExec}, BorderBrush={Brush}", nodeVm.IsExecuting, nodeVm.BorderBrushOverride);
+                Log.Debug("[BlueprintDebug] NodeExecuting: setting IsExecuting=true. Title={Title}", nodeVm.Title);
+                nodeVm.IsExecuting = true;
 
-                    // v5.0 BlockNode: highlight parent BlockNode if this node is inside one
-                    foreach (var blockNode in Nodes.OfType<BlueprintNodeVM>())
-                    {
-                        if (blockNode.IsBlockNode && blockNode.BlockScope != null
-                            && blockNode.BlockScope.ContainedNodeIds.Contains(nodeVm.BlueprintNodeId))
-                        {
-                            blockNode.BlockScope.IsInternalNodeExecuting = true;
-                            blockNode.IsExecuting = true; // also highlight the BlockNode itself
-                        }
-                    }
-                }
-                else
+                // v5.0 BlockNode: highlight parent BlockNode if this node is inside one
+                foreach (var blockNode in Nodes.OfType<BlueprintNodeVM>())
                 {
-                    Log.Warning("[BlueprintDebug] NodeExecuting: nodeVm NOT FOUND for BlueprintNodeId={NodeId}. Node count={Count}", nodeId, Nodes.Count);
+                    if (blockNode.IsBlockNode && blockNode.BlockScope != null
+                        && blockNode.BlockScope.ContainedNodeIds.Contains(nodeVm.BlueprintNodeId))
+                    {
+                        blockNode.BlockScope.IsInternalNodeExecuting = true;
+                        blockNode.IsExecuting = true; // also highlight the BlockNode itself
+                    }
                 }
             }
             else
             {
-                Log.Debug("[BlueprintDebug] NodeExecuting: no mapping for stmtId={StmtId}. Mapping count={Count}", statementId, _statementToNodeId.Count);
+                Log.Warning("[BlueprintDebug] NodeExecuting: nodeVm NOT FOUND for BlueprintNodeId={NodeId}. Node count={Count}", statementId, Nodes.Count);
             }
         });
     }
@@ -2428,24 +2422,21 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            if (_statementToNodeId.TryGetValue(statementId, out var nodeId))
+            var nodeVm = Nodes.OfType<BlueprintNodeVM>()
+                .FirstOrDefault(n => n.BlueprintNodeId == statementId);
+            if (nodeVm != null)
             {
-                var nodeVm = Nodes.OfType<BlueprintNodeVM>()
-                    .FirstOrDefault(n => n.BlueprintNodeId == nodeId);
-                if (nodeVm != null)
-                {
-                    nodeVm.IsExecuting = false;
-                    nodeVm.ExecutionCompleted = true;
+                nodeVm.IsExecuting = false;
+                nodeVm.ExecutionCompleted = true;
 
-                    // v5.0 BlockNode: clear parent BlockNode highlight
-                    foreach (var blockNode in Nodes.OfType<BlueprintNodeVM>())
+                // v5.0 BlockNode: clear parent BlockNode highlight
+                foreach (var blockNode in Nodes.OfType<BlueprintNodeVM>())
+                {
+                    if (blockNode.IsBlockNode && blockNode.BlockScope != null
+                        && blockNode.BlockScope.ContainedNodeIds.Contains(nodeVm.BlueprintNodeId))
                     {
-                        if (blockNode.IsBlockNode && blockNode.BlockScope != null
-                            && blockNode.BlockScope.ContainedNodeIds.Contains(nodeVm.BlueprintNodeId))
-                        {
-                            blockNode.BlockScope.IsInternalNodeExecuting = false;
-                            blockNode.IsExecuting = false;
-                        }
+                        blockNode.BlockScope.IsInternalNodeExecuting = false;
+                        blockNode.IsExecuting = false;
                     }
                 }
             }
@@ -2483,10 +2474,5 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         _debugController.NodeExecuted -= OnDebugNodeExecuted;
         _debugController.VariableChanged -= OnDebugVariableChanged;
         _debugController = null;
-    }
-
-    internal void SetDebugNodeMapping(Dictionary<string, string> mapping)
-    {
-        _statementToNodeId = new Dictionary<string, string>(mapping);
     }
 }
