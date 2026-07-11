@@ -350,6 +350,32 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
         RefreshCounts();
         Log.Debug("Connection created: {SrcTitle} -> {TgtTitle}", src.Title, tgt.Title);
+
+        // F1.4: emit ConnectData for data-pin connections to sync the IR.
+        // Exec connections are handled via SetControlFlowArm (scope block creation);
+        // ConnectData/Disconnect are currently no-ops in BpEditTranslator (re-derived
+        // from PubVar-writing statements on re-render), but emitting them is semantically
+        // correct and future-proofs the path.
+        if (src.PinType != PinType.Execution && tgt.PinType != PinType.Execution)
+        {
+            var srcParent = FindParentNode(src);
+            var tgtParent = FindParentNode(tgt);
+            if (srcParent != null && tgtParent != null)
+            {
+                ApplyBpEdits(new ConnectData(
+                    srcParent.BlueprintNodeId, src.Title,
+                    tgtParent.BlueprintNodeId, tgt.Title));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Finds the BlueprintNodeVM that owns the given connector (F1.4 helper).
+    /// </summary>
+    private BlueprintNodeVM? FindParentNode(ConnectorViewModelBase connector)
+    {
+        return Nodes.OfType<BlueprintNodeVM>()
+            .FirstOrDefault(n => n.Input.Contains(connector) || n.Output.Contains(connector));
     }
 
     /// <summary>
@@ -469,6 +495,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         var toRemove = SelectedNodes.ToList();
         if (toRemove.Count == 0) return;
 
+        var bpEdits = new List<BpEditAction>();
+
         // Remove connections attached to deleted nodes
         foreach (var node in toRemove.OfType<BlueprintNodeVM>())
         {
@@ -500,6 +528,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             }
 
             Nodes.Remove(node);
+            bpEdits.Add(new DeleteNode(node.BlueprintNodeId));
         }
 
         // Also remove any selected scope blocks (e.g., if user selects and deletes them)
@@ -508,11 +537,15 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             scope.UnsubscribeFromChildNodes();
             ScopeBlocks.Remove(scope);
             Nodes.Remove(scope);
+            bpEdits.Add(new DeleteBlock(scope.DisplayName));
         }
 
         SelectedNodes.Clear();
         RefreshCounts();
         Log.Information("Deleted {Count} nodes", toRemove.Count);
+
+        // F1.4: emit collected DeleteNode/DeleteBlock actions to sync the IR.
+        ApplyBpEdits(bpEdits.ToArray());
     }
 
     // ─── Scope Block Membership ─────────────────────────────────────────
@@ -526,6 +559,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         var scope = ScopeBlocks.FirstOrDefault(s => s.ScopeId == scopeId);
         if (scope == null) return;
 
+        var bpEdits = new List<BpEditAction>();
+
         foreach (var node in SelectedNodes.OfType<BlueprintNodeVM>().ToList())
         {
             // Remove from any existing scope first
@@ -537,10 +572,14 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 scope.ContainedNodeIds.Add(node.BlueprintNodeId);
                 NodeToScopeMap[node.BlueprintNodeId] = scopeId;
             }
+            bpEdits.Add(new MoveNodeToBlock(node.BlueprintNodeId, scope.DisplayName, null));
         }
 
         scope.RecalculateBounds();
         Log.Information("Moved {Count} nodes to scope '{ScopeId}'", SelectedNodes.Count, scopeId);
+
+        // F1.4: emit MoveNodeToBlock actions to sync the IR.
+        ApplyBpEdits(bpEdits.ToArray());
     }
 
     /// <summary>
@@ -549,9 +588,12 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     [RelayCommand]
     private void RemoveSelectedNodesFromScope()
     {
+        var bpEdits = new List<BpEditAction>();
+
         foreach (var node in SelectedNodes.OfType<BlueprintNodeVM>().ToList())
         {
             RemoveNodeFromAnyScope(node.BlueprintNodeId);
+            bpEdits.Add(new MoveNodeToBlock(node.BlueprintNodeId, "#MainBlock", null));
         }
 
         // Recalculate bounds for all affected scopes
@@ -559,6 +601,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             scope.RecalculateBounds();
 
         Log.Information("Removed {Count} nodes from their scope blocks", SelectedNodes.Count);
+
+        // F1.4: emit MoveNodeToBlock actions (back to MainBlock) to sync the IR.
+        ApplyBpEdits(bpEdits.ToArray());
     }
 
     // ─── Rename Commands ────────────────────────────────────────────────
@@ -658,6 +703,63 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     public string? GetNodeScopeId(string nodeId)
     {
         return NodeToScopeMap.TryGetValue(nodeId, out var scopeId) ? scopeId : null;
+    }
+
+    /// <summary>
+    /// Resolves a node's block name (the IR block name the translator expects).
+    /// Returns the owning scope's DisplayName, or "MainBlock" if the node is
+    /// not in any scope.
+    /// </summary>
+    private string GetNodeBlockName(string nodeId)
+    {
+        var scopeId = GetNodeScopeId(nodeId);
+        if (scopeId == null) return "#MainBlock";
+        var scope = ScopeBlocks.FirstOrDefault(s => s.ScopeId == scopeId);
+        return scope?.DisplayName ?? "#MainBlock";
+    }
+
+    // ─── Phase F1.4: BP edit回流 ──────────────────────────────────────
+
+    /// <summary>
+    /// Re-entrancy guard: when true, BP edits are being applied from IR re-projection
+    /// and should NOT re-emit BpEditActions (avoids feedback loop).
+    /// </summary>
+    private bool _isApplyingBpEdits;
+
+    /// <summary>
+    /// Sends a batch of BP edit actions to the SyncService, which applies them to
+    /// the session's IR and fires IrChanged (triggering BP re-render). No-op when
+    /// no session is active or when re-entering from a re-projection.
+    /// </summary>
+    private void ApplyBpEdits(params BpEditAction[] actions)
+    {
+        if (_session == null || _syncService == null || _isApplyingBpEdits) return;
+        if (actions.Length == 0) return;
+
+        try
+        {
+            var changeSet = _syncService.ApplyBpEdits(_session, actions);
+            if (changeSet.StatementDiff is { IsEmpty: false } || changeSet.PositionsChanged)
+            {
+                // Re-project IR → BP and reload the canvas with the updated Blueprint.
+                // The _isApplyingBpEdits guard prevents re-entrancy during reload.
+                _isApplyingBpEdits = true;
+                try
+                {
+                    var updatedBlueprint = _bpGraphLens.Project(_session.Ir);
+                    CurrentBlueprint = updatedBlueprint;
+                    LoadBlueprintIntoDrawing(updatedBlueprint);
+                }
+                finally
+                {
+                    _isApplyingBpEdits = false;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[BlueprintEditorVM] ApplyBpEdits failed for {Count} actions", actions.Length);
+        }
     }
 
     private void RemoveNodeFromAnyScope(string nodeId)
@@ -1709,6 +1811,11 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         scopeBlock.SubscribeToChildNodes();
 
         Log.Information("Created scope block '{DisplayName}' for node {NodeId}", displayName, ownerNode.BlueprintNodeId);
+
+        // F1.4: emit AddBlock + SetControlFlowArm to sync the IR.
+        ApplyBpEdits(
+            new AddBlock(displayName),
+            new SetControlFlowArm(ownerNode.BlueprintNodeId, armName, displayName));
     }
 
     /// <summary>
@@ -1780,6 +1887,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         Nodes.Add(node);
         RefreshCounts();
         Log.Information("Added {NodeType} node", type);
+
+        // F1.4: emit AddNodeInBlock to sync the IR.
+        ApplyBpEdits(new AddNodeInBlock("#MainBlock", type.ToString(), null));
     }
 
     private void RefreshCounts()
@@ -1843,6 +1953,10 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         Nodes.Add(node);
         RefreshCounts();
         Log.Information("Added BuiltinFunction node: {FunctionName}", functionName);
+
+        // F1.4: emit AddNodeInBlock to sync the IR. The function name is the BP kind;
+        // ResolveBpName maps e.g. "Loop" → "ForLoop" via the registry's IBpReverseHandler.
+        ApplyBpEdits(new AddNodeInBlock("#MainBlock", functionName, null));
     }
 
     [RelayCommand]
@@ -2151,10 +2265,9 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         ExecutionResult = string.Empty;
 
         Log.Information("[BlueprintDebug] Starting debug execution");
-        // Phase 12-prep: legacy KitX.Workflow.BlockScripting.BlueprintDebugger archived;
-        // using the local KitX.Dashboard.Services stub until the editor migrates to the
-        // new KitX.WorkflowIR debug surface. The stub throws NotImplementedException.
-        _debugController = new BlueprintDebugger();
+
+        // F1.5: use the real RealBlueprintDebugger (replaces the WorkflowStubs stub).
+        _debugController = new RealBlueprintDebugger();
         _debugController.SetSpeed(KitX.Core.Contract.Workflow.ExecutionSpeed.StepByStep);
         _debugController.NodeExecuting += OnDebugNodeExecuting;
         _debugController.NodeExecuted += OnDebugNodeExecuted;
@@ -2172,37 +2285,52 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 Log.Debug("[BlueprintDebug] UI: IsPaused=false");
             });
 
-        // F1.5: debugger is passed to IExecutionBackend.ExecuteAsync (not SetDebugger).
-        // The real debug controller wiring is implemented in F1.5.
-
-        // v5.2: IBlueprintService removed — debug mapping and execution need migration to ICfgExecutor
-        // var mapping = _blueprintService.GetDebugNodeMapping(CurrentBlueprint!);
-        // SetDebugNodeMapping(mapping);
-        // Log.Information("[BlueprintDebug] Debug node mapping: {Count} entries", mapping.Count);
-
         IsExecuting = true;
         StatusText = "Debugging...";
+
+        _cancellationTokenSource = new CancellationTokenSource();
+        var ct = _cancellationTokenSource.Token;
 
         _ = System.Threading.Tasks.Task.Run(async () =>
         {
             try
             {
-                Log.Information("[BlueprintDebug] Executing with debugger (v5.2: execution path needs migration)");
-                // var result = await _blueprintService.ExecuteBlueprintAsync(CurrentBlueprint);
+                Log.Information("[BlueprintDebug] Executing via IExecutionBackend with debugger");
 
-                /* await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                // F1.5: execute via the new IR backend with the debug controller attached.
+                // The session's IR is the canonical source; pass it with the lowering result.
+                var ir = _session?.Ir;
+                if (ir == null)
+                {
+                    // No session — try to parse from BS source.
+                    var bsSource = App.GetService<WorkflowScriptEditorWindowViewModel>()?.MainProgramCode;
+                    if (!string.IsNullOrWhiteSpace(bsSource) && _bsTextLens != null)
+                        ir = _bsTextLens.Parse(bsSource);
+                }
+                if (ir == null)
+                {
+                    throw new InvalidOperationException("No workflow IR available for debug execution");
+                }
+
+                var result = await _executionBackend.ExecuteAsync(ir, null, ct, _debugController);
+
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     if (result.IsSuccess)
                     {
                         StatusText = $"Debug done: {result.ExecutedBlockCount} blocks";
-                        ExecutionResult = $"Debug complete.\nBlocks: {result.ExecutedBlockCount}\nTime: {result.ExecutionTimeMs}ms";
+                        ExecutionResult = string.Join("\n", result.Output);
                     }
                     else
                     {
                         StatusText = $"Debug failed: {result.ErrorMessage}";
                         ExecutionResult = $"Debug error: {result.ErrorMessage}";
                     }
-                }); */
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                Log.Information("[BlueprintDebug] Debug execution cancelled");
             }
             catch (Exception ex)
             {
@@ -2225,7 +2353,6 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                         conn.RuntimeValue = null;
                     Log.Information("[BlueprintDebug] Debug execution complete, cleanup");
                 });
-                // F1.5: debugger cleanup — no SetDebugger on IExecutionBackend.
                 CleanupDebugController();
             }
         });
@@ -2257,17 +2384,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     private void OnDebugNodeExecuting(string statementId)
     {
-        // Capture output from the PREVIOUS node's execution
-        // Phase 12-prep: legacy KitX.Workflow.Services.WorkflowOutput archived;
-        // local KitX.Dashboard.Services stub returns empty until IR backend is wired.
-        var output = WorkflowOutput.GetAndClear();
-        if (output.Length > 0)
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                ExecutionResult += output;
-            });
-        }
+        // F1.5: output is captured at execution end (from BlockScriptExecutionResult.Output),
+        // not incrementally. The checkpoint just drives UI node highlight here.
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
