@@ -62,13 +62,22 @@ public partial class App : Application
             new KitX.Dashboard.Services.NodeFactory(
                 sp.GetRequiredService<KitX.Workflow.Builtin.BuiltinFunctionRegistry>()));
 
+        // §2.3 fix: bridge the Dashboard's plugin services to Kscript's IPluginServiceProvider,
+        // then register RealPluginManager as the live IPluginManager. This replaces the
+        // NoOpPluginManager fallback so workflow PluginCall(...) builtins reach live plugins.
+        services.AddSingleton<Kscript.CSharp.Parser.Core.IPluginServiceProvider>(sp =>
+            new KitX.Dashboard.Services.DashboardPluginServiceProvider(
+                sp.GetRequiredService<KitX.Core.Contract.Plugin.IPluginServer>(),
+                sp.GetRequiredService<KitX.Core.Contract.Event.IEventService>()));
+        services.AddSingleton<Kscript.CSharp.Parser.Core.IPluginManager>(sp =>
+            new Kscript.CSharp.Parser.Core.RealPluginManager(
+                sp.GetRequiredService<Kscript.CSharp.Parser.Core.IPluginServiceProvider>()));
+
         // IPluginHost adapter: wraps RealPluginManager for workflow PluginCall execution.
-        // Currently registered as a factory that resolves IPluginManager when available;
-        // plugin-call execution requires an IPluginServiceProvider implementation (future work).
+        // Resolves the live IPluginManager (registered above); NoOpPluginManager remains as a
+        // defensive fallback if the registration is ever removed.
         services.AddSingleton<KitX.Workflow.Backend.Runtime.IPluginHost>(sp =>
         {
-            // Resolve IPluginManager if registered; otherwise return a no-op host.
-            // The active Kscript RealPluginManager needs IPluginServiceProvider (not yet wired).
             return new KitX.Dashboard.Services.PluginHostAdapter(
                 sp.GetService<Kscript.CSharp.Parser.Core.IPluginManager>()
                     ?? new NoOpPluginManager());
