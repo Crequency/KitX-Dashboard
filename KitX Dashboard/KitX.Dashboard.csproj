@@ -11,6 +11,11 @@
         <RootNamespace>KitX.Dashboard</RootNamespace>
     </PropertyGroup>
 
+    <!-- FT.3: expose internal VMs to the test project -->
+    <ItemGroup>
+        <InternalsVisibleTo Include="KitX.Dashboard.Test.Xunit" />
+    </ItemGroup>
+
     <PropertyGroup>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <FileVersion>$(Version)</FileVersion>
