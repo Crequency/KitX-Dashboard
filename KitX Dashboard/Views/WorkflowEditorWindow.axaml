@@ -423,7 +423,7 @@
                         <StackPanel DockPanel.Dock="Top"
                                     Orientation="Horizontal"
                                     Margin="5"
-                                    IsVisible="{Binding ScriptVM.IsEditingHelperFunction, Converter={x:Static BoolConverters.Not}}">
+                                    IsVisible="{Binding IsEditingHelperFunction, Converter={x:Static BoolConverters.Not}}">
                             <TextBlock Text="{DynamicResource Text_WorkflowEditor_VariableConstants}"
                                        FontWeight="Bold"
                                        VerticalAlignment="Center" />
@@ -436,14 +436,14 @@
                         <StackPanel DockPanel.Dock="Top"
                                     Orientation="Horizontal"
                                     Margin="5"
-                                    IsVisible="{Binding ScriptVM.IsEditingHelperFunction}">
+                                    IsVisible="{Binding IsEditingHelperFunction}">
                             <TextBlock Text="{DynamicResource Text_WorkflowEditor_HelperFunctionSettings}"
                                        FontWeight="Bold"
                                        VerticalAlignment="Center" />
                         </StackPanel>
 
                         <!-- Content: Variable Constants -->
-                        <ScrollViewer IsVisible="{Binding ScriptVM.IsEditingHelperFunction, Converter={x:Static BoolConverters.Not}}">
+                        <ScrollViewer IsVisible="{Binding IsEditingHelperFunction, Converter={x:Static BoolConverters.Not}}">
                             <ItemsControl Name="ConstantsItemsControl">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -472,9 +472,8 @@
                         </ScrollViewer>
 
                         <!-- Content: Helper Function Settings -->
-                        <ScrollViewer IsVisible="{Binding ScriptVM.IsEditingHelperFunction}">
-                            <StackPanel Spacing="5" Margin="5"
-                                        DataContext="{Binding ScriptVM}">
+                        <ScrollViewer IsVisible="{Binding IsEditingHelperFunction}">
+                            <StackPanel Spacing="5" Margin="5">
                                 <StackPanel Orientation="Horizontal" Spacing="5">
                                     <TextBlock Text="{DynamicResource Text_WorkflowEditor_Return}" VerticalAlignment="Center" Width="60" />
                                     <TextBox Text="{Binding SelectedHelperFunction.ReturnType, Mode=TwoWay}"

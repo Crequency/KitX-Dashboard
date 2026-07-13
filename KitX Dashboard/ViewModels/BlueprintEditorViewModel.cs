@@ -2304,14 +2304,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 var ir = _session?.Ir;
                 if (ir == null)
                 {
-                    // No session — try to parse from BS source.
-                    // Debug path only: resolve the script VM at runtime (not a test target).
-                    var bsSource = App.GetService<WorkflowScriptEditorWindowViewModel>()?.MainProgramCode;
-                    if (!string.IsNullOrWhiteSpace(bsSource) && _bsTextLens != null)
-                        ir = _bsTextLens.Parse(bsSource);
-                }
-                if (ir == null)
-                {
+                    // S5: ScriptVM retired. No session IR — cannot recover source for debug.
+                    // (Previously fell back to parsing ScriptVM.MainProgramCode, but that VM no longer exists.)
                     throw new InvalidOperationException("No workflow IR available for debug execution");
                 }
 

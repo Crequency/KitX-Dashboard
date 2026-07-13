@@ -41,14 +41,11 @@ public partial class WorkflowEditorWindow : Window, IView
     {
         InitializeComponent();
 
-        var scriptVM = App.GetService<WorkflowScriptEditorWindowViewModel>();
         var blueprintVM = App.GetService<BlueprintEditorViewModel>();
 
         _viewModel = new WorkflowEditorViewModel(
             App.GetService<IWorkflowStorageService>(),
-            // App.GetService<IBlueprintService>(), // v5.2: removed
             App.GetService<ITasksService>(),
-            scriptVM,
             blueprintVM
         );
 
@@ -70,7 +67,7 @@ public partial class WorkflowEditorWindow : Window, IView
         var codeEditor = this.FindControl<TextEditor>("CodeEditor");
         if (codeEditor != null)
         {
-            codeEditor.Text = _viewModel.ScriptVM.MainProgramCode ?? string.Empty;
+            codeEditor.Text = _viewModel.MainProgramCode ?? string.Empty;
         }
     }
 
@@ -125,7 +122,7 @@ public partial class WorkflowEditorWindow : Window, IView
         var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
         if (codeEditor == null) return;
 
-        _viewModel.ScriptVM.CodeDocument = codeEditor.Document;
+        _viewModel.CodeDocument = codeEditor.Document;
 
         codeEditor.TextChanged += (s, e) =>
         {
@@ -134,15 +131,15 @@ public partial class WorkflowEditorWindow : Window, IView
             // Helper function editing: sync immediately
             if (_isEditingHelperFunction)
             {
-                if (_viewModel.ScriptVM.SelectedHelperFunction != null)
+                if (_viewModel.SelectedHelperFunction != null)
                 {
-                    _viewModel.ScriptVM.SelectedHelperFunction.Code = codeEditor.Document.Text;
+                    _viewModel.SelectedHelperFunction.Code = codeEditor.Document.Text;
                 }
                 return;
             }
 
             // Main program editing: debounce parse + auto-save
-            _viewModel.ScriptVM.MainProgramCode = codeEditor.Document.Text;
+            _viewModel.MainProgramCode = codeEditor.Document.Text;
             _viewModel.IsDirty = true;
 
             // Debounced constant parsing
@@ -156,9 +153,9 @@ public partial class WorkflowEditorWindow : Window, IView
                 Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     if (codeEditor.Document == null) return;
-                    _viewModel.ScriptVM.ParseConstantsFromCode(codeEditor.Document.Text);
+                    _viewModel.ParseConstantsFromCode(codeEditor.Document.Text);
                     if (constantsItemsControl != null)
-                        constantsItemsControl.ItemsSource = _viewModel.ScriptVM.VariableConstants;
+                        constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
                 });
             }, token);
 
@@ -207,7 +204,7 @@ public partial class WorkflowEditorWindow : Window, IView
         var helperFunctionsListBox = this.FindControl<ListBox>("HelperFunctionsListBox");
         if (helperFunctionsListBox != null)
         {
-            helperFunctionsListBox.ItemsSource = _viewModel.ScriptVM.HelperFunctions;
+            helperFunctionsListBox.ItemsSource = _viewModel.HelperFunctions;
             helperFunctionsListBox.SelectionChanged += OnHelperFunctionSelected;
         }
 
@@ -225,16 +222,16 @@ public partial class WorkflowEditorWindow : Window, IView
 
     private void OnAddHelperFunction(object? sender, RoutedEventArgs e)
     {
-        _viewModel.ScriptVM.AddHelperFunctionCommand?.Execute().Subscribe();
+        _viewModel.AddHelperFunctionCommand.Execute(null);
 
         var helperFunctionsListBox = this.FindControl<ListBox>("HelperFunctionsListBox");
         if (helperFunctionsListBox != null)
         {
             helperFunctionsListBox.ItemsSource = null;
-            helperFunctionsListBox.ItemsSource = _viewModel.ScriptVM.HelperFunctions;
+            helperFunctionsListBox.ItemsSource = _viewModel.HelperFunctions;
 
-            if (_viewModel.ScriptVM.SelectedHelperFunction != null)
-                helperFunctionsListBox.SelectedItem = _viewModel.ScriptVM.SelectedHelperFunction;
+            if (_viewModel.SelectedHelperFunction != null)
+                helperFunctionsListBox.SelectedItem = _viewModel.SelectedHelperFunction;
         }
     }
 
@@ -242,7 +239,7 @@ public partial class WorkflowEditorWindow : Window, IView
     {
         if (sender is ListBox listBox && listBox.SelectedItem is HelperFunction selectedFunction)
         {
-            _viewModel.ScriptVM.SelectedHelperFunction = selectedFunction;
+            _viewModel.SelectedHelperFunction = selectedFunction;
             _isEditingHelperFunction = true;
 
             var codeEditor = this.FindControl<TextEditor>("CodeEditor");
@@ -261,13 +258,13 @@ public partial class WorkflowEditorWindow : Window, IView
     private void OnBackToMainProgram(object? sender, RoutedEventArgs e)
     {
         _isEditingHelperFunction = false;
-        _viewModel.ScriptVM.SelectedHelperFunction = null;
+        _viewModel.SelectedHelperFunction = null;
 
         var codeEditor = this.FindControl<TextEditor>("CodeEditor");
         var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
 
         if (codeEditor != null)
-            codeEditor.Text = _viewModel.ScriptVM.MainProgramCode ?? string.Empty;
+            codeEditor.Text = _viewModel.MainProgramCode ?? string.Empty;
 
         if (codeEditorTitle != null)
             codeEditorTitle.Text = GetResource("Text_WorkflowEditor_MainProgram") ?? "Main Program";
@@ -296,22 +293,22 @@ public partial class WorkflowEditorWindow : Window, IView
             // Check if this is within the helper function list by checking the button's content
             if (button.Content?.ToString() == "X")
             {
-                _viewModel.ScriptVM.RemoveHelperFunctionCommand?.Execute(function).Subscribe();
+                _viewModel.RemoveHelperFunctionCommand.Execute(function);
 
                 var helperFunctionsListBox = this.FindControl<ListBox>("HelperFunctionsListBox");
                 if (helperFunctionsListBox != null)
                 {
                     helperFunctionsListBox.ItemsSource = null;
-                    helperFunctionsListBox.ItemsSource = _viewModel.ScriptVM.HelperFunctions;
+                    helperFunctionsListBox.ItemsSource = _viewModel.HelperFunctions;
                 }
 
-                if (_viewModel.ScriptVM.SelectedHelperFunction == null)
+                if (_viewModel.SelectedHelperFunction == null)
                 {
                     _isEditingHelperFunction = false;
                     var codeEditor = this.FindControl<TextEditor>("CodeEditor");
                     var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
                     if (codeEditor != null)
-                        codeEditor.Text = _viewModel.ScriptVM.MainProgramCode ?? string.Empty;
+                        codeEditor.Text = _viewModel.MainProgramCode ?? string.Empty;
                     if (codeEditorTitle != null)
                         codeEditorTitle.Text = GetResource("Text_WorkflowEditor_MainProgram") ?? "Main Program";
                 }
@@ -327,7 +324,7 @@ public partial class WorkflowEditorWindow : Window, IView
     {
         var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
         if (constantsItemsControl != null)
-            constantsItemsControl.ItemsSource = _viewModel.ScriptVM.VariableConstants;
+            constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
 
         var resetAllBtn = this.FindControl<Button>("ResetAllConstantsButton");
         if (resetAllBtn != null)
@@ -343,26 +340,26 @@ public partial class WorkflowEditorWindow : Window, IView
 
     private void OnResetAllConstants(object? sender, RoutedEventArgs e)
     {
-        _viewModel.ScriptVM.ResetAllConstantsCommand?.Execute().Subscribe();
+        _viewModel.ResetAllConstantsCommand.Execute(null);
         var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
         if (constantsItemsControl != null)
         {
             constantsItemsControl.ItemsSource = null;
-            constantsItemsControl.ItemsSource = _viewModel.ScriptVM.VariableConstants;
+            constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
         }
     }
 
     private void OnAddParameter(object? sender, RoutedEventArgs e)
     {
-        if (_viewModel.ScriptVM.SelectedHelperFunction != null)
+        if (_viewModel.SelectedHelperFunction != null)
         {
             var newParam = new HelperFunctionParameter
             {
-                Name = $"param{_viewModel.ScriptVM.SelectedHelperFunction.Parameters.Count + 1}",
+                Name = $"param{_viewModel.SelectedHelperFunction.Parameters.Count + 1}",
                 Type = "object"
             };
-            _viewModel.ScriptVM.Parameters.Add(newParam);
-            _viewModel.ScriptVM.SelectedHelperFunction.Parameters.Add(newParam);
+            _viewModel.Parameters.Add(newParam);
+            _viewModel.SelectedHelperFunction.Parameters.Add(newParam);
         }
     }
 
@@ -373,21 +370,21 @@ public partial class WorkflowEditorWindow : Window, IView
         // Reset constant button (in constants panel)
         if (button.Tag is VariableConstant constant && button.Content?.ToString() == "R")
         {
-            _viewModel.ScriptVM.ResetConstantCommand?.Execute(constant).Subscribe();
+            _viewModel.ResetConstantCommand.Execute(constant);
             var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
             if (constantsItemsControl != null)
             {
                 constantsItemsControl.ItemsSource = null;
-                constantsItemsControl.ItemsSource = _viewModel.ScriptVM.VariableConstants;
+                constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
             }
         }
         // Remove parameter button (in helper function settings)
         else if (button.Tag is HelperFunctionParameter param && button.Content?.ToString() == "X")
         {
-            if (_viewModel.ScriptVM.SelectedHelperFunction != null)
+            if (_viewModel.SelectedHelperFunction != null)
             {
-                _viewModel.ScriptVM.Parameters.Remove(param);
-                _viewModel.ScriptVM.SelectedHelperFunction.Parameters.Remove(param);
+                _viewModel.Parameters.Remove(param);
+                _viewModel.SelectedHelperFunction.Parameters.Remove(param);
             }
         }
     }
@@ -413,16 +410,16 @@ public partial class WorkflowEditorWindow : Window, IView
         var codeEditor = this.FindControl<TextEditor>("CodeEditor");
 
         // Save helper function code if currently editing one
-        if (_isEditingHelperFunction && _viewModel.ScriptVM.SelectedHelperFunction != null)
-            _viewModel.ScriptVM.SelectedHelperFunction.Code = _viewModel.ScriptVM.CodeDocument?.Text
-                ?? _viewModel.ScriptVM.SelectedHelperFunction.Code;
+        if (_isEditingHelperFunction && _viewModel.SelectedHelperFunction != null)
+            _viewModel.SelectedHelperFunction.Code = _viewModel.CodeDocument?.Text
+                ?? _viewModel.SelectedHelperFunction.Code;
 
         // Switch back to main program
         _isEditingHelperFunction = false;
-        _viewModel.ScriptVM.SelectedHelperFunction = null;
+        _viewModel.SelectedHelperFunction = null;
 
         if (codeEditor != null)
-            codeEditor.Text = _viewModel.ScriptVM.MainProgramCode ?? string.Empty;
+            codeEditor.Text = _viewModel.MainProgramCode ?? string.Empty;
 
         var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
         if (codeEditorTitle != null)
@@ -430,13 +427,13 @@ public partial class WorkflowEditorWindow : Window, IView
 
         await Task.Delay(50);
 
-        if (_viewModel.ScriptVM.CodeDocument != null)
-            _viewModel.ScriptVM.SubmitCodes(_viewModel.ScriptVM.CodeDocument);
+        if (_viewModel.CodeDocument != null)
+            _viewModel.SubmitCodes(_viewModel.CodeDocument);
     }
 
     private void OnStop(object? sender, RoutedEventArgs e)
     {
-        _viewModel.ScriptVM.CancelExecution();
+        _viewModel.CancelExecutionCommand.Execute(null);
     }
 
     #endregion
@@ -445,15 +442,16 @@ public partial class WorkflowEditorWindow : Window, IView
 
     private void WireUpOutput()
     {
-        _viewModel.ScriptVM.PropertyChanged += (s, e) =>
+        // S5: IsExecuting now lives directly on WorkflowEditorViewModel.
+        _viewModel.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(_viewModel.ScriptVM.IsExecuting))
+            if (e.PropertyName == nameof(_viewModel.IsExecuting))
             {
                 Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     var statusText = this.FindControl<TextBlock>("StatusText");
                     if (statusText != null)
-                        statusText.Text = _viewModel.ScriptVM.IsExecuting
+                        statusText.Text = _viewModel.IsExecuting
                             ? (GetResource("Text_WorkflowEditor_Running") ?? "Running...")
                             : (GetResource("Text_WorkflowEditor_Ready") ?? "Ready");
                 });
@@ -513,7 +511,7 @@ public partial class WorkflowEditorWindow : Window, IView
     #region Mode Switch Wiring
 
     /// <summary>
-    /// When mode switches from BP→BS, the converted code is set on ScriptVM.MainProgramCode
+    /// When mode switches from BP→BS, the converted code is set on MainProgramCode
     /// but the AvaloniaEdit TextEditor needs to be refreshed explicitly (no reverse binding).
     /// </summary>
     private void WireUpModeSwitch()
@@ -529,7 +527,7 @@ public partial class WorkflowEditorWindow : Window, IView
                 if (codeEditor != null)
                 {
                     _isEditingHelperFunction = false;
-                    codeEditor.Text = _viewModel.ScriptVM.MainProgramCode ?? string.Empty;
+                    codeEditor.Text = _viewModel.MainProgramCode ?? string.Empty;
                 }
 
                 if (codeEditorTitle != null)
@@ -538,9 +536,9 @@ public partial class WorkflowEditorWindow : Window, IView
                 // Refresh constants display from the newly converted code
                 if (codeEditor?.Document != null)
                 {
-                    _viewModel.ScriptVM.ParseConstantsFromCode(codeEditor.Document.Text);
+                    _viewModel.ParseConstantsFromCode(codeEditor.Document.Text);
                     if (constantsItemsControl != null)
-                        constantsItemsControl.ItemsSource = _viewModel.ScriptVM.VariableConstants;
+                        constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
                 }
             }
         };

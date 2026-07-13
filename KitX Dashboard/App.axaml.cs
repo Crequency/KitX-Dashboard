@@ -99,7 +99,7 @@ public partial class App : Application
         services.AddSingleton<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
 
         // Register Dashboard ViewModels (for DI auto-resolution without ActivatorUtilities fallback)
-        services.AddTransient<WorkflowScriptEditorWindowViewModel>();
+        // S5: WorkflowScriptEditorWindowViewModel retired — functionality merged into WorkflowEditorViewModel.
         services.AddTransient<DebugWindowViewModel>();
         services.AddTransient<BlueprintEditorViewModel>();
         services.AddTransient<Settings_GeneralViewModel>();

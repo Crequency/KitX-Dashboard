@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Threading;
+using AvaloniaEdit.Document;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Event;
@@ -14,10 +18,12 @@ using KitX.Core.Tasks;
 using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
-using KitX.Workflow.Session;
+using KitX.Workflow.Backend;
+using KitX.Workflow.Ir.Lowering;
 using KitX.Workflow.Lens;
 using KitX.Workflow.Lens.BsTextLens;
 using KitX.Workflow.Lens.BpGraphLens;
+using KitX.Workflow.Session;
 using Serilog;
 using BsTextLens = KitX.Workflow.Lens.BsTextLens.BsTextLens;
 using BpGraphLens = KitX.Workflow.Lens.BpGraphLens.BpGraphLens;
@@ -26,7 +32,9 @@ namespace KitX.Dashboard.ViewModels;
 
 /// <summary>
 /// Unified workflow editor ViewModel that coordinates BS and BP editing modes.
-/// Uses composition: holds references to existing ScriptVM and BlueprintVM.
+/// S5: absorbed the former WorkflowScriptEditorWindowViewModel's code-editor,
+/// helper-function, constant, and BS-execution responsibilities; holds only
+/// the BlueprintVM sub-VM.
 /// </summary>
 internal partial class WorkflowEditorViewModel : ObservableObject
 {
@@ -36,6 +44,10 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     private readonly ITasksService _tasksService;
     private readonly IEventService? _eventService;
     private readonly IPluginServer? _pluginServer;
+
+    // S5: execution backend + cancellation (BS execution now lives in this VM).
+    private readonly IExecutionBackend _executionBackend;
+    private CancellationTokenSource? _cancellationTokenSource;
 
     // Phase F1: per-document workflow session (IR as single source of truth).
     // Constructed from BS source on load; drives BP↔BS round-trip via Lens projection.
@@ -141,10 +153,49 @@ internal partial class WorkflowEditorViewModel : ObservableObject
             AvailableTriggers.Add(trigger);
     }
 
+    // ─── S5: migrated ScriptVM properties ───────────────────────────────
+
+    /// <summary>The AvaloniaEdit document for the active code editor (main program or helper).</summary>
+    [ObservableProperty]
+    internal IDocument? _codeDocument;
+
+    /// <summary>The main program BS source text.</summary>
+    [ObservableProperty]
+    private string? _mainProgramCode;
+
+    /// <summary>The helper function currently selected for editing.</summary>
+    [ObservableProperty]
+    private HelperFunction? _selectedHelperFunction;
+
+    /// <summary>All helper functions in the workflow.</summary>
+    [ObservableProperty]
+    private ObservableCollection<HelperFunction> _helperFunctions = [];
+
+    /// <summary>Parameters of the currently selected helper function (UI-bound).</summary>
+    [ObservableProperty]
+    private ObservableCollection<HelperFunctionParameter> _parameters = [];
+
+    /// <summary>Mutable constants parsed from BS (user can override defaults).</summary>
+    [ObservableProperty]
+    private ObservableCollection<VariableConstant> _variableConstants = [];
+
+    /// <summary>True when a helper function is selected for editing.</summary>
+    public bool IsEditingHelperFunction => SelectedHelperFunction != null;
+
     /// <summary>
-    /// The BS editor sub-ViewModel
+    /// Mirrors the legacy ScriptVM setter side-effects: when the selection changes,
+    /// refresh the Parameters list and notify IsEditingHelperFunction.
     /// </summary>
-    public WorkflowScriptEditorWindowViewModel ScriptVM { get; }
+    partial void OnSelectedHelperFunctionChanged(HelperFunction? value)
+    {
+        OnPropertyChanged(nameof(IsEditingHelperFunction));
+        Parameters.Clear();
+        if (value?.Parameters != null)
+        {
+            foreach (var param in value.Parameters)
+                Parameters.Add(param);
+        }
+    }
 
     /// <summary>
     /// The BP editor sub-ViewModel
@@ -223,18 +274,17 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     public WorkflowEditorViewModel(
         IWorkflowStorageService storageService,
         ITasksService tasksService,
-        WorkflowScriptEditorWindowViewModel scriptVM,
         BlueprintEditorViewModel blueprintVM,
         IEventService? eventService = null,
         IPluginServer? pluginServer = null,
         BsTextLens? bsTextLens = null,
-        ILens<Blueprint, IReadOnlyList<BpEditAction>>? bpGraphLens = null)
+        ILens<Blueprint, IReadOnlyList<BpEditAction>>? bpGraphLens = null,
+        IExecutionBackend? executionBackend = null)
     {
         _storageService = storageService;
         _tasksService = tasksService;
         _eventService = eventService;
         _pluginServer = pluginServer;
-        ScriptVM = scriptVM;
         BlueprintVM = blueprintVM;
 
         // Phase F1: resolve Lens services from DI for BP↔BS round-trip.
@@ -242,15 +292,14 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         _bsTextLens = bsTextLens ?? App.GetService<BsTextLens>();
         _bpGraphLens = bpGraphLens ?? App.GetService<BpGraphLens>();
 
-        // Forward execution output from sub-VMs
-        ScriptVM.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(ScriptVM.ExecutionResult))
-                ExecutionOutput = ScriptVM.ExecutionResult;
-            if (e.PropertyName == nameof(ScriptVM.IsExecuting))
-                IsExecuting = ScriptVM.IsExecuting;
-        };
+        // S5: resolve execution backend for BS-mode execution.
+        _executionBackend = executionBackend ?? App.GetService<IExecutionBackend>();
 
+        // S5: seed default helper functions for new workflows.
+        if (HelperFunctions.Count == 0)
+            InitializeDefaultHelperFunctions();
+
+        // S5: BS execution now lives in this VM — forward BlueprintVM output only.
         BlueprintVM.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(BlueprintVM.ExecutionResult))
@@ -309,18 +358,18 @@ internal partial class WorkflowEditorViewModel : ObservableObject
             BlueprintVM.SetSession(_session);
 
             // BS text is a projection — populate the editor from IR.
-            ScriptVM.MainProgramCode = _bsTextLens != null
+            MainProgramCode = _bsTextLens != null
                 ? _bsTextLens.Project(ir)
                 : string.Empty;
 
-            ScriptVM.HelperFunctions.Clear();
+            HelperFunctions.Clear();
             foreach (var func in ir.HelperFunctions)
-                ScriptVM.HelperFunctions.Add(func);
+                HelperFunctions.Add(func);
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "[WorkflowEditorVM] Failed to deserialize IR from stored data — editors will be empty");
-            ScriptVM.MainProgramCode = string.Empty;
+            MainProgramCode = string.Empty;
         }
 
         // Mirror helpers into the Blueprint palette so BP mode's Helper Functions
@@ -351,7 +400,7 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         // BS text is a projection, refreshed for the editor display only.
         if (_session != null && _bsTextLens != null && IsBlueprintMode)
         {
-            try { ScriptVM.MainProgramCode = _bsTextLens.Project(_session.Ir); }
+            try { MainProgramCode = _bsTextLens.Project(_session.Ir); }
             catch (Exception ex) { Log.Error(ex, "[WorkflowEditorVM] BS projection during save failed"); }
         }
 
@@ -394,8 +443,8 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         await SaveAsync();
 
         // Convert BS → BP
-        var sourceCode = ScriptVM.MainProgramCode ?? string.Empty;
-        var helpers = new System.Collections.Generic.List<HelperFunction>(ScriptVM.HelperFunctions);
+        var sourceCode = MainProgramCode ?? string.Empty;
+        var helpers = new System.Collections.Generic.List<HelperFunction>(HelperFunctions);
 
         // Refresh the BP palette with the latest helpers before switching mode.
         SyncBlueprintHelperFunctions();
@@ -462,13 +511,12 @@ internal partial class WorkflowEditorViewModel : ObservableObject
 
     /// <summary>
     /// Mirrors the BS-mode helper function list into the Blueprint editor's palette.
-    /// Replaces the legacy SetBridge → RefreshHelperFunctions path: the unified editor
-    /// holds both sub-VMs directly, so we copy from ScriptVM whenever helpers change.
+    /// S5: helpers now live in this VM directly (no ScriptVM).
     /// </summary>
     private void SyncBlueprintHelperFunctions()
     {
         BlueprintVM.HelperFunctions.Clear();
-        foreach (var helper in ScriptVM.HelperFunctions)
+        foreach (var helper in HelperFunctions)
         {
             BlueprintVM.HelperFunctions.Add(new HelperFunctionPaletteItem
             {
@@ -533,7 +581,7 @@ internal partial class WorkflowEditorViewModel : ObservableObject
                     ? _bsTextLens.Project(_session.Ir)
                     : "";
 
-                ScriptVM.MainProgramCode = sourceCode;
+                MainProgramCode = sourceCode;
             }
             catch (Exception ex)
             {
@@ -573,4 +621,258 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     /// </summary>
     [RelayCommand]
     private void ClearOutput() => ExecutionOutput = string.Empty;
+
+    // ─── S5: migrated ScriptVM commands ─────────────────────────────────
+
+    /// <summary>Adds a new helper function and selects it for editing.</summary>
+    [RelayCommand]
+    private void AddHelperFunction()
+    {
+        var newFunction = new HelperFunction
+        {
+            Name = $"HelperFunction{HelperFunctions.Count + 1}",
+            ReturnType = "object",
+            Parameters = new List<HelperFunctionParameter>(),
+            Code = "// Helper function body\nreturn null;"
+        };
+        HelperFunctions.Add(newFunction);
+        SelectedHelperFunction = newFunction;
+    }
+
+    /// <summary>Removes a helper function; adjusts selection if needed.</summary>
+    [RelayCommand]
+    private void RemoveHelperFunction(HelperFunction? helperFunction)
+    {
+        if (helperFunction == null) return;
+        HelperFunctions.Remove(helperFunction);
+        if (SelectedHelperFunction == helperFunction)
+            SelectedHelperFunction = HelperFunctions.FirstOrDefault();
+    }
+
+    /// <summary>Resets a single constant's UserValue back to its default.</summary>
+    [RelayCommand]
+    private void ResetConstant(VariableConstant? constant)
+    {
+        if (constant == null) return;
+        constant.UserValue = constant.DefaultValue;
+        OnPropertyChanged(nameof(VariableConstants));
+    }
+
+    /// <summary>Resets all constants' UserValues back to their defaults.</summary>
+    [RelayCommand]
+    private void ResetAllConstants()
+    {
+        foreach (var constant in VariableConstants)
+            constant.UserValue = constant.DefaultValue;
+        OnPropertyChanged(nameof(VariableConstants));
+    }
+
+    /// <summary>Cancels the currently running BS execution.</summary>
+    [RelayCommand]
+    private void CancelExecution() => _cancellationTokenSource?.Cancel();
+
+    // ─── S5: migrated ScriptVM methods (constants + execution) ──────────
+
+    /// <summary>
+    /// Seeds two default helper functions (HelperFuncCompare, HelperFuncAdd)
+    /// for new workflows. Migrated verbatim from ScriptVM.
+    /// </summary>
+    private void InitializeDefaultHelperFunctions()
+    {
+        HelperFunctions.Add(new HelperFunction
+        {
+            Name = "HelperFuncCompare",
+            ReturnType = "bool",
+            Parameters = new List<HelperFunctionParameter>
+            {
+                new() { Name = "op", Type = "string" },
+                new() { Name = "value1", Type = "object?" },
+                new() { Name = "value2", Type = "object?" }
+            },
+            Code = @"var v1 = Convert.ToDouble(value1);
+var v2 = Convert.ToDouble(value2);
+return op switch
+{
+    ""BEQ"" => v1 == v2,
+    ""BNE"" => v1 != v2,
+    ""BLT"" => v1 < v2,
+    ""BGT"" => v1 > v2,
+    ""BLE"" => v1 <= v2,
+    ""BGE"" => v1 >= v2,
+    _ => false
+};"
+        });
+
+        HelperFunctions.Add(new HelperFunction
+        {
+            Name = "HelperFuncAdd",
+            ReturnType = "int",
+            Parameters = new List<HelperFunctionParameter>
+            {
+                new() { Name = "value1", Type = "object?" },
+                new() { Name = "value2", Type = "object?" }
+            },
+            Code = @"var v1 = Convert.ToInt32(value1);
+var v2 = Convert.ToInt32(value2);
+return v1 + v2;"
+        });
+    }
+
+    /// <summary>
+    /// Parses BS source for constants and updates the VariableConstants list,
+    /// preserving any user overrides on constants with matching names.
+    /// S5: replaces ScriptVM's IBlockScriptService.ParseConstantsFromBlockScript.
+    /// </summary>
+    public void ParseConstantsFromCode(string code)
+    {
+        if (_bsTextLens == null || string.IsNullOrWhiteSpace(code)) return;
+
+        try
+        {
+            var lowering = _bsTextLens.ParseLowering(code, HelperFunctions);
+            var newConstants = new List<VariableConstant>();
+            foreach (var (name, irConst) in lowering.Ir.Constants)
+            {
+                newConstants.Add(new VariableConstant
+                {
+                    Name = name,
+                    Type = irConst.Type,
+                    DefaultValue = irConst.DefaultValue,
+                    UserValue = irConst.DefaultValue
+                });
+            }
+            UpdateVariableConstants(newConstants);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[WorkflowEditorVM] ParseConstantsFromCode failed");
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the VariableConstants list while preserving user-edited UserValues
+    /// for constants that still exist. Migrated verbatim from ScriptVM.
+    /// </summary>
+    private void UpdateVariableConstants(List<VariableConstant> newConstants)
+    {
+        foreach (var newConstant in newConstants)
+        {
+            var existing = VariableConstants.FirstOrDefault(c => c.Name == newConstant.Name);
+            if (existing != null)
+                newConstant.UserValue = existing.UserValue;
+        }
+
+        VariableConstants.Clear();
+        foreach (var constant in newConstants)
+            VariableConstants.Add(constant);
+    }
+
+    /// <summary>
+    /// Builds a dictionary of user-edited constant values that differ from defaults.
+    /// Migrated verbatim from ScriptVM.
+    /// </summary>
+    private Dictionary<string, object?>? GetUserConstantOverrides()
+    {
+        if (VariableConstants.Count == 0) return null;
+
+        var overrides = new Dictionary<string, object?>();
+        foreach (var constant in VariableConstants)
+        {
+            if (!object.Equals(constant.UserValue, constant.DefaultValue))
+                overrides[constant.Name] = constant.UserValue;
+        }
+
+        return overrides.Count > 0 ? overrides : null;
+    }
+
+    /// <summary>
+    /// Submits the BS source for execution via IExecutionBackend.
+    /// S5: replaces ScriptVM's IBlockScriptService.ExecuteBlockScriptAsync.
+    /// Validates by attempting ParseLowering; on success applies constant
+    /// overrides to the IR (via with-expression) and executes.
+    /// </summary>
+    internal void SubmitCodes(IDocument doc)
+    {
+        string codeText;
+        try
+        {
+            codeText = doc.Text;
+        }
+        catch (InvalidOperationException)
+        {
+            ExecutionOutput = "Error: Cannot access document from background thread.";
+            return;
+        }
+
+        // Validation = parse attempt (ParseLowering throws on syntax errors).
+        LoweringResult? lowering = null;
+        if (_bsTextLens != null)
+        {
+            try
+            {
+                lowering = _bsTextLens.ParseLowering(codeText, HelperFunctions);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[WorkflowEditorVM] Block script parse failed");
+                ExecutionOutput = $"Block script parse failed: {ex.Message}";
+                return;
+            }
+        }
+
+        IsExecuting = true;
+
+        var tokenSource = new CancellationTokenSource();
+        _cancellationTokenSource = tokenSource;
+
+        _tasksService.RunTaskAsync(
+            async () =>
+            {
+                string result;
+                try
+                {
+                    var ir = lowering!.Ir;
+
+                    // Apply constant overrides to the immutable IR via with-expression.
+                    var overrides = GetUserConstantOverrides();
+                    if (overrides != null && overrides.Count > 0)
+                    {
+                        var builder = ir.Constants.ToBuilder();
+                        foreach (var (name, value) in overrides)
+                        {
+                            if (builder.TryGetValue(name, out var existing))
+                                builder[name] = existing with { DefaultValue = value };
+                        }
+                        ir = ir with { Constants = builder.ToImmutable() };
+                    }
+
+                    var executionResult = await _executionBackend.ExecuteAsync(ir, lowering, tokenSource.Token);
+
+                    result = executionResult.IsSuccess
+                        ? $"Blocks executed: {executionResult.ExecutedBlockCount}\nExecution time: {executionResult.ExecutionTimeMs}ms\nOutput:\n{string.Join("\n", executionResult.Output)}"
+                        : $"Error: {executionResult.ErrorMessage}";
+                }
+                catch (OperationCanceledException)
+                {
+                    result = "Execution cancelled.";
+                }
+                catch (Exception ex)
+                {
+                    result = $"Error: {ex.Message}";
+                }
+                finally
+                {
+                    tokenSource.Dispose();
+                    _cancellationTokenSource = null;
+                }
+
+                Dispatcher.UIThread.Invoke(() =>
+                {
+                    ExecutionOutput = result;
+                    IsExecuting = false;
+                });
+            },
+            tokenSource.Token,
+            nameof(SubmitCodes));
+    }
 }
