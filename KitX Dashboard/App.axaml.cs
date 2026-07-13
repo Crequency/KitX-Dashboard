@@ -86,6 +86,10 @@ public partial class App : Application
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
 
+        // S2: WorkflowStorageService — file-based IWorkflowStorageService for KcsFileFormat v2 (IR as storage).
+        services.AddSingleton<KitX.Core.Contract.Workflow.IWorkflowStorageService,
+            KitX.Dashboard.Services.WorkflowStorageService>();
+
         // Register SignalTasksManager for signal-based coordination
         services.AddSingleton<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
 
