@@ -297,43 +297,35 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         WorkflowDescription = data.Description ?? string.Empty;
         WorkflowAuthor = data.Author ?? string.Empty;
 
-        // Load into BS editor
-        ScriptVM.UseBlockMode = data.UseBlockMode;
-        ScriptVM.MainProgramCode = data.UseBlockMode
-            ? (data.BlockScriptSource ?? string.Empty)
-            : data.MainProgram;
+        // v2: IR is the stored form (data.IrData). Deserialize it into the session,
+        // then project BS text on demand for the BS editor. HelperFunctions live in the IR.
+        try
+        {
+            var ir = KitX.Workflow.Serialization.IrSerializer.Deserialize(data.IrData);
+            _session = new WorkflowSession(ir)
+            {
+                HelperFunctions = ir.HelperFunctions.ToList(),
+            };
+            BlueprintVM.SetSession(_session);
 
-        ScriptVM.HelperFunctions.Clear();
-        foreach (var func in data.HelperFunctions)
-            ScriptVM.HelperFunctions.Add(func);
+            // BS text is a projection — populate the editor from IR.
+            ScriptVM.MainProgramCode = _bsTextLens != null
+                ? _bsTextLens.Project(ir)
+                : string.Empty;
+
+            ScriptVM.HelperFunctions.Clear();
+            foreach (var func in ir.HelperFunctions)
+                ScriptVM.HelperFunctions.Add(func);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[WorkflowEditorVM] Failed to deserialize IR from stored data — editors will be empty");
+            ScriptVM.MainProgramCode = string.Empty;
+        }
 
         // Mirror helpers into the Blueprint palette so BP mode's Helper Functions
         // panel is populated (replaces the legacy bridge plumbing).
         SyncBlueprintHelperFunctions();
-
-        // Phase F1: construct the per-document WorkflowSession from the BS source.
-        // The session holds the IR (single source of truth); BP and BS are projections.
-        try
-        {
-            var bsSource = ScriptVM.MainProgramCode ?? string.Empty;
-            var helpers = ScriptVM.HelperFunctions.ToList();
-            if (!string.IsNullOrWhiteSpace(bsSource) && _bsTextLens != null)
-            {
-                var ir = _bsTextLens.Parse(bsSource, helpers);
-                _session = new WorkflowSession(ir) { HelperFunctions = helpers };
-                BlueprintVM.SetSession(_session);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "[WorkflowEditorVM] Failed to construct WorkflowSession from BS source — BP sync will be unavailable until BS is valid");
-        }
-
-        // Load into BP editor if blueprint data exists
-        if (data.BlueprintData != null)
-        {
-            BlueprintVM.CurrentBlueprint = data.BlueprintData;
-        }
 
         // Load trigger configuration
         if (data.TriggerConfig != null)
@@ -354,41 +346,13 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     {
         if (_workflowId == null) return;
 
-        // If in BP mode, sync BP→BS so runtime executor has up-to-date BlockScript
-        if (IsBlueprintMode && BlueprintVM.Nodes.Count > 0)
+        // v2: IR (_session.Ir) is the single source of truth — BP edits already flow into
+        // it via ApplyBpEdits → SyncService. Save just serializes the session's IR.
+        // BS text is a projection, refreshed for the editor display only.
+        if (_session != null && _bsTextLens != null && IsBlueprintMode)
         {
-            try
-            {
-                var blueprint = BlueprintVM.ExportDrawingToBlueprint();
-
-                // Handle trigger node → Entry replacement for conversion (same as SwitchToBlockScriptAsync)
-                var triggerNode = blueprint.Nodes.FirstOrDefault(n => n.NodeType == BlueprintNodeType.PluginTrigger);
-                if (triggerNode is PluginTriggerNode ptNode)
-                {
-                    var entryReplacement = new EntryNode
-                    {
-                        Id = ptNode.Id,
-                        X = ptNode.X,
-                        Y = ptNode.Y
-                    };
-                    if (ptNode.OutputPins.Count > 0 && entryReplacement.OutputPins.Count > 0)
-                        entryReplacement.OutputPins[0].Id = ptNode.OutputPins[0].Id;
-                    var idx = blueprint.Nodes.IndexOf(ptNode);
-                    blueprint.Nodes[idx] = entryReplacement;
-                }
-
-                // Phase F1: BP→BS via BsTextLens.Project(session.Ir).
-                // The session's IR is the canonical state; BS text is a projection.
-                var sourceCode = _session != null && _bsTextLens != null
-                    ? _bsTextLens.Project(_session.Ir)
-                    : "";
-                ScriptVM.MainProgramCode = sourceCode;
-                ScriptVM.UseBlockMode = true;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "[WorkflowEditorVM] BP→BS sync during save failed");
-            }
+            try { ScriptVM.MainProgramCode = _bsTextLens.Project(_session.Ir); }
+            catch (Exception ex) { Log.Error(ex, "[WorkflowEditorVM] BS projection during save failed"); }
         }
 
         var data = new KcsFileFormat
@@ -397,19 +361,16 @@ internal partial class WorkflowEditorViewModel : ObservableObject
             Name = WorkflowName,
             Description = WorkflowDescription,
             Author = WorkflowAuthor,
-            UseBlockMode = ScriptVM.UseBlockMode,
-            BlockScriptSource = ScriptVM.UseBlockMode ? ScriptVM.MainProgramCode : null,
-            MainProgram = ScriptVM.UseBlockMode ? string.Empty : (ScriptVM.MainProgramCode ?? string.Empty),
-            HelperFunctions = new System.Collections.Generic.List<HelperFunction>(ScriptVM.HelperFunctions),
-            VariableConstants = ScriptVM.UseBlockMode
-                ? new System.Collections.Generic.Dictionary<string, object?>()
-                : new System.Collections.Generic.Dictionary<string, object?>(),
-            BlueprintData = BlueprintVM.CurrentBlueprint,
+            // v2: store IR (the single source of truth). BS/BP are projections — not persisted.
+            IrData = _session != null
+                ? KitX.Workflow.Serialization.IrSerializer.Serialize(_session.Ir)
+                : "{}",
+            VariableConstants = new System.Collections.Generic.Dictionary<string, object?>(),
             TriggerConfig = new TriggerConfig
             {
                 TriggerType = TriggerType,
                 PluginName = TriggerPluginName,
-                TriggerName = TriggerName
+                TriggerName = TriggerName,
             },
         };
 
@@ -566,11 +527,13 @@ internal partial class WorkflowEditorViewModel : ObservableObject
                     TriggerName = null;
                 }
 
-                // v5.2: _blueprintService removed — BP→BS export needs migration
-                var sourceCode = ""; // was: _blueprintService.ExportToBlockScript(blueprint);
+                // v2: BP→BS is a projection of session.Ir via BsTextLens.
+                // The session's IR is already current (BP edits flow into it via ApplyBpEdits).
+                var sourceCode = _session != null && _bsTextLens != null
+                    ? _bsTextLens.Project(_session.Ir)
+                    : "";
 
                 ScriptVM.MainProgramCode = sourceCode;
-                ScriptVM.UseBlockMode = true;
             }
             catch (Exception ex)
             {
