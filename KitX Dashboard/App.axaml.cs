@@ -90,6 +90,11 @@ public partial class App : Application
         services.AddSingleton<KitX.Core.Contract.Workflow.IWorkflowStorageService,
             KitX.Dashboard.Services.WorkflowStorageService>();
 
+        // S4: WorkflowSessionManager — IWorkflowManagementService orchestrator (run/stop by id
+        // via stored IR + IExecutionBackend). Replaces the archived WorkflowManagementService.
+        services.AddSingleton<KitX.Core.Contract.Workflow.IWorkflowManagementService,
+            KitX.Dashboard.Services.WorkflowSessionManager>();
+
         // Register SignalTasksManager for signal-based coordination
         services.AddSingleton<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
 
