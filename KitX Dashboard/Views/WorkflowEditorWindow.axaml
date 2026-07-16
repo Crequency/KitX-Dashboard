@@ -18,6 +18,54 @@
 
     <Window.Resources>
         <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
+
+        <!-- Shared connector templates (used by both Node and BlockNodeContainer) -->
+        <DataTemplate x:Key="SharedInputConnectorTemplate" DataType="{x:Type viewModels:BlueprintConnectorVM}">
+            <controls:NodeInput IsConnected="{Binding IsConnected}"
+                                Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <ToolTip.Tip>
+                    <MultiBinding StringFormat="{}{0} ({1})">
+                        <Binding Path="Title" />
+                        <Binding Path="PinTypeText" />
+                    </MultiBinding>
+                </ToolTip.Tip>
+                <controls:NodeInput.BorderBrush>
+                    <Binding Path="PinTypeColorHex"
+                             Converter="{StaticResource HexToBrushConverter}" />
+                </controls:NodeInput.BorderBrush>
+                <controls:NodeInput.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="{Binding Title}"
+                                   VerticalAlignment="Center" FontSize="11" />
+                        <TextBox Text="{Binding DefaultValue, Mode=TwoWay}"
+                                 IsVisible="{Binding ShowDefaultValue}"
+                                 FontSize="9" Watermark="{DynamicResource Text_WorkflowEditor_ValueWatermark}"
+                                 Width="60" Padding="2,0"
+                                 VerticalAlignment="Center" />
+                    </StackPanel>
+                </controls:NodeInput.Header>
+            </controls:NodeInput>
+        </DataTemplate>
+
+        <DataTemplate x:Key="SharedOutputConnectorTemplate" DataType="{x:Type viewModels:BlueprintConnectorVM}">
+            <controls:NodeOutput IsConnected="{Binding IsConnected}"
+                                 Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <ToolTip.Tip>
+                    <MultiBinding StringFormat="{}{0} ({1})">
+                        <Binding Path="Title" />
+                        <Binding Path="PinTypeText" />
+                    </MultiBinding>
+                </ToolTip.Tip>
+                <controls:NodeOutput.BorderBrush>
+                    <Binding Path="PinTypeColorHex"
+                             Converter="{StaticResource HexToBrushConverter}" />
+                </controls:NodeOutput.BorderBrush>
+                <controls:NodeOutput.Header>
+                    <TextBlock Text="{Binding Title}"
+                               VerticalAlignment="Center" FontSize="11" />
+                </controls:NodeOutput.Header>
+            </controls:NodeOutput>
+        </DataTemplate>
     </Window.Resources>
 
     <Window.Styles>
@@ -597,6 +645,11 @@
                                                                            BlockName="{Binding Metadata[BlockName]}"
                                                                            ChildCount="{Binding BlockScope.ChildCount}"
                                                                            IsDebugHighlight="{Binding BlockScope.IsInternalNodeExecuting}"
+                                                                           Input="{Binding Input}"
+                                                                           Output="{Binding Output}"
+                                                                           InputConnectorTemplate="{StaticResource SharedInputConnectorTemplate}"
+                                                                           OutputConnectorTemplate="{StaticResource SharedOutputConnectorTemplate}"
+                                                                           PreviewContent="{Binding BlockScope.PreviewNodes}"
                                                                            Size="400,300"
                                                                            CanResize="True">
                                         </controls:BlockNodeContainer>
@@ -606,6 +659,8 @@
                                                        IsVisible="{Binding !IsBlockNode}"
                                                        Input="{Binding Input}"
                                                        Output="{Binding Output}"
+                                                       InputConnectorTemplate="{StaticResource SharedInputConnectorTemplate}"
+                                                       OutputConnectorTemplate="{StaticResource SharedOutputConnectorTemplate}"
                                                        IsResize="False"
                                                        ZIndex="1">
 
@@ -688,58 +743,6 @@
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <!-- Input connector template -->
-                                        <controls:Node.InputConnectorTemplate>
-                                            <DataTemplate DataType="{x:Type viewModels:BlueprintConnectorVM}">
-                                                 <controls:NodeInput IsConnected="{Binding IsConnected}"
-                                                                     Anchor="{Binding Anchor, Mode=OneWayToSource}">
-                                                    <ToolTip.Tip>
-                                                        <MultiBinding StringFormat="{}{0} ({1})">
-                                                            <Binding Path="Title" />
-                                                            <Binding Path="PinTypeText" />
-                                                        </MultiBinding>
-                                                    </ToolTip.Tip>
-                                                    <controls:NodeInput.BorderBrush>
-                                                        <Binding Path="PinTypeColorHex"
-                                                                 Converter="{StaticResource HexToBrushConverter}" />
-                                                    </controls:NodeInput.BorderBrush>
-                                                    <controls:NodeInput.Header>
-                                                        <StackPanel Orientation="Horizontal" Spacing="4">
-                                                            <TextBlock Text="{Binding Title}"
-                                                                       VerticalAlignment="Center" FontSize="11" />
-                                                            <TextBox Text="{Binding DefaultValue, Mode=TwoWay}"
-                                                                     IsVisible="{Binding ShowDefaultValue}"
-                                                                     FontSize="9" Watermark="{DynamicResource Text_WorkflowEditor_ValueWatermark}"
-                                                                     Width="60" Padding="2,0"
-                                                                     VerticalAlignment="Center" />
-                                                        </StackPanel>
-                                                    </controls:NodeInput.Header>
-                                                </controls:NodeInput>
-                                            </DataTemplate>
-                                        </controls:Node.InputConnectorTemplate>
-
-                                        <!-- Output connector template -->
-                                        <controls:Node.OutputConnectorTemplate>
-                                            <DataTemplate DataType="{x:Type viewModels:BlueprintConnectorVM}">
-                                                 <controls:NodeOutput IsConnected="{Binding IsConnected}"
-                                                                      Anchor="{Binding Anchor, Mode=OneWayToSource}">
-                                                    <ToolTip.Tip>
-                                                        <MultiBinding StringFormat="{}{0} ({1})">
-                                                            <Binding Path="Title" />
-                                                            <Binding Path="PinTypeText" />
-                                                        </MultiBinding>
-                                                    </ToolTip.Tip>
-                                                    <controls:NodeOutput.BorderBrush>
-                                                        <Binding Path="PinTypeColorHex"
-                                                                 Converter="{StaticResource HexToBrushConverter}" />
-                                                    </controls:NodeOutput.BorderBrush>
-                                                    <controls:NodeOutput.Header>
-                                                        <TextBlock Text="{Binding Title}"
-                                                                   VerticalAlignment="Center" FontSize="11" />
-                                                    </controls:NodeOutput.Header>
-                                                </controls:NodeOutput>
-                                            </DataTemplate>
-                                        </controls:Node.OutputConnectorTemplate>
                                     </controls:Node>
                                     </Panel>
                                 </DataTemplate>
