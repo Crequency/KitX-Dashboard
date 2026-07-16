@@ -60,6 +60,7 @@ internal partial class WorkflowEditorViewModel : ObservableObject
     private string? _workflowId;
     private string _workflowName = "Untitled Workflow";
     private string _workflowDescription = string.Empty;
+    private TriggerConfig? _triggerConfig;
     private string _workflowAuthor = string.Empty;
     private bool _isDirty;
     private string _executionOutput = string.Empty;
@@ -379,9 +380,14 @@ internal partial class WorkflowEditorViewModel : ObservableObject
         // Load trigger configuration
         if (data.TriggerConfig != null)
         {
+            _triggerConfig = data.TriggerConfig;
             TriggerType = data.TriggerConfig.TriggerType ?? "Manual";
             TriggerPluginName = data.TriggerConfig.PluginName;
             TriggerName = data.TriggerConfig.TriggerName;
+        }
+        else
+        {
+            _triggerConfig = new TriggerConfig();
         }
     }
 
@@ -404,6 +410,23 @@ internal partial class WorkflowEditorViewModel : ObservableObject
             catch (Exception ex) { Log.Error(ex, "[WorkflowEditorVM] BS projection during save failed"); }
         }
 
+        // Persist EntryNode coordinates from the Blueprint canvas (if available).
+        // The synthetic EntryNode has no IrBlock counterpart, so its position
+        // lives in the trigger envelope rather than IR annotations.
+        var tc = _triggerConfig ?? new TriggerConfig();
+        tc.TriggerType = TriggerType;
+        tc.PluginName = TriggerPluginName;
+        tc.TriggerName = TriggerName;
+        var entryVm = BlueprintVM?.Nodes?.OfType<BlueprintNodeVM>()
+            .FirstOrDefault(n => n.BlueprintNodeId == "entry:__synthetic__"
+                || n.NodeType == BlueprintNodeType.Entry
+                || n.NodeType == BlueprintNodeType.PluginTrigger);
+        if (entryVm != null)
+        {
+            tc.EntryNodeX = entryVm.Location.X;
+            tc.EntryNodeY = entryVm.Location.Y;
+        }
+
         var data = new KcsFileFormat
         {
             Id = _workflowId,
@@ -415,12 +438,7 @@ internal partial class WorkflowEditorViewModel : ObservableObject
                 ? KitX.Workflow.Serialization.IrSerializer.Serialize(_session.Ir)
                 : "{}",
             VariableConstants = new System.Collections.Generic.Dictionary<string, object?>(),
-            TriggerConfig = new TriggerConfig
-            {
-                TriggerType = TriggerType,
-                PluginName = TriggerPluginName,
-                TriggerName = TriggerName,
-            },
+            TriggerConfig = tc,
         };
 
         await _storageService.SaveWorkflowDataAsync(_workflowId, data);
@@ -469,10 +487,19 @@ internal partial class WorkflowEditorViewModel : ObservableObject
 
                 if (blueprint != null)
                 {
+                    // Apply EntryNode coordinates from TriggerConfig (the synthetic
+                    // EntryNode's position is persisted in the trigger envelope, not
+                    // in IR annotations, because it has no IrBlock counterpart).
+                    var entryNode = blueprint.Nodes.FirstOrDefault(n => n.NodeType == BlueprintNodeType.Entry);
+                    if (entryNode != null)
+                    {
+                        entryNode.X = _triggerConfig?.EntryNodeX ?? 0;
+                        entryNode.Y = _triggerConfig?.EntryNodeY ?? 0;
+                    }
+
                     // BS → BP trigger conversion: replace Entry with PluginTriggerNode
                     if (TriggerType == "PluginEvent" && !string.IsNullOrEmpty(TriggerPluginName))
                     {
-                        var entryNode = blueprint.Nodes.FirstOrDefault(n => n.NodeType == BlueprintNodeType.Entry);
                         if (entryNode != null)
                         {
                             var triggerNode = new PluginTriggerNode
