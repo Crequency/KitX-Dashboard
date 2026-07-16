@@ -12,6 +12,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
 using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Tasks;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Event;
@@ -46,7 +47,9 @@ public partial class WorkflowEditorWindow : Window, IView
         _viewModel = new WorkflowEditorViewModel(
             App.GetService<IWorkflowStorageService>(),
             App.GetService<ITasksService>(),
-            blueprintVM
+            blueprintVM,
+            App.GetService<IEventService>(),
+            App.GetService<IPluginServer>()
         );
 
         DataContext = _viewModel;
