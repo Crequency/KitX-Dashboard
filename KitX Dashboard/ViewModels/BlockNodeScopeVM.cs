@@ -25,9 +25,11 @@ public partial class BlockNodeScopeVM : ObservableObject
     [ObservableProperty]
     private string _blockName = string.Empty;
 
-    /// <summary>Whether this block is collapsed (showing preview only)</summary>
+    /// <summary>Whether this block is collapsed (showing preview only).
+    /// Default: true (§11.1 — blocks render collapsed; internal structure invisible
+    /// until the user double-clicks to expand).</summary>
     [ObservableProperty]
-    private bool _isCollapsed;
+    private bool _isCollapsed = true;
 
     /// <summary>Ordered list of child node IDs inside this block</summary>
     public ObservableCollection<string> ContainedNodeIds { get; } = [];
@@ -80,8 +82,9 @@ public partial class BlockNodeScopeVM : ObservableObject
     // ─── Port Mapping ───────────────────────────────────────────────────
 
     /// <summary>
-    /// When collapsing: scans child nodes for EntryPointNode/ExitPointNode,
-    /// maps their ports to the BlockNode's own input/output connectors.
+    /// When collapsing: hides ALL child nodes (§11.1 — internal structure invisible
+    /// in collapsed state), then scans for EntryPoint/ExitPoint to map their ports
+    /// onto the BlockNode's outer connectors.
     /// </summary>
     private void MapPortsForCollapsed()
     {
@@ -90,10 +93,12 @@ public partial class BlockNodeScopeVM : ObservableObject
 
         if (Editor == null) return;
 
+        // §11.1: hide every child node — not just boundary nodes.
         foreach (var nodeId in ContainedNodeIds)
         {
             var nodeVm = Editor.FindNodeById(nodeId);
             if (nodeVm == null) continue;
+            nodeVm.IsVisible = false;
 
             // EntryPointNode: has no inputs, one Value output → maps to BlockNode OUTPUT port
             if (nodeVm.NodeType == Core.Contract.Workflow.BlueprintNodeType.EntryPoint)
@@ -105,8 +110,6 @@ public partial class BlockNodeScopeVM : ObservableObject
                     Direction = PortDirection.Output,
                     OriginalNodeId = nodeId
                 });
-                // Hide the EntryPointNode on the canvas
-                nodeVm.IsVisible = false;
             }
 
             // ExitPointNode: has one Value input, no outputs → maps to BlockNode INPUT port
@@ -119,8 +122,6 @@ public partial class BlockNodeScopeVM : ObservableObject
                     Direction = PortDirection.Input,
                     OriginalNodeId = nodeId
                 });
-                // Hide the ExitPointNode on the canvas
-                nodeVm.IsVisible = false;
             }
         }
     }
