@@ -890,14 +890,19 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         UpdateAllConnectorStates();
 
         // === Phase 4: Rebuild ScopeBlocks from BlockScopes ===
-        RebuildScopeBlocksFromBlockScopes(blueprint);
+        // DISABLED: The old ScopeBlockControl background frames are superseded by
+        // BlockNodeContainer, which now renders as a real node with connectors +
+        // collapse/expand + thumbnail. ScopeBlocks created visual clutter behind
+        // the BlockNodes. The BlockNodeScopeVM (per-BlockNode) handles child
+        // visibility + preview; no separate ScopeBlock layer is needed.
+        // RebuildScopeBlocksFromBlockScopes(blueprint);
 
         // === Phase 5: Resolve dynamic pin types for Get/Set nodes ===
         ResolveAllVariablePinTypes();
 
         RefreshCounts();
-        Log.Information("Loaded blueprint: {NodeCount} nodes, {ConnCount} connections, {ScopeCount} scope blocks",
-            Nodes.Count, Connections.Count, ScopeBlocks.Count);
+        Log.Information("Loaded blueprint: {NodeCount} nodes, {ConnCount} connections",
+            Nodes.Count, Connections.Count);
     }
 
     /// <summary>
@@ -1008,6 +1013,12 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             blockScope.RecalculatePreview();
 
             nodeVm.BlockScope = blockScope;
+
+            // Apply initial collapsed state (hide child nodes if collapsed).
+            // Must happen after BlockScope is assigned so MapPortsForCollapsed
+            // can find child nodes via Editor.FindNodeById.
+            blockScope.ApplyInitialCollapsedState();
+
             Serilog.Log.Debug("Initialized BlockScope for '{BlockName}' with {Count} child nodes",
                 blockScope.BlockName, blockScope.ContainedNodeIds.Count);
         }

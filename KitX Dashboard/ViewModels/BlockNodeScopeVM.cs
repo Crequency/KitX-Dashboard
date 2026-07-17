@@ -58,6 +58,18 @@ public partial class BlockNodeScopeVM : ObservableObject
 
     // ─── Collapse / Expand ──────────────────────────────────────────────
 
+    /// <summary>
+    /// Applies the initial collapsed state (hides child nodes when collapsed).
+    /// Call after the BlockScope is fully populated and assigned to the node VM.
+    /// Needed because [ObservableProperty] does not fire OnIsCollapsedChanged
+    /// for the default value — this method does it explicitly.
+    /// </summary>
+    public void ApplyInitialCollapsedState()
+    {
+        if (IsCollapsed)
+            MapPortsForCollapsed();
+    }
+
     /// <summary>Toggles collapse/expand and triggers push layout</summary>
     [RelayCommand]
     private void ToggleCollapse()
