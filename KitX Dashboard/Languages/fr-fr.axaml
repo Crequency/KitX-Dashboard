@@ -195,6 +195,9 @@
     <sys:String x:Key="Text_Settings_General_ShowAnnouncement">Afficher l'annonce au démarrage</sys:String>
     <sys:String x:Key="Text_Settings_General_ShowAnnouncementNow">Voir les dernières annonces</sys:String>
     <sys:String x:Key="Text_Settings_General_OpenDebugTool">Ouvrir le débogueur</sys:String>
+    <sys:String x:Key="Text_Settings_General_BlueprintNestedNodeExpandMode">Mode d'expansion des nœuds imbriqués de blueprint</sys:String>
+    <sys:String x:Key="Text_Settings_General_NestedNodeMode_Embedded">Intégré (Incrustation)</sys:String>
+    <sys:String x:Key="Text_Settings_General_NestedNodeMode_SubEditor">Sous-éditeur (overlay modal)</sys:String>
     <sys:String x:Key="Text_Settings_Personalise">personnaliser</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_DisplayLanguage">langue d'affichage</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_MicaEffect">Effet mica</sys:String>

@@ -195,6 +195,9 @@
     <sys:String x:Key="Text_Settings_General_ShowAnnouncement">시작 시 알림 표시</sys:String>
     <sys:String x:Key="Text_Settings_General_ShowAnnouncementNow">최신 공지사항 보기</sys:String>
     <sys:String x:Key="Text_Settings_General_OpenDebugTool">디버거 열기</sys:String>
+    <sys:String x:Key="Text_Settings_General_BlueprintNestedNodeExpandMode">블루프린트 중첩 노드 전개 모드</sys:String>
+    <sys:String x:Key="Text_Settings_General_NestedNodeMode_Embedded">임베디드 (피처인피처)</sys:String>
+    <sys:String x:Key="Text_Settings_General_NestedNodeMode_SubEditor">서브에디터 (모달 오버레이)</sys:String>
     <sys:String x:Key="Text_Settings_Personalise">개인화</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_DisplayLanguage">표시 언어</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_MicaEffect">운모 효과</sys:String>

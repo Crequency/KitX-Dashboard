@@ -11,6 +11,7 @@ using KitX.Core.Contract.Workflow;
 using KitX.Core.Contract.Tasks;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Plugin.Events;
+using KitX.Core.Contract.Configuration;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
@@ -112,6 +113,24 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 _debugController.SetSpeed(value >= 1.0 ? KitX.Core.Contract.Workflow.ExecutionSpeed.RealTime : KitX.Core.Contract.Workflow.ExecutionSpeed.Slow);
         }
     }
+
+    // ─── SubEditor (Phase 2) ───────────────────────────────────────────────
+    //
+    // ActiveScope is the DataContext of the NestedNode being edited in the
+    // sub-editor overlay. Set by NodifyEditor's SubEditorRequested handler
+    // when a NestedNode with ExpandMode=SubEditor is double-clicked or its
+    // "Enter" button is clicked. Setting it to null hides the overlay.
+    // Bound TwoWay to the outer NodifyEditor.ActiveScope in XAML.
+    [ObservableProperty]
+    private object? _activeScope;
+
+    /// <summary>
+    /// Clears <see cref="ActiveScope"/>, hiding the SubEditorOverlay.
+    /// Bound to NodifyEditor.ExitScopeCommand (invoked by the overlay's
+    /// "Back" button).
+    /// </summary>
+    [RelayCommand]
+    private void ExitScope() => ActiveScope = null;
 
     private int _nodeCount;
     public int NodeCount
@@ -376,7 +395,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     private BlueprintNodeVM? FindParentNode(ConnectorViewModelBase connector)
     {
-        return Nodes.OfType<BlueprintNodeVM>()
+        return AllBlueprintNodes()
             .FirstOrDefault(n => n.Input.Contains(connector) || n.Output.Contains(connector));
     }
 
@@ -463,26 +482,44 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// <summary>
     /// Overrides NodifyM's DisconnectConnector to properly update IsConnected
     /// and refresh counts. Triggered by Alt+click on a connector.
+    /// <para>
+    /// Embedded/SubEditor migration: traverses <see cref="AllConnections"/>
+    /// so connections living inside a block's <c>InnerEditor.Connections</c>
+    /// are also disconnected when their connector is Alt-clicked.
+    /// </para>
     /// </summary>
     public override void DisconnectConnector(ConnectorViewModelBase connector)
     {
         if (connector is not BlueprintConnectorVM bpConn) return;
 
-        var attached = Connections.OfType<BlueprintConnectionVM>()
+        var attached = AllConnections()
             .Where(c => c.Source == bpConn || c.Target == bpConn)
             .ToList();
 
         foreach (var conn in attached)
         {
-            // Update IsConnected on counterpart connectors
+            // Update IsConnected on counterpart connectors across ALL layers
             if (conn.Source is BlueprintConnectorVM src)
-                src.IsConnected = Connections.OfType<BlueprintConnectionVM>()
+                src.IsConnected = AllConnections()
                     .Any(c => c != conn && (c.Source == src || c.Target == src));
             if (conn.Target is BlueprintConnectorVM tgt)
-                tgt.IsConnected = Connections.OfType<BlueprintConnectionVM>()
+                tgt.IsConnected = AllConnections()
                     .Any(c => c != conn && (c.Source == tgt || c.Target == tgt));
 
-            Connections.Remove(conn);
+            // Remove from whichever editor owns this connection.
+            if (Connections.Contains(conn))
+                Connections.Remove(conn);
+            else
+            {
+                foreach (var block in Nodes.OfType<BlueprintBlockNodeVM>())
+                {
+                    if (block.InnerEditor.Connections.Contains(conn))
+                    {
+                        block.InnerEditor.Connections.Remove(conn);
+                        break;
+                    }
+                }
+            }
         }
 
         RefreshCounts();
@@ -974,10 +1011,53 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     private void InitializeBlockScopes()
     {
+        // Phase 1 (Approach B): child nodes are MOVED from the flat outer Nodes
+        // collection into each owning Block's ChildNodes, with their Location
+        // converted from canvas-absolute to relative (child.Location - block.Location).
+        // Two-pass to avoid mutating Nodes while iterating it.
+        var childrenToMove = new Dictionary<BlueprintBlockNodeVM, List<BlueprintNodeVM>>();
+
         foreach (var nodeVm in Nodes.OfType<BlueprintNodeVM>())
         {
             if (!nodeVm.IsBlockNode) continue;
             if (nodeVm.BlockScope != null) continue; // already initialized
+            if (nodeVm is not BlueprintBlockNodeVM blockVm) continue;
+
+            // The implicit #MainBlock (synthesized by BpGraphLens to wrap all
+            // top-level nodes) must NOT have its children partitioned into
+            // ChildNodes — they stay flat in the outer Nodes so that box-select,
+            // deletion, and other top-level operations find them. Only
+            // user-defined named blocks (LoopBody, Branch arms, etc.) get
+            // truly-nested children.
+            bool isMainBlock = nodeVm.BlueprintNodeId == "block:#MainBlock"
+                || (nodeVm.Metadata.TryGetValue("BlockName", out var mainBn) && mainBn == "#MainBlock");
+            if (isMainBlock)
+            {
+                // Still init a BlockScope (for collapse/preview) but skip the
+                // child-partitioning passes below.
+                var mainScope = new BlockNodeScopeVM
+                {
+                    BlockName = "#MainBlock",
+                    OwnerBlockNodeId = nodeVm.BlueprintNodeId,
+                    Editor = this,
+                    Location = nodeVm.Location,
+                };
+                if (nodeVm.Metadata.TryGetValue("ChildNodeIds", out var mainChildIds) &&
+                    !string.IsNullOrEmpty(mainChildIds))
+                {
+                    foreach (var id in mainChildIds.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var trimmed = id.Trim();
+                        if (!string.IsNullOrEmpty(trimmed))
+                            mainScope.ContainedNodeIds.Add(trimmed);
+                    }
+                }
+                mainScope.RecalculatePreview();
+                nodeVm.BlockScope = mainScope;
+                // Don't apply collapsed state for main block — children stay visible.
+                Serilog.Log.Debug("Initialized MainBlock scope (children kept flat in Nodes)");
+                continue;
+            }
 
             var blockScope = new BlockNodeScopeVM
             {
@@ -1000,6 +1080,23 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
                 }
             }
 
+            // Collect child VMs to move. Convert their Location from absolute to
+            // relative now (the VM still lives in Nodes until the second pass).
+            var children = new List<BlueprintNodeVM>();
+            foreach (var nodeId in blockScope.ContainedNodeIds)
+            {
+                var childVm = Nodes.OfType<BlueprintNodeVM>()
+                    .FirstOrDefault(n => n.BlueprintNodeId == nodeId);
+                if (childVm != null && childVm != blockVm)
+                {
+                    childVm.Location = new Avalonia.Point(
+                        childVm.Location.X - blockVm.Location.X,
+                        childVm.Location.Y - blockVm.Location.Y);
+                    children.Add(childVm);
+                }
+            }
+            childrenToMove[blockVm] = children;
+
             // Check for nesting violation (warn but don't block)
             var nestedBlockId = blockScope.FindNestedBlockNode();
             if (nestedBlockId != null)
@@ -1014,18 +1111,87 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
             nodeVm.BlockScope = blockScope;
 
-            // Apply initial collapsed state (hide child nodes if collapsed).
-            // Must happen after BlockScope is assigned so MapPortsForCollapsed
-            // can find child nodes via Editor.FindNodeById.
+            // Apply the user-configured nested-node expand mode (Embedded vs
+            // SubEditor) from AppConfig. Takes effect on this load; changing
+            // the setting at runtime requires re-loading the blueprint.
+            var modeStr = App.GetService<IConfigService>().AppConfig.App.BlueprintNestedNodeExpandMode;
+            blockVm.ExpandMode = modeStr == "SubEditor"
+                ? NodifyM.Avalonia.Controls.NestedNodeExpandMode.SubEditor
+                : NodifyM.Avalonia.Controls.NestedNodeExpandMode.Embedded;
+
+            // Apply initial collapsed state. With Approach B the NestedNode template
+            // hides the inner host when collapsed, so the per-VM IsVisible toggling
+            // done here is redundant but harmless.
             blockScope.ApplyInitialCollapsedState();
 
             Serilog.Log.Debug("Initialized BlockScope for '{BlockName}' with {Count} child nodes",
                 blockScope.BlockName, blockScope.ContainedNodeIds.Count);
         }
 
+        // Second pass: move children out of the outer Nodes into each block's ChildNodes.
+        foreach (var (blockVm, children) in childrenToMove)
+        {
+            foreach (var child in children)
+            {
+                Nodes.Remove(child);
+                blockVm.ChildNodes.Add(child);
+            }
+        }
+
+        // Third pass (Embedded/SubEditor migration): partition inner connections.
+        // Any outer-layer connection whose both endpoint connectors live inside
+        // the SAME block must be moved into that block's InnerEditor.Connections.
+        // This keeps inner-layer connections isolated from the outer editor
+        // (the embedded SubEditorOverlay / NestedNode inner editor bind to
+        // InnerEditor.Connections directly).
+        //
+        // #MainBlock skips this pass (its children stay flat in outer Nodes, so
+        // their connections stay in outer Connections too).
+        var innerConns = Connections.OfType<BlueprintConnectionVM>()
+            .Where(c =>
+            {
+                var srcNode = FindParentNode(c.Source);
+                var tgtNode = FindParentNode(c.Target);
+                var srcBlock = FindOwningBlock(srcNode);
+                var tgtBlock = FindOwningBlock(tgtNode);
+                return srcBlock != null && srcBlock == tgtBlock;
+            })
+            .ToList();
+
+        foreach (var conn in innerConns)
+        {
+            Connections.Remove(conn);
+            var block = FindOwningBlock(FindParentNode(conn.Source));
+            if (block == null) continue;
+            // Re-create the connection against the InnerEditor so its editor
+            // reference points to the inner editor (ConnectionViewModelBase
+            // stores the editor passed to its ctor; DisconnectConnection later
+            // calls nodifyEditor.Connections.Remove on that reference).
+            var newConn = new BlueprintConnectionVM(block.InnerEditor,
+                (BlueprintConnectorVM)conn.Source, (BlueprintConnectorVM)conn.Target);
+            block.InnerEditor.Connections.Add(newConn);
+        }
+
         var blockCount = Nodes.OfType<BlueprintNodeVM>().Count(n => n.IsBlockNode);
         if (blockCount > 0)
             Serilog.Log.Information("Initialized {Count} BlockScopes", blockCount);
+    }
+
+    /// <summary>
+    /// Finds the <see cref="BlueprintBlockNodeVM"/> that owns a given node as
+    /// a direct child (i.e. the node lives in <c>block.ChildNodes</c>).
+    /// Returns null for top-level nodes and for <c>#MainBlock</c> children
+    /// (which stay flat in the outer <c>Nodes</c> collection).
+    /// </summary>
+    private BlueprintBlockNodeVM? FindOwningBlock(BlueprintNodeVM? node)
+    {
+        if (node == null) return null;
+        foreach (var block in Nodes.OfType<BlueprintBlockNodeVM>())
+        {
+            if (block.ChildNodes.Contains(node))
+                return block;
+        }
+        return null;
     }
 
     /// <summary>
@@ -1102,20 +1268,23 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         var displayTitle = blueprintNode.GetDisplayTitle();
         var (primaryColor, lightColor) = BlueprintNodeVM.GetCategoryColors(blueprintNode.NodeType);
 
-        var nodeVm = new BlueprintNodeVM
-        {
-            Location = new Avalonia.Point(blueprintNode.X, blueprintNode.Y),
-            BlueprintNodeId = blueprintNode.Id,
-            NodeType = blueprintNode.NodeType,
-            Name = blueprintNode.Name,
-            DisplayTitle = displayTitle,
-            CategoryColor = primaryColor,
-            CategoryColorLight = lightColor,
-            Title = displayTitle,
-            Comment = blueprintNode.Comment,
-            Input = new ObservableCollection<object>(),
-            Output = new ObservableCollection<object>()
-        };
+        // Use BlueprintBlockNodeVM subclass for Block nodes so NodeTemplateSelector
+        // can dispatch to the NestedNode DataTemplate by type (Phase 0 fix for the
+        // Panel-wrapper bug that broke selection/drag for all BlueprintNodeVMs).
+        BlueprintNodeVM nodeVm = blueprintNode.NodeType == BlueprintNodeType.Block
+            ? new BlueprintBlockNodeVM()
+            : new BlueprintNodeVM();
+        nodeVm.Location = new Avalonia.Point(blueprintNode.X, blueprintNode.Y);
+        nodeVm.BlueprintNodeId = blueprintNode.Id;
+        nodeVm.NodeType = blueprintNode.NodeType;
+        nodeVm.Name = blueprintNode.Name;
+        nodeVm.DisplayTitle = displayTitle;
+        nodeVm.CategoryColor = primaryColor;
+        nodeVm.CategoryColorLight = lightColor;
+        nodeVm.Title = displayTitle;
+        nodeVm.Comment = blueprintNode.Comment;
+        nodeVm.Input = new ObservableCollection<object>();
+        nodeVm.Output = new ObservableCollection<object>();
 
         // Build RelativeY lookup from descriptor for correct pin ordering
         var inputRelativeY = descriptor.InputPins
@@ -1311,19 +1480,41 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     }
 
     /// <summary>
-    /// Updates IsConnected state on all connectors based on current connections
+    /// Updates IsConnected state on all connectors based on current connections.
+    /// <para>
+    /// Embedded/SubEditor migration: traverses <see cref="AllConnections"/>
+    /// so connectors whose only connection lives inside a block's
+    /// <c>InnerEditor.Connections</c> are also marked connected.
+    /// </para>
     /// </summary>
     private void UpdateAllConnectorStates()
     {
-        var allConnectors = Nodes.OfType<BlueprintNodeVM>()
+        var allConnectors = AllBlueprintNodes()
             .SelectMany(n => n.Input.OfType<BlueprintConnectorVM>()
                 .Concat(n.Output.OfType<BlueprintConnectorVM>()));
 
+        var all = AllConnections().ToList();
         foreach (var connector in allConnectors)
         {
-            connector.IsConnected = Connections.OfType<BlueprintConnectionVM>()
+            connector.IsConnected = all
                 .Any(c => c.Source == connector || c.Target == connector);
         }
+    }
+
+    /// <summary>
+    /// Enumerates ALL <see cref="BlueprintConnectionVM"/> instances in the
+    /// editor: outer-layer <see cref="Connections"/> plus every block's
+    /// <c>InnerEditor.Connections</c>. Use this instead of
+    /// <c>Connections.OfType&lt;BlueprintConnectionVM&gt;()</c> wherever the
+    /// call site must account for connections nested inside block scopes.
+    /// </summary>
+    private IEnumerable<BlueprintConnectionVM> AllConnections()
+    {
+        foreach (var conn in Connections.OfType<BlueprintConnectionVM>())
+            yield return conn;
+        foreach (var block in Nodes.OfType<BlueprintBlockNodeVM>())
+            foreach (var conn in block.InnerEditor.Connections.OfType<BlueprintConnectionVM>())
+                yield return conn;
     }
 
     // ─── Blueprint Export ────────────────────────────────────────────────
@@ -1557,10 +1748,41 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     /// <summary>
     /// Finds a BlueprintNodeVM by its BlueprintNodeId.
-    /// Used by scope blocks to look up contained child nodes.
+    /// Searches both top-level <see cref="NodifyEditorViewModelBase.Nodes"/>
+    /// and every <see cref="BlueprintBlockNodeVM.ChildNodes"/> collection
+    /// (Phase 1 Approach B: children live inside their owning block, not in
+    /// the flat outer Nodes list).
     /// </summary>
     public BlueprintNodeVM? FindNodeById(string nodeId)
-        => Nodes.OfType<BlueprintNodeVM>().FirstOrDefault(n => n.BlueprintNodeId == nodeId);
+    {
+        var found = Nodes.OfType<BlueprintNodeVM>().FirstOrDefault(n => n.BlueprintNodeId == nodeId);
+        if (found != null) return found;
+
+        foreach (var block in Nodes.OfType<BlueprintBlockNodeVM>())
+        {
+            // ChildNodes is ObservableCollection<object?> (forwards InnerEditor.Nodes)
+            // so we cast each child to BlueprintNodeVM before comparing.
+            found = block.ChildNodes.OfType<BlueprintNodeVM>()
+                .FirstOrDefault(n => n.BlueprintNodeId == nodeId);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Enumerates ALL BlueprintNodeVMs in the editor: both top-level Nodes and
+    /// every child inside each <see cref="BlueprintBlockNodeVM.ChildNodes"/>
+    /// (Phase 1 Approach B). Use this instead of <c>Nodes.OfType&lt;BlueprintNodeVM&gt;()</c>
+    /// wherever the call site must account for nodes nested inside blocks.
+    /// </summary>
+    private IEnumerable<BlueprintNodeVM> AllBlueprintNodes()
+    {
+        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+            yield return node;
+        foreach (var block in Nodes.OfType<BlueprintBlockNodeVM>())
+            foreach (var child in block.ChildNodes.OfType<BlueprintNodeVM>())
+                yield return child;
+    }
 
     private void ApplyDisplayTitleToNode(BlueprintNode node, string title, BlueprintNodeVM? nodeVm = null)
     {
@@ -1657,7 +1879,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         if (string.IsNullOrEmpty(varName)) return PinType.Any;
 
         // 1. Search ConstNode VMs in canvas
-        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+        foreach (var node in AllBlueprintNodes())
         {
             if (node.NodeType == BlueprintNodeType.Const)
             {
@@ -1669,7 +1891,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         }
 
         // 2. Search VariableNode VMs in canvas
-        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+        foreach (var node in AllBlueprintNodes())
         {
             if (node.NodeType == BlueprintNodeType.Variable)
             {
@@ -1771,7 +1993,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     /// </summary>
     private void ResolveAllVariablePinTypes()
     {
-        foreach (var node in Nodes.OfType<BlueprintNodeVM>())
+        foreach (var node in AllBlueprintNodes())
         {
             if (node.NodeType != BlueprintNodeType.Variable) continue;
 
@@ -1907,7 +2129,8 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
 
     private void RefreshCounts()
     {
-        NodeCount = Nodes?.OfType<BlueprintNodeVM>().Count() ?? 0;
+        // Count both top-level nodes and children nested inside blocks (Phase 1).
+        NodeCount = AllBlueprintNodes().Count();
         ConnectionCount = Connections?.Count ?? 0;
     }
 
@@ -2402,8 +2625,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             Log.Debug("[BlueprintDebug] NodeExecuting: nodeId={NodeId}", statementId);
-            var nodeVm = Nodes.OfType<BlueprintNodeVM>()
-                .FirstOrDefault(n => n.BlueprintNodeId == statementId);
+            var nodeVm = FindNodeById(statementId);
             if (nodeVm != null)
             {
                 Log.Debug("[BlueprintDebug] NodeExecuting: setting IsExecuting=true. Title={Title}", nodeVm.Title);
@@ -2431,8 +2653,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
     {
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            var nodeVm = Nodes.OfType<BlueprintNodeVM>()
-                .FirstOrDefault(n => n.BlueprintNodeId == statementId);
+            var nodeVm = FindNodeById(statementId);
             if (nodeVm != null)
             {
                 nodeVm.IsExecuting = false;

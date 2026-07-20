@@ -59,10 +59,20 @@ public partial class BlockNodeScopeVM : ObservableObject
     // ─── Collapse / Expand ──────────────────────────────────────────────
 
     /// <summary>
-    /// Applies the initial collapsed state (hides child nodes when collapsed).
-    /// Call after the BlockScope is fully populated and assigned to the node VM.
-    /// Needed because [ObservableProperty] does not fire OnIsCollapsedChanged
-    /// for the default value — this method does it explicitly.
+    /// Applies the initial collapsed state.
+    /// <para>
+    /// Embedded/SubEditor migration: in Embedded mode the NestedNode template
+    /// controls inner-visibility via <c>PART_EmbeddedEditor.IsVisible</c>
+    /// (bound to <c>!IsCollapsed</c>), so per-VM <see cref="BlueprintNodeVM.IsVisible"/>
+    /// toggling is no longer needed and is skipped here. We still call
+    /// <see cref="MapPortsForCollapsed"/> for EntryPoint/ExitPoint port mapping.
+    /// </para>
+    /// <para>
+    /// For <c>#MainBlock</c> (whose children stay flat in the outer
+    /// <c>Nodes</c> collection) <see cref="MapPortsForCollapsed"/> is also safe:
+    /// its child VMs are top-level and remain visible by default, the loop
+    /// below only re-maps ports without hiding them in Embedded mode.
+    /// </para>
     /// </summary>
     public void ApplyInitialCollapsedState()
     {
@@ -94,9 +104,16 @@ public partial class BlockNodeScopeVM : ObservableObject
     // ─── Port Mapping ───────────────────────────────────────────────────
 
     /// <summary>
-    /// When collapsing: hides ALL child nodes (§11.1 — internal structure invisible
-    /// in collapsed state), then scans for EntryPoint/ExitPoint to map their ports
-    /// onto the BlockNode's outer connectors.
+    /// When collapsing: scans for EntryPoint/ExitPoint to map their ports onto
+    /// the BlockNode's outer connectors.
+    /// <para>
+    /// Embedded/SubEditor migration: child node <see cref="BlueprintNodeVM.IsVisible"/>
+    /// is no longer toggled here — the NestedNode template's
+    /// <c>PART_EmbeddedEditor.IsVisible</c> (bound to <c>!IsCollapsed</c>) and
+    /// <c>PART_CollapsedBody.IsVisible</c> (bound to <c>IsCollapsed</c>) handle
+    /// visibility natively. Toggling per-VM IsVisible would be a redundant no-op
+    /// since children live in <c>InnerEditor.Nodes</c>, not the outer canvas.
+    /// </para>
     /// </summary>
     private void MapPortsForCollapsed()
     {
@@ -105,12 +122,10 @@ public partial class BlockNodeScopeVM : ObservableObject
 
         if (Editor == null) return;
 
-        // §11.1: hide every child node — not just boundary nodes.
         foreach (var nodeId in ContainedNodeIds)
         {
             var nodeVm = Editor.FindNodeById(nodeId);
             if (nodeVm == null) continue;
-            nodeVm.IsVisible = false;
 
             // EntryPointNode: has no inputs, one Value output → maps to BlockNode OUTPUT port
             if (nodeVm.NodeType == Core.Contract.Workflow.BlueprintNodeType.EntryPoint)
@@ -139,23 +154,14 @@ public partial class BlockNodeScopeVM : ObservableObject
     }
 
     /// <summary>
-    /// When expanding: restores EntryPoint/ExitPoint node visibility on the canvas.
-    /// The BlockNode's mapped ports are removed by the BlockNodeContainer.
+    /// When expanding: clears EntryPoint/ExitPoint port mapping.
+    /// <para>
+    /// Embedded/SubEditor migration: no per-VM IsVisible toggling — visibility
+    /// is controlled by the NestedNode template.
+    /// </para>
     /// </summary>
     private void MapPortsForExpanded()
     {
-        if (Editor == null) return;
-
-        // Restore visibility of EntryPoint/ExitPoint nodes
-        foreach (var nodeId in ContainedNodeIds)
-        {
-            var nodeVm = Editor.FindNodeById(nodeId);
-            if (nodeVm != null)
-            {
-                nodeVm.IsVisible = true;
-            }
-        }
-
         EntryPorts.Clear();
         ExitPorts.Clear();
     }

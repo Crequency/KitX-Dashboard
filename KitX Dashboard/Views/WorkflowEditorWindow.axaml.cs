@@ -16,7 +16,6 @@ using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Tasks;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Event;
-using KitX.Dashboard.Controls;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using NodifyM.Avalonia.Controls;
@@ -557,31 +556,18 @@ public partial class WorkflowEditorWindow : Window, IView
         if (e.Source is not Visual visual) return;
 
         var baseNode = FindAncestor<NodifyM.Avalonia.Controls.BaseNode>(visual);
-        var scopeBlock = FindAncestor<ScopeBlockControl>(visual);
 
-        if (baseNode == null && scopeBlock == null) return;
+        // ScopeBlockControl branch removed: the legacy control was deleted in
+        // the Embedded/SubEditor migration. Scope-block rename/delete is now
+        // routed through the NestedNode (BlueprintBlockNodeVM) DataContext.
+        if (baseNode == null) return;
 
         e.Handled = true;
         CloseContextPopup();
 
         var bpVM = _viewModel.BlueprintVM;
 
-        // Scope block context menu
-        if (scopeBlock != null && scopeBlock.DataContext is BlueprintScopeBlockVM scopeVm)
-        {
-            editor.SelectItem(scopeBlock, false);
-            var panel = CreateMenuPanel();
-            panel.Children.Add(CreateMenuButton(
-                GetResource("Text_WorkflowEditor_Rename") ?? "Rename", bpVM.RenameScopeBlockCommand, scopeVm));
-            panel.Children.Add(CreateSeparator());
-            panel.Children.Add(CreateMenuButton(
-                GetResource("Text_WorkflowEditor_Delete") ?? "Delete", bpVM.DeleteSelectedNodesCommand, null));
-            ShowContextPopup(panel);
-            return;
-        }
-
         // Regular node context menu
-        if (baseNode == null) return;
         if (baseNode.DataContext is not BlueprintNodeVM nodeVm) return;
 
         editor.SelectItem(baseNode, false);

@@ -7,7 +7,6 @@
         xmlns:icon="using:Material.Icons.Avalonia"
         xmlns:controls="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
-        xmlns:localControls="using:KitX.Dashboard.Controls"
         xmlns:converters="using:KitX.Dashboard.Converters"
         mc:Ignorable="d"
         d:DesignHeight="700"
@@ -66,11 +65,17 @@
                 </controls:NodeOutput.Header>
             </controls:NodeOutput>
         </DataTemplate>
+
+        <!-- Child-node template removed: Embedded/SubEditor mode reuses the
+             outer NodifyEditor.ItemTemplate (NodeTemplateSelector). The
+             NestedNode's embedded inner NodifyEditor forwards the outer
+             ItemTemplate automatically (see NestedNode.ForwardOuterTemplates).
+             A separate ChildNodeDataTemplate is no longer needed. -->
     </Window.Resources>
 
-    <Window.Styles>
-        <StyleInclude Source="/Styles/ScopeBlockStyles.axaml"/>
-    </Window.Styles>
+    <!-- ScopeBlockStyles.axaml removed: legacy ScopeBlockControl/BlueprintScopeBlockVM
+         deleted in Embedded/SubEditor migration. NestedNode is now the only block
+         renderer. -->
 
     <DockPanel LastChildFill="True">
         <!-- Unified Toolbar -->
@@ -563,6 +568,8 @@
                                            Connections="{Binding Connections}"
                                            PendingConnection="{Binding PendingConnection}"
                                            DisconnectConnectorCommand="{Binding DisconnectConnectorCommand}"
+                                           ActiveScope="{Binding ActiveScope, Mode=TwoWay}"
+                                           ExitScopeCommand="{Binding ExitScopeCommand}"
                                            Background="Transparent">
 
                         <controls:NodifyEditor.KeyBindings>
@@ -612,139 +619,128 @@
 
                         <controls:NodifyEditor.ItemTemplate>
                             <controls:NodeTemplateSelector>
-                                <!-- Scope Block -->
-                                <DataTemplate DataType="{x:Type viewModels:BlueprintScopeBlockVM}">
-                                    <localControls:ScopeBlockControl Location="{Binding Location, Mode=TwoWay}"
-                                                                     Size="{Binding GroupSize, Mode=TwoWay}"
-                                                                     CanResize="True">
-                                        <localControls:ScopeBlockControl.HeaderBrush>
-                                            <Binding Path="HeaderColor"
-                                                     Converter="{StaticResource HexToBrushConverter}" />
-                                        </localControls:ScopeBlockControl.HeaderBrush>
-                                        <localControls:ScopeBlockControl.Header>
-                                            <TextBlock Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" FontWeight="SemiBold" FontSize="12">
-                                                <TextBlock.Text>
-                                                    <MultiBinding StringFormat="{}{0} ({1} nodes)">
-                                                        <Binding Path="DisplayName" />
-                                                        <Binding Path="ContainedNodeIds.Count" />
-                                                    </MultiBinding>
-                                                </TextBlock.Text>
-                                            </TextBlock>
-                                        </localControls:ScopeBlockControl.Header>
-                                    </localControls:ScopeBlockControl>
+                                <!-- Blueprint Node -->
+                                <!-- Split into two type-based DataTemplates so each BaseNode is the
+                                     DIRECT child of its ContentPresenter. The previous <Panel> wrapper
+                                     broke (cp.Child is BaseNode) in NodifyEditor.GetSelectedNode(),
+                                     preventing selection/drag for every BlueprintNodeVM.
+                                     Order matters: the more-specific BlueprintBlockNodeVM template
+                                     MUST precede the BlueprintNodeVM one (NodeTemplateSelector is
+                                     first-match-wins and a subclass also matches the base template).
+                                     Legacy BlueprintScopeBlockVM template removed — ScopeBlockControl
+                                     is deleted and no longer rendered. -->
+                                <DataTemplate DataType="{x:Type viewModels:BlueprintBlockNodeVM}">
+                                    <controls:NestedNode Location="{Binding Location, Mode=TwoWay}"
+                                                            IsCollapsed="{Binding BlockScope.IsCollapsed, Mode=TwoWay}"
+                                                            ExpandMode="{Binding ExpandMode}"
+                                                            BlockName="{Binding Metadata[BlockName]}"
+                                                            ChildCount="{Binding BlockScope.ChildCount}"
+                                                            IsDebugHighlight="{Binding BlockScope.IsInternalNodeExecuting}"
+                                                            Input="{Binding Input}"
+                                                            Output="{Binding Output}"
+                                                            InputConnectorTemplate="{StaticResource SharedInputConnectorTemplate}"
+                                                            OutputConnectorTemplate="{StaticResource SharedOutputConnectorTemplate}"
+                                                            PreviewContent="{Binding BlockScope.PreviewNodes}"
+                                                            Size="400,300"
+                                                            CanResize="True">
+                                        <!-- ChildNodes / ChildNodeTemplate bindings removed:
+                                             the NestedNode template binds its embedded NodifyEditor
+                                             via {ReflectionBinding InnerEditor} (Nodes/Connections/
+                                             PendingConnection), and ForwardOuterTemplates forwards
+                                             the outer ItemTemplate/ConnectionTemplate/PendingConnectionTemplate
+                                             automatically. -->
+                                    </controls:NestedNode>
                                 </DataTemplate>
 
-                                <!-- Blueprint Node -->
-                                <!-- BlueprintNode (regular + BlockNode variants) -->
                                 <DataTemplate DataType="{x:Type viewModels:BlueprintNodeVM}">
-                                    <Panel>
-                                        <!-- BlockNode variant (v5.0) -->
-                                        <controls:BlockNodeContainer IsVisible="{Binding IsBlockNode}"
-                                                                           Location="{Binding Location, Mode=TwoWay}"
-                                                                           IsCollapsed="{Binding BlockScope.IsCollapsed, Mode=TwoWay}"
-                                                                           BlockName="{Binding Metadata[BlockName]}"
-                                                                           ChildCount="{Binding BlockScope.ChildCount}"
-                                                                           IsDebugHighlight="{Binding BlockScope.IsInternalNodeExecuting}"
-                                                                           Input="{Binding Input}"
-                                                                           Output="{Binding Output}"
-                                                                           InputConnectorTemplate="{StaticResource SharedInputConnectorTemplate}"
-                                                                           OutputConnectorTemplate="{StaticResource SharedOutputConnectorTemplate}"
-                                                                           PreviewContent="{Binding BlockScope.PreviewNodes}"
-                                                                           Size="400,300"
-                                                                           CanResize="True">
-                                        </controls:BlockNodeContainer>
+                                    <controls:Node Location="{Binding Location, Mode=TwoWay}"
+                                                   Input="{Binding Input}"
+                                                   Output="{Binding Output}"
+                                                   InputConnectorTemplate="{StaticResource SharedInputConnectorTemplate}"
+                                                   OutputConnectorTemplate="{StaticResource SharedOutputConnectorTemplate}"
+                                                   IsResize="False"
+                                                   ZIndex="1">
 
-                                        <!-- Regular node variant -->
-                                        <controls:Node Location="{Binding Location, Mode=TwoWay}"
-                                                       IsVisible="{Binding !IsBlockNode}"
-                                                       Input="{Binding Input}"
-                                                       Output="{Binding Output}"
-                                                       InputConnectorTemplate="{StaticResource SharedInputConnectorTemplate}"
-                                                       OutputConnectorTemplate="{StaticResource SharedOutputConnectorTemplate}"
-                                                       IsResize="False"
-                                                       ZIndex="1">
-
-                                        <controls:Node.Header>
-                                            <Border CornerRadius="4,4,0,0"
-                                                    Padding="10,4"
-                                                    HorizontalAlignment="Stretch">
-                                                <Border.Background>
-                                                    <Binding Path="CategoryColor"
-                                                             Converter="{StaticResource HexToBrushConverter}" />
-                                                </Border.Background>
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <TextBlock Text="{Binding DisplayTitle}"
-                                                               Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
-                                                               FontWeight="SemiBold"
-                                                               FontSize="12" />
-                                                    <!-- Comment indicator + inline editor (v5.0) -->
-                                                    <!-- Always visible; opacity 1.0 when has comment, 0.35 when empty -->
-                                                    <TextBlock Text="💬"
-                                                               FontSize="10"
-                                                               Opacity="1.0"
-                                                               VerticalAlignment="Center"
-                                                               ToolTip.Tip="{Binding Comment}"
-                                                               Cursor="Hand"
-                                                               PointerPressed="OnCommentIndicatorPressed" />
-                                                    <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
-                                                             IsVisible="{Binding IsEditingComment}"
-                                                             FontSize="10" MinWidth="80" MaxWidth="200"
-                                                             Padding="2,0"
-                                                             VerticalAlignment="Center"
-                                                             Background="{DynamicResource ControlFillColorDefaultBrush}"
-                                                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                                             KeyDown="OnCommentEditKeyDown"
-                                                             LostFocus="OnCommentEditLostFocus" />
-                                                </StackPanel>
-                                            </Border>
-                                        </controls:Node.Header>
-
-                                        <StackPanel>
-                                            <!-- Const Node: Type + Value -->
-                                            <StackPanel IsVisible="{Binding ShowConstTypeSelector}">
-                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,0">
-                                                    <TextBlock Text="{DynamicResource Text_WorkflowEditor_Type}" VerticalAlignment="Center"
-                                                               FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                                                    <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
-                                                              SelectedItem="{Binding ConstType, Mode=TwoWay}"
-                                                              FontSize="10" MinWidth="70" Padding="4,2"
-                                                              HorizontalAlignment="Left" />
-                                                </StackPanel>
-                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,2,8,4">
-                                                    <TextBlock Text="{DynamicResource Text_WorkflowEditor_Value}" VerticalAlignment="Center"
-                                                               FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                                                    <TextBox Text="{Binding ConstValue, Mode=TwoWay}"
-                                                             FontSize="10" Watermark="{DynamicResource Text_WorkflowEditor_ValueWatermark}"
-                                                             MinWidth="80" Padding="4,2"
-                                                             Background="{DynamicResource ControlFillColorDefaultBrush}"
-                                                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                                             BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                                                </StackPanel>
+                                    <controls:Node.Header>
+                                        <Border CornerRadius="4,4,0,0"
+                                                Padding="10,4"
+                                                HorizontalAlignment="Stretch">
+                                            <Border.Background>
+                                                <Binding Path="CategoryColor"
+                                                         Converter="{StaticResource HexToBrushConverter}" />
+                                            </Border.Background>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Text="{Binding DisplayTitle}"
+                                                           Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="12" />
+                                                <!-- Comment indicator + inline editor (v5.0) -->
+                                                <!-- Always visible; opacity 1.0 when has comment, 0.35 when empty -->
+                                                <TextBlock Text="💬"
+                                                           FontSize="10"
+                                                           Opacity="1.0"
+                                                           VerticalAlignment="Center"
+                                                           ToolTip.Tip="{Binding Comment}"
+                                                           Cursor="Hand"
+                                                           PointerPressed="OnCommentIndicatorPressed" />
+                                                <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
+                                                         IsVisible="{Binding IsEditingComment}"
+                                                         FontSize="10" MinWidth="80" MaxWidth="200"
+                                                         Padding="2,0"
+                                                         VerticalAlignment="Center"
+                                                         Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                         Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                         KeyDown="OnCommentEditKeyDown"
+                                                         LostFocus="OnCommentEditLostFocus" />
                                             </StackPanel>
+                                        </Border>
+                                    </controls:Node.Header>
 
-                                            <!-- Variable Node: VarKind + Type selector -->
-                                            <StackPanel IsVisible="{Binding ShowVarTypeSelector}">
-                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,2">
-                                                    <TextBlock Text="Kind" VerticalAlignment="Center"
-                                                               FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                                                    <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.VarKindOptions}"
-                                                              SelectedItem="{Binding VarKind, Mode=TwoWay}"
-                                                              FontSize="10" MinWidth="75" Padding="4,2"
-                                                              HorizontalAlignment="Left" />
-                                                </StackPanel>
-                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,2,8,4">
-                                                    <TextBlock Text="{DynamicResource Text_WorkflowEditor_Type}" VerticalAlignment="Center"
-                                                               FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                                                    <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
-                                                              SelectedItem="{Binding VarType, Mode=TwoWay}"
-                                                              FontSize="10" MinWidth="70" Padding="4,2"
-                                                              HorizontalAlignment="Left" />
-                                                </StackPanel>
+                                    <StackPanel>
+                                        <!-- Const Node: Type + Value -->
+                                        <StackPanel IsVisible="{Binding ShowConstTypeSelector}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,0">
+                                                <TextBlock Text="{DynamicResource Text_WorkflowEditor_Type}" VerticalAlignment="Center"
+                                                           FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                                <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
+                                                          SelectedItem="{Binding ConstType, Mode=TwoWay}"
+                                                          FontSize="10" MinWidth="70" Padding="4,2"
+                                                          HorizontalAlignment="Left" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,2,8,4">
+                                                <TextBlock Text="{DynamicResource Text_WorkflowEditor_Value}" VerticalAlignment="Center"
+                                                           FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                                <TextBox Text="{Binding ConstValue, Mode=TwoWay}"
+                                                         FontSize="10" Watermark="{DynamicResource Text_WorkflowEditor_ValueWatermark}"
+                                                         MinWidth="80" Padding="4,2"
+                                                         Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                         Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                         BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" />
                                             </StackPanel>
                                         </StackPanel>
 
+                                        <!-- Variable Node: VarKind + Type selector -->
+                                        <StackPanel IsVisible="{Binding ShowVarTypeSelector}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,4,8,2">
+                                                <TextBlock Text="Kind" VerticalAlignment="Center"
+                                                           FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                                <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.VarKindOptions}"
+                                                          SelectedItem="{Binding VarKind, Mode=TwoWay}"
+                                                          FontSize="10" MinWidth="75" Padding="4,2"
+                                                          HorizontalAlignment="Left" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,2,8,4">
+                                                <TextBlock Text="{DynamicResource Text_WorkflowEditor_Type}" VerticalAlignment="Center"
+                                                           FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                                <ComboBox ItemsSource="{x:Static viewModels:BlueprintNodeVM.ConstTypeOptions}"
+                                                          SelectedItem="{Binding VarType, Mode=TwoWay}"
+                                                          FontSize="10" MinWidth="70" Padding="4,2"
+                                                          HorizontalAlignment="Left" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+
                                     </controls:Node>
-                                    </Panel>
                                 </DataTemplate>
                             </controls:NodeTemplateSelector>
                         </controls:NodifyEditor.ItemTemplate>

@@ -98,6 +98,24 @@ internal class Settings_GeneralViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Index for the ComboBox selecting the default blueprint nested-node
+    /// expand mode. 0 = Embedded (Picture-in-Picture), 1 = SubEditor (modal
+    /// overlay). Persisted as a string in
+    /// <c>AppConfig.App.BlueprintNestedNodeExpandMode</c>. Takes effect on
+    /// the next blueprint load (InitializeBlockScopes).
+    /// </summary>
+    internal int BlueprintNestedNodeExpandModeIndex
+    {
+        get => _configService.AppConfig.App.BlueprintNestedNodeExpandMode == "SubEditor" ? 1 : 0;
+        set
+        {
+            _configService.AppConfig.App.BlueprintNestedNodeExpandMode =
+                value == 1 ? "SubEditor" : "Embedded";
+            _configService.SaveAll();
+        }
+    }
+
     internal ReactiveCommand<Unit, Unit>? ShowAnnouncementsInstantlyCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? OpenDebugToolCommand { get; set; }

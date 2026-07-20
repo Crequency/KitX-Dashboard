@@ -195,6 +195,9 @@
     <sys:String x:Key="Text_Settings_General_ShowAnnouncement">启动时显示公告</sys:String>
     <sys:String x:Key="Text_Settings_General_ShowAnnouncementNow">查看最新公告</sys:String>
     <sys:String x:Key="Text_Settings_General_OpenDebugTool">打开调试工具</sys:String>
+    <sys:String x:Key="Text_Settings_General_BlueprintNestedNodeExpandMode">蓝图嵌套节点展开模式</sys:String>
+    <sys:String x:Key="Text_Settings_General_NestedNodeMode_Embedded">嵌入式（画中画）</sys:String>
+    <sys:String x:Key="Text_Settings_General_NestedNodeMode_SubEditor">子编辑器（弹窗）</sys:String>
     <sys:String x:Key="Text_Settings_Personalise">个性化</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_DisplayLanguage">显示语言</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_MicaEffect">云母效果</sys:String>

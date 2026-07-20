@@ -195,6 +195,9 @@
     <sys:String x:Key="Text_Settings_General_ShowAnnouncement">起動時にアナウンスを表示</sys:String>
     <sys:String x:Key="Text_Settings_General_ShowAnnouncementNow">最新のお知らせを見る</sys:String>
     <sys:String x:Key="Text_Settings_General_OpenDebugTool">デバッガーを開く</sys:String>
+    <sys:String x:Key="Text_Settings_General_BlueprintNestedNodeExpandMode">ブループリント ネストノード展開モード</sys:String>
+    <sys:String x:Key="Text_Settings_General_NestedNodeMode_Embedded">埋め込み（ピクチャーインピクチャー）</sys:String>
+    <sys:String x:Key="Text_Settings_General_NestedNodeMode_SubEditor">サブエディタ（モーダルオーバーレイ）</sys:String>
     <sys:String x:Key="Text_Settings_Personalise">パーソナライズ</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_DisplayLanguage">表示言語</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_MicaEffect">Mica 効果</sys:String>
