@@ -1,0 +1,260 @@
+<Window x:Class="KitX.Dashboard.Views.WorkflowEditorWindowV6"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avalonedit="using:AvaloniaEdit"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:viewModels="using:KitX.Dashboard.ViewModels"
+        mc:Ignorable="d"
+        d:DesignHeight="700"
+        d:DesignWidth="1200"
+        Title="KitX Workflow Editor (v6 — scaffolding)"
+        Width="1200"
+        Height="800">
+
+    <!--
+        WorkflowEditorWindowV6 — UI scaffolding for the v6-grammar editor.
+
+        This window mirrors the chrome of WorkflowEditorWindow.axaml (toolbar,
+        metadata panel, mode toggle, status bar, three-column layout, output panel)
+        so the upcoming v6 implementation has a ready shell to fill in. The BP
+        canvas area is INTENTIONALLY a static banner — see
+        BlueprintEditorViewModelV6.PlaceholderBanner.
+
+        The original v5 WorkflowEditorWindow is unchanged. This window is not
+        reachable from any menu yet; it can be opened from a developer console or
+        a future debug entry. See WorkflowEditorViewModelV6.cs for the wiring plan.
+    -->
+
+    <DockPanel LastChildFill="True">
+
+        <!-- Unified Toolbar -->
+        <Border DockPanel.Dock="Top"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="10,8">
+            <DockPanel>
+                <!-- Left: Back to Dashboard (no-op in scaffolding; wired later) -->
+                <Button DockPanel.Dock="Left"
+                        Command="{Binding SwitchToBlockScriptCommand}"
+                        IsVisible="False"
+                        ToolTip.Tip="Back to Dashboard (wired in v6 implementation)">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="ArrowLeft" />
+                        <TextBlock Text="Dashboard" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Right: Run/Stop/Debug -->
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                    <Button Name="RunButton"
+                            ToolTip.Tip="Run (scaffolding — no-op)"
+                            Command="{Binding RunCommand}"
+                            IsEnabled="{Binding !IsExecuting}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="Play" />
+                            <TextBlock Text="Run" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Name="DebugButton"
+                            ToolTip.Tip="Debug Mode (scaffolding — no-op)"
+                            Command="{Binding DebugRunCommand}"
+                            IsEnabled="{Binding !IsExecuting}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="BugOutline" />
+                            <TextBlock Text="Debug" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Name="StopButton"
+                            ToolTip.Tip="Stop (scaffolding — no-op)"
+                            Command="{Binding StopCommand}"
+                            IsEnabled="{Binding IsExecuting}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="Stop" />
+                            <TextBlock Text="Stop" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Center: Mode toggle + metadata -->
+                <StackPanel HorizontalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <!-- Workflow Name -->
+                    <TextBox Text="{Binding WorkflowName, Mode=TwoWay}"
+                             FontSize="16"
+                             FontWeight="SemiBold"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             MinWidth="150"
+                             MaxWidth="300"
+                             VerticalAlignment="Center"
+                             IsReadOnly="True" />
+
+                    <!-- Separator -->
+                    <Border Width="1" Height="24" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" />
+
+                    <!-- BS/BP Toggle -->
+                    <StackPanel Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
+                        <Button Name="BlockScriptModeButton"
+                                Padding="12,6"
+                                CornerRadius="4,0,0,4"
+                                Command="{Binding SwitchToBlockScriptCommand}"
+                                IsEnabled="{Binding !IsBlockScriptMode}">
+                            <TextBlock Text="BlockScript (v6 indented)" />
+                        </Button>
+                        <Button Name="BlueprintModeButton"
+                                Padding="12,6"
+                                CornerRadius="0,4,4,0"
+                                Command="{Binding SwitchToBlueprintCommand}"
+                                IsEnabled="{Binding !IsBlueprintMode}">
+                            <TextBlock Text="Blueprint (v6 structured)" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Bottom status bar -->
+        <Border DockPanel.Dock="Bottom"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="10,4">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left"
+                            Orientation="Horizontal"
+                            Spacing="20">
+                    <TextBlock Text="⚠ v6 grammar scaffolding — KitX.WorkflowV6 backend not yet wired"
+                               FontSize="11"
+                               Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="20"
+                            HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding Mode, StringFormat='Mode: {0}'}"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding StatusText}"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Content Area: Three columns -->
+        <Grid ColumnDefinitions="200,5,*,5,250">
+
+            <!-- ==================== Left Panel (placeholder) ==================== -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource LayerFillColorDefaultBrush}"
+                    Margin="5" CornerRadius="5">
+                <DockPanel Margin="10">
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Node Palette / Sections"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10" />
+                    <TextBlock Text="Pending v6 implementation.&#x0a;&#x0a;The palette will list the 9 control-flow primitives (if/switch/forEach/while/break/continue/exit/Range) plus data nodes (Const/Variable) and plugin/helper calls — see §3.3 of the discussion notes."
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                </DockPanel>
+            </Border>
+
+            <GridSplitter Grid.Column="1"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                          Width="5" />
+
+            <!-- ==================== Column 2: Main Editor Area ==================== -->
+            <Grid Grid.Column="2">
+
+                <!-- BS Mode: Code Editor (placeholder source) -->
+                <DockPanel IsVisible="{Binding IsBlockScriptMode}" Margin="5">
+                    <StackPanel DockPanel.Dock="Top"
+                                Orientation="Horizontal"
+                                Margin="5">
+                        <TextBlock Text="Main Program (v6 indented grammar)"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <avalonedit:TextEditor Name="CodeEditor"
+                                           FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                                           FontSize="12"
+                                           ShowLineNumbers="True"
+                                           IsReadOnly="False"
+                                           HorizontalScrollBarVisibility="Auto"
+                                           VerticalScrollBarVisibility="Auto" />
+                </DockPanel>
+
+                <!-- BP Mode: Placeholder Banner -->
+                <Border IsVisible="{Binding IsBlueprintMode}"
+                        Background="{DynamicResource LayerFillColorDefaultBrush}"
+                        Margin="5" CornerRadius="5">
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="10"
+                                Margin="40">
+                        <icon:MaterialIcon Width="48" Height="48" Kind="Sitemap"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                        <TextBlock Text="Blueprint editor for v6 grammar is not yet implemented."
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding BlueprintVM.PlaceholderBanner}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <GridSplitter Grid.Column="3"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                          Width="5" />
+
+            <!-- ==================== Column 4: Output Panel ==================== -->
+            <Border Grid.Column="4" Background="{DynamicResource LayerFillColorDefaultBrush}" Margin="5" CornerRadius="5">
+                <DockPanel Margin="10">
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <TextBlock Text="Output"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <Button Name="ClearOutputButton"
+                                DockPanel.Dock="Right"
+                                Command="{Binding ClearOutputCommand}"
+                                ToolTip.Tip="Clear output"
+                                Padding="8,2"
+                                HorizontalAlignment="Right">
+                            <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
+                        </Button>
+                    </DockPanel>
+                    <ScrollViewer Name="OutputScrollViewer"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto">
+                        <TextBox Name="OutputTextBox"
+                                 Text="{Binding ExecutionOutput}"
+                                 IsReadOnly="True"
+                                 FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                                 FontSize="11"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Background="Transparent"
+                                 BorderThickness="0" />
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>
