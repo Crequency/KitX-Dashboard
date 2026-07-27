@@ -86,6 +86,17 @@ public sealed class RealBlueprintDebugger : IBlueprintDebugController
             VariableChanged?.Invoke(name, value);
     }
 
+    // ── Wire / PubVar value change notification ──
+    //
+    // Generated code calls this for every PubVar write (name = var name) and
+    // every wire-value flow (name = "w:{nodeId}" or "w:{nodeId}:{pinName}").
+    // Routed through the existing VariableChanged event so the frontend can
+    // attach a single handler and dispatch by name prefix (w: → wire tooltip,
+    // otherwise → variable panel update). See IBlueprintDebugController docs.
+
+    public void NotifyValueChanged(string name, object? value)
+        => VariableChanged?.Invoke(name, value);
+
     // ── Checkpoint (called by the generated workflow code between statements) ──
 
     public async Task CheckpointAsync(string statementId, string? blockName, CancellationToken cancellationToken)
