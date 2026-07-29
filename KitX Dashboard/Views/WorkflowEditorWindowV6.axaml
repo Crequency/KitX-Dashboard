@@ -5,27 +5,71 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:avalonedit="using:AvaloniaEdit"
         xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:controls="using:NodifyM.Avalonia.Controls"
+        xmlns:converters="using:KitX.Dashboard.Converters"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
         mc:Ignorable="d"
         d:DesignHeight="700"
         d:DesignWidth="1200"
-        Title="KitX Workflow Editor (v6 — scaffolding)"
+        Title="KitX Workflow Editor (v6)"
         Width="1200"
         Height="800">
 
     <!--
-        WorkflowEditorWindowV6 — UI scaffolding for the v6-grammar editor.
+        WorkflowEditorWindowV6 — v6 workflow editor window.
 
-        This window mirrors the chrome of WorkflowEditorWindow.axaml (toolbar,
-        metadata panel, mode toggle, status bar, three-column layout, output panel)
-        so the upcoming v6 implementation has a ready shell to fill in. The BP
-        canvas area is INTENTIONALLY a static banner — see
-        BlueprintEditorViewModelV6.PlaceholderBanner.
+        KS mode: AvaloniaEdit text editor (KS indented grammar).
+        BP mode: NodifyM canvas rendering the Blueprint (read-only in P1).
 
-        The original v5 WorkflowEditorWindow is unchanged. This window is not
-        reachable from any menu yet; it can be opened from a developer console or
-        a future debug entry. See WorkflowEditorViewModelV6.cs for the wiring plan.
+        Mode switching uses the IR-centred state machine: KS→BP parses KS into IR
+        then projects to Blueprint; BP→KS reverses. See WorkflowEditorViewModelV6.
     -->
+
+    <Window.Resources>
+        <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
+
+        <!-- V6 Input connector template: circle coloured by PinType -->
+        <DataTemplate x:Key="V6InputConnectorTemplate" DataType="{x:Type viewModels:BlueprintConnectorVMV6}">
+            <controls:NodeInput IsConnected="{Binding IsConnected}"
+                                Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <ToolTip.Tip>
+                    <MultiBinding StringFormat="{}{0} ({1})">
+                        <Binding Path="Title" />
+                        <Binding Path="PinTypeText" />
+                    </MultiBinding>
+                </ToolTip.Tip>
+                <controls:NodeInput.BorderBrush>
+                    <Binding Path="PinTypeColorHex"
+                             Converter="{StaticResource HexToBrushConverter}" />
+                </controls:NodeInput.BorderBrush>
+                <controls:NodeInput.Header>
+                    <TextBlock Text="{Binding Title}"
+                               VerticalAlignment="Center" FontSize="11" />
+                </controls:NodeInput.Header>
+            </controls:NodeInput>
+        </DataTemplate>
+
+        <!-- V6 Output connector template -->
+        <DataTemplate x:Key="V6OutputConnectorTemplate" DataType="{x:Type viewModels:BlueprintConnectorVMV6}">
+            <controls:NodeOutput IsConnected="{Binding IsConnected}"
+                                 Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <ToolTip.Tip>
+                    <MultiBinding StringFormat="{}{0} ({1})">
+                        <Binding Path="Title" />
+                        <Binding Path="PinTypeText" />
+                    </MultiBinding>
+                </ToolTip.Tip>
+                <controls:NodeOutput.BorderBrush>
+                    <Binding Path="PinTypeColorHex"
+                             Converter="{StaticResource HexToBrushConverter}" />
+                </controls:NodeOutput.BorderBrush>
+                <controls:NodeOutput.Header>
+                    <TextBlock Text="{Binding Title}"
+                               VerticalAlignment="Center" FontSize="11" />
+                </controls:NodeOutput.Header>
+            </controls:NodeOutput>
+        </DataTemplate>
+    </Window.Resources>
 
     <DockPanel LastChildFill="True">
 
@@ -35,24 +79,13 @@
                 BorderThickness="0,0,0,1"
                 Padding="10,8">
             <DockPanel>
-                <!-- Left: Back to Dashboard (no-op in scaffolding; wired later) -->
-                <Button DockPanel.Dock="Left"
-                        Command="{Binding SwitchToBlockScriptCommand}"
-                        IsVisible="False"
-                        ToolTip.Tip="Back to Dashboard (wired in v6 implementation)">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <icon:MaterialIcon Width="18" Height="18" Kind="ArrowLeft" />
-                        <TextBlock Text="Dashboard" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-
                 <!-- Right: Run/Stop/Debug -->
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             Spacing="8"
                             VerticalAlignment="Center">
                     <Button Name="RunButton"
-                            ToolTip.Tip="Run (scaffolding — no-op)"
+                            ToolTip.Tip="Run"
                             Command="{Binding RunCommand}"
                             IsEnabled="{Binding !IsExecuting}">
                         <StackPanel Orientation="Horizontal" Spacing="5">
@@ -61,7 +94,7 @@
                         </StackPanel>
                     </Button>
                     <Button Name="DebugButton"
-                            ToolTip.Tip="Debug Mode (scaffolding — no-op)"
+                            ToolTip.Tip="Debug Mode"
                             Command="{Binding DebugRunCommand}"
                             IsEnabled="{Binding !IsExecuting}">
                         <StackPanel Orientation="Horizontal" Spacing="5">
@@ -70,7 +103,7 @@
                         </StackPanel>
                     </Button>
                     <Button Name="StopButton"
-                            ToolTip.Tip="Stop (scaffolding — no-op)"
+                            ToolTip.Tip="Stop"
                             Command="{Binding StopCommand}"
                             IsEnabled="{Binding IsExecuting}">
                         <StackPanel Orientation="Horizontal" Spacing="5">
@@ -80,12 +113,11 @@
                     </Button>
                 </StackPanel>
 
-                <!-- Center: Mode toggle + metadata -->
+                <!-- Center: Mode toggle -->
                 <StackPanel HorizontalAlignment="Center"
                             Orientation="Horizontal"
                             Spacing="10"
                             VerticalAlignment="Center">
-                    <!-- Workflow Name -->
                     <TextBox Text="{Binding WorkflowName, Mode=TwoWay}"
                              FontSize="16"
                              FontWeight="SemiBold"
@@ -96,28 +128,35 @@
                              VerticalAlignment="Center"
                              IsReadOnly="True" />
 
-                    <!-- Separator -->
                     <Border Width="1" Height="24" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" />
 
-                    <!-- BS/BP Toggle -->
                     <StackPanel Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
-                        <Button Name="BlockScriptModeButton"
-                                Padding="12,6"
+                        <Button Padding="12,6"
                                 CornerRadius="4,0,0,4"
                                 Command="{Binding SwitchToBlockScriptCommand}"
                                 IsEnabled="{Binding !IsBlockScriptMode}">
-                            <TextBlock Text="BlockScript (v6 indented)" />
+                            <TextBlock Text="KScript" />
                         </Button>
-                        <Button Name="BlueprintModeButton"
-                                Padding="12,6"
+                        <Button Padding="12,6"
                                 CornerRadius="0,4,4,0"
                                 Command="{Binding SwitchToBlueprintCommand}"
                                 IsEnabled="{Binding !IsBlueprintMode}">
-                            <TextBlock Text="Blueprint (v6 structured)" />
+                            <TextBlock Text="Blueprint" />
                         </Button>
                     </StackPanel>
                 </StackPanel>
             </DockPanel>
+        </Border>
+
+        <!-- Conversion error bar (shown when KS→BP or BP→KS fails) -->
+        <Border DockPanel.Dock="Top"
+                IsVisible="{Binding ConversionError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                Padding="10,4">
+            <TextBlock Text="{Binding ConversionError}"
+                       FontSize="11"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextWrapping="Wrap" />
         </Border>
 
         <!-- Bottom status bar -->
@@ -126,61 +165,30 @@
                 BorderThickness="0,1,0,0"
                 Padding="10,4">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Left"
-                            Orientation="Horizontal"
-                            Spacing="20">
-                    <TextBlock Text="⚠ v6 grammar scaffolding — KitX.WorkflowV6 backend not yet wired"
-                               FontSize="11"
-                               Foreground="{DynamicResource SystemFillColorCautionBrush}" />
-                </StackPanel>
-                <StackPanel DockPanel.Dock="Right"
-                            Orientation="Horizontal"
-                            Spacing="20"
-                            HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding Mode, StringFormat='Mode: {0}'}"
-                               FontSize="11"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                    <TextBlock Text="{Binding StatusText}"
-                               FontSize="11"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                </StackPanel>
+                <TextBlock DockPanel.Dock="Left"
+                           Text="{Binding StatusText}"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                <TextBlock DockPanel.Dock="Right"
+                           Text="{Binding Mode, StringFormat='Mode: {0}'}"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           HorizontalAlignment="Right" />
             </DockPanel>
         </Border>
 
-        <!-- Main Content Area: Three columns -->
-        <Grid ColumnDefinitions="200,5,*,5,250">
+        <!-- Main Content Area: Two columns (editor + output) -->
+        <Grid ColumnDefinitions="*,5,280">
 
-            <!-- ==================== Left Panel (placeholder) ==================== -->
-            <Border Grid.Column="0"
-                    Background="{DynamicResource LayerFillColorDefaultBrush}"
-                    Margin="5" CornerRadius="5">
-                <DockPanel Margin="10">
-                    <TextBlock DockPanel.Dock="Top"
-                               Text="Node Palette / Sections"
-                               FontWeight="Bold"
-                               Margin="0,0,0,10" />
-                    <TextBlock Text="Pending v6 implementation.&#x0a;&#x0a;The palette will list the 9 control-flow primitives (if/switch/forEach/while/break/continue/exit/Range) plus data nodes (Const/Variable) and plugin/helper calls — see §3.3 of the discussion notes."
-                               FontSize="11"
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                </DockPanel>
-            </Border>
+            <!-- ==================== Column 0: Editor Area ==================== -->
+            <Grid Grid.Column="0">
 
-            <GridSplitter Grid.Column="1"
-                          ResizeDirection="Columns"
-                          ResizeBehavior="PreviousAndNext"
-                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
-                          Width="5" />
-
-            <!-- ==================== Column 2: Main Editor Area ==================== -->
-            <Grid Grid.Column="2">
-
-                <!-- BS Mode: Code Editor (placeholder source) -->
+                <!-- KS Mode: Code Editor -->
                 <DockPanel IsVisible="{Binding IsBlockScriptMode}" Margin="5">
                     <StackPanel DockPanel.Dock="Top"
                                 Orientation="Horizontal"
-                                Margin="5">
-                        <TextBlock Text="Main Program (v6 indented grammar)"
+                                Margin="5,5,5,0">
+                        <TextBlock Text="KScript Source (v6 indented grammar)"
                                    FontWeight="Bold"
                                    VerticalAlignment="Center" />
                     </StackPanel>
@@ -193,39 +201,153 @@
                                            VerticalScrollBarVisibility="Auto" />
                 </DockPanel>
 
-                <!-- BP Mode: Placeholder Banner -->
+                <!-- BP Mode: NodifyM Blueprint Canvas -->
                 <Border IsVisible="{Binding IsBlueprintMode}"
                         Background="{DynamicResource LayerFillColorDefaultBrush}"
                         Margin="5" CornerRadius="5">
-                    <StackPanel HorizontalAlignment="Center"
+
+                    <Grid>
+                        <!-- Empty-state banner -->
+                        <StackPanel IsVisible="{Binding !BlueprintVM.HasContent}"
+                                HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Spacing="10"
                                 Margin="40">
                         <icon:MaterialIcon Width="48" Height="48" Kind="Sitemap"
                                            HorizontalAlignment="Center"
                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                        <TextBlock Text="Blueprint editor for v6 grammar is not yet implemented."
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   HorizontalAlignment="Center" />
-                        <TextBlock Text="{Binding BlueprintVM.PlaceholderBanner}"
-                                   FontSize="11"
+                        <TextBlock Text="{Binding BlueprintVM.EmptyBanner}"
+                                   FontSize="13"
                                    TextWrapping="Wrap"
                                    HorizontalAlignment="Center"
                                    TextAlignment="Center"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                     </StackPanel>
+
+                    <!-- NodifyEditor canvas (visible only when there is content) -->
+                    <controls:NodifyEditor x:Name="EditorControl"
+                                           IsVisible="{Binding BlueprintVM.HasContent}"
+                                           DataContext="{Binding BlueprintVM}"
+                                           ItemsSource="{Binding Nodes}"
+                                           Connections="{Binding Connections}"
+                                           PendingConnection="{Binding PendingConnection}"
+                                           Background="Transparent">
+
+                        <!-- Grid lines -->
+                        <controls:NodifyEditor.GridLineTemplate>
+                            <DataTemplate>
+                                <controls:LargeGridLine Width="{Binding $parent[controls:NodifyEditor].Bounds.Width}"
+                                                        Height="{Binding $parent[controls:NodifyEditor].Bounds.Height}"
+                                                        OffsetX="{Binding $parent[controls:NodifyEditor].OffsetX}"
+                                                        OffsetY="{Binding $parent[controls:NodifyEditor].OffsetY}"
+                                                        Zoom="{Binding $parent[controls:NodifyEditor].Zoom}"
+                                                        Spacing="15"
+                                                        Thickness="0.5"
+                                                        Brush="{DynamicResource ControlStrokeColorSecondaryBrush}" />
+                            </DataTemplate>
+                        </controls:NodifyEditor.GridLineTemplate>
+
+                        <!-- Connection template: colour follows source pin type -->
+                        <controls:NodifyEditor.ConnectionTemplate>
+                            <DataTemplate>
+                                <controls:Connection Source="{Binding Source.Anchor}"
+                                                     Target="{Binding Target.Anchor}"
+                                                     StrokeThickness="2.5"
+                                                     Spacing="20"
+                                                     Direction="Forward">
+                                    <controls:Connection.Stroke>
+                                        <Binding Path="StrokeColorHex"
+                                                 Converter="{StaticResource HexToBrushConverter}" />
+                                    </controls:Connection.Stroke>
+                                </controls:Connection>
+                            </DataTemplate>
+                        </controls:NodifyEditor.ConnectionTemplate>
+
+                        <!-- Pending connection (drag preview) -->
+                        <controls:NodifyEditor.PendingConnectionTemplate>
+                            <DataTemplate>
+                                <controls:PendingConnection StartedCommand="{Binding StartCommand}"
+                                                            CompletedCommand="{Binding FinishCommand}"
+                                                            Direction="Forward">
+                                    <controls:PendingConnection.Stroke>
+                                        <SolidColorBrush Color="White" Opacity="0.5" />
+                                    </controls:PendingConnection.Stroke>
+                                </controls:PendingConnection>
+                            </DataTemplate>
+                        </controls:NodifyEditor.PendingConnectionTemplate>
+
+                        <!-- Item template: NodeTemplateSelector distinguishes scope frames from nodes -->
+                        <controls:NodifyEditor.ItemTemplate>
+                            <controls:NodeTemplateSelector>
+
+                                <!-- Scope frame: decorative background (non-interactive, bottom layer) -->
+                                <DataTemplate DataType="{x:Type viewModels:ScopeFrameVM}">
+                                    <Border Width="{Binding FrameWidth}"
+                                            Height="{Binding FrameHeight}"
+                                            CornerRadius="8"
+                                            BorderThickness="2"
+                                            IsHitTestVisible="False">
+                                        <Border.Background>
+                                            <Binding Path="BackgroundColorHex"
+                                                     Converter="{StaticResource HexToBrushConverter}" />
+                                        </Border.Background>
+                                        <Border.BorderBrush>
+                                            <Binding Path="BorderColorHex"
+                                                     Converter="{StaticResource HexToBrushConverter}" />
+                                        </Border.BorderBrush>
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   Opacity="0.7"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Top"
+                                                   Margin="8,4" />
+                                    </Border>
+                                </DataTemplate>
+
+                                <!-- Blueprint node -->
+                                <DataTemplate DataType="{x:Type viewModels:BlueprintNodeVMV6}">
+                                    <controls:Node Location="{Binding Location, Mode=TwoWay}"
+                                                   Input="{Binding Input}"
+                                                   Output="{Binding Output}"
+                                                   InputConnectorTemplate="{StaticResource V6InputConnectorTemplate}"
+                                                   OutputConnectorTemplate="{StaticResource V6OutputConnectorTemplate}"
+                                                   IsResize="False">
+
+                                        <controls:Node.Header>
+                                            <Border CornerRadius="4,4,0,0"
+                                                    Padding="10,4"
+                                                    HorizontalAlignment="Stretch">
+                                                <Border.Background>
+                                                    <Binding Path="HeaderColorHex"
+                                                             Converter="{StaticResource HexToBrushConverter}" />
+                                                </Border.Background>
+                                                <TextBlock Text="{Binding DisplayTitle}"
+                                                           Foreground="White"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="12" />
+                                            </Border>
+                                        </controls:Node.Header>
+
+                                    </controls:Node>
+                                </DataTemplate>
+
+                            </controls:NodeTemplateSelector>
+                        </controls:NodifyEditor.ItemTemplate>
+
+                    </controls:NodifyEditor>
+                    </Grid>
                 </Border>
             </Grid>
 
-            <GridSplitter Grid.Column="3"
+            <GridSplitter Grid.Column="1"
                           ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext"
                           Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
                           Width="5" />
 
-            <!-- ==================== Column 4: Output Panel ==================== -->
-            <Border Grid.Column="4" Background="{DynamicResource LayerFillColorDefaultBrush}" Margin="5" CornerRadius="5">
+            <!-- ==================== Column 2: Output Panel ==================== -->
+            <Border Grid.Column="2" Background="{DynamicResource LayerFillColorDefaultBrush}" Margin="5" CornerRadius="5">
                 <DockPanel Margin="10">
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <TextBlock Text="Output"

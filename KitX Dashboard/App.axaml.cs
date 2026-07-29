@@ -19,6 +19,7 @@ using KitX.Core.DI;
 using KitX.Core.Event;
 using KitX.Dashboard.Services;
 using KitX.Workflow.Hosting;
+using KitX.WorkflowV6.Hosting;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.ViewModels.Pages.Controls;
 using KitX.Dashboard.Views;
@@ -53,7 +54,14 @@ public partial class App : Application
         // Register Core services from KitX.Core
         services.AddCoreServices();
 
-        // Phase F1: register the new WorkflowIR library services (IR/Lens/Diff/Backend/Session).
+        // V6 workflow services. Registered *before* V5 so that the V6 concrete types
+        // (KsTextLens, BpGraphLens, SyncService, IScopeAnalyzer) are resolvable for the
+        // v6 editor, while the shared interface registrations (ILens<>, IExecutionBackend)
+        // remain pointed at V5 implementations — the v5 editor is still the active one.
+        services.AddKitXWorkflowV6();
+
+        // Phase F1: register the WorkflowIR (v5) library services (IR/Lens/Diff/Backend/Session).
+        // Registered after V6 so shared interfaces (ILens<>, IExecutionBackend) resolve to V5.
         // This replaces the archived AddKitXWorkflow() entry (CoreServiceCollectionExtensions.cs:117).
         services.AddKitXWorkflowIR();
 

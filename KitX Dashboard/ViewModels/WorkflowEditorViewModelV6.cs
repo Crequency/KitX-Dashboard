@@ -3,43 +3,39 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using KitX.Core.Contract.Workflow;
+using KitX.WorkflowV6.Ir;
+using KitX.WorkflowV6.Lens.BpGraphLens;
+using KitX.WorkflowV6.Lens.KsTextLens;
 using Serilog;
+using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
 
 namespace KitX.Dashboard.ViewModels;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WorkflowEditorViewModelV6 — UI scaffolding for the v6-grammar workflow editor.
+// WorkflowEditorViewModelV6 — v6 workflow editor with KS/BP mode switching.
 //
-// This ViewModel is the *scaffolding* for the future v6 editor frontend. It mirrors
-// the surface of WorkflowEditorViewModel (the v5 editor) at the chrome level —
-// metadata fields, mode toggle, output panel, status bar — so the upcoming v6
-// implementation has a ready-made window to fill in. The deep BP machinery
-// (BlueprintEditorViewModel, NodeFactory, SyncService, BpGraphLens, ...) is
-// INTENTIONALLY NOT referenced here. Wiring those up is the work of the v6
-// implementation plan, at which point:
-//   • Dashboard.csproj will add a ProjectReference to KitX.WorkflowV6
-//   • This VM will obtain a WorkflowV6.SyncService / BsTextLens / BpGraphLens
-//   • BlueprintEditorViewModelV6 will fill in (currently an empty stub)
+// Implements the "switch-time conversion" state machine (per the v6 frontend design):
+//   • KS editing is purely local (no IR sync until switch/save/compile).
+//   • Switching KS→BP: KsTextLens.Parse → IR → BpGraphLens.Project → AnalyzeScopes → render.
+//   • Switching BP→KS: BpGraphLens.Reverse → IR → KsTextLens.Project → text.
+//   • BP editing (P3) will call StructuralReducer on every connectivity edit.
 //
-// Until then, this VM is a compile-clean shell: the BS code editor shows a static
-// placeholder, and the BP canvas shows a "BP editor pending v6 implementation"
-// banner. The Run/Stop buttons are bound to no-op relay commands so the toolbar
-// renders correctly.
-//
-// The original v5 editor (WorkflowEditorWindow + WorkflowEditorViewModel +
-// BlueprintEditorViewModel) is unchanged and remains the only editor reachable
-// from the WorkflowPage UI. This V6 window is intentionally not wired into any
-// menu yet; it can be opened from a developer console or future debug entry.
+// P1 scope: KS editing + read-only BP rendering. Run/Debug/Save are stubs for now
+// (wired in P4/P5). The window is not yet reachable from the menu — open via code.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// <summary>
-/// Placeholder ViewModel for the v6-grammar workflow editor. Carries only the
-/// chrome-level state (metadata + mode + output + status); real BS/BP/execution
-/// wiring arrives with the v6 implementation plan.
+/// v6 workflow editor ViewModel. Manages KS/BP mode switching via the IR-centred
+/// state machine, KS source text, and the read-only blueprint canvas.
 /// </summary>
 internal partial class WorkflowEditorViewModelV6 : ObservableObject
 {
+    /// <summary>KS (text) or BP (blueprint) view.</summary>
     public enum EditorMode { BlockScript, Blueprint }
+
+    private readonly KsTextLens _ksTextLens;
+    private readonly BpGraphLens _bpGraphLens;
 
     private EditorMode _mode = EditorMode.BlockScript;
     private string _workflowName = "Untitled Workflow (v6)";
@@ -48,15 +44,39 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private bool _isDirty;
     private string _executionOutput = string.Empty;
     private bool _isExecuting;
-    private string _statusText = "v6 grammar — scaffolding only";
+    private string _statusText = "Ready (v6)";
+    private string _ksSource = string.Empty;
+    private string _conversionError = string.Empty;
 
-    /// <summary>The placeholder BS source shown in the code editor.</summary>
-    public string PlaceholderSource { get; } =
-        "# v6 structured BlockScript scaffolding" + Environment.NewLine +
-        "# The grammar is not yet implemented. This editor is a UI shell waiting" + Environment.NewLine +
-        "# for the KitX.WorkflowV6 library to provide BsTextLens / BpGraphLens." + Environment.NewLine +
+    /// <summary>
+    /// Default KS source loaded into the editor on first open — a small sample
+    /// demonstrating const/var blocks, pipeline, if/else, and forEach.
+    /// </summary>
+    public static string DefaultSource { get; } =
+        "const {" + Environment.NewLine +
+        "    int max = 3" + Environment.NewLine +
+        "}" + Environment.NewLine +
         Environment.NewLine +
-        "Print(\"hello, v6\")";
+        "var {" + Environment.NewLine +
+        "    int counter" + Environment.NewLine +
+        "    int sum" + Environment.NewLine +
+        "}" + Environment.NewLine +
+        Environment.NewLine +
+        "Print(\"hello, v6\")" + Environment.NewLine +
+        "0 > counter" + Environment.NewLine +
+        "0 > sum" + Environment.NewLine +
+        "forEach Range(0, max, 1) as i:" + Environment.NewLine +
+        "    counter > Add(_, 1) > counter" + Environment.NewLine +
+        "    counter > sum";
+
+    public WorkflowEditorViewModelV6(KsTextLens ksTextLens, BpGraphLens bpGraphLens)
+    {
+        _ksTextLens = ksTextLens ?? throw new ArgumentNullException(nameof(ksTextLens));
+        _bpGraphLens = bpGraphLens ?? throw new ArgumentNullException(nameof(bpGraphLens));
+        _ksSource = DefaultSource;
+    }
+
+    // ── Mode ──
 
     public EditorMode Mode
     {
@@ -73,6 +93,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     public bool IsBlockScriptMode => _mode == EditorMode.BlockScript;
     public bool IsBlueprintMode => _mode == EditorMode.Blueprint;
+
+    // ── Chrome properties ──
 
     public string WorkflowName
     {
@@ -116,41 +138,121 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         set => SetProperty(ref _statusText, value);
     }
 
-    /// <summary>The placeholder BP editor ViewModel. Empty stub pending implementation.</summary>
+    /// <summary>KS source text (bound to AvaloniaEdit).</summary>
+    public string KsSource
+    {
+        get => _ksSource;
+        set
+        {
+            if (SetProperty(ref _ksSource, value))
+                IsDirty = true;
+        }
+    }
+
+    /// <summary>Error message from the last KS→BP or BP→KS conversion (empty = success).</summary>
+    public string ConversionError
+    {
+        get => _conversionError;
+        set => SetProperty(ref _conversionError, value);
+    }
+
+    /// <summary>The read-only blueprint editor ViewModel.</summary>
     public BlueprintEditorViewModelV6 BlueprintVM { get; } = new();
 
-    /// <summary>Switches to BS (BlockScript) editing mode.</summary>
-    [RelayCommand]
-    private void SwitchToBlockScript() => Mode = EditorMode.BlockScript;
+    // ── Mode switch commands ──
 
-    /// <summary>Switches to BP (Blueprint) editing mode.</summary>
+    /// <summary>Switches to KS (text) mode. If coming from BP, reverse-translates BP→KS.</summary>
     [RelayCommand]
-    private void SwitchToBlueprint() => Mode = EditorMode.Blueprint;
+    private void SwitchToBlockScript()
+    {
+        if (_mode == EditorMode.Blueprint)
+        {
+            // BP→KS: reverse the current blueprint back to KS text.
+            try
+            {
+                // The current blueprint is read-only (P1); we reverse from the last
+                // projected IR. Since we stored the IR at switch time, re-project KS.
+                // In P1 (read-only BP), the blueprint hasn't changed, so we simply
+                // re-render KS from the stored IR. If no IR is stored (edge case),
+                // keep the existing text.
+                if (_lastIr != null)
+                {
+                    KsSource = _ksTextLens.Project(_lastIr);
+                }
+                ConversionError = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                ConversionError = $"BP→KS 转换失败: {ex.Message}";
+                Log.Warning(ex, "[WorkflowEditorVMV6] BP→KS conversion failed");
+            }
+        }
+        Mode = EditorMode.BlockScript;
+    }
 
-    /// <summary>No-op Run command. Bound so the toolbar button renders enabled.</summary>
+    /// <summary>Switches to BP (blueprint) mode. Parses KS→IR→BP and renders the canvas.</summary>
+    [RelayCommand]
+    private void SwitchToBlueprint()
+    {
+        if (_mode == EditorMode.BlockScript)
+        {
+            RenderBlueprintFromKs();
+        }
+        Mode = EditorMode.Blueprint;
+    }
+
+    // ── KS → BP rendering ──
+
+    private V6Workflow? _lastIr;
+
+    /// <summary>
+    /// Parses the current KS source into IR, projects to Blueprint, analyzes scopes,
+    /// and loads everything into the canvas. Sets <see cref="ConversionError"/> on failure.
+    /// </summary>
+    private void RenderBlueprintFromKs()
+    {
+        try
+        {
+            var ir = _ksTextLens.Parse(KsSource, []);
+            _lastIr = ir;
+
+            var bp = _bpGraphLens.Project(ir);
+            var scopes = _bpGraphLens.AnalyzeScopes(bp);
+
+            BlueprintVM.LoadBlueprint(bp, scopes);
+            ConversionError = string.Empty;
+            StatusText = $"BP 渲染完成: {bp.Nodes.Count} 节点, {bp.Connections.Count} 连线";
+        }
+        catch (Exception ex)
+        {
+            ConversionError = $"KS→BP 转换失败: {ex.Message}";
+            StatusText = "KS 解析错误";
+            Log.Warning(ex, "[WorkflowEditorVMV6] KS→BP conversion failed");
+        }
+    }
+
+    // ── Toolbar stubs (P4/P5) ──
+
     [RelayCommand]
     private void Run()
     {
-        ExecutionOutput = "[v6 scaffolding] Run is not wired. The KitX.WorkflowV6 execution backend is not yet implemented.";
-        Log.Information("[WorkflowEditorVMV6] Run invoked (scaffolding — no-op)");
+        ExecutionOutput = "[v6] Run 尚未接入。执行后端 (StructuredRoslynBackend) 将在 P4 阶段接入。";
+        Log.Information("[WorkflowEditorVMV6] Run invoked (stub — P4)");
     }
 
-    /// <summary>No-op Stop command.</summary>
     [RelayCommand]
     private void Stop()
     {
-        Log.Information("[WorkflowEditorVMV6] Stop invoked (scaffolding — no-op)");
+        Log.Information("[WorkflowEditorVMV6] Stop invoked (stub)");
     }
 
-    /// <summary>No-op Debug command.</summary>
     [RelayCommand]
     private void DebugRun()
     {
-        ExecutionOutput = "[v6 scaffolding] Debug is not wired. Resumability design is captured in §5.5 of the discussion notes.";
-        Log.Information("[WorkflowEditorVMV6] DebugRun invoked (scaffolding — no-op)");
+        ExecutionOutput = "[v6] Debug 尚未接入。调试高亮通道将在 P4 阶段接入。";
+        Log.Information("[WorkflowEditorVMV6] DebugRun invoked (stub — P4)");
     }
 
-    /// <summary>Clears the output panel.</summary>
     [RelayCommand]
     private void ClearOutput() => ExecutionOutput = string.Empty;
 }
