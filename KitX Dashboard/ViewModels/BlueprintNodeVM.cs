@@ -260,6 +260,7 @@ public partial class BlueprintNodeVM : NodeViewModelBase
         "double" or "float" or "number" => PinType.Double,
         "string" => PinType.String,
         "json" or "jsonelement" => PinType.Json,  // List-Port design §3.3
+        "dict" => PinType.Dict,                   // Dict-Type design §2.2
         _ => PinType.Any
     };
 

@@ -421,8 +421,40 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         var spec = GetVariadicSpec(node, isOutput);
         if (spec == null) return;
 
+        var pinList = isOutput ? node.Output : node.Input;
+
+        // ── Pin-group variadic mode (Dict-Type design §3.2: DictNew Key/Value pairs).
+        // When PinNamePrefixes/PinTypes are set, pins follow {prefix}{index} and a whole
+        // group (one pin per prefix) is appended when the last prefix of the highest index
+        // gets connected. ──
+        if (spec.PinNamePrefixes is { Length: > 0 } prefixes
+            && spec.PinTypes is { Length: > 0 } types
+            && prefixes.Length == types.Length)
+        {
+            var groupPins = pinList.OfType<BlueprintConnectorVM>()
+                .Where(c => MatchGroupPin(c.Title, prefixes))
+                .ToList();
+            if (groupPins.Count == 0) return;
+            int maxIdx = groupPins.Max(c => ExtractGroupIndex(c.Title, prefixes));
+            // Only expand when the LAST prefix of the HIGHEST index group is connected.
+            if (connector.Title != $"{prefixes[^1]}{maxIdx}") return;
+            int nextIdx = maxIdx + 1;
+            for (int i = 0; i < prefixes.Length; i++)
+            {
+                pinList.Add(new BlueprintConnectorVM
+                {
+                    Title = $"{prefixes[i]}{nextIdx}",
+                    Flow = isOutput ? ConnectorViewModelBase.ConnectorFlow.Output : ConnectorViewModelBase.ConnectorFlow.Input,
+                    PinType = types[i],
+                    OriginalPinId = Guid.NewGuid().ToString()
+                });
+            }
+            return;
+        }
+
+        // ── Legacy single-PinType variadic mode (StringConcat etc.) ──
         // Collect the node's pins that belong to this variadic group (matching PinType).
-        var pins = (isOutput ? node.Output : node.Input).OfType<BlueprintConnectorVM>()
+        var pins = pinList.OfType<BlueprintConnectorVM>()
             .Where(c => c.PinType == spec.PinType)
             .ToList();
         if (pins.Count == 0) return;
@@ -437,13 +469,31 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
             ? nextIndex.ToString()
             : $"{spec.BasePinName}{nextIndex}";
 
-        (isOutput ? node.Output : node.Input).Add(new BlueprintConnectorVM
+        pinList.Add(new BlueprintConnectorVM
         {
             Title = name,
             Flow = isOutput ? ConnectorViewModelBase.ConnectorFlow.Output : ConnectorViewModelBase.ConnectorFlow.Input,
             PinType = spec.PinType,
             OriginalPinId = Guid.NewGuid().ToString()
         });
+    }
+
+    /// <summary>True if <paramref name="title"/> matches a group pin pattern {prefix}{index}.</summary>
+    private static bool MatchGroupPin(string title, string[] prefixes)
+    {
+        foreach (var p in prefixes)
+            if (title.StartsWith(p, StringComparison.Ordinal) && int.TryParse(title[p.Length..], out _))
+                return true;
+        return false;
+    }
+
+    /// <summary>Extracts the numeric index from a group pin title {prefix}{index}.</summary>
+    private static int ExtractGroupIndex(string title, string[] prefixes)
+    {
+        foreach (var p in prefixes)
+            if (title.StartsWith(p, StringComparison.Ordinal) && int.TryParse(title[p.Length..], out var idx))
+                return idx;
+        return -1;
     }
 
     /// <summary>
@@ -1865,6 +1915,7 @@ public partial class BlueprintEditorViewModel : NodifyEditorViewModelBase
         "bool" or "boolean" => PinType.Boolean,
         "double" or "float" or "number" => PinType.Double,
         "string" => PinType.String,
+        "dict" => PinType.Dict,                   // Dict-Type design §2.2
         _ => PinType.Any
     };
 
