@@ -45,6 +45,9 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
     /// <summary>Human-readable pin type name for tooltips.</summary>
     public string PinTypeText => IsExecution ? "Exec" : PinType.ToString();
 
+    /// <summary>Border colour: red when CanConnect is false (hover-preview rejection), else PinType colour.</summary>
+    public string EffectiveBorderColorHex => CanConnect ? PinTypeColorHex : "#F44336";
+
     /// <summary>Maps PinType to hex colour for visual rendering.</summary>
     public static string GetHexColorForPinType(PinType pinType) => pinType switch
     {
@@ -58,11 +61,22 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
         _ => "#FFFFFF"                      // White (Any)
     };
 
+    public BlueprintConnectorVMV6()
+    {
+        // CanConnect lives on the base class; forward its changes to EffectiveBorderColorHex.
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(CanConnect))
+                OnPropertyChanged(nameof(EffectiveBorderColorHex));
+        };
+    }
+
     partial void OnPinTypeChanged(PinType value)
     {
         OnPropertyChanged(nameof(IsExecution));
         OnPropertyChanged(nameof(PinTypeColorHex));
         OnPropertyChanged(nameof(PinTypeText));
+        OnPropertyChanged(nameof(EffectiveBorderColorHex));
     }
 }
 

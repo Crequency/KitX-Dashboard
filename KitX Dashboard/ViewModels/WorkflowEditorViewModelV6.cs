@@ -89,6 +89,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         _ksTextLens = ksTextLens ?? throw new ArgumentNullException(nameof(ksTextLens));
         _bpGraphLens = bpGraphLens ?? throw new ArgumentNullException(nameof(bpGraphLens));
 
+        BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens);
+
         _ksSource = DefaultSource;
 
         try
@@ -381,7 +383,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     // ── Blueprint VM ──
 
-    public BlueprintEditorViewModelV6 BlueprintVM { get; } = new();
+    public BlueprintEditorViewModelV6 BlueprintVM { get; private set; } = null!;
 
     // ── Mode switch ──
 

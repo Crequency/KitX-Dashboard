@@ -29,7 +29,7 @@
                     </MultiBinding>
                 </ToolTip.Tip>
                 <controls:NodeInput.BorderBrush>
-                    <Binding Path="PinTypeColorHex" Converter="{StaticResource HexToBrushConverter}" />
+                    <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
                 </controls:NodeInput.BorderBrush>
                 <controls:NodeInput.Header>
                     <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="11" />
@@ -48,7 +48,7 @@
                     </MultiBinding>
                 </ToolTip.Tip>
                 <controls:NodeOutput.BorderBrush>
-                    <Binding Path="PinTypeColorHex" Converter="{StaticResource HexToBrushConverter}" />
+                    <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
                 </controls:NodeOutput.BorderBrush>
                 <controls:NodeOutput.Header>
                     <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="11" />
@@ -420,6 +420,35 @@
                         Margin="5" CornerRadius="5">
 
                     <Grid>
+                        <!-- Error bar: active constraint violation -->
+                        <Border IsVisible="{Binding BlueprintVM.HasError}"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Stretch"
+                                Background="#F44336"
+                                Padding="10,6"
+                                Margin="5"
+                                CornerRadius="4"
+                                ZIndex="100">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <icon:MaterialIcon Kind="AlertCircle" Foreground="White" VerticalAlignment="Center" />
+                                <TextBlock Foreground="White" FontSize="12" TextWrapping="Wrap"
+                                           Text="{Binding BlueprintVM.ErrorInfo.Message}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Hover-preview rejection hint -->
+                        <Border IsVisible="{Binding BlueprintVM.HasHoverError}"
+                                VerticalAlignment="Bottom"
+                                HorizontalAlignment="Center"
+                                Background="#CC000000"
+                                Padding="10,4"
+                                CornerRadius="4"
+                                Margin="5"
+                                ZIndex="100">
+                            <TextBlock Foreground="#FFCCCC" FontSize="11"
+                                       Text="{Binding BlueprintVM.HoverErrorText}" />
+                        </Border>
+
                         <!-- Empty-state banner -->
                         <StackPanel IsVisible="{Binding !BlueprintVM.HasContent}"
                                     HorizontalAlignment="Center"
