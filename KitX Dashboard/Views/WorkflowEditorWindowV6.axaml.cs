@@ -1,14 +1,19 @@
 using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
+using KitX.Core.Contract.Workflow;
+using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
+using KitX.WorkflowV6.Serialization;
 using TextMateSharp.Grammars;
+using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
 
 namespace KitX.Dashboard.Views;
 
@@ -58,6 +63,44 @@ public partial class WorkflowEditorWindowV6 : Window
         var codeEditor = this.FindControl<TextEditor>("CodeEditor");
         if (codeEditor != null)
             codeEditor.Text = ksSource;
+    }
+
+    /// <summary>
+    /// Loads a v6 workflow from a .kcs file by workflow ID. Deserialises the V6 IR
+    /// from IrData, renders it to KS text via KsTextLens.Project, and seeds the editor.
+    /// Call before Show().
+    /// </summary>
+    public async Task LoadWorkflowAsync(string workflowId)
+    {
+        var storage = App.GetService<IWorkflowStorageService>();
+        var kcs = await storage.LoadWorkflowDataAsync(workflowId);
+        if (kcs == null)
+        {
+            _viewModel.StatusText = $"Workflow not found: {workflowId}";
+            return;
+        }
+
+        // Defensive: only open as v6 if IrVersion says so.
+        if (kcs.IrVersion != "v6")
+        {
+            _viewModel.StatusText = $"Not a v6 workflow (IrVersion={kcs.IrVersion ?? "null"})";
+            return;
+        }
+
+        try
+        {
+            var ir = WorkflowSerializer.Deserialize(kcs.IrData);
+            _viewModel.LoadFromIr(ir, kcs.Name);
+
+            // Refresh the TextEditor with the rendered KS text.
+            var codeEditor = this.FindControl<TextEditor>("CodeEditor");
+            if (codeEditor != null)
+                codeEditor.Text = _viewModel.KsSource;
+        }
+        catch (Exception ex)
+        {
+            _viewModel.StatusText = $"Failed to load v6 IR: {ex.Message}";
+        }
     }
 
     // ── AvaloniaEdit initialization ──

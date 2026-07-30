@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Contract.Workflow;
@@ -256,9 +257,19 @@ internal class WorkflowPageViewModel : ViewModelBase
                 return;
             }
 
-            // Create new unified editor window
-            var editorWindow = new WorkflowEditorWindow();
-            await editorWindow.LoadWorkflowAsync(workflow.Id);
+            // Detect IR version: load the .kcs envelope and check IrVersion.
+            // "v6" → WorkflowEditorWindowV6 (v6 grammar editor); default → v5 editor.
+            var kcsData = await _storageService.LoadWorkflowDataAsync(workflow.Id);
+            var isV6 = kcsData?.IrVersion == "v6";
+
+            Window editorWindow = isV6
+                ? new Views.WorkflowEditorWindowV6()
+                : new Views.WorkflowEditorWindow();
+
+            if (editorWindow is Views.WorkflowEditorWindowV6 v6Window)
+                await v6Window.LoadWorkflowAsync(workflow.Id);
+            else if (editorWindow is Views.WorkflowEditorWindow v5Window)
+                await v5Window.LoadWorkflowAsync(workflow.Id);
 
             // Track the window
             UIStateService.WorkflowEditorWindows[workflow.Id] = editorWindow;

@@ -231,6 +231,22 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
     }
 
+    // ── Load from .kcs (V6 IR) ──
+
+    /// <summary>
+    /// Loads a V6 Workflow IR (deserialised from a .kcs file's IrData), renders it to
+    /// KS text via KsTextLens.Project, and stores the IR for BP-switch use.
+    /// Called by WorkflowEditorWindowV6.LoadWorkflowAsync.
+    /// </summary>
+    public void LoadFromIr(V6Workflow ir, string name)
+    {
+        _lastIr = ir;
+        KsSource = _ksTextLens.Project(ir);
+        WorkflowName = name;
+        IsDirty = false;
+        StatusText = "Loaded (v6)";
+    }
+
     // ── Toolbar stubs (P4/P5) ──
 
     [RelayCommand]
