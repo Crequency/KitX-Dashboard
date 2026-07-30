@@ -88,13 +88,27 @@ public class WorkflowStorageService : IWorkflowStorageService
     public async Task<KcsFileFormat?> LoadWorkflowDataAsync(string workflowId)
     {
         var filePath = GetWorkflowFilePath(workflowId);
-        if (!File.Exists(filePath))
+        if (File.Exists(filePath))
+            return await LoadKcsFileInternalAsync(filePath);
+
+        // Fallback: the .kcs filename may not match the Id (e.g. a v6 .kcs created by
+        // KcsBuilder with a custom filename). Scan the directory for a file whose stored
+        // Id matches workflowId.
+        Log.Warning("[WorkflowStorageService] Workflow file not found at {FilePath}, scanning directory for Id={Id}", filePath, workflowId);
+        EnsureDirectoryExists();
+        foreach (var file in Directory.GetFiles(_storageDirectory, "*.kcs"))
         {
-            Log.Warning("[WorkflowStorageService] Workflow file not found: {FilePath}", filePath);
-            return null;
+            try
+            {
+                var kcs = await LoadKcsFileInternalAsync(file);
+                if (kcs != null && kcs.Id == workflowId)
+                    return kcs;
+            }
+            catch { /* skip corrupt files during scan */ }
         }
 
-        return await LoadKcsFileInternalAsync(filePath);
+        Log.Warning("[WorkflowStorageService] No .kcs found with Id={Id}", workflowId);
+        return null;
     }
 
     /// <inheritdoc/>
