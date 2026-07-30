@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Workflow;
-using KitX.WorkflowV6.Ir;
+using KitX.Core.Event;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
 using Serilog;
@@ -13,45 +17,56 @@ using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
 namespace KitX.Dashboard.ViewModels;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WorkflowEditorViewModelV6 — v6 workflow editor with KS/BP mode switching.
+// WorkflowEditorViewModelV6 — v6 workflow editor with full KS-side feature parity.
 //
-// Implements the "switch-time conversion" state machine (per the v6 frontend design):
-//   • KS editing is purely local (no IR sync until switch/save/compile).
-//   • Switching KS→BP: KsTextLens.Parse → IR → BpGraphLens.Project → AnalyzeScopes → render.
-//   • Switching BP→KS: BpGraphLens.Reverse → IR → KsTextLens.Project → text.
-//   • BP editing (P3) will call StructuralReducer on every connectivity edit.
-//
-// P1 scope: KS editing + read-only BP rendering. Run/Debug/Save are stubs for now
-// (wired in P4/P5). The window is not yet reachable from the menu — open via code.
+// Mirrors WorkflowEditorViewModel (v5.1) at the feature level: mode switching,
+// metadata, Trigger config, Helper Function management, Variable Constants panel,
+// and KS↔BP conversion via KsTextLens/BpGraphLens. Differences from v5.1:
+//   • KsTextLens (v6 indented grammar) instead of BsTextLens (v5 block grammar)
+//   • WorkflowSerializer (v6 IR) instead of IrSerializer (v5 IR)
+//   • V6 Constant record uses InitialValueExpression (not V5 IrConstant.DefaultValue)
+//   • IrVersion = "v6" in KcsFileFormat
+//   • Run/Save use v6 backend (P4); currently stubs for Run, basic save implemented
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// <summary>
-/// v6 workflow editor ViewModel. Manages KS/BP mode switching via the IR-centred
-/// state machine, KS source text, and the read-only blueprint canvas.
-/// </summary>
 internal partial class WorkflowEditorViewModelV6 : ObservableObject
 {
-    /// <summary>KS (text) or BP (blueprint) view.</summary>
     public enum EditorMode { BlockScript, Blueprint }
 
+    private readonly IWorkflowStorageService? _storageService;
+    private readonly IEventService? _eventService;
+    private readonly IPluginServer? _pluginServer;
     private readonly KsTextLens _ksTextLens;
     private readonly BpGraphLens _bpGraphLens;
 
     private EditorMode _mode = EditorMode.BlockScript;
+    private string? _workflowId;
     private string _workflowName = "Untitled Workflow (v6)";
     private string _workflowDescription = string.Empty;
     private string _workflowAuthor = string.Empty;
+    private TriggerConfig? _triggerConfig;
     private bool _isDirty;
     private string _executionOutput = string.Empty;
     private bool _isExecuting;
     private string _statusText = "Ready (v6)";
     private string _ksSource = string.Empty;
     private string _conversionError = string.Empty;
+    private V6Workflow? _lastIr;
 
-    /// <summary>
-    /// Default KS source loaded into the editor on first open — a small sample
-    /// demonstrating const/var blocks, pipeline, if/else, and forEach.
-    /// </summary>
+    // ─── Trigger Configuration ──────────────────────────────────────────
+    private string _triggerType = "Manual";
+    private string? _triggerPluginName;
+    private string? _triggerName;
+
+    // ─── Helper Function ───────────────────────────────────────────────
+    private HelperFunction? _selectedHelperFunction;
+    private ObservableCollection<HelperFunction> _helperFunctions = [];
+    private ObservableCollection<HelperFunctionParameter> _parameters = [];
+    private bool _isEditingHelperFunction;
+
+    // ─── Variable Constants ─────────────────────────────────────────────
+    private ObservableCollection<VariableConstant> _variableConstants = [];
+
     public static string DefaultSource { get; } =
         "const {" + Environment.NewLine +
         "    int max = 3" + Environment.NewLine +
@@ -73,7 +88,33 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     {
         _ksTextLens = ksTextLens ?? throw new ArgumentNullException(nameof(ksTextLens));
         _bpGraphLens = bpGraphLens ?? throw new ArgumentNullException(nameof(bpGraphLens));
+
         _ksSource = DefaultSource;
+
+        try
+        {
+            _storageService = App.GetService<IWorkflowStorageService>();
+            _eventService = App.GetService<IEventService>();
+            _pluginServer = App.GetService<IPluginServer>();
+        }
+        catch { /* test/host without DI — OK */ }
+
+        // Seed default helper functions (same as v5.1)
+        if (HelperFunctions.Count == 0)
+            InitializeDefaultHelperFunctions();
+
+        // Publish metadata changes
+        PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName is nameof(WorkflowName) or nameof(WorkflowDescription) or nameof(WorkflowAuthor))
+            {
+                IsDirty = true;
+                _eventService?.Publish(EventNames.WorkflowDataSaved,
+                    new WorkflowSavedEventArgs(
+                        _workflowId ?? string.Empty,
+                        WorkflowName, WorkflowDescription, WorkflowAuthor));
+            }
+        };
     }
 
     // ── Mode ──
@@ -94,91 +135,264 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     public bool IsBlockScriptMode => _mode == EditorMode.BlockScript;
     public bool IsBlueprintMode => _mode == EditorMode.Blueprint;
 
-    // ── Chrome properties ──
+    // ── Metadata ──
 
-    public string WorkflowName
-    {
-        get => _workflowName;
-        set => SetProperty(ref _workflowName, value);
-    }
+    public string WorkflowName { get => _workflowName; set => SetProperty(ref _workflowName, value); }
+    public string WorkflowDescription { get => _workflowDescription; set => SetProperty(ref _workflowDescription, value); }
+    public string WorkflowAuthor { get => _workflowAuthor; set => SetProperty(ref _workflowAuthor, value); }
+    public bool IsDirty { get => _isDirty; set => SetProperty(ref _isDirty, value); }
+    public string ExecutionOutput { get => _executionOutput; set => SetProperty(ref _executionOutput, value); }
+    public bool IsExecuting { get => _isExecuting; set => SetProperty(ref _isExecuting, value); }
+    public string StatusText { get => _statusText; set => SetProperty(ref _statusText, value); }
 
-    public string WorkflowDescription
-    {
-        get => _workflowDescription;
-        set => SetProperty(ref _workflowDescription, value);
-    }
+    // ── KS Source ──
 
-    public string WorkflowAuthor
-    {
-        get => _workflowAuthor;
-        set => SetProperty(ref _workflowAuthor, value);
-    }
-
-    public bool IsDirty
-    {
-        get => _isDirty;
-        set => SetProperty(ref _isDirty, value);
-    }
-
-    public string ExecutionOutput
-    {
-        get => _executionOutput;
-        set => SetProperty(ref _executionOutput, value);
-    }
-
-    public bool IsExecuting
-    {
-        get => _isExecuting;
-        set => SetProperty(ref _isExecuting, value);
-    }
-
-    public string StatusText
-    {
-        get => _statusText;
-        set => SetProperty(ref _statusText, value);
-    }
-
-    /// <summary>KS source text (bound to AvaloniaEdit).</summary>
     public string KsSource
     {
         get => _ksSource;
-        set
-        {
-            if (SetProperty(ref _ksSource, value))
-                IsDirty = true;
-        }
+        set { if (SetProperty(ref _ksSource, value)) IsDirty = true; }
     }
 
-    /// <summary>Error message from the last KS→BP or BP→KS conversion (empty = success).</summary>
     public string ConversionError
     {
         get => _conversionError;
         set => SetProperty(ref _conversionError, value);
     }
 
-    /// <summary>The read-only blueprint editor ViewModel.</summary>
+    // ── Trigger ──
+
+    public string[] TriggerTypeOptions { get; } = ["Manual", "PluginEvent"];
+    public ObservableCollection<string> AvailablePlugins { get; } = [];
+    public ObservableCollection<string> AvailableTriggers { get; } = [];
+
+    public string TriggerType
+    {
+        get => _triggerType;
+        set
+        {
+            if (SetProperty(ref _triggerType, value))
+            {
+                OnPropertyChanged(nameof(IsPluginEventTrigger));
+                if (value == "PluginEvent") RefreshAvailablePlugins();
+                IsDirty = true;
+            }
+        }
+    }
+
+    public bool IsPluginEventTrigger => _triggerType == "PluginEvent";
+
+    public string? TriggerPluginName
+    {
+        get => _triggerPluginName;
+        set
+        {
+            if (SetProperty(ref _triggerPluginName, value))
+            {
+                RefreshAvailableTriggers();
+                IsDirty = true;
+            }
+        }
+    }
+
+    public string? TriggerName
+    {
+        get => _triggerName;
+        set { if (SetProperty(ref _triggerName, value)) IsDirty = true; }
+    }
+
+    private void RefreshAvailablePlugins()
+    {
+        AvailablePlugins.Clear();
+        if (_pluginServer == null) return;
+        foreach (var conn in _pluginServer.Connections)
+            if (!string.IsNullOrEmpty(conn.PluginInfo?.Name))
+                AvailablePlugins.Add(conn.PluginInfo.Name);
+    }
+
+    private void RefreshAvailableTriggers()
+    {
+        AvailableTriggers.Clear();
+        if (string.IsNullOrEmpty(_triggerPluginName) || _pluginServer == null) return;
+        var conn = _pluginServer.Connections
+            .FirstOrDefault(c => c.PluginInfo?.Name == _triggerPluginName);
+        if (conn?.PluginInfo?.SupportedTriggers == null) return;
+        foreach (var trigger in conn.PluginInfo.SupportedTriggers)
+            AvailableTriggers.Add(trigger);
+    }
+
+    // ── Helper Functions ──
+
+    public HelperFunction? SelectedHelperFunction
+    {
+        get => _selectedHelperFunction;
+        set
+        {
+            if (SetProperty(ref _selectedHelperFunction, value))
+            {
+                IsEditingHelperFunction = value != null;
+                Parameters.Clear();
+                if (value?.Parameters != null)
+                    foreach (var p in value.Parameters) Parameters.Add(p);
+            }
+        }
+    }
+
+    public ObservableCollection<HelperFunction> HelperFunctions
+    {
+        get => _helperFunctions;
+        set => SetProperty(ref _helperFunctions, value);
+    }
+
+    public ObservableCollection<HelperFunctionParameter> Parameters
+    {
+        get => _parameters;
+        set => SetProperty(ref _parameters, value);
+    }
+
+    public bool IsEditingHelperFunction
+    {
+        get => _isEditingHelperFunction;
+        set => SetProperty(ref _isEditingHelperFunction, value);
+    }
+
+    [RelayCommand]
+    private void AddHelperFunction()
+    {
+        var fn = new HelperFunction
+        {
+            Name = $"HelperFunction{HelperFunctions.Count + 1}",
+            ReturnType = "object",
+            Parameters = new List<HelperFunctionParameter>(),
+            Code = "// Helper function body\nreturn null;"
+        };
+        HelperFunctions.Add(fn);
+        SelectedHelperFunction = fn;
+    }
+
+    [RelayCommand]
+    private void RemoveHelperFunction(HelperFunction? fn)
+    {
+        if (fn == null) return;
+        HelperFunctions.Remove(fn);
+        if (SelectedHelperFunction == fn)
+            SelectedHelperFunction = HelperFunctions.FirstOrDefault();
+    }
+
+    private void InitializeDefaultHelperFunctions()
+    {
+        HelperFunctions.Add(new HelperFunction
+        {
+            Name = "Compare",
+            ReturnType = "bool",
+            Parameters = new List<HelperFunctionParameter>
+            {
+                new() { Name = "op", Type = "string" },
+                new() { Name = "a", Type = "object?" },
+                new() { Name = "b", Type = "object?" }
+            },
+            Code = "var v1 = Convert.ToDouble(a);\nvar v2 = Convert.ToDouble(b);\nreturn op switch\n{\n    \"BEQ\" => v1 == v2,\n    \"BNE\" => v1 != v2,\n    \"BLT\" => v1 < v2,\n    \"BGT\" => v1 > v2,\n    \"BLE\" => v1 <= v2,\n    \"BGE\" => v1 >= v2,\n    _ => false\n};"
+        });
+        HelperFunctions.Add(new HelperFunction
+        {
+            Name = "Add",
+            ReturnType = "int",
+            Parameters = new List<HelperFunctionParameter>
+            {
+                new() { Name = "a", Type = "object?" },
+                new() { Name = "b", Type = "object?" }
+            },
+            Code = "var v1 = Convert.ToInt32(a);\nvar v2 = Convert.ToInt32(b);\nreturn v1 + v2;"
+        });
+    }
+
+    // ── Variable Constants ──
+
+    public ObservableCollection<VariableConstant> VariableConstants
+    {
+        get => _variableConstants;
+        set => SetProperty(ref _variableConstants, value);
+    }
+
+    [RelayCommand]
+    private void ResetConstant(VariableConstant? constant)
+    {
+        if (constant == null) return;
+        constant.UserValue = constant.DefaultValue;
+        OnPropertyChanged(nameof(VariableConstants));
+    }
+
+    [RelayCommand]
+    private void ResetAllConstants()
+    {
+        foreach (var c in VariableConstants) c.UserValue = c.DefaultValue;
+        OnPropertyChanged(nameof(VariableConstants));
+    }
+
+    /// <summary>
+    /// Parses KS source for const/var declarations and updates the VariableConstants
+    /// list, preserving any user overrides on constants with matching names.
+    /// </summary>
+    public void ParseConstantsFromCode(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return;
+        try
+        {
+            var ir = _ksTextLens.Parse(code, HelperFunctions);
+            var newConstants = new List<VariableConstant>();
+            foreach (var (name, c) in ir.Constants)
+            {
+                newConstants.Add(new VariableConstant
+                {
+                    Name = name,
+                    Type = c.Type,
+                    DefaultValue = c.InitialValueExpression,
+                    UserValue = c.InitialValueExpression
+                });
+            }
+            // Also show var declarations (editable initial values for v6)
+            foreach (var (name, v) in ir.GlobalVars)
+            {
+                newConstants.Add(new VariableConstant
+                {
+                    Name = name,
+                    Type = v.Type,
+                    DefaultValue = v.InitialValueExpression,
+                    UserValue = v.InitialValueExpression
+                });
+            }
+            UpdateVariableConstants(newConstants);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[WorkflowEditorVMV6] ParseConstantsFromCode failed");
+        }
+    }
+
+    private void UpdateVariableConstants(List<VariableConstant> newConstants)
+    {
+        foreach (var nc in newConstants)
+        {
+            var existing = VariableConstants.FirstOrDefault(c => c.Name == nc.Name);
+            if (existing != null) nc.UserValue = existing.UserValue;
+        }
+        VariableConstants.Clear();
+        foreach (var c in newConstants) VariableConstants.Add(c);
+    }
+
+    // ── Blueprint VM ──
+
     public BlueprintEditorViewModelV6 BlueprintVM { get; } = new();
 
-    // ── Mode switch commands ──
+    // ── Mode switch ──
 
-    /// <summary>Switches to KS (text) mode. If coming from BP, reverse-translates BP→KS.</summary>
     [RelayCommand]
     private void SwitchToBlockScript()
     {
-        if (_mode == EditorMode.Blueprint)
+        if (_mode == EditorMode.Blueprint && _lastIr != null)
         {
-            // BP→KS: reverse the current blueprint back to KS text.
             try
             {
-                // The current blueprint is read-only (P1); we reverse from the last
-                // projected IR. Since we stored the IR at switch time, re-project KS.
-                // In P1 (read-only BP), the blueprint hasn't changed, so we simply
-                // re-render KS from the stored IR. If no IR is stored (edge case),
-                // keep the existing text.
-                if (_lastIr != null)
-                {
-                    KsSource = _ksTextLens.Project(_lastIr);
-                }
+                KsSource = _ksTextLens.Project(_lastIr);
                 ConversionError = string.Empty;
             }
             catch (Exception ex)
@@ -190,30 +404,20 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         Mode = EditorMode.BlockScript;
     }
 
-    /// <summary>Switches to BP (blueprint) mode. Parses KS→IR→BP and renders the canvas.</summary>
     [RelayCommand]
     private void SwitchToBlueprint()
     {
         if (_mode == EditorMode.BlockScript)
-        {
             RenderBlueprintFromKs();
-        }
         Mode = EditorMode.Blueprint;
     }
 
-    // ── KS → BP rendering ──
-
-    private V6Workflow? _lastIr;
-
-    /// <summary>
-    /// Parses the current KS source into IR, projects to Blueprint, analyzes scopes,
-    /// and loads everything into the canvas. Sets <see cref="ConversionError"/> on failure.
-    /// </summary>
     private void RenderBlueprintFromKs()
     {
         try
         {
-            var ir = _ksTextLens.Parse(KsSource, []);
+            var helpers = new List<HelperFunction>(HelperFunctions);
+            var ir = _ksTextLens.Parse(KsSource, helpers);
             _lastIr = ir;
 
             var bp = _bpGraphLens.Project(ir);
@@ -231,23 +435,112 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
     }
 
-    // ── Load from .kcs (V6 IR) ──
+    // ── Load from .kcs ──
 
     /// <summary>
-    /// Loads a V6 Workflow IR (deserialised from a .kcs file's IrData), renders it to
-    /// KS text via KsTextLens.Project, and stores the IR for BP-switch use.
-    /// Called by WorkflowEditorWindowV6.LoadWorkflowAsync.
+    /// Loads a v6 Workflow IR (deserialised from a .kcs file's IrData), renders it
+    /// to KS text, restores metadata/trigger/helper functions.
     /// </summary>
-    public void LoadFromIr(V6Workflow ir, string name)
+    public void LoadFromIr(V6Workflow ir, string name, KcsFileFormat? kcs)
     {
         _lastIr = ir;
         KsSource = _ksTextLens.Project(ir);
         WorkflowName = name;
         IsDirty = false;
         StatusText = "Loaded (v6)";
+
+        // Restore helper functions from IR
+        HelperFunctions.Clear();
+        foreach (var fn in ir.HelperFunctions)
+            HelperFunctions.Add(fn);
+
+        // Parse constants from the loaded source
+        ParseConstantsFromCode(KsSource);
+
+        // Restore trigger config
+        if (kcs?.TriggerConfig != null)
+        {
+            _triggerConfig = kcs.TriggerConfig;
+            TriggerType = kcs.TriggerConfig.TriggerType ?? "Manual";
+            TriggerPluginName = kcs.TriggerConfig.PluginName;
+            TriggerName = kcs.TriggerConfig.TriggerName;
+        }
+        else
+        {
+            _triggerConfig = new TriggerConfig();
+        }
+
+        // Restore metadata
+        if (kcs != null)
+        {
+            WorkflowDescription = kcs.Description ?? string.Empty;
+            WorkflowAuthor = kcs.Author ?? string.Empty;
+        }
     }
 
-    // ── Toolbar stubs (P4/P5) ──
+    // ── Save ──
+
+    /// <summary>
+    /// Saves the current workflow to storage as a v6 .kcs file.
+    /// Parses current KS source into V6 IR, serialises via WorkflowSerializer.
+    /// </summary>
+    public async Task SaveAsync()
+    {
+        if (_workflowId == null || _storageService == null) return;
+
+        try
+        {
+            var helpers = new List<HelperFunction>(HelperFunctions);
+            var ir = _ksTextLens.Parse(KsSource, helpers);
+            _lastIr = ir;
+
+            var irData = KitX.WorkflowV6.Serialization.WorkflowSerializer.Serialize(ir);
+
+            var tc = _triggerConfig ?? new TriggerConfig();
+            tc.TriggerType = TriggerType;
+            tc.PluginName = TriggerPluginName;
+            tc.TriggerName = TriggerName;
+
+            var data = new KcsFileFormat
+            {
+                Id = _workflowId,
+                Name = WorkflowName,
+                Description = WorkflowDescription,
+                Author = WorkflowAuthor,
+                IrData = irData,
+                IrVersion = "v6",
+                VariableConstants = new Dictionary<string, object?>(),
+                TriggerConfig = tc,
+            };
+
+            await _storageService.SaveWorkflowDataAsync(_workflowId, data);
+            IsDirty = false;
+
+            _eventService?.Publish(EventNames.WorkflowDataSaved,
+                new WorkflowSavedEventArgs(_workflowId, WorkflowName, WorkflowDescription, WorkflowAuthor));
+
+            StatusText = "Saved (v6)";
+            Log.Information("[WorkflowEditorVMV6] Saved workflow: {Id}", _workflowId);
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Save failed: {ex.Message}";
+            Log.Error(ex, "[WorkflowEditorVMV6] SaveAsync failed");
+        }
+    }
+
+    /// <summary>Sets the workflow ID (called by LoadWorkflowAsync in the window code-behind).</summary>
+    internal void SetWorkflowId(string id) => _workflowId = id;
+
+    // ── ShowDashboard ──
+
+    [RelayCommand]
+    private void ShowDashboard()
+    {
+        Services.UIStateService.MainWindow?.Activate();
+    }
+
+    // ── Toolbar stubs (P4) ──
 
     [RelayCommand]
     private void Run()
