@@ -419,6 +419,11 @@ public partial class WorkflowEditorWindowV6 : Window
             _ = _viewModel.SaveAsync();
             e.Handled = true;
         }
+        else if (e.Key == Avalonia.Input.Key.Delete && _viewModel.IsBlueprintMode)
+        {
+            _viewModel.BlueprintVM.DeleteSelectedNodesCommand.Execute(null);
+            e.Handled = true;
+        }
         base.OnKeyDown(e);
     }
 }

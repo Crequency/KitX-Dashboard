@@ -38,6 +38,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>The authoritative Contract blueprint being edited. Null until LoadBlueprint.</summary>
     private Blueprint? _workingBlueprint;
 
+    /// <summary>Public accessor for the working blueprint (Reverse / save consume it).</summary>
+    public Blueprint? WorkingBlueprint => _workingBlueprint;
+
     /// <summary>Contract→VM lookup (rendering connections from Contract).</summary>
     private readonly Dictionary<(string NodeId, string PinId), BlueprintConnectorVMV6> _contractToConnector = new();
 
@@ -268,6 +271,53 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             RemoveConnectionFromWorkingBlueprint(cvm);
         }
 
+        RefreshIsConnected();
+        RefreshScopes();
+        ErrorInfo = null;
+    }
+
+    /// <summary>Deletes all selected nodes and their connections (canvas + Contract).</summary>
+    [RelayCommand]
+    private void DeleteSelectedNodes()
+    {
+        if (_workingBlueprint == null) return;
+        var toRemove = SelectedNodes.OfType<BlueprintNodeVMV6>().ToList();
+        if (toRemove.Count == 0) return;
+
+        var nodeIds = toRemove.Select(n => n.BlueprintNodeId).ToHashSet();
+
+        // Remove connections touching deleted nodes (VM + Contract).
+        var relatedConns = Connections
+            .OfType<BlueprintConnectionVMV6>()
+            .Where(c => (c.Source is BlueprintConnectorVMV6 s
+                         && _connectorToContract.TryGetValue(s, out var sc) && nodeIds.Contains(sc.NodeId))
+                     || (c.Target is BlueprintConnectorVMV6 t
+                         && _connectorToContract.TryGetValue(t, out var tc) && nodeIds.Contains(tc.NodeId)))
+            .ToList();
+        foreach (var cvm in relatedConns)
+        {
+            Connections.Remove(cvm);
+            RemoveConnectionFromWorkingBlueprint(cvm);
+        }
+
+        // Remove nodes + clean connector lookups.
+        foreach (var nodeVm in toRemove)
+        {
+            Nodes.Remove(nodeVm);
+            var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == nodeVm.BlueprintNodeId);
+            if (contractNode != null)
+                _workingBlueprint.Nodes.Remove(contractNode);
+
+            var stale = _connectorToContract
+                .Where(kvp => kvp.Value.NodeId == nodeVm.BlueprintNodeId).ToList();
+            foreach (var kvp in stale)
+            {
+                _connectorToContract.Remove(kvp.Key);
+                _contractToConnector.Remove(kvp.Value);
+            }
+        }
+
+        SelectedNodes.Clear();
         RefreshIsConnected();
         RefreshScopes();
         ErrorInfo = null;

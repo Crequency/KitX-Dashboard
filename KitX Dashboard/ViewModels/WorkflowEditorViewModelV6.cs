@@ -393,17 +393,28 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     [RelayCommand]
     private void SwitchToBlockScript()
     {
-        if (_mode == EditorMode.Blueprint && _lastIr != null)
+        if (_mode == EditorMode.Blueprint)
         {
             try
             {
-                KsSource = _ksTextLens.Project(_lastIr);
+                // BP→IR→KS: reverse the (possibly edited) working blueprint.
+                var bp = BlueprintVM.WorkingBlueprint;
+                if (bp != null && bp.Nodes.Count > 0)
+                {
+                    var ir = _bpGraphLens.Reverse(bp);
+                    _lastIr = ir;
+                    KsSource = _ksTextLens.Project(ir);
+                }
+                else if (_lastIr != null)
+                {
+                    KsSource = _ksTextLens.Project(_lastIr);
+                }
                 ConversionError = string.Empty;
             }
             catch (Exception ex)
             {
                 ConversionError = $"BP→KS 转换失败: {ex.Message}";
-                Log.Warning(ex, "[WorkflowEditorVMV6] BP→KS conversion failed");
+                Log.Warning(ex, "[WorkflowEditorVMV6] BP→KS reverse failed");
             }
         }
         Mode = EditorMode.BlockScript;
@@ -496,7 +507,17 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         try
         {
             var helpers = new List<HelperFunction>(HelperFunctions);
-            var ir = _ksTextLens.Parse(KsSource, helpers);
+            V6Workflow ir;
+            if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint != null
+                && BlueprintVM.WorkingBlueprint.Nodes.Count > 0)
+            {
+                // BP mode: reverse the edited blueprint instead of re-parsing stale KS text.
+                ir = _bpGraphLens.Reverse(BlueprintVM.WorkingBlueprint);
+            }
+            else
+            {
+                ir = _ksTextLens.Parse(KsSource, helpers);
+            }
             _lastIr = ir;
 
             var irData = KitX.WorkflowV6.Serialization.WorkflowSerializer.Serialize(ir);
