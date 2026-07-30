@@ -275,7 +275,7 @@
                 </ListBox>
             </DockPanel>
 
-            <!-- BP Mode: Node Palette (placeholder for P3) -->
+            <!-- BP Mode: Node Palette -->
             <Border Grid.Column="0"
                     IsVisible="{Binding IsBlueprintMode}"
                     Background="{DynamicResource LayerFillColorDefaultBrush}"
@@ -285,10 +285,21 @@
                                Text="Node Palette"
                                FontWeight="Bold"
                                Margin="0,0,0,10" />
-                    <TextBlock Text="BP editing arrives in P3.&#x0a;&#x0a;Switch to KScript mode to edit the workflow source, then switch to Blueprint to view the rendered graph."
-                               FontSize="11"
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding BlueprintVM.PaletteItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                    <Button Content="{Binding DisplayName}"
+                                            Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"
+                                            Margin="0,2"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Padding="8,4" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </DockPanel>
             </Border>
 

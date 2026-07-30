@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Workflow;
+using KitX.Dashboard.Services;
+using KitX.WorkflowV6.Builtin;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using NodifyM.Avalonia.ViewModelBase;
 
@@ -29,6 +33,7 @@ namespace KitX.Dashboard.ViewModels;
 internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 {
     private readonly BpGraphLens? _bpGraphLens;
+    private readonly BuiltinFunctionRegistry? _registry;
 
     /// <summary>The authoritative Contract blueprint being edited. Null until LoadBlueprint.</summary>
     private Blueprint? _workingBlueprint;
@@ -71,10 +76,12 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     public BlueprintEditorViewModelV6() { }
 
     /// <summary>Creates an editable BP editor wired to the backend lens for validation.</summary>
-    public BlueprintEditorViewModelV6(BpGraphLens bpGraphLens)
+    public BlueprintEditorViewModelV6(BpGraphLens bpGraphLens, BuiltinFunctionRegistry? registry)
     {
         _bpGraphLens = bpGraphLens;
+        _registry = registry;
         PendingConnection.PropertyChanged += OnPendingConnectionPropertyChanged;
+        PopulatePalette();
     }
 
     // ── Loading ──
@@ -128,6 +135,54 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         HasContent = false;
     }
 
+    // ── Node palette (P3-β) ──
+
+    /// <summary>Flat list of creatable nodes shown in the palette panel.</summary>
+    public ObservableCollection<PaletteItemV6> PaletteItems { get; } = new();
+
+    /// <summary>Fills the palette from the builtin registry + hardcoded control-flow set.</summary>
+    private void PopulatePalette()
+    {
+        PaletteItems.Clear();
+        PaletteItems.Add(new PaletteItemV6("if (Branch)", "ControlFlow", "Branch"));
+        PaletteItems.Add(new PaletteItemV6("forEach (Each)", "ControlFlow", "Each"));
+        PaletteItems.Add(new PaletteItemV6("while (While)", "ControlFlow", "While"));
+        PaletteItems.Add(new PaletteItemV6("switch (Switch)", "ControlFlow", "Switch"));
+        PaletteItems.Add(new PaletteItemV6("break", "ControlFlow", "break"));
+        PaletteItems.Add(new PaletteItemV6("continue", "ControlFlow", "continue"));
+        if (_registry != null)
+            foreach (var fn in _registry.All.OrderBy(f => f.Name))
+                PaletteItems.Add(new PaletteItemV6(fn.Name, "Builtin", fn.Name));
+    }
+
+    /// <summary>Creates a node from a palette item and drops it onto the canvas.</summary>
+    [RelayCommand]
+    private void AddPaletteNode(PaletteItemV6? item)
+    {
+        if (item == null || _workingBlueprint == null) return;
+        BlueprintNode node = item.Kind switch
+        {
+            "ControlFlow" => NodeFactoryV6.CreateControlFlowNode(item.FunctionName!),
+            "Builtin" when _registry != null
+                => NodeFactoryV6.CreateBuiltinFunctionNode(item.FunctionName!, _registry),
+            _ => null!,
+        };
+        if (node == null) return;
+        AddNodeToCanvas(node);
+    }
+
+    private int _nodeCounter;
+
+    private void AddNodeToCanvas(BlueprintNode node)
+    {
+        node.X = 200 + (_nodeCounter % 5) * 230;
+        node.Y = 120 + (_nodeCounter / 5) * 140;
+        _nodeCounter++;
+        _workingBlueprint!.Nodes.Add(node);
+        Nodes.Add(ConvertNodeToViewModel(node));
+        HasContent = true;
+    }
+
     // ── Connect / Disconnect (P3-α editing core) ──
 
     /// <summary>
@@ -174,7 +229,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _workingBlueprint.Connections.Add(candidate);
 
         var violation = _bpGraphLens.ValidateDetailed(_workingBlueprint);
-        if (violation != null)
+        if (IsConnectionStructural(violation))
         {
             _workingBlueprint.Connections.Remove(candidate);
             ErrorInfo = violation;
@@ -289,6 +344,17 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         return source == target;
     }
 
+    // Violation codes introduced by a connection (rejected during edit). Global-completeness
+    // codes (KS100/KS120/KS130) come from orphan nodes / missing declarations and are tolerated
+    // during editing — they surface only at the switch/save completeness check.
+    private static readonly HashSet<string> ConnectionStructuralCodes = new()
+    {
+        "KS101", "KS102", "KS111", "KS105", "KS110", "KS140",
+    };
+
+    private static bool IsConnectionStructural(ConstraintViolation? v)
+        => v != null && ConnectionStructuralCodes.Contains(v.Code);
+
     // ── Hover preview (inductive invariant enforcement) ──
 
     private void OnPendingConnectionPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -348,10 +414,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var violation = _bpGraphLens.ValidateDetailed(_workingBlueprint);
         _workingBlueprint.Connections.Remove(candidate);
 
-        if (violation != null)
+        if (IsConnectionStructural(violation))
         {
             tgt.CanConnect = false;
-            HoverErrorText = violation.Message;
+            HoverErrorText = violation!.Message;
         }
     }
 
@@ -499,3 +565,6 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         return connection;
     }
 }
+
+/// <summary>A palette entry describing a creatable node.</summary>
+public sealed record PaletteItemV6(string DisplayName, string Kind, string? FunctionName);

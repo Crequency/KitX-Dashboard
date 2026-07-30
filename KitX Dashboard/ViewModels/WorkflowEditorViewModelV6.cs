@@ -9,6 +9,7 @@ using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Event;
+using KitX.WorkflowV6.Builtin;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
 using Serilog;
@@ -89,7 +90,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         _ksTextLens = ksTextLens ?? throw new ArgumentNullException(nameof(ksTextLens));
         _bpGraphLens = bpGraphLens ?? throw new ArgumentNullException(nameof(bpGraphLens));
 
-        BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens);
+        BuiltinFunctionRegistry? registry = null;
+        try { registry = App.GetService<BuiltinFunctionRegistry>(); } catch { /* host without DI */ }
+        BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens, registry);
 
         _ksSource = DefaultSource;
 
