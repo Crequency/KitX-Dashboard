@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:avalonedit="using:AvaloniaEdit"
         xmlns:icon="using:Material.Icons.Avalonia"
-        xmlns:controls="using:NodifyM.Avalonia.Controls"
+        xmlns:controls="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
         xmlns:converters="using:KitX.Dashboard.Converters"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
         mc:Ignorable="d"
