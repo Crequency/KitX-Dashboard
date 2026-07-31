@@ -493,6 +493,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 if (bp != null && bp.Nodes.Count > 0)
                 {
                     var ir = _bpGraphLens.Reverse(bp);
+                    Log.Information("[WorkflowEditorVMV6] BP→KS: bp={BpNodes} nodes, ir={Consts} consts/{Vars} vars/{Stmts} stmts",
+                        bp.Nodes.Count, ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length);
                     _lastIr = ir;
                     KsSource = _ksTextLens.Project(ir);
                 }
@@ -687,6 +689,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             return;
         }
 
+        Log.Information("[WorkflowEditorVMV6] Run invoked: Mode={Mode}, KsSource={Length} chars", _mode, KsSource.Length);
+
         // Obtain IR + lowering (KS: ParseLowering; BP: Reverse).
         V6Workflow ir;
         LoweringResult? lowering;
@@ -711,6 +715,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
 
         ir = ApplyConstantOverridesV6(ir);
+
+        Log.Information("[WorkflowEditorVMV6] Run IR: {Consts} constants, {Vars} vars, {Stmts} statements, lowering={HasLowering}",
+            ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length, lowering != null);
 
         IsExecuting = true;
         ExecutionOutput = "执行中...";
