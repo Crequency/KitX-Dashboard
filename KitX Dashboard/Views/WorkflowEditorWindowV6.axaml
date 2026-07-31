@@ -310,19 +310,39 @@
                                FontWeight="Bold"
                                Margin="0,0,0,10" />
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding BlueprintVM.PaletteItems}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
-                                    <Button Content="{Binding DisplayName}"
-                                            Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}"
-                                            Margin="0,2"
-                                            HorizontalAlignment="Stretch"
-                                            HorizontalContentAlignment="Left"
-                                            Padding="8,4" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.PaletteItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                        <Button Content="{Binding DisplayName}"
+                                                Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Padding="8,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="Plugin Triggers"
+                                       FontWeight="Bold"
+                                       Margin="0,14,0,4"
+                                       IsVisible="{Binding BlueprintVM.HasPluginTriggers}" />
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.PluginTriggers}"
+                                          IsVisible="{Binding BlueprintVM.HasPluginTriggers}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:PluginTriggerPaletteItemV6}">
+                                        <Button Content="{Binding DisplayName}"
+                                                Command="{Binding DataContext.BlueprintVM.AddPluginTriggerNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Padding="8,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
             </Border>

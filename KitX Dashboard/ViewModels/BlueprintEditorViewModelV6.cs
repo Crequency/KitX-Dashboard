@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Workflow;
 using KitX.Dashboard.Services;
 using KitX.WorkflowV6.Builtin;
@@ -34,6 +35,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 {
     private readonly BpGraphLens? _bpGraphLens;
     private readonly BuiltinFunctionRegistry? _registry;
+    private readonly IPluginServer? _pluginServer;
 
     /// <summary>The authoritative Contract blueprint being edited. Null until LoadBlueprint.</summary>
     private Blueprint? _workingBlueprint;
@@ -79,12 +81,15 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     public BlueprintEditorViewModelV6() { }
 
     /// <summary>Creates an editable BP editor wired to the backend lens for validation.</summary>
-    public BlueprintEditorViewModelV6(BpGraphLens bpGraphLens, BuiltinFunctionRegistry? registry)
+    public BlueprintEditorViewModelV6(BpGraphLens bpGraphLens, BuiltinFunctionRegistry? registry,
+        IPluginServer? pluginServer = null)
     {
         _bpGraphLens = bpGraphLens;
         _registry = registry;
+        _pluginServer = pluginServer;
         PendingConnection.PropertyChanged += OnPendingConnectionPropertyChanged;
         PopulatePalette();
+        RefreshPluginTriggers();
     }
 
     // ── Loading ──
@@ -184,6 +189,72 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _workingBlueprint!.Nodes.Add(node);
         Nodes.Add(ConvertNodeToViewModel(node));
         HasContent = true;
+    }
+
+    // ── Plugin trigger palette (P3-δ) ──
+
+    /// <summary>Dynamic palette of plugin triggers from connected plugins' SupportedTriggers.</summary>
+    public ObservableCollection<PluginTriggerPaletteItemV6> PluginTriggers { get; } = new();
+
+    /// <summary>True when at least one plugin trigger is available to add.</summary>
+    public bool HasPluginTriggers => PluginTriggers.Count > 0;
+
+    /// <summary>
+    /// Refreshes <see cref="PluginTriggers"/> from the connected plugin server's
+    /// <c>PluginInfo.SupportedTriggers</c>. Called at construction; the list reflects
+    /// plugins that are connected when the editor opens.
+    /// </summary>
+    private void RefreshPluginTriggers()
+    {
+        PluginTriggers.Clear();
+        if (_pluginServer == null) return;
+        foreach (var conn in _pluginServer.Connections)
+        {
+            if (conn.PluginInfo?.SupportedTriggers == null) continue;
+            foreach (var trigger in conn.PluginInfo.SupportedTriggers)
+                PluginTriggers.Add(new PluginTriggerPaletteItemV6(conn.PluginInfo.Name, trigger));
+        }
+        OnPropertyChanged(nameof(HasPluginTriggers));
+    }
+
+    /// <summary>
+    /// Adds a <see cref="PluginTriggerNode"/> from the dynamic palette. When the canvas
+    /// already carries an EntryNode (projected from KS) the trigger node replaces it in
+    /// place — keeping exactly one entry — otherwise it is dropped as a new node.
+    /// </summary>
+    [RelayCommand]
+    private void AddPluginTriggerNode(PluginTriggerPaletteItemV6? item)
+    {
+        if (item == null || _workingBlueprint == null) return;
+        var node = NodeFactoryV6.CreatePluginTriggerNode(item.PluginName, item.TriggerName);
+
+        var existing = _workingBlueprint.Nodes.FirstOrDefault(n => n is EntryNode);
+        if (existing != null)
+        {
+            var idx = _workingBlueprint.Nodes.IndexOf(existing);
+            node.Id = existing.Id;
+            node.X = existing.X;
+            node.Y = existing.Y;
+            node.OutputPins[0].Id = existing.OutputPins[0].Id;
+            _workingBlueprint.Nodes[idx] = node;
+        }
+        else
+        {
+            AddNodeToCanvas(node);
+        }
+
+        // Rebuild the canvas from the Contract so VM connectors match the new root.
+        ReloadCanvas();
+    }
+
+    /// <summary>Rebuilds all node/connection VMs from the working blueprint (preserves Contract coordinates).</summary>
+    private void ReloadCanvas()
+    {
+        if (_workingBlueprint == null) return;
+        IReadOnlyList<ScopeRegion> scopes = [];
+        try { scopes = _bpGraphLens?.AnalyzeScopes(_workingBlueprint) ?? []; }
+        catch { /* keep empty scope set */ }
+        LoadBlueprint(_workingBlueprint, scopes);
     }
 
     // ── Connect / Disconnect (P3-α editing core) ──
@@ -666,3 +737,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
 /// <summary>A palette entry describing a creatable node.</summary>
 public sealed record PaletteItemV6(string DisplayName, string Kind, string? FunctionName);
+
+/// <summary>A dynamic palette entry for a plugin trigger (replaces the EntryNode on the canvas).</summary>
+public sealed record PluginTriggerPaletteItemV6(string PluginName, string TriggerName)
+{
+    public string DisplayName => $"Trigger: {PluginName}.{TriggerName}";
+}

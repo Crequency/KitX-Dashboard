@@ -49,9 +49,23 @@ public static class NodeFactoryV6
         return node;
     }
 
-    /// <summary>Creates a control-flow node with the pin layout defined in the correspondence doc.</summary>
-    public static BuiltinFunctionNode CreateControlFlowNode(string functionName) => functionName switch
+    /// <summary>
+    /// Creates a PluginTriggerNode — an alternative entry point with 0 input pins and
+    /// 1 Exec output pin (same shape as EntryNode). Carries PluginName/TriggerName
+    /// metadata; the frontend swaps it with the EntryNode when TriggerType=PluginEvent.
+    /// </summary>
+    public static PluginTriggerNode CreatePluginTriggerNode(string pluginName, string triggerName) => new()
     {
+        Id = NewId(),
+        Name = "PluginTrigger",
+        X = 0,
+        Y = 0,
+        PluginName = pluginName,
+        TriggerName = triggerName,
+    };
+
+    /// <summary>Creates a control-flow node with the pin layout defined in the correspondence doc.</summary>
+    public static BuiltinFunctionNode CreateControlFlowNode(string functionName) => functionName switch    {
         "Branch" => CreateBranch(),
         "Each" => CreateEach(),
         "While" => CreateWhile(),

@@ -103,7 +103,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
         BuiltinFunctionRegistry? registry = null;
         try { registry = App.GetService<BuiltinFunctionRegistry>(); } catch { /* host without DI */ }
-        BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens, registry);
+        IPluginServer? pluginServer = null;
+        try { pluginServer = App.GetService<IPluginServer>(); } catch { /* host without DI */ }
+        BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens, registry, pluginServer);
 
         // Resolve the v6 execution backend (shared interface points elsewhere; use concrete type).
         try { _executionBackend = App.GetService<StructuredRoslynBackend>(); } catch { /* host without DI */ }
@@ -531,6 +533,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 var bp = BlueprintVM.WorkingBlueprint;
                 if (bp != null && bp.Nodes.Count > 0)
                 {
+                    RestoreTriggerFromBlueprint(bp);
                     var ir = _bpGraphLens.Reverse(bp);
                     Log.Information("[WorkflowEditorVMV6] BP→KS: bp={BpNodes} nodes, ir={Consts} consts/{Vars} vars/{Stmts} stmts",
                         bp.Nodes.Count, ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length);
@@ -560,6 +563,78 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         Mode = EditorMode.Blueprint;
     }
 
+    // ── Trigger ↔ Blueprint entry node (P3-δ) ──
+
+    /// <summary>
+    /// Applies the PluginEvent trigger configuration to a freshly projected Blueprint
+    /// (v5.1 pattern): restores the persisted entry coordinates from
+    /// <see cref="TriggerConfig.EntryNodeX/Y"/>, then — when the trigger type is
+    /// PluginEvent with a plugin selected — swaps the synthetic EntryNode for a
+    /// <see cref="PluginTriggerNode"/> carrying PluginName/TriggerName. The node keeps
+    /// the Entry's Id and output-pin Id so existing connections stay valid, and the
+    /// swap happens before scope analysis so the canvas renders the trigger entry.
+    /// </summary>
+    private void ApplyTriggerToBlueprint(Blueprint bp)
+    {
+        var entry = bp.Nodes.FirstOrDefault(n => n is EntryNode);
+        if (entry is null) return;
+
+        // Restore persisted entry coordinates (they live in TriggerConfig, not IR).
+        if (_triggerConfig is not null && (_triggerConfig.EntryNodeX != 0 || _triggerConfig.EntryNodeY != 0))
+        {
+            entry.X = _triggerConfig.EntryNodeX;
+            entry.Y = _triggerConfig.EntryNodeY;
+        }
+
+        if (TriggerType != "PluginEvent" || string.IsNullOrEmpty(TriggerPluginName))
+            return;
+
+        var idx = bp.Nodes.IndexOf(entry);
+        var trigger = new PluginTriggerNode
+        {
+            Id = entry.Id,
+            Name = "PluginTrigger",
+            X = entry.X,
+            Y = entry.Y,
+            PluginName = TriggerPluginName,
+            TriggerName = TriggerName ?? string.Empty,
+        };
+        trigger.OutputPins[0].Id = entry.OutputPins[0].Id;
+        bp.Nodes[idx] = trigger;
+    }
+
+    /// <summary>
+    /// Reverses the frontend entry swap before BP→KS: when the canvas root is a
+    /// <see cref="PluginTriggerNode"/>, its PluginName/TriggerName (plus coordinates)
+    /// feed back into the TriggerConfig and the node reverts to an EntryNode so the
+    /// reverse translator walks the exec graph normally. If no trigger node is present
+    /// (user deleted it on the canvas) the trigger configuration resets to Manual.
+    /// </summary>
+    private void RestoreTriggerFromBlueprint(Blueprint bp)
+    {
+        var trigger = bp.Nodes.FirstOrDefault(n => n is PluginTriggerNode) as PluginTriggerNode;
+        if (trigger is not null)
+        {
+            TriggerType = "PluginEvent";
+            TriggerPluginName = trigger.PluginName;
+            TriggerName = trigger.TriggerName;
+            _triggerConfig ??= new TriggerConfig();
+            _triggerConfig.EntryNodeX = trigger.X;
+            _triggerConfig.EntryNodeY = trigger.Y;
+
+            var idx = bp.Nodes.IndexOf(trigger);
+            var entry = new EntryNode { Id = trigger.Id, Name = "Entry", X = trigger.X, Y = trigger.Y };
+            entry.OutputPins[0].Id = trigger.OutputPins[0].Id;
+            bp.Nodes[idx] = entry;
+        }
+        else
+        {
+            TriggerType = "Manual";
+            TriggerPluginName = null;
+            TriggerName = null;
+        }
+    }
+
     private void RenderBlueprintFromKs()
     {
         try
@@ -576,6 +651,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             _lastIr = ir;
 
             var bp = _bpGraphLens.Project(ir);
+            ApplyTriggerToBlueprint(bp);
             var scopes = _bpGraphLens.AnalyzeScopes(bp);
 
             BlueprintVM.LoadBlueprint(bp, scopes);
@@ -688,6 +764,18 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             tc.TriggerType = TriggerType;
             tc.PluginName = TriggerPluginName;
             tc.TriggerName = TriggerName;
+
+            // Persist the entry/trigger node coordinates (P3-δ): they are not part of
+            // the IR annotation system — they follow the trigger envelope in TriggerConfig.
+            if (BlueprintVM.WorkingBlueprint is { } wb)
+            {
+                var root = wb.Nodes.FirstOrDefault(n => n is EntryNode or PluginTriggerNode);
+                if (root is not null)
+                {
+                    tc.EntryNodeX = root.X;
+                    tc.EntryNodeY = root.Y;
+                }
+            }
 
             var data = new KcsFileFormat
             {
