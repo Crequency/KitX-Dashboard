@@ -64,7 +64,18 @@
                     <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
                 </controls:NodeOutput.BorderBrush>
                 <controls:NodeOutput.Header>
-                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="11" />
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="11" />
+                        <!-- Dangling exec-out: sub-scope tail naturally ends here (hover to reveal). -->
+                        <StackPanel IsVisible="{Binding IsPointerOver, RelativeSource={RelativeSource AncestorType=controls:NodeOutput}}">
+                            <TextBlock Text="⎍"
+                                       IsVisible="{Binding IsDanglingExec}"
+                                       Foreground="#666666"
+                                       FontSize="11"
+                                       VerticalAlignment="Center"
+                                       ToolTip.Tip="body 自然结束，回到控制流节点 End" />
+                        </StackPanel>
+                    </StackPanel>
                 </controls:NodeOutput.Header>
             </controls:NodeOutput>
         </DataTemplate>
@@ -618,6 +629,24 @@
                                         </Border>
                                     </DataTemplate>
 
+                                    <!-- Leading group comment (decorative label) -->
+                                    <DataTemplate DataType="{x:Type viewModels:GroupCommentVM}">
+                                        <Border Width="{Binding Width}"
+                                                Height="{Binding Height}"
+                                                CornerRadius="6"
+                                                Padding="6,2"
+                                                IsHitTestVisible="False"
+                                                Background="#33222222"
+                                                BorderBrush="#88444444"
+                                                BorderThickness="1">
+                                            <TextBlock Text="{Binding Comment}"
+                                                       FontSize="10"
+                                                       Foreground="#CCCCCC"
+                                                       TextWrapping="Wrap"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                    </DataTemplate>
+
                                     <!-- Blueprint node -->
                                     <DataTemplate DataType="{x:Type viewModels:BlueprintNodeVMV6}">
                                         <controls:Node Location="{Binding Location, Mode=TwoWay}"
@@ -651,6 +680,31 @@
                                                                    Foreground="White"
                                                                    FontWeight="SemiBold"
                                                                    FontSize="12" />
+                                                        <TextBlock Text="{Binding TerminatorGlyph}"
+                                                                   IsVisible="{Binding IsTerminator}"
+                                                                   Foreground="{Binding TerminatorColorHex, Converter={StaticResource HexToBrushConverter}}"
+                                                                   FontSize="12"
+                                                                   VerticalAlignment="Center"
+                                                                   ToolTip.Tip="终结符：exec 路径在此终止" />
+                                                        <!-- Comment indicator + inline editor -->
+                                                        <TextBlock Text="&#x1F4AC;"
+                                                                   FontSize="10"
+                                                                   Opacity="0.7"
+                                                                   VerticalAlignment="Center"
+                                                                   Cursor="Hand"
+                                                                   ToolTip.Tip="{Binding Comment}"
+                                                                   PointerPressed="OnCommentIndicatorPressed" />
+                                                        <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
+                                                                 IsVisible="{Binding IsEditingComment}"
+                                                                 FontSize="10"
+                                                                 MinWidth="80"
+                                                                 MaxWidth="160"
+                                                                 Padding="2,0"
+                                                                 VerticalAlignment="Center"
+                                                                 Background="White"
+                                                                 Foreground="Black"
+                                                                 KeyDown="OnCommentEditKeyDown"
+                                                                 LostFocus="OnCommentEditLostFocus" />
                                                     </StackPanel>
                                                 </Border>
                                             </controls:Node.Header>

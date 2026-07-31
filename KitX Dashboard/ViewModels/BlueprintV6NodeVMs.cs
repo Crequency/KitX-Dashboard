@@ -65,6 +65,13 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
     /// </summary>
     public bool ShowDefaultValue => !IsConnected && !IsExecution && Flow == ConnectorFlow.Input;
 
+    /// <summary>
+    /// True on an unwired Exec output pin — the exec path dangles here (P5-B1). For a
+    /// sub-scope tail this is the *natural* end (back to the control-flow node's End);
+    /// the ground icon visualises that instead of implying an error.
+    /// </summary>
+    public bool IsDanglingExec => IsExecution && !IsConnected && Flow == ConnectorFlow.Output;
+
     /// <summary>Maps PinType to hex colour for visual rendering.</summary>
     public static string GetHexColorForPinType(PinType pinType) => pinType switch
     {
@@ -90,7 +97,10 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
             if (e.PropertyName == nameof(CanConnect))
                 OnPropertyChanged(nameof(EffectiveBorderColorHex));
             if (e.PropertyName == nameof(IsConnected))
+            {
                 OnPropertyChanged(nameof(ShowDefaultValue));
+                OnPropertyChanged(nameof(IsDanglingExec));
+            }
         };
     }
 
@@ -101,6 +111,7 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
         OnPropertyChanged(nameof(PinTypeText));
         OnPropertyChanged(nameof(EffectiveBorderColorHex));
         OnPropertyChanged(nameof(ShowDefaultValue));
+        OnPropertyChanged(nameof(IsDanglingExec));
     }
 
     partial void OnDefaultValueChanged(string? value)
@@ -162,6 +173,8 @@ public partial class BlueprintConnectionVMV6 : ConnectionViewModelBase
 /// </summary>
 public partial class BlueprintNodeVMV6 : NodeViewModelBase
 {
+    private readonly Action<BlueprintNodeVMV6, string?>? _onCommentCommitted;
+
     /// <summary>Original BlueprintNode.Id for round-trip export.</summary>
     [ObservableProperty]
     private string _blueprintNodeId = string.Empty;
@@ -185,6 +198,45 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     /// <summary>User comment (from BlueprintNode.Comment or GroupComment).</summary>
     [ObservableProperty]
     private string? _comment;
+
+    /// <summary>Whether inline comment editing is active (P5-B2).</summary>
+    [ObservableProperty]
+    private bool _isEditingComment;
+
+    /// <summary>Temporary text during inline comment editing (P5-B2).</summary>
+    [ObservableProperty]
+    private string _commentEditText = string.Empty;
+
+    public BlueprintNodeVMV6()
+        : this(null) { }
+
+    public BlueprintNodeVMV6(Action<BlueprintNodeVMV6, string?>? onCommentCommitted)
+    {
+        _onCommentCommitted = onCommentCommitted;
+    }
+
+    /// <summary>Begins inline comment editing.</summary>
+    [RelayCommand]
+    private void StartEditComment()
+    {
+        CommentEditText = Comment ?? string.Empty;
+        IsEditingComment = true;
+    }
+
+    /// <summary>Commits the inline comment text and writes it back to the Contract.</summary>
+    [RelayCommand]
+    private void CommitComment()
+    {
+        IsEditingComment = false;
+        Comment = CommentEditText;
+    }
+
+    /// <summary>Discards the inline comment edit.</summary>
+    [RelayCommand]
+    private void CancelEditComment()
+    {
+        IsEditingComment = false;
+    }
 
     /// <summary>
     /// True for *definition* nodes (const/var block declarations). Definition nodes
@@ -227,6 +279,22 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     public bool IsTerminator
         => NodeType == BlueprintNodeType.BuiltinFunction
            && FunctionName is "break" or "continue";
+
+    /// <summary>Terminator glyph (break ⏹ / continue ⏭), shown on the node header (P5-B1).</summary>
+    public string? TerminatorGlyph => FunctionName switch
+    {
+        "break" => "⏹",
+        "continue" => "⏭",
+        _ => null,
+    };
+
+    /// <summary>Terminator glyph colour (break red / continue orange).</summary>
+    public string? TerminatorColorHex => FunctionName switch
+    {
+        "break" => "#F44336",
+        "continue" => "#FF9800",
+        _ => null,
+    };
 
     /// <summary>Whether the node has a non-empty comment (for UI indicator).</summary>
     public bool HasComment => !string.IsNullOrEmpty(Comment);
@@ -295,5 +363,9 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         => OnPropertyChanged(nameof(EffectiveHeaderColorHex));
 
     partial void OnCommentChanged(string? value)
-        => OnPropertyChanged(nameof(HasComment));
+    {
+        OnPropertyChanged(nameof(HasComment));
+        // Any comment change (inline edit or programmatic) is written back to the Contract.
+        _onCommentCommitted?.Invoke(this, value);
+    }
 }

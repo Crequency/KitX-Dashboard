@@ -116,6 +116,19 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         foreach (var scope in scopes)
             Nodes.Add(CreateScopeFrame(scope));
 
+        // Phase 1b: leading group comments (decorative labels anchored above their node).
+        foreach (var groupComment in blueprint.GroupComments)
+        {
+            var anchor = blueprint.Nodes.FirstOrDefault(n => n.Id == groupComment.AnchorNodeId);
+            if (anchor == null) continue;
+            Nodes.Add(new GroupCommentVM
+            {
+                Comment = groupComment.Comment,
+                Location = new Avalonia.Point(anchor.X, anchor.Y - 26),
+                Width = Math.Max(120, anchor.Width),
+            });
+        }
+
         // Phase 2: create node VMs + their connector VMs.
         foreach (var node in blueprint.Nodes)
         {
@@ -391,6 +404,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                 _contractToConnector.Remove(kvp.Value);
             }
         }
+
+        // Drop group comments anchored to any deleted node (P5-B2).
+        if (_workingBlueprint.GroupComments.Count > 0)
+            _workingBlueprint.GroupComments.RemoveAll(gc => nodeIds.Contains(gc.AnchorNodeId));
 
         SelectedNodes.Clear();
         RefreshIsConnected();
@@ -687,7 +704,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             && !node.InputPins.Any(p => p.Type == PinType.Execution)
             && !node.OutputPins.Any(p => p.Type == PinType.Execution);
 
-        var nodeVm = new BlueprintNodeVMV6
+        var nodeVm = new BlueprintNodeVMV6(
+            (node, comment) => UpdateNodeComment(node.BlueprintNodeId, comment))
         {
             BlueprintNodeId = node.Id,
             NodeType = node.NodeType,
@@ -752,6 +770,15 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var pin = node?.InputPins.Find(p => p.Id == pinId);
         if (pin != null)
             pin.DefaultValue = value;
+    }
+
+    /// <summary>Writes an edited node comment back to the Contract node (P5-B2, trailing comment).</summary>
+    private void UpdateNodeComment(string nodeId, string? comment)
+    {
+        if (_workingBlueprint == null) return;
+        var node = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node != null)
+            node.Comment = string.IsNullOrWhiteSpace(comment) ? null : comment;
     }
 
     private BlueprintConnectionVMV6? ConvertConnectionToViewModel(BlueprintConnection conn)

@@ -447,4 +447,33 @@ public partial class WorkflowEditorWindowV6 : Window
         }
         base.OnKeyDown(e);
     }
+
+    // ── Inline node comment editing (P5-B2) ──
+
+    private void OnCommentIndicatorPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        if (sender is Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node })
+            node.StartEditCommentCommand.Execute(null);
+    }
+
+    private void OnCommentEditKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    {
+        if (sender is not Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node }) return;
+        if (e.Key == Avalonia.Input.Key.Enter)
+        {
+            node.CommitCommentCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Avalonia.Input.Key.Escape)
+        {
+            node.CancelEditCommentCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnCommentEditLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node })
+            node.CommitCommentCommand.Execute(null);
+    }
 }
