@@ -173,16 +173,35 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         foreach (var scope in scopes)
             Nodes.Add(CreateScopeFrame(scope));
 
-        // Phase 1b: leading group comments (decorative labels anchored above their node).
+        // Phase 1b: leading group comments (decorative notes with a dashed subgraph frame).
         foreach (var groupComment in blueprint.GroupComments)
         {
             var anchor = blueprint.Nodes.FirstOrDefault(n => n.Id == groupComment.AnchorNodeId);
             if (anchor == null) continue;
+
+            // Bounding box over the data subgraph (NodeIds), falling back to the anchor node.
+            double minX = anchor.X, minY = anchor.Y;
+            double maxX = anchor.X + (anchor.Width > 0 ? anchor.Width : 180);
+            double maxY = anchor.Y + (anchor.Height > 0 ? anchor.Height : 60);
+            foreach (var id in groupComment.NodeIds)
+            {
+                var n = blueprint.Nodes.FirstOrDefault(x => x.Id == id);
+                if (n == null) continue;
+                minX = Math.Min(minX, n.X);
+                minY = Math.Min(minY, n.Y);
+                maxX = Math.Max(maxX, n.X + (n.Width > 0 ? n.Width : 180));
+                maxY = Math.Max(maxY, n.Y + (n.Height > 0 ? n.Height : 60));
+            }
+
             Nodes.Add(new GroupCommentVM
             {
                 Comment = groupComment.Comment,
-                Location = new Avalonia.Point(anchor.X, anchor.Y - 26),
-                Width = Math.Max(120, anchor.Width),
+                Location = new Avalonia.Point(minX, minY - 26),
+                Width = Math.Max(140, anchor.Width),
+                HighlightX = minX,
+                HighlightY = minY,
+                HighlightWidth = maxX - minX,
+                HighlightHeight = maxY - minY,
             });
         }
 
@@ -222,6 +241,33 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>Flat list of creatable nodes shown in the palette panel.</summary>
     public ObservableCollection<PaletteItemV6> PaletteItems { get; } = new();
 
+    /// <summary>Palette search filter (R9).</summary>
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    /// <summary>Control-flow palette items filtered by <see cref="SearchText"/> (R9).</summary>
+    public ObservableCollection<PaletteItemV6> FilteredControlFlowItems { get; } = new();
+
+    /// <summary>Builtin-function palette items filtered by <see cref="SearchText"/> (R9).</summary>
+    public ObservableCollection<PaletteItemV6> FilteredBuiltinItems { get; } = new();
+
+    partial void OnSearchTextChanged(string value) => RefreshFilteredPalette();
+
+    /// <summary>Refreshes the grouped/filtered palette collections from <see cref="PaletteItems"/>.</summary>
+    private void RefreshFilteredPalette()
+    {
+        var q = SearchText?.Trim();
+        FilteredControlFlowItems.Clear();
+        FilteredBuiltinItems.Clear();
+        foreach (var item in PaletteItems)
+        {
+            if (!string.IsNullOrEmpty(q)
+                && item.DisplayName.Contains(q, StringComparison.OrdinalIgnoreCase) == false)
+                continue;
+            (item.Kind == "ControlFlow" ? FilteredControlFlowItems : FilteredBuiltinItems).Add(item);
+        }
+    }
+
     /// <summary>Fills the palette from the builtin registry + hardcoded control-flow set.</summary>
     private void PopulatePalette()
     {
@@ -235,6 +281,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (_registry != null)
             foreach (var fn in _registry.All.OrderBy(f => f.Name))
                 PaletteItems.Add(new PaletteItemV6(fn.Name, "Builtin", fn.Name));
+        RefreshFilteredPalette();
     }
 
     /// <summary>Creates a node from a palette item and drops it onto the canvas.</summary>
@@ -856,7 +903,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             && !node.OutputPins.Any(p => p.Type == PinType.Execution);
 
         var nodeVm = new BlueprintNodeVMV6(
-            (node, comment) => UpdateNodeComment(node.BlueprintNodeId, comment))
+            (node, comment) => UpdateNodeComment(node.BlueprintNodeId, comment),
+            (node, oldName, newName, value) => UpdateDefinitionNode(node, oldName, newName, value))
         {
             BlueprintNodeId = node.Id,
             NodeType = node.NodeType,
@@ -868,6 +916,24 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             IsDefinition = isDefinition,
             Location = new Avalonia.Point(node.X, node.Y),
         };
+
+        // Definition nodes carry editable declaration name/type/value (R8).
+        if (isDefinition)
+        {
+            switch (node)
+            {
+                case ConstNode cn:
+                    nodeVm.DefinitionName = cn.ConstName;
+                    nodeVm.DefinitionType = cn.ConstType;
+                    nodeVm.DefinitionValue = cn.ConstValue;
+                    break;
+                case VariableNode vn:
+                    nodeVm.DefinitionName = vn.VarName;
+                    nodeVm.DefinitionType = vn.VarType;
+                    nodeVm.DefinitionValue = vn.VarInitialValue;
+                    break;
+            }
+        }
 
         foreach (var pin in node.InputPins)
         {
@@ -930,6 +996,35 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var node = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == nodeId);
         if (node != null)
             node.Comment = string.IsNullOrWhiteSpace(comment) ? null : comment;
+    }
+
+    /// <summary>
+    /// Writes an edited definition node's declaration name/value back to the Contract (R8).
+    /// Renaming a definition node synchronises all same-named usage nodes in the working
+    /// blueprint so Reverse produces a consistent declaration + references.
+    /// </summary>
+    private void UpdateDefinitionNode(BlueprintNodeVMV6 node, string? oldName, string? newName, string? value)
+    {
+        if (_workingBlueprint == null) return;
+        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
+        switch (contractNode)
+        {
+            case ConstNode cn:
+                if (!string.IsNullOrEmpty(newName))
+                    cn.ConstName = newName;
+                cn.ConstValue = string.IsNullOrWhiteSpace(value) ? null : value;
+                break;
+            case VariableNode vn:
+                if (!string.IsNullOrEmpty(newName) && newName != oldName)
+                {
+                    vn.VarName = newName;
+                    foreach (var other in _workingBlueprint.Nodes.OfType<VariableNode>())
+                        if (!ReferenceEquals(other, vn) && other.VarName == oldName)
+                            other.VarName = newName;
+                }
+                vn.VarInitialValue = string.IsNullOrWhiteSpace(value) ? null : value;
+                break;
+        }
     }
 
     private BlueprintConnectionVMV6? ConvertConnectionToViewModel(BlueprintConnection conn)

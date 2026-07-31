@@ -15,6 +15,7 @@ using KitX.Dashboard.ViewModels;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
 using KitX.WorkflowV6.Serialization;
+using NodifyM.Avalonia;
 using Serilog;
 using TextMateSharp.Grammars;
 using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
@@ -521,5 +522,67 @@ public partial class WorkflowEditorWindowV6 : Window
     {
         if (sender is Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node })
             node.CommitCommentCommand.Execute(null);
+    }
+
+    // ── GroupComment note drag / collapse (R7) ──
+
+    private bool _gcDragging;
+    private bool _gcClickCandidate;
+    private Avalonia.Point _gcDragStartPointer;
+    private Avalonia.Point _gcDragStartLocation;
+
+    private void OnGroupCommentPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        if (sender is not Avalonia.Controls.Control c || c.DataContext is not GroupCommentVM vm) return;
+        var editor = this.FindControl<NodifyM.Avalonia.Controls.NodifyEditor>("EditorControl");
+        if (editor == null) return;
+        _gcDragStartPointer = e.GetPosition(editor);
+        _gcDragStartLocation = vm.Location;
+        _gcDragging = true;
+        _gcClickCandidate = true;
+        e.Pointer.Capture(c);
+        e.Handled = true;  // prevent NodifyEditor node selection/drag
+    }
+
+    private void OnGroupCommentPointerMoved(object? sender, Avalonia.Input.PointerEventArgs e)
+    {
+        if (!_gcDragging || sender is not Avalonia.Controls.Control c || c.DataContext is not GroupCommentVM vm) return;
+        var editor = this.FindControl<NodifyM.Avalonia.Controls.NodifyEditor>("EditorControl");
+        if (editor == null) return;
+        var p = e.GetPosition(editor);
+        var dx = p.X - _gcDragStartPointer.X;
+        var dy = p.Y - _gcDragStartPointer.Y;
+        if (Math.Abs(dx) > 3 || Math.Abs(dy) > 3)
+            _gcClickCandidate = false;
+        vm.Location = new Avalonia.Point(_gcDragStartLocation.X + dx, _gcDragStartLocation.Y + dy);
+        e.Handled = true;
+    }
+
+    private void OnGroupCommentPointerReleased(object? sender, Avalonia.Input.PointerReleasedEventArgs e)
+    {
+        if (!_gcDragging) return;
+        _gcDragging = false;
+        if (sender is Avalonia.Controls.Control c)
+        {
+            e.Pointer.Capture(null);
+            if (c.DataContext is GroupCommentVM vm)
+            {
+                if (_gcClickCandidate)
+                    vm.IsCollapsed = !vm.IsCollapsed;   // click toggles collapse
+                else
+                    SnapGroupComment(vm);
+            }
+        }
+        e.Handled = true;
+    }
+
+    /// <summary>Snaps the note back onto its subgraph frame top when dropped nearby (R7).</summary>
+    private static void SnapGroupComment(GroupCommentVM vm)
+    {
+        var targetX = vm.HighlightX;
+        var targetY = vm.HighlightY - 26;
+        var x = Math.Abs(vm.Location.X - targetX) < 100 ? targetX : vm.Location.X;
+        var y = Math.Abs(vm.Location.Y - targetY) < 90 ? targetY : vm.Location.Y;
+        vm.Location = new Avalonia.Point(x, y);
     }
 }

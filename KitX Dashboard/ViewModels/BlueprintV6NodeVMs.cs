@@ -174,6 +174,7 @@ public partial class BlueprintConnectionVMV6 : ConnectionViewModelBase
 public partial class BlueprintNodeVMV6 : NodeViewModelBase
 {
     private readonly Action<BlueprintNodeVMV6, string?>? _onCommentCommitted;
+    private readonly Action<BlueprintNodeVMV6, string? /*oldName*/, string? /*newName*/, string? /*value*/>? _onDefinitionEdited;
 
     /// <summary>Original BlueprintNode.Id for round-trip export.</summary>
     [ObservableProperty]
@@ -215,6 +216,13 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         _onCommentCommitted = onCommentCommitted;
     }
 
+    public BlueprintNodeVMV6(Action<BlueprintNodeVMV6, string?>? onCommentCommitted,
+        Action<BlueprintNodeVMV6, string?, string?, string?>? onDefinitionEdited)
+    {
+        _onCommentCommitted = onCommentCommitted;
+        _onDefinitionEdited = onDefinitionEdited;
+    }
+
     /// <summary>Begins inline comment editing.</summary>
     [RelayCommand]
     private void StartEditComment()
@@ -246,8 +254,59 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     [ObservableProperty]
     private bool _isDefinition;
 
-    /// <summary>Header title for definition nodes (e.g. "def guessNum").</summary>
-    public string DefinitionTitle => IsDefinition ? $"def {DisplayTitle}" : DisplayTitle;
+    /// <summary>Header title for definition nodes: "const guessNum" / "var counter" (R8).</summary>
+    public string DefinitionTitle =>
+        IsDefinition
+            ? $"{DefinitionKindText} {DefinitionName ?? DisplayTitle}"
+            : DisplayTitle;
+
+    /// <summary>Definition keyword ("const" / "var") for the header title (R8).</summary>
+    public string DefinitionKindText => NodeType switch
+    {
+        BlueprintNodeType.Const => "const",
+        BlueprintNodeType.Variable => "var",
+        _ => "def",
+    };
+
+    /// <summary>
+    /// Editable declaration name for definition nodes (ConstNode.ConstName / VariableNode.VarName).
+    /// Renaming a definition node synchronises all same-named usage nodes in the working blueprint.
+    /// </summary>
+    private string? _definitionName;
+    public string? DefinitionName
+    {
+        get => _definitionName;
+        set
+        {
+            if (_definitionName == value) return;
+            var oldName = _definitionName;
+            _definitionName = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(DefinitionTitle));
+            _onDefinitionEdited?.Invoke(this, oldName, value, DefinitionValue);
+        }
+    }
+
+    /// <summary>Declaration type text for definition nodes ("int", "string", ...).</summary>
+    [ObservableProperty]
+    private string? _definitionType;
+
+    /// <summary>
+    /// Editable initial value for definition nodes (ConstValue / VarInitialValue).
+    /// Empty → null (a var with no initial value).
+    /// </summary>
+    private string? _definitionValue;
+    public string? DefinitionValue
+    {
+        get => _definitionValue;
+        set
+        {
+            if (_definitionValue == value) return;
+            _definitionValue = value;
+            OnPropertyChanged();
+            _onDefinitionEdited?.Invoke(this, null, DefinitionName, value);
+        }
+    }
 
     /// <summary>
     /// Header background hex — definition nodes render translucent (alpha ~40%)

@@ -52,6 +52,7 @@
         <!-- V6 Output connector template -->
         <DataTemplate x:Key="V6OutputConnectorTemplate" DataType="{x:Type viewModels:BlueprintConnectorVMV6}">
             <controls:NodeOutput IsConnected="{Binding IsConnected}"
+                                 IsVisible="{Binding !IsDefinitionPin}"
                                  Anchor="{Binding Anchor, Mode=OneWayToSource}">
                 <ToolTip.Tip>
                     <MultiBinding StringFormat="{}{0} ({1}){2}">
@@ -339,10 +340,39 @@
                     <TextBlock DockPanel.Dock="Top"
                                Text="Node Palette"
                                FontWeight="Bold"
-                               Margin="0,0,0,10" />
+                               Margin="0,0,0,6" />
+                    <TextBox DockPanel.Dock="Top"
+                             Text="{Binding BlueprintVM.SearchText, Mode=TwoWay}"
+                             Watermark="搜索节点…"
+                             FontSize="11"
+                             Margin="0,0,0,8"
+                             Padding="4,2" />
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <ItemsControl ItemsSource="{Binding BlueprintVM.PaletteItems}">
+                            <TextBlock Text="控制流"
+                                       FontWeight="SemiBold"
+                                       FontSize="10"
+                                       Opacity="0.7"
+                                       Margin="0,0,0,3" />
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.FilteredControlFlowItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                        <Button Content="{Binding DisplayName}"
+                                                Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Padding="8,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="内置函数"
+                                       FontWeight="SemiBold"
+                                       FontSize="10"
+                                       Opacity="0.7"
+                                       Margin="0,10,0,3" />
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.FilteredBuiltinItems}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
                                         <Button Content="{Binding DisplayName}"
@@ -640,22 +670,44 @@
                                         </Border>
                                     </DataTemplate>
 
-                                    <!-- Leading group comment (decorative label) -->
+                                    <!-- Leading group comment (sticky note + dashed subgraph frame on hover) -->
                                     <DataTemplate DataType="{x:Type viewModels:GroupCommentVM}">
-                                        <Border Width="{Binding Width}"
-                                                Height="{Binding Height}"
-                                                CornerRadius="6"
-                                                Padding="6,2"
-                                                IsHitTestVisible="False"
-                                                Background="#33222222"
-                                                BorderBrush="#88444444"
-                                                BorderThickness="1">
-                                            <TextBlock Text="{Binding Comment}"
-                                                       FontSize="10"
-                                                       Foreground="#CCCCCC"
-                                                       TextWrapping="Wrap"
-                                                       VerticalAlignment="Center" />
-                                        </Border>
+                                        <Grid Width="{Binding HighlightWidth}"
+                                              Height="{Binding HighlightHeight}"
+                                              Background="Transparent">
+                                            <!-- Dashed frame covering the statement's data subgraph (hover) -->
+                                            <Rectangle Stroke="#FFB300"
+                                                       StrokeDashArray="4,3"
+                                                       StrokeThickness="1.5"
+                                                       IsHitTestVisible="False"
+                                                       IsVisible="{Binding IsPointerOver, RelativeSource={RelativeSource AncestorType=Grid}}">
+                                                <Rectangle.Fill>
+                                                    <SolidColorBrush Color="#14FFB300" />
+                                                </Rectangle.Fill>
+                                            </Rectangle>
+                                            <!-- Sticky note (draggable; click toggles collapse) -->
+                                            <Border Width="{Binding Width}"
+                                                    Height="{Binding EffectiveHeight}"
+                                                    VerticalAlignment="Top"
+                                                    HorizontalAlignment="Left"
+                                                    CornerRadius="6"
+                                                    Padding="6,3"
+                                                    Background="#FFF8E1"
+                                                    BorderBrush="#FFB300"
+                                                    BorderThickness="1"
+                                                    Cursor="Hand"
+                                                    ToolTip.Tip="数据子图注释（可拖动 / 点击折叠）"
+                                                    PointerPressed="OnGroupCommentPointerPressed"
+                                                    PointerMoved="OnGroupCommentPointerMoved"
+                                                    PointerReleased="OnGroupCommentPointerReleased">
+                                                <TextBlock Text="{Binding BubbleText}"
+                                                           FontSize="10"
+                                                           FontStyle="Italic"
+                                                           Foreground="#6D4C00"
+                                                           TextWrapping="Wrap"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </Border>
+                                        </Grid>
                                     </DataTemplate>
 
                                     <!-- Blueprint node -->
@@ -728,7 +780,52 @@
                                                                    Margin="0,3,0,0"
                                                                    Cursor="Hand"
                                                                    TextWrapping="Wrap"
-                                                                    PointerPressed="OnCommentIndicatorPressed" />
+                                                                   PointerPressed="OnCommentIndicatorPressed" />
+                                                        <!-- Definition node declaration editor (R8) -->
+                                                        <StackPanel IsVisible="{Binding IsDefinition}"
+                                                                    Margin="0,5,0,0"
+                                                                    Spacing="3">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Type"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBlock Text="{Binding DefinitionType}"
+                                                                           FontSize="10"
+                                                                           VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Name"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBox Text="{Binding DefinitionName, Mode=TwoWay}"
+                                                                         FontSize="10"
+                                                                         Background="White"
+                                                                         Foreground="Black"
+                                                                         Width="110"
+                                                                         Padding="2,0"
+                                                                         VerticalAlignment="Center"
+                                                                         ToolTip.Tip="重命名会同步所有同名使用节点" />
+                                                            </StackPanel>
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Value"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBox Text="{Binding DefinitionValue, Mode=TwoWay}"
+                                                                         FontSize="10"
+                                                                         Background="White"
+                                                                         Foreground="Black"
+                                                                         Width="110"
+                                                                         Padding="2,0"
+                                                                         VerticalAlignment="Center"
+                                                                         ToolTip.Tip="初始值（留空 = 无初始值）" />
+                                                            </StackPanel>
+                                                        </StackPanel>
                                                     </StackPanel>
                                                 </Border>
                                             </controls:Node.Header>
