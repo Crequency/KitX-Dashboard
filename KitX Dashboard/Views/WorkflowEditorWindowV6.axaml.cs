@@ -135,10 +135,30 @@ public partial class WorkflowEditorWindowV6 : Window
             // Older AvaloniaEdit API surface — non-fatal.
         }
 
+        // P5-C2: load the dedicated KS TextMate grammar (Assets/TextMate/ks) when present,
+        // falling back to the C# grammar approximation. The resources are copied to the
+        // output directory via the csproj Assets/** CopyToOutputDirectory rule.
         var registryOptions = new RegistryOptions(
             ActualThemeVariant == ThemeVariant.Light ? ThemeName.LightPlus : ThemeName.DarkPlus
         );
         var installation = textEditor.InstallTextMate(registryOptions);
+        try
+        {
+            var ksPackage = new System.IO.FileInfo(
+                System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "TextMate", "ks", "package.json"));
+            if (ksPackage.Exists)
+            {
+                registryOptions.LoadFromLocalFile("ks", ksPackage, overwrite: true);
+                installation.SetGrammar(registryOptions.GetScopeByLanguageId("ks"));
+                Log.Information("[WorkflowEditorWindowV6] KS grammar loaded from {Path}", ksPackage.FullName);
+                return;
+            }
+            Log.Warning("[WorkflowEditorWindowV6] KS grammar package not found at {Path}, falling back to C#", ksPackage.FullName);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[WorkflowEditorWindowV6] Failed to load KS grammar, falling back to C#");
+        }
         installation.SetGrammar(
             registryOptions.GetScopeByLanguageId(registryOptions.GetLanguageByExtension(".cs").Id)
         );

@@ -333,6 +333,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         outVm.IsConnected = true;
         inVm.IsConnected = true;
         ErrorInfo = null;
+        TryExpandVariadicPins(src, tgt);
         RefreshScopes();
     }
 
@@ -688,6 +689,75 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             x.TargetNodeId == t.NodeId && x.TargetPinId == t.PinId);
         if (bc != null)
             _workingBlueprint.Connections.Remove(bc);
+    }
+
+    // ── Variadic pin expansion (P5-C1) ──
+
+    /// <summary>
+    /// After a successful connect, auto-grows variadic pin groups (e.g. StringConcat's
+    /// "Input N") when the last group pin gets connected — ported from v5.1
+    /// TryExpandVariadicPins, adapted to the v6 double-write model (Contract + VM +
+    /// both registries stay in sync). The appended pin round-trips through Reverse → KS.
+    /// </summary>
+    private void TryExpandVariadicPins(BlueprintConnectorVMV6 src, BlueprintConnectorVMV6 tgt)
+    {
+        // Input side grows when an input connector is the drop target (current builtins
+        // only declare InputVariadic; output-side groups are deferred).
+        TryExpandVariadicSide(tgt, isOutput: false);
+    }
+
+    private void TryExpandVariadicSide(BlueprintConnectorVMV6 connector, bool isOutput)
+    {
+        if (_workingBlueprint == null || _registry == null) return;
+        if (!_connectorToContract.TryGetValue(connector, out var coord)) return;
+        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == coord.NodeId);
+        if (contractNode is not BuiltinFunctionNode fn) return;
+        var spec = _registry.Get(fn.FunctionName)?.InputVariadic;
+        if (spec == null) return;
+
+        var nodeVm = FindNodeById(fn.Id);
+        if (nodeVm == null) return;
+
+        // Legacy single-PinType mode: collect the node's pins belonging to the variadic
+        // group (matching PinType). Expand only when the LAST pin was just connected.
+        var pinList = nodeVm.Input;
+        var pins = pinList.OfType<BlueprintConnectorVMV6>()
+            .Where(c => c.PinType == spec.PinType)
+            .ToList();
+        if (pins.Count == 0 || connector != pins[^1]) return;
+
+        // Derive the new pin's index from the static (base) group count vs current count.
+        var baseCount = fn.InputPins.Count(p =>
+            p.Name != "Exec"
+            && p.Type == spec.PinType
+            && (string.IsNullOrEmpty(spec.BasePinName)
+                || !p.Name.StartsWith(spec.BasePinName, StringComparison.Ordinal)));
+        var nextIndex = spec.StartIndex + (pins.Count - baseCount);
+        var name = string.IsNullOrEmpty(spec.BasePinName)
+            ? nextIndex.ToString()
+            : $"{spec.BasePinName}{nextIndex}";
+
+        // Append to Contract + VM + registries (v6 double-write).
+        var newPin = new BlueprintPin
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = name,
+            Direction = PinDirection.Input,
+            Type = spec.PinType,
+        };
+        fn.InputPins.Add(newPin);
+
+        var connectorVm = new BlueprintConnectorVMV6(
+            (c, value) => UpdatePinDefaultValue(fn.Id, c.OriginalPinId, value))
+        {
+            Title = name,
+            PinType = spec.PinType,
+            OriginalPinId = newPin.Id,
+            Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+            IsDefinitionPin = false,
+        };
+        nodeVm.Input.Add(connectorVm);
+        RegisterConnector(connectorVm, fn.Id, newPin.Id);
     }
 
     // ── Contract → ViewModel conversion ──

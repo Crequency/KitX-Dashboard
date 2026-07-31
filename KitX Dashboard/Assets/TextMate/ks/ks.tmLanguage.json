@@ -1,0 +1,85 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "KScript",
+  "scopeName": "source.ks",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#characters" },
+    { "include": "#numbers" },
+    { "include": "#types" },
+    { "include": "#keywords" },
+    { "include": "#constants" },
+    { "include": "#pipe" },
+    { "include": "#placeholders" },
+    { "include": "#function-calls" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "name": "comment.line.double-slash.ks", "match": "//.*$" }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.ks",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "name": "constant.character.escape.ks", "match": "\\\\." }
+          ]
+        }
+      ]
+    },
+    "characters": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.ks",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            { "name": "constant.character.escape.ks", "match": "\\\\." }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        { "name": "constant.numeric.ks", "match": "\\b[0-9]+(\\.[0-9]+)?\\b" }
+      ]
+    },
+    "types": {
+      "patterns": [
+        { "name": "storage.type.ks", "match": "\\b(int|float|double|bool|string|char)\\b" }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        { "name": "keyword.control.ks", "match": "\\b(if|else|switch|forEach|while|break|continue|const|var|as)\\b" }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        { "name": "constant.language.ks", "match": "\\b(true|false|null)\\b" }
+      ]
+    },
+    "pipe": {
+      "patterns": [
+        { "name": "keyword.operator.pipe.ks", "match": ">" },
+        { "name": "keyword.operator.assignment.ks", "match": "=" },
+        { "name": "punctuation.definition.ks", "match": "[{}\\(\\)\\[,:]]" }
+      ]
+    },
+    "placeholders": {
+      "patterns": [
+        { "name": "variable.parameter.placeholder.ks", "match": "\\b_\\b" }
+      ]
+    },
+    "function-calls": {
+      "patterns": [
+        { "name": "support.function.ks", "match": "\\b[A-Z][A-Za-z0-9]*(?=\\()" }
+      ]
+    }
+  }
+}
