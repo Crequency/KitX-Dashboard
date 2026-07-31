@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,7 +11,9 @@ using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Event;
+using KitX.WorkflowV6.Backend.RoslynBackend;
 using KitX.WorkflowV6.Builtin;
+using KitX.WorkflowV6.Ir.Lowering;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
 using Serilog;
@@ -39,6 +43,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private readonly IPluginServer? _pluginServer;
     private readonly KsTextLens _ksTextLens;
     private readonly BpGraphLens _bpGraphLens;
+    private readonly StructuredRoslynBackend? _executionBackend;
+    private CancellationTokenSource? _cancellationTokenSource;
 
     private EditorMode _mode = EditorMode.BlockScript;
     private string? _workflowId;
@@ -93,6 +99,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         BuiltinFunctionRegistry? registry = null;
         try { registry = App.GetService<BuiltinFunctionRegistry>(); } catch { /* host without DI */ }
         BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens, registry);
+
+        // Resolve the v6 execution backend (shared interface points elsewhere; use concrete type).
+        try { _executionBackend = App.GetService<StructuredRoslynBackend>(); } catch { /* host without DI */ }
 
         _ksSource = DefaultSource;
 
@@ -384,6 +393,80 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         foreach (var c in newConstants) VariableConstants.Add(c);
     }
 
+    // ── Constant overrides (P4-α) ──
+
+    /// <summary>
+    /// Collects user-modified constant/var overrides (UserValue != DefaultValue).
+    /// Returns null when nothing is overridden. Unlike v5.1 which compares
+    /// evaluated objects, v6 compares the raw text (InitialValueExpression strings).
+    /// </summary>
+    private Dictionary<string, string?>? GetUserConstantOverridesV6()
+    {
+        if (VariableConstants.Count == 0) return null;
+
+        var overrides = new Dictionary<string, string?>();
+        foreach (var constant in VariableConstants)
+        {
+            var def = constant.DefaultValue?.ToString();
+            var usr = constant.UserValue?.ToString();
+            if (!string.Equals(def, usr, StringComparison.Ordinal))
+                overrides[constant.Name] = usr;
+        }
+        return overrides.Count > 0 ? overrides : null;
+    }
+
+    /// <summary>
+    /// Renders a user-entered value as a valid C# literal expression for the given
+    /// KS type. This is necessary because v6 codegen inlines <c>InitialValueExpression</c>
+    /// directly into the generated C# source — an unquoted string would be a syntax error.
+    /// </summary>
+    private static string RenderLiteral(string? text, string type)
+    {
+        if (text is null) return "default";
+        if (string.IsNullOrEmpty(type)) return text;
+        return type.ToLowerInvariant() switch
+        {
+            "string" => "\"" + text.Replace("\\", "\\\\").Replace("\"", "\\\"")
+                                   .Replace("\n", "\\n").Replace("\t", "\\t") + "\"",
+            "char" => "'" + text.Replace("\\", "\\\\").Replace("'", "\\'") + "'",
+            "bool" or "int" or "long" or "double" or "float" => text,
+            _ => text   // dict / unknown: pass through (dict uses DictInitializer, not text)
+        };
+    }
+
+    /// <summary>
+    /// Applies user constant overrides to the IR via with-expressions. Unlike v5.1
+    /// which overwrites <c>DefaultValue</c> (runtime seeding), v6 overwrites
+    /// <c>InitialValueExpression</c> (compile-time text inlining) — see decision 6.
+    /// </summary>
+    private V6Workflow ApplyConstantOverridesV6(V6Workflow ir)
+    {
+        var overrides = GetUserConstantOverridesV6();
+        if (overrides is null || overrides.Count == 0) return ir;
+
+        var cBuilder = ir.Constants.ToBuilder();
+        var gBuilder = ir.GlobalVars.ToBuilder();
+        var changed = false;
+
+        foreach (var (name, userText) in overrides)
+        {
+            if (cBuilder.TryGetValue(name, out var c))
+            {
+                cBuilder[name] = c with { InitialValueExpression = RenderLiteral(userText, c.Type) };
+                changed = true;
+            }
+            else if (gBuilder.TryGetValue(name, out var g))
+            {
+                gBuilder[name] = g with { InitialValueExpression = RenderLiteral(userText, g.Type) };
+                changed = true;
+            }
+        }
+
+        return changed
+            ? ir with { Constants = cBuilder.ToImmutable(), GlobalVars = gBuilder.ToImmutable() }
+            : ir;
+    }
+
     // ── Blueprint VM ──
 
     public BlueprintEditorViewModelV6 BlueprintVM { get; private set; } = null!;
@@ -566,26 +649,97 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         Services.UIStateService.MainWindow?.Activate();
     }
 
-    // ── Toolbar stubs (P4) ──
+    // ── Toolbar commands ──
 
+    /// <summary>
+    /// Parses the current workflow (KS or BP mode), applies constant overrides,
+    /// and executes via StructuredRoslynBackend on a background thread.
+    /// ExecuteAsync is synchronous internally (Roslyn compile + Invoke), so we
+    /// offload it via Task.Run to avoid blocking the UI thread.
+    /// </summary>
     [RelayCommand]
-    private void Run()
+    private async Task RunAsync()
     {
-        ExecutionOutput = "[v6] Run 尚未接入。执行后端 (StructuredRoslynBackend) 将在 P4 阶段接入。";
-        Log.Information("[WorkflowEditorVMV6] Run invoked (stub — P4)");
+        if (_executionBackend is null)
+        {
+            ExecutionOutput = "[v6] StructuredRoslynBackend 未注入，无法执行。";
+            return;
+        }
+
+        // Obtain IR + lowering (KS: ParseLowering; BP: Reverse).
+        V6Workflow ir;
+        LoweringResult? lowering;
+        try
+        {
+            if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint is { Nodes.Count: > 0 } bp)
+            {
+                ir = _bpGraphLens.Reverse(bp);
+                lowering = null; // ScriptCompiler fallback infers PubVarTypes from ir.GlobalVars
+            }
+            else
+            {
+                var helpers = new List<HelperFunction>(HelperFunctions);
+                (ir, lowering) = _ksTextLens.ParseLowering(KsSource, helpers);
+            }
+        }
+        catch (Exception ex)
+        {
+            ExecutionOutput = $"解析失败: {ex.Message}";
+            Log.Error(ex, "[WorkflowEditorVMV6] Run parse failed");
+            return;
+        }
+
+        ir = ApplyConstantOverridesV6(ir);
+
+        IsExecuting = true;
+        ExecutionOutput = "执行中...";
+        StatusText = "Running (v6)...";
+
+        var tokenSource = new CancellationTokenSource();
+        _cancellationTokenSource = tokenSource;
+
+        try
+        {
+            var result = await Task.Run(
+                () => _executionBackend.ExecuteAsync(ir, lowering, tokenSource.Token),
+                tokenSource.Token).ConfigureAwait(true);
+
+            ExecutionOutput = result.IsSuccess
+                ? $"执行完成\n耗时: {result.ExecutionTimeMs}ms\n输出:\n{string.Join("\n", result.Output)}"
+                : $"执行错误:\n{result.ErrorMessage}";
+            StatusText = result.IsSuccess ? "Done (v6)" : "Error (v6)";
+        }
+        catch (OperationCanceledException)
+        {
+            ExecutionOutput = "执行已取消。";
+            StatusText = "Cancelled (v6)";
+        }
+        catch (Exception ex)
+        {
+            ExecutionOutput = $"执行异常: {ex.Message}";
+            StatusText = "Error (v6)";
+            Log.Error(ex, "[WorkflowEditorVMV6] Run failed");
+        }
+        finally
+        {
+            tokenSource.Dispose();
+            _cancellationTokenSource = null;
+            IsExecuting = false;
+        }
     }
 
     [RelayCommand]
     private void Stop()
     {
-        Log.Information("[WorkflowEditorVMV6] Stop invoked (stub)");
+        _cancellationTokenSource?.Cancel();
+        Log.Information("[WorkflowEditorVMV6] Stop invoked");
     }
 
     [RelayCommand]
     private void DebugRun()
     {
-        ExecutionOutput = "[v6] Debug 尚未接入。调试高亮通道将在 P4 阶段接入。";
-        Log.Information("[WorkflowEditorVMV6] DebugRun invoked (stub — P4)");
+        ExecutionOutput = "[v6] Debug 尚未接入。调试高亮通道将在 P4-β 阶段接入。";
+        Log.Information("[WorkflowEditorVMV6] DebugRun invoked (stub — P4-β)");
     }
 
     [RelayCommand]
