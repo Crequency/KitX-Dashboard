@@ -365,10 +365,24 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         ErrorInfo = null;
     }
 
+    /// <summary>
+    /// Removes a single connection (Alt+click on a connector/connection, or the
+    /// connection's context menu) — VM + Contract double-write (R3).
+    /// </summary>
+    [RelayCommand]
+    private void RemoveConnection(BlueprintConnectionVMV6? connection)
+    {
+        if (connection == null || _workingBlueprint == null) return;
+        Connections.Remove(connection);
+        RemoveConnectionFromWorkingBlueprint(connection);
+        RefreshIsConnected();
+        RefreshScopes();
+        ErrorInfo = null;
+    }
+
     /// <summary>Deletes all selected nodes and their connections (canvas + Contract).</summary>
     [RelayCommand]
-    private void DeleteSelectedNodes()
-    {
+    private void DeleteSelectedNodes()    {
         if (_workingBlueprint == null) return;
         var toRemove = SelectedNodes.OfType<BlueprintNodeVMV6>().ToList();
         if (toRemove.Count == 0) return;
@@ -475,6 +489,15 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                 : new ConstraintViolation("KS111", "D2",
                     "Data input 已有入边，不允许多入边。", highlight);
         }
+
+        // Source uniqueness (R4): a single output pin may only drive ONE target — the KS
+        // side cannot express a single output fanning out to multiple consumers without a
+        // variable (each reference becomes its own usage node), and exec stays linear.
+        bool outputHasOutgoing = Connections.OfType<BlueprintConnectionVMV6>()
+            .Any(c => c.Source == output);
+        if (outputHasOutgoing)
+            return new ConstraintViolation("PRE", "Outgoing",
+                "输出端已有出边：KS 无法表达单输出多消费者（多路使用需经变量）。", highlight);
 
         // Duplicate edge: identical (output, input) pair already exists.
         bool duplicate = Connections.OfType<BlueprintConnectionVMV6>()

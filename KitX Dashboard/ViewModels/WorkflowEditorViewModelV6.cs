@@ -188,6 +188,25 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Provides the current editor document text from the view (R1). Returns null while the
+    /// editor is showing a Helper Function rather than the main program — Save/Run/Switch use
+    /// this to take an explicit snapshot instead of trusting the TextChanged-maintained cache.
+    /// </summary>
+    public Func<string?>? EditorTextProvider { get; set; }
+
+    /// <summary>
+    /// Snapshot the editor document into <see cref="KsSource"/> when the editor is in the
+    /// main-program context (R1). Eliminates the "stale cache" failure mode where a helper
+    /// editing session leaves KsSource holding an old value.
+    /// </summary>
+    private void SyncFromEditorText()
+    {
+        var text = EditorTextProvider?.Invoke();
+        if (text != null)
+            KsSource = text;
+    }
+
     public string ConversionError
     {
         get => _conversionError;
@@ -487,11 +506,20 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                     Log.Information("[WorkflowEditorVMV6] BP→KS: bp={BpNodes} nodes, ir={Consts} consts/{Vars} vars/{Stmts} stmts",
                         bp.Nodes.Count, ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length);
                     _lastIr = ir;
-                    KsSource = _ksTextLens.Project(ir);
+                    // R1: only overwrite the KS text when the reverse projection actually
+                    // differs — preserves hand-written formatting/comments on identity trips.
+                    var projected = _ksTextLens.Project(ir);
+                    if (!string.Equals(projected, KsSource, StringComparison.Ordinal))
+                    {
+                        Log.Information("[WorkflowEditorVMV6] BP→KS 反投影改写 KS: {Old} → {New} chars", KsSource.Length, projected.Length);
+                        KsSource = projected;
+                    }
                 }
                 else if (_lastIr != null)
                 {
-                    KsSource = _ksTextLens.Project(_lastIr);
+                    var projected = _ksTextLens.Project(_lastIr);
+                    if (!string.Equals(projected, KsSource, StringComparison.Ordinal))
+                        KsSource = projected;
                 }
                 ConversionError = string.Empty;
             }
@@ -588,6 +616,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     {
         try
         {
+            SyncFromEditorText();
             var parseError = ValidateKsParse();
             if (parseError != null)
             {
@@ -683,6 +712,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
         try
         {
+            if (_mode != EditorMode.Blueprint)
+                SyncFromEditorText();
             Log.Information("[WorkflowEditorVMV6] SaveAsync: Mode={Mode}, KsSource={Length} chars", _mode, KsSource.Length);
             var helpers = new List<HelperFunction>(HelperFunctions);
             V6Workflow ir;
@@ -784,6 +815,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             return;
         }
 
+        // R1: take an explicit snapshot from the editor before parsing (KS mode only).
+        if (_mode != EditorMode.Blueprint)
+            SyncFromEditorText();
         Log.Information("[WorkflowEditorVMV6] Run invoked: Mode={Mode}, KsSource={Length} chars", _mode, KsSource.Length);
         Log.Information("[WorkflowEditorVMV6] Run KsSource content (first 500 chars):\n{Content}",
             KsSource.Length > 500 ? KsSource[..500] : KsSource);
@@ -882,6 +916,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             ExecutionOutput = "[v6] StructuredRoslynBackend 未注入，无法调试。";
             return;
         }
+
+        // R1: take an explicit snapshot from the editor before parsing (KS mode only).
+        if (_mode != EditorMode.Blueprint)
+            SyncFromEditorText();
 
         // Obtain IR + lowering (same as Run).
         V6Workflow ir;

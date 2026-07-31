@@ -559,6 +559,9 @@
                                                ItemsSource="{Binding Nodes}"
                                                Connections="{Binding Connections}"
                                                PendingConnection="{Binding PendingConnection}"
+                                               SelectedItems="{Binding SelectedNodes}"
+                                               DisconnectConnectorCommand="{Binding DisconnectConnectorCommand}"
+                                               RemoveConnectionCommand="{Binding RemoveConnectionCommand}"
                                                Background="Transparent">
 
                             <controls:NodifyEditor.GridLineTemplate>
@@ -585,6 +588,14 @@
                                             <Binding Path="StrokeColorHex"
                                                      Converter="{StaticResource HexToBrushConverter}" />
                                         </controls:Connection.Stroke>
+                                        <controls:Connection.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="断开连线"
+                                                          Command="{Binding DataContext.BlueprintVM.RemoveConnectionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          CommandParameter="{Binding}" />
+                                            </ContextMenu>
+                                        </controls:Connection.ContextMenu>
+                                        <ToolTip.Tip>Alt+点击连接或端点可断开连线</ToolTip.Tip>
                                     </controls:Connection>
                                 </DataTemplate>
                             </controls:NodifyEditor.ConnectionTemplate>

@@ -36,8 +36,12 @@ namespace KitX.Dashboard.Views;
 
 public partial class WorkflowEditorWindowV6 : Window
 {
+    /// <summary>Which document the AvaloniaEdit currently shows — drives TextChanged routing (R1).</summary>
+    private enum EditorContext { MainProgram, HelperFunction }
+
     private readonly WorkflowEditorViewModelV6 _viewModel;
-    private bool _isEditingHelperFunction = false;
+    private EditorContext _context = EditorContext.MainProgram;
+    private bool _textChangedWired;
     private CancellationTokenSource? _debounceCts;
     private CancellationTokenSource? _autoSaveCts;
 
@@ -51,8 +55,15 @@ public partial class WorkflowEditorWindowV6 : Window
         _viewModel = new WorkflowEditorViewModelV6(ksTextLens, bpGraphLens);
         DataContext = _viewModel;
 
+        // R1: the view exposes the live editor text to the VM for explicit snapshots
+        // before Save/Run. Returns null while a Helper Function is shown (not the main program).
+        _viewModel.EditorTextProvider = () =>
+        {
+            if (_context != EditorContext.MainProgram) return null;
+            return this.FindControl<TextEditor>("CodeEditor")?.Document?.Text;
+        };
+
         InitializeEditor();
-        WireUpCodeEditor();
         WireUpHelperFunctions();
         WireUpConstants();
 
@@ -85,12 +96,7 @@ public partial class WorkflowEditorWindowV6 : Window
             _viewModel.SetWorkflowId(workflowId);
             _viewModel.LoadFromIr(ir, kcs.Name, kcs);
 
-            var codeEditor = this.FindControl<TextEditor>("CodeEditor");
-            if (codeEditor != null)
-            {
-                Log.Information("[WorkflowEditorWindowV6] LoadWorkflowAsync: setting codeEditor.Text to {Length} chars", _viewModel.KsSource.Length);
-                codeEditor.Text = _viewModel.KsSource;
-            }
+            SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
 
             var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
             if (constantsItemsControl != null)
@@ -105,9 +111,7 @@ public partial class WorkflowEditorWindowV6 : Window
     public void LoadSource(string ksSource)
     {
         _viewModel.KsSource = ksSource;
-        var codeEditor = this.FindControl<TextEditor>("CodeEditor");
-        if (codeEditor != null)
-            codeEditor.Text = ksSource;
+        SetEditorContext(EditorContext.MainProgram, ksSource, "Main Program");
     }
 
     // ── AvaloniaEdit initialization ──
@@ -142,6 +146,7 @@ public partial class WorkflowEditorWindowV6 : Window
             ActualThemeVariant == ThemeVariant.Light ? ThemeName.LightPlus : ThemeName.DarkPlus
         );
         var installation = textEditor.InstallTextMate(registryOptions);
+        var ksGrammarLoaded = false;
         try
         {
             var ksPackage = new System.IO.FileInfo(
@@ -151,62 +156,85 @@ public partial class WorkflowEditorWindowV6 : Window
                 registryOptions.LoadFromLocalFile("ks", ksPackage, overwrite: true);
                 installation.SetGrammar(registryOptions.GetScopeByLanguageId("ks"));
                 Log.Information("[WorkflowEditorWindowV6] KS grammar loaded from {Path}", ksPackage.FullName);
-                return;
+                ksGrammarLoaded = true;
             }
-            Log.Warning("[WorkflowEditorWindowV6] KS grammar package not found at {Path}, falling back to C#", ksPackage.FullName);
+            else
+            {
+                Log.Warning("[WorkflowEditorWindowV6] KS grammar package not found at {Path}, falling back to C#", ksPackage.FullName);
+            }
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "[WorkflowEditorWindowV6] Failed to load KS grammar, falling back to C#");
         }
-        installation.SetGrammar(
-            registryOptions.GetScopeByLanguageId(registryOptions.GetLanguageByExtension(".cs").Id)
-        );
-
-        textEditor.TextChanged += (_, _) =>
+        if (!ksGrammarLoaded)
         {
-            if (_isEditingHelperFunction) return;
-            _viewModel.KsSource = textEditor.Document?.Text ?? string.Empty;
-        };
+            installation.SetGrammar(
+                registryOptions.GetScopeByLanguageId(registryOptions.GetLanguageByExtension(".cs").Id));
+        }
+
+        // Single TextChanged routing point (R1): wire once, not per theme-change call.
+        if (!_textChangedWired)
+        {
+            textEditor.TextChanged += OnEditorTextChanged;
+            _textChangedWired = true;
+        }
     }
 
-    // ── Code editor wiring (debounced constant parsing + auto-save) ──
+    // ── Editor context routing (R1) ──
 
-    private void WireUpCodeEditor()
+    /// <summary>
+    /// Atomically switches the editor to show <paramref name="docText"/> under the given
+    /// context, keeping the context flag, document, and title in sync. The TextChanged
+    /// handler routes typing to the main program (KsSource) or the selected helper's Code.
+    /// </summary>
+    private void SetEditorContext(EditorContext context, string docText, string title)
     {
+        _context = context;
         var codeEditor = this.FindControl<TextEditor>("CodeEditor");
-        if (codeEditor == null) return;
+        var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
+        if (codeEditor != null)
+            codeEditor.Text = docText;
+        if (codeEditorTitle != null)
+            codeEditorTitle.Text = title;
+    }
 
-        codeEditor.TextChanged += (_, _) =>
+    /// <summary>
+    /// The single editor TextChanged handler. Routes by current context, and — for the
+    /// main program — refreshes KsSource, debounced constant parsing, and auto-save.
+    /// </summary>
+    private void OnEditorTextChanged(object? sender, EventArgs e)
+    {
+        if (sender is not TextEditor codeEditor || codeEditor.Document == null) return;
+        var doc = codeEditor.Document.Text;
+
+        if (_context == EditorContext.HelperFunction)
         {
-            if (codeEditor.Document == null) return;
+            if (_viewModel.SelectedHelperFunction != null)
+                _viewModel.SelectedHelperFunction.Code = doc;
+            return;
+        }
 
-            if (_isEditingHelperFunction)
+        _viewModel.KsSource = doc;
+
+        // Debounced constant parsing (500ms).
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+        _ = Task.Delay(500, token).ContinueWith(t =>
+        {
+            if (t.IsCanceled) return;
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
-                if (_viewModel.SelectedHelperFunction != null)
-                    _viewModel.SelectedHelperFunction.Code = codeEditor.Document.Text;
-                return;
-            }
+                if (codeEditor.Document == null) return;
+                _viewModel.ParseConstantsFromCode(codeEditor.Document.Text);
+                var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
+                if (constantsItemsControl != null)
+                    constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
+            });
+        }, token);
 
-            // Debounced constant parsing (500ms)
-            _debounceCts?.Cancel();
-            _debounceCts = new CancellationTokenSource();
-            var token = _debounceCts.Token;
-            _ = Task.Delay(500, token).ContinueWith(t =>
-            {
-                if (t.IsCanceled) return;
-                Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    if (codeEditor.Document == null) return;
-                    _viewModel.ParseConstantsFromCode(codeEditor.Document.Text);
-                    var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
-                    if (constantsItemsControl != null)
-                        constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
-                });
-            }, token);
-
-            ScheduleAutoSave();
-        };
+        ScheduleAutoSave();
     }
 
     // ── Helper Functions wiring ──
@@ -250,30 +278,16 @@ public partial class WorkflowEditorWindowV6 : Window
         if (sender is ListBox listBox && listBox.SelectedItem is HelperFunction selectedFunction)
         {
             _viewModel.SelectedHelperFunction = selectedFunction;
-            _isEditingHelperFunction = true;
-
-            var codeEditor = this.FindControl<TextEditor>("CodeEditor");
-            var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
-
-            if (codeEditor != null)
-                codeEditor.Text = selectedFunction.Code;
-            if (codeEditorTitle != null)
-                codeEditorTitle.Text = $"Helper Function: {selectedFunction.Name}";
+            SetEditorContext(EditorContext.HelperFunction,
+                selectedFunction.Code ?? string.Empty,
+                $"Helper Function: {selectedFunction.Name}");
         }
     }
 
     private void OnBackToMainProgram(object? sender, RoutedEventArgs e)
     {
-        _isEditingHelperFunction = false;
         _viewModel.SelectedHelperFunction = null;
-
-        var codeEditor = this.FindControl<TextEditor>("CodeEditor");
-        var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
-
-        if (codeEditor != null)
-            codeEditor.Text = _viewModel.KsSource;
-        if (codeEditorTitle != null)
-            codeEditorTitle.Text = "Main Program";
+        SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
 
         var listBox = this.FindControl<ListBox>("HelperFunctionsListBox");
         if (listBox != null)
@@ -303,15 +317,20 @@ public partial class WorkflowEditorWindowV6 : Window
                 listBox.ItemsSource = _viewModel.HelperFunctions;
             }
 
-            if (_viewModel.SelectedHelperFunction == null)
+            // R1: the VM auto-selects the next helper (or null) after removal — refresh the
+            // editor context to match the new selection so the code-behind flag, document,
+            // and title never drift out of sync.
+            if (_viewModel.SelectedHelperFunction is { } remaining)
             {
-                _isEditingHelperFunction = false;
-                var codeEditor = this.FindControl<TextEditor>("CodeEditor");
-                var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
-                if (codeEditor != null)
-                    codeEditor.Text = _viewModel.KsSource;
-                if (codeEditorTitle != null)
-                    codeEditorTitle.Text = "Main Program";
+                SetEditorContext(EditorContext.HelperFunction,
+                    remaining.Code ?? string.Empty,
+                    $"Helper Function: {remaining.Name}");
+                if (listBox != null)
+                    listBox.SelectedItem = remaining;
+            }
+            else
+            {
+                SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
             }
         }
     }
@@ -394,16 +413,12 @@ public partial class WorkflowEditorWindowV6 : Window
         {
             Dispatcher.UIThread.Post(() =>
             {
-                var codeEditor = this.FindControl<TextEditor>("CodeEditor");
-                var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
+                // R1: returning to KS mode always restores the main-program editing context
+                // (in case a helper session was active when the mode switched).
+                SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
+
                 var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
-
-                _isEditingHelperFunction = false;
-                if (codeEditor != null)
-                    codeEditor.Text = _viewModel.KsSource;
-                if (codeEditorTitle != null)
-                    codeEditorTitle.Text = "Main Program";
-
+                var codeEditor = this.FindControl<TextEditor>("CodeEditor");
                 if (codeEditor?.Document != null)
                 {
                     _viewModel.ParseConstantsFromCode(codeEditor.Document.Text);
@@ -460,12 +475,19 @@ public partial class WorkflowEditorWindowV6 : Window
             _ = _viewModel.SaveAsync();
             e.Handled = true;
         }
-        else if (e.Key == Avalonia.Input.Key.Delete && _viewModel.IsBlueprintMode)
+        else if (e.Key == Avalonia.Input.Key.Delete && _viewModel.IsBlueprintMode && !IsTextInputFocused())
         {
             _viewModel.BlueprintVM.DeleteSelectedNodesCommand.Execute(null);
             e.Handled = true;
         }
         base.OnKeyDown(e);
+    }
+
+    /// <summary>True when keyboard focus is inside a text input (Delete must not remove nodes then).</summary>
+    private bool IsTextInputFocused()
+    {
+        var focus = FocusManager?.GetFocusedElement();
+        return focus is TextBox or TextEditor;
     }
 
     // ── Inline node comment editing (P5-B2) ──
