@@ -53,6 +53,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     [ObservableProperty]
     private bool _hasContent;
 
+    /// <summary>Whether scope background frames are visible (P5-A3). Hiding keeps the canvas flat.</summary>
+    [ObservableProperty]
+    private bool _showScopeFrames = true;
+
     /// <summary>Active constraint violation shown in the error bar (null = no error).</summary>
     [ObservableProperty]
     private ConstraintViolation? _errorInfo;
@@ -411,6 +415,11 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var highlight = new[] { srcCoord.NodeId, tgtCoord.NodeId }
             .Where(id => !string.IsNullOrEmpty(id)).ToArray();
 
+        // Definition nodes (const/var block declarations) don't participate in wiring.
+        if (IsDefinitionConnector(src) || IsDefinitionConnector(tgt))
+            return new ConstraintViolation("PRE", "Definition",
+                "定义型节点不可连线（const/var 声明不参与数据/执行图）。", highlight);
+
         // Direction: one end must be Output, the other Input.
         bool srcIsOutput = src.Flow == ConnectorViewModelBase.ConnectorFlow.Output;
         bool tgtIsOutput = tgt.Flow == ConnectorViewModelBase.ConnectorFlow.Output;
@@ -463,6 +472,13 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     {
         if (source == PinType.Any || target == PinType.Any) return true;
         return source == target;
+    }
+
+    /// <summary>True when the connector belongs to a definition node (const/var declaration).</summary>
+    private bool IsDefinitionConnector(BlueprintConnectorVMV6 connector)
+    {
+        if (!_connectorToContract.TryGetValue(connector, out var coord)) return false;
+        return FindNodeById(coord.NodeId)?.IsDefinition == true;
     }
 
     // Violation codes introduced by a connection (rejected during edit). Global-completeness
@@ -686,13 +702,15 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
         foreach (var pin in node.InputPins)
         {
-            var connector = new BlueprintConnectorVMV6
+            var connector = new BlueprintConnectorVMV6(
+                (connector, value) => UpdatePinDefaultValue(node.Id, connector.OriginalPinId, value))
             {
                 Title = pin.Name,
                 PinType = pin.Type,
                 OriginalPinId = pin.Id,
                 DefaultValue = pin.DefaultValue,
                 Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+                IsDefinitionPin = isDefinition,
             };
             nodeVm.Input.Add(connector);
             RegisterConnector(connector, node.Id, pin.Id);
@@ -706,6 +724,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                 PinType = pin.Type,
                 OriginalPinId = pin.Id,
                 Flow = ConnectorViewModelBase.ConnectorFlow.Output,
+                IsDefinitionPin = isDefinition,
             };
             nodeVm.Output.Add(connector);
             RegisterConnector(connector, node.Id, pin.Id);
@@ -719,6 +738,20 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         connector.CanConnect = true;  // default connectable until hover-preview rejects
         _contractToConnector[(nodeId, pinId)] = connector;
         _connectorToContract[connector] = (nodeId, pinId);
+    }
+
+    /// <summary>
+    /// Writes an edited inline default value back to the Contract pin (P5-A1). The
+    /// working blueprint is the authoritative copy, so any later Reverse → KS
+    /// round-trip picks the new literal up automatically.
+    /// </summary>
+    private void UpdatePinDefaultValue(string nodeId, string? pinId, string? value)
+    {
+        if (_workingBlueprint == null || string.IsNullOrEmpty(pinId)) return;
+        var node = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        var pin = node?.InputPins.Find(p => p.Id == pinId);
+        if (pin != null)
+            pin.DefaultValue = value;
     }
 
     private BlueprintConnectionVMV6? ConvertConnectionToViewModel(BlueprintConnection conn)

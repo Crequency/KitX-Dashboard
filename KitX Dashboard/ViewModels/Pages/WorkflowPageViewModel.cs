@@ -91,6 +91,16 @@ internal class WorkflowPageViewModel : ViewModelBase
             _eventService.Publish(EventNames.WorkflowCreated, EventArgs.Empty);
         });
 
+        // P5-A4: create a v6-format workflow (empty v6 IR). The v6 editor opens when the
+        // card is double-clicked (OpenWorkflowEditorAsync dispatches on IrVersion == "v6").
+        CreateV6WorkflowCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            var workflow = await _storageService.CreateWorkflowAsync(
+                TranslateTextWithSuffix("Workflow", "NewWorkflow") ?? "New Workflow", null, "v6");
+            WorkflowCases.Add(workflow);
+            _eventService.Publish(EventNames.WorkflowCreated, EventArgs.Empty);
+        });
+
         OpenWorkflowCommand = ReactiveCommand.Create<IWorkflowCase>(workflow =>
         {
             OpenWorkflowEditorAsync(workflow);
@@ -601,6 +611,9 @@ internal class WorkflowPageViewModel : ViewModelBase
     internal static ObservableCollection<IWorkflowCase> WorkflowCases => UIStateService.WorkflowCases;
 
     internal ReactiveCommand<Unit, Unit>? CreateWorkflowCommand { get; set; }
+
+    /// <summary>Creates a v6-format (WorkflowV6 IR) workflow (P5-A4).</summary>
+    internal ReactiveCommand<Unit, Unit>? CreateV6WorkflowCommand { get; set; }
 
     internal ReactiveCommand<IWorkflowCase, Unit>? OpenWorkflowCommand { get; set; }
 

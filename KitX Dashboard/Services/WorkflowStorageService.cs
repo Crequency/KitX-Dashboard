@@ -9,6 +9,7 @@ using KitX.Core.Contract.Workflow;
 using KitX.Workflow.Ir;
 using KitX.Workflow.Serialization;
 using Serilog;
+using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WorkflowStorageService v2 — persists KcsFileFormat v2 (IR as storage).
@@ -45,13 +46,16 @@ public class WorkflowStorageService : IWorkflowStorageService
     public string StorageDirectory => _storageDirectory;
 
     /// <inheritdoc/>
-    public async Task<IWorkflowCase> CreateWorkflowAsync(string name, string? description = null)
+    public async Task<IWorkflowCase> CreateWorkflowAsync(string name, string? description = null, string irVersion = "v5")
     {
         EnsureDirectoryExists();
 
         var id = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow;
 
+        // P5-A4: "v6" stores an empty v6 Workflow IR (the v6 editor opens with it and
+        // projects an empty KS buffer); the default "v5" keeps the v5 empty IR path.
+        var isV6 = irVersion == "v6";
         var kcs = new KcsFileFormat
         {
             Id = id,
@@ -61,9 +65,12 @@ public class WorkflowStorageService : IWorkflowStorageService
             CreatedTime = now,
             LastModifiedTime = now,
             VariableConstants = new Dictionary<string, object?>(),
+            IrVersion = isV6 ? "v6" : "v5",
             // v2: store an empty IR (one #MainBlock, no statements). The host projects
             // BS/BP views on demand when the editor opens.
-            IrData = IrSerializer.Serialize(NewEmptyWorkflow()),
+            IrData = isV6
+                ? KitX.WorkflowV6.Serialization.WorkflowSerializer.Serialize(new V6Workflow())
+                : IrSerializer.Serialize(NewEmptyWorkflow()),
         };
 
         var filePath = GetWorkflowFilePath(id);

@@ -21,6 +21,7 @@
         <!-- V6 Input connector template -->
         <DataTemplate x:Key="V6InputConnectorTemplate" DataType="{x:Type viewModels:BlueprintConnectorVMV6}">
             <controls:NodeInput IsConnected="{Binding IsConnected}"
+                                IsVisible="{Binding !IsDefinitionPin}"
                                 Anchor="{Binding Anchor, Mode=OneWayToSource}">
                 <ToolTip.Tip>
                     <MultiBinding StringFormat="{}{0} ({1}){2}">
@@ -33,7 +34,17 @@
                     <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
                 </controls:NodeInput.BorderBrush>
                 <controls:NodeInput.Header>
-                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="11" />
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="11" />
+                        <TextBox Text="{Binding DefaultValue, Mode=TwoWay}"
+                                 IsVisible="{Binding ShowDefaultValue}"
+                                 Watermark="默认值"
+                                 FontSize="10"
+                                 Width="60"
+                                 Padding="2,0"
+                                 VerticalAlignment="Center"
+                                 ToolTip.Tip="未连接数据端点值，可在运行时作为字面量使用" />
+                    </StackPanel>
                 </controls:NodeInput.Header>
             </controls:NodeInput>
         </DataTemplate>
@@ -154,6 +165,15 @@
                                   Padding="4"
                                   ToolTip.Tip="Show metadata">
                         <icon:MaterialIcon Width="16" Height="16" Kind="InformationOutline" />
+                    </ToggleButton>
+
+                    <!-- Scope frames toggle (BP mode) -->
+                    <ToggleButton VerticalAlignment="Center"
+                                  Padding="4"
+                                  IsVisible="{Binding IsBlueprintMode}"
+                                  IsChecked="{Binding BlueprintVM.ShowScopeFrames}"
+                                  ToolTip.Tip="显示/隐藏作用域背景框">
+                        <icon:MaterialIcon Width="16" Height="16" Kind="BorderAllVariant" />
                     </ToggleButton>
 
                     <Border Width="1" Height="24" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" />
@@ -578,7 +598,8 @@
                                                 Height="{Binding FrameHeight}"
                                                 CornerRadius="8"
                                                 BorderThickness="2"
-                                                IsHitTestVisible="False">
+                                                IsHitTestVisible="False"
+                                                IsVisible="{Binding DataContext.BlueprintVM.ShowScopeFrames, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <Border.Background>
                                                 <Binding Path="BackgroundColorHex"
                                                          Converter="{StaticResource HexToBrushConverter}" />

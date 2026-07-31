@@ -53,6 +53,13 @@
                         <TextBlock Text="{DynamicResource Text_Workflow_Create}" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
+                <Button Command="{Binding CreateV6WorkflowCommand}"
+                        ToolTip.Tip="New V6 Workflow">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <icon:MaterialIcon Width="20" Height="20" Kind="AlphaVBox" />
+                        <TextBlock Text="V6" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
 

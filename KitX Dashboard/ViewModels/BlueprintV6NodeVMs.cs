@@ -1,3 +1,4 @@
+using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Workflow;
@@ -21,6 +22,8 @@ namespace KitX.Dashboard.ViewModels;
 /// </summary>
 public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
 {
+    private readonly Action<BlueprintConnectorVMV6, string?>? _onDefaultValueEdited;
+
     /// <summary>Pin data type — drives colour and Exec/Data visual distinction.</summary>
     [ObservableProperty]
     private PinType _pinType = PinType.Any;
@@ -37,6 +40,13 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
     [ObservableProperty]
     private string? _runtimeValue;
 
+    /// <summary>
+    /// True when this pin belongs to a *definition* node (const/var block declaration).
+    /// Such nodes don't participate in wiring — their Value input pin is hidden (P5-A2).
+    /// </summary>
+    [ObservableProperty]
+    private bool _isDefinitionPin;
+
     /// <summary>True for execution-flow pins (rendered as triangles).</summary>
     public bool IsExecution => PinType == PinType.Execution;
 
@@ -48,6 +58,12 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
 
     /// <summary>Border colour: red when CanConnect is false (hover-preview rejection), else PinType colour.</summary>
     public string EffectiveBorderColorHex => CanConnect ? PinTypeColorHex : "#F44336";
+
+    /// <summary>
+    /// True on an unwired, non-Exec input pin — drives the inline default-value editor
+    /// (P5-A1). Editing the value is routed back to the Contract via the constructor callback.
+    /// </summary>
+    public bool ShowDefaultValue => !IsConnected && !IsExecution && Flow == ConnectorFlow.Input;
 
     /// <summary>Maps PinType to hex colour for visual rendering.</summary>
     public static string GetHexColorForPinType(PinType pinType) => pinType switch
@@ -63,12 +79,18 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
     };
 
     public BlueprintConnectorVMV6()
+        : this(null) { }
+
+    public BlueprintConnectorVMV6(Action<BlueprintConnectorVMV6, string?>? onDefaultValueEdited)
     {
-        // CanConnect lives on the base class; forward its changes to EffectiveBorderColorHex.
+        _onDefaultValueEdited = onDefaultValueEdited;
+        // CanConnect / IsConnected live on the base class; forward their changes to derived visuals.
         PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(CanConnect))
                 OnPropertyChanged(nameof(EffectiveBorderColorHex));
+            if (e.PropertyName == nameof(IsConnected))
+                OnPropertyChanged(nameof(ShowDefaultValue));
         };
     }
 
@@ -78,7 +100,11 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
         OnPropertyChanged(nameof(PinTypeColorHex));
         OnPropertyChanged(nameof(PinTypeText));
         OnPropertyChanged(nameof(EffectiveBorderColorHex));
+        OnPropertyChanged(nameof(ShowDefaultValue));
     }
+
+    partial void OnDefaultValueChanged(string? value)
+        => _onDefaultValueEdited?.Invoke(this, value);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
