@@ -125,6 +125,7 @@ public partial class WorkflowEditorWindowV6 : Window
 
         textEditor.TextChanged += (_, _) =>
         {
+            if (_isEditingHelperFunction) return;
             _viewModel.KsSource = textEditor.Document?.Text ?? string.Empty;
         };
     }
