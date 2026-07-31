@@ -594,6 +594,12 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var headerColor = BlueprintNodeVMV6.GetHeaderColor(node.NodeType, functionName);
         var displayTitle = node.GetDisplayTitle();
 
+        // Definition nodes (const/var block declarations) carry NO Exec pins — that is
+        // the only reliable discriminator between a definition and a usage node.
+        bool isDefinition = node is ConstNode or VariableNode
+            && !node.InputPins.Any(p => p.Type == PinType.Execution)
+            && !node.OutputPins.Any(p => p.Type == PinType.Execution);
+
         var nodeVm = new BlueprintNodeVMV6
         {
             BlueprintNodeId = node.Id,
@@ -603,6 +609,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             HeaderColorHex = headerColor,
             Comment = node.Comment,
             Title = displayTitle,
+            IsDefinition = isDefinition,
             Location = new Avalonia.Point(node.X, node.Y),
         };
 

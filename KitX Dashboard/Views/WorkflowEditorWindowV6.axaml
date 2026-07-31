@@ -592,7 +592,7 @@
                                                         BorderBrush="{Binding DebugBorderBrushHex, Converter={StaticResource HexToBrushConverter}}"
                                                         BorderThickness="2">
                                                     <Border.Background>
-                                                        <Binding Path="HeaderColorHex"
+                                                        <Binding Path="EffectiveHeaderColorHex"
                                                                  Converter="{StaticResource HexToBrushConverter}" />
                                                     </Border.Background>
                                                     <Border.ContextMenu>
@@ -606,7 +606,7 @@
                                                                  VerticalAlignment="Center"
                                                                  Fill="#F44336"
                                                                  IsVisible="{Binding IsBreakpoint}" />
-                                                        <TextBlock Text="{Binding DisplayTitle}"
+                                                        <TextBlock Text="{Binding DefinitionTitle}"
                                                                    Foreground="White"
                                                                    FontWeight="SemiBold"
                                                                    FontSize="12" />

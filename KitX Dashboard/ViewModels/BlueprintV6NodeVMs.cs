@@ -160,6 +160,26 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     [ObservableProperty]
     private string? _comment;
 
+    /// <summary>
+    /// True for *definition* nodes (const/var block declarations). Definition nodes
+    /// have no Exec pins and no connections — they live in the initialisation region,
+    /// unlike usage nodes which are wired into the exec chain.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isDefinition;
+
+    /// <summary>Header title for definition nodes (e.g. "def guessNum").</summary>
+    public string DefinitionTitle => IsDefinition ? $"def {DisplayTitle}" : DisplayTitle;
+
+    /// <summary>
+    /// Header background hex — definition nodes render translucent (alpha ~40%)
+    /// to visually separate the initialisation region from the exec-wired usage nodes.
+    /// </summary>
+    public string EffectiveHeaderColorHex =>
+        IsDefinition && HeaderColorHex.Length == 7
+            ? HeaderColorHex + "66"
+            : HeaderColorHex;
+
     /// <summary>Whether this node is currently executing (debug highlight).</summary>
     [ObservableProperty]
     private bool _isExecuting;
@@ -238,6 +258,15 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         OnPropertyChanged(nameof(DebugBorderBrushHex));
         OnPropertyChanged(nameof(DebugBorderThickness));
     }
+
+    partial void OnIsDefinitionChanged(bool value)
+    {
+        OnPropertyChanged(nameof(DefinitionTitle));
+        OnPropertyChanged(nameof(EffectiveHeaderColorHex));
+    }
+
+    partial void OnHeaderColorHexChanged(string value)
+        => OnPropertyChanged(nameof(EffectiveHeaderColorHex));
 
     partial void OnCommentChanged(string? value)
         => OnPropertyChanged(nameof(HasComment));
