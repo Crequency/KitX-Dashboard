@@ -120,6 +120,21 @@ public partial class WorkflowEditorWindowV6 : Window
         Log.Information("[WorkflowEditorWindowV6] InitializeEditor: setting Text to {Length} chars", _viewModel.KsSource.Length);
         textEditor.Text = _viewModel.KsSource;
 
+        // KS grammar requires 4-space indents and forbids Tab (KS001).
+        // Configure the editor so pressing Tab inserts 4 spaces instead of a Tab char.
+        try
+        {
+            textEditor.Options = new AvaloniaEdit.TextEditorOptions
+            {
+                ConvertTabsToSpaces = true,
+                IndentationSize = 4,
+            };
+        }
+        catch
+        {
+            // Older AvaloniaEdit API surface — non-fatal.
+        }
+
         var registryOptions = new RegistryOptions(
             ActualThemeVariant == ThemeVariant.Light ? ThemeName.LightPlus : ThemeName.DarkPlus
         );

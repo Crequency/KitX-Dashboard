@@ -485,6 +485,35 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             : ir;
     }
 
+    // ── KS parse validation (diagnostics-aware) ──
+
+    /// <summary>
+    /// Parses <see cref="KsSource"/> and fails fast when the tokenizer/parser reports
+    /// errors (KS001/KS002/KS062 etc.). The parser is lenient — it skips offending
+    /// lines (dropping const/var/body content) but still returns a partial IR. This
+    /// helper surfaces those errors so Run/Save/BP-switch do NOT silently consume a
+    /// damaged IR. Returns the formatted error text, or null when the source parses clean.
+    /// </summary>
+    private string? ValidateKsParse()
+    {
+        if (string.IsNullOrWhiteSpace(KsSource)) return null;
+        try
+        {
+            var (_, diag) = _ksTextLens.ParseAstWithDiagnostics(KsSource);
+            if (!diag.HasErrors) return null;
+            var detail = string.Join("\n", diag.Items
+                .Where(d => d.Severity == KsDiagnosticSeverity.Error)
+                .Select(d => $"  [{d.Code}] L{d.Line}: {d.Message}"));
+            Log.Warning("[WorkflowEditorVMV6] KS parse errors ({Count}):\n{Detail}", diag.ErrorCount, detail);
+            return detail;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[WorkflowEditorVMV6] KS parse threw");
+            return $"  [EX] {ex.Message}";
+        }
+    }
+
     // ── Blueprint VM ──
 
     public BlueprintEditorViewModelV6 BlueprintVM { get; private set; } = null!;
@@ -535,6 +564,13 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     {
         try
         {
+            var parseError = ValidateKsParse();
+            if (parseError != null)
+            {
+                ConversionError = $"KS 解析错误，无法切换至 BP:\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
+                StatusText = "KS 解析错误";
+                return;
+            }
             var helpers = new List<HelperFunction>(HelperFunctions);
             var ir = _ksTextLens.Parse(KsSource, helpers);
             _lastIr = ir;
@@ -633,6 +669,15 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             }
             else
             {
+                var parseError = ValidateKsParse();
+                if (parseError != null)
+                {
+                    // Abort the save — persisting a partially-parsed IR would permanently
+                    // corrupt the .kcs file (const/var/body silently dropped).
+                    StatusText = $"Save aborted — KS 解析错误:\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
+                    Log.Warning("[WorkflowEditorVMV6] SaveAsync aborted due to parse errors");
+                    return;
+                }
                 ir = _ksTextLens.Parse(KsSource, helpers);
             }
             _lastIr = ir;
@@ -718,6 +763,13 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             }
             else
             {
+                var parseError = ValidateKsParse();
+                if (parseError != null)
+                {
+                    ExecutionOutput = $"KS 解析错误，无法执行:\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
+                    StatusText = "Parse Error";
+                    return;
+                }
                 var helpers = new List<HelperFunction>(HelperFunctions);
                 (ir, lowering) = _ksTextLens.ParseLowering(KsSource, helpers);
             }
@@ -806,6 +858,13 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             }
             else
             {
+                var parseError = ValidateKsParse();
+                if (parseError != null)
+                {
+                    ExecutionOutput = $"KS 解析错误，无法调试:\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
+                    StatusText = "Parse Error";
+                    return;
+                }
                 var helpers = new List<HelperFunction>(HelperFunctions);
                 (ir, lowering) = _ksTextLens.ParseLowering(KsSource, helpers);
             }
