@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Workflow;
 using NodifyM.Avalonia.ViewModelBase;
 
@@ -167,6 +168,10 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     [ObservableProperty]
     private bool _isBreakpoint;
 
+    /// <summary>True after this node has finished executing during debug.</summary>
+    [ObservableProperty]
+    private bool _executionCompleted;
+
     /// <summary>True if this is a control-flow node (Branch/Each/While/Switch).</summary>
     public bool IsControlFlow
         => NodeType == BlueprintNodeType.BuiltinFunction
@@ -179,6 +184,13 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
 
     /// <summary>Whether the node has a non-empty comment (for UI indicator).</summary>
     public bool HasComment => !string.IsNullOrEmpty(Comment);
+
+    /// <summary>Toggles the breakpoint flag on this node (right-click menu).</summary>
+    [RelayCommand]
+    private void ToggleBreakpoint()
+    {
+        IsBreakpoint = !IsBreakpoint;
+    }
 
     /// <summary>Category colour for a given node type + function name.</summary>
     public static string GetHeaderColor(BlueprintNodeType type, string? functionName) => type switch
@@ -197,6 +209,35 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         },
         _ => "#607D8B"
     };
+
+    /// <summary>Debug highlight border colour hex (null when no debug state active).</summary>
+    public string? DebugBorderBrushHex =>
+        IsExecuting ? "#FFEB3B" :
+        IsBreakpoint ? "#F44336" :
+        ExecutionCompleted ? "#4CAF50" :
+        null;
+
+    /// <summary>Debug highlight border thickness (0 when no debug state).</summary>
+    public double DebugBorderThickness =>
+        IsExecuting ? 3.0 : IsBreakpoint ? 2.0 : ExecutionCompleted ? 1.5 : 0.0;
+
+    partial void OnIsExecutingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(DebugBorderBrushHex));
+        OnPropertyChanged(nameof(DebugBorderThickness));
+    }
+
+    partial void OnIsBreakpointChanged(bool value)
+    {
+        OnPropertyChanged(nameof(DebugBorderBrushHex));
+        OnPropertyChanged(nameof(DebugBorderThickness));
+    }
+
+    partial void OnExecutionCompletedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(DebugBorderBrushHex));
+        OnPropertyChanged(nameof(DebugBorderThickness));
+    }
 
     partial void OnCommentChanged(string? value)
         => OnPropertyChanged(nameof(HasComment));

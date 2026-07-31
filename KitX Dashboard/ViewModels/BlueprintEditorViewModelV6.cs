@@ -510,6 +510,47 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
     // ── Helpers ──
 
+    // ── Debug helpers (P4-β) ──
+
+    /// <summary>Finds a node VM by its BlueprintNodeId (= debug statementId n_XXXXXXXX).</summary>
+    public BlueprintNodeVMV6? FindNodeById(string nodeId)
+        => Nodes.OfType<BlueprintNodeVMV6>().FirstOrDefault(n => n.BlueprintNodeId == nodeId);
+
+    /// <summary>
+    /// Finds the primary output connector for a node. Used for wire-value tooltip
+    /// mapping: wireId <c>w:{nodeId}</c> → node's first output connector.
+    /// </summary>
+    public BlueprintConnectorVMV6? FindOutputConnector(string nodeId)
+        => FindNodeById(nodeId)?.Output.OfType<BlueprintConnectorVMV6>().FirstOrDefault();
+
+    /// <summary>
+    /// Finds a specific input connector by node ID + pin name. Used for control-flow
+    /// data-input wire tooltips: wireId <c>w:{ctrlNodeId}:{pinName}</c>.
+    /// </summary>
+    public BlueprintConnectorVMV6? FindInputConnector(string nodeId, string pinName)
+        => FindNodeById(nodeId)?.Input.OfType<BlueprintConnectorVMV6>()
+               .FirstOrDefault(c => c.Title == pinName);
+
+    /// <summary>Clears all debug highlight state (IsExecuting / ExecutionCompleted) from every node.</summary>
+    public void ClearDebugHighlights()
+    {
+        foreach (var n in Nodes.OfType<BlueprintNodeVMV6>())
+        {
+            n.IsExecuting = false;
+            n.ExecutionCompleted = false;
+        }
+    }
+
+    /// <summary>Clears all RuntimeValue tooltips from every connector.</summary>
+    public void ClearRuntimeValues()
+    {
+        foreach (var n in Nodes.OfType<BlueprintNodeVMV6>())
+        {
+            foreach (var c in n.Input.OfType<BlueprintConnectorVMV6>()) c.RuntimeValue = null;
+            foreach (var c in n.Output.OfType<BlueprintConnectorVMV6>()) c.RuntimeValue = null;
+        }
+    }
+
     /// <summary>Recomputes IsConnected for every connector from the current Connections set.</summary>
     private void RefreshIsConnected()
     {

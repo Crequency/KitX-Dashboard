@@ -7,10 +7,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Avalonia.Threading;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Workflow;
 using KitX.Core.Event;
+using KitX.Dashboard.Services;
 using KitX.WorkflowV6.Backend.RoslynBackend;
 using KitX.WorkflowV6.Builtin;
 using KitX.WorkflowV6.Ir.Lowering;
@@ -45,6 +47,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private readonly BpGraphLens _bpGraphLens;
     private readonly StructuredRoslynBackend? _executionBackend;
     private CancellationTokenSource? _cancellationTokenSource;
+    private RealBlueprintDebugger? _debugController;
+    private bool _isDebugging;
+    private bool _isPaused;
 
     private EditorMode _mode = EditorMode.BlockScript;
     private string? _workflowId;
@@ -158,6 +163,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     public string ExecutionOutput { get => _executionOutput; set => SetProperty(ref _executionOutput, value); }
     public bool IsExecuting { get => _isExecuting; set => SetProperty(ref _isExecuting, value); }
     public string StatusText { get => _statusText; set => SetProperty(ref _statusText, value); }
+    public bool IsDebugging { get => _isDebugging; set => SetProperty(ref _isDebugging, value); }
+    public bool IsPaused { get => _isPaused; set => SetProperty(ref _isPaused, value); }
+    public ObservableCollection<RuntimeVariableItem> RuntimeVariables { get; } = [];
 
     // ── KS Source ──
 
@@ -556,6 +564,17 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         // Parse constants from the loaded source
         ParseConstantsFromCode(KsSource);
 
+        // Restore user constant overrides from saved data (P4-γ)
+        if (kcs?.VariableConstants != null)
+        {
+            foreach (var kvp in kcs.VariableConstants)
+            {
+                var existing = VariableConstants.FirstOrDefault(c => c.Name == kvp.Key);
+                if (existing != null)
+                    existing.UserValue = kvp.Value;
+            }
+        }
+
         // Restore trigger config
         if (kcs?.TriggerConfig != null)
         {
@@ -618,7 +637,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 Author = WorkflowAuthor,
                 IrData = irData,
                 IrVersion = "v6",
-                VariableConstants = new Dictionary<string, object?>(),
+                VariableConstants = GetUserConstantOverridesV6() is { } ov
+                    ? ov.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value)
+                    : new Dictionary<string, object?>(),
                 TriggerConfig = tc,
             };
 
@@ -736,12 +757,220 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     }
 
     [RelayCommand]
-    private void DebugRun()
+    private async Task DebugRunAsync()
     {
-        ExecutionOutput = "[v6] Debug 尚未接入。调试高亮通道将在 P4-β 阶段接入。";
-        Log.Information("[WorkflowEditorVMV6] DebugRun invoked (stub — P4-β)");
+        if (IsDebugging)
+        {
+            // Toggle: stop the active debug session.
+            _cancellationTokenSource?.Cancel();
+            return;
+        }
+
+        if (_executionBackend is null)
+        {
+            ExecutionOutput = "[v6] StructuredRoslynBackend 未注入，无法调试。";
+            return;
+        }
+
+        // Obtain IR + lowering (same as Run).
+        V6Workflow ir;
+        LoweringResult? lowering;
+        try
+        {
+            if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint is { Nodes.Count: > 0 } bp)
+            {
+                ir = _bpGraphLens.Reverse(bp);
+                lowering = null;
+            }
+            else
+            {
+                var helpers = new List<HelperFunction>(HelperFunctions);
+                (ir, lowering) = _ksTextLens.ParseLowering(KsSource, helpers);
+            }
+        }
+        catch (Exception ex)
+        {
+            ExecutionOutput = $"解析失败: {ex.Message}";
+            Log.Error(ex, "[WorkflowEditorVMV6] DebugRun parse failed");
+            return;
+        }
+
+        ir = ApplyConstantOverridesV6(ir);
+
+        // Create debugger + wire events.
+        _debugController = new RealBlueprintDebugger();
+        _debugController.SetSpeed(ExecutionSpeed.RealTime);
+        _debugController.NodeExecuting += OnDebugNodeExecuting;
+        _debugController.NodeExecuted += OnDebugNodeExecuted;
+        _debugController.VariableChanged += OnDebugVariableChanged;
+        SyncBreakpointsToDebugger();
+
+        IsDebugging = true;
+        IsPaused = false;
+        ExecutionOutput = "调试中...";
+        StatusText = "Debugging (v6)...";
+
+        var tokenSource = new CancellationTokenSource();
+        _cancellationTokenSource = tokenSource;
+
+        try
+        {
+            var result = await Task.Run(
+                () => _executionBackend.ExecuteAsync(ir, lowering, tokenSource.Token, _debugController),
+                tokenSource.Token).ConfigureAwait(true);
+
+            ExecutionOutput = result.IsSuccess
+                ? $"调试完成\n耗时: {result.ExecutionTimeMs}ms\n输出:\n{string.Join("\n", result.Output)}"
+                : $"调试错误:\n{result.ErrorMessage}";
+            StatusText = result.IsSuccess ? "Debug Done (v6)" : "Error (v6)";
+        }
+        catch (OperationCanceledException)
+        {
+            ExecutionOutput = "调试已取消。";
+            StatusText = "Cancelled (v6)";
+        }
+        catch (Exception ex)
+        {
+            ExecutionOutput = $"调试异常: {ex.Message}";
+            StatusText = "Error (v6)";
+            Log.Error(ex, "[WorkflowEditorVMV6] DebugRun failed");
+        }
+        finally
+        {
+            CleanupDebugController();
+        }
+    }
+
+    // ── Debug event callbacks (P4-β) ──
+
+    private void OnDebugNodeExecuting(string statementId)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            BlueprintVM.FindNodeById(statementId)?.IsExecuting = true;
+            IsPaused = _debugController?.IsPaused ?? false;
+        });
+    }
+
+    private void OnDebugNodeExecuted(string statementId)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (BlueprintVM.FindNodeById(statementId) is { } node)
+            {
+                node.IsExecuting = false;
+                node.ExecutionCompleted = true;
+            }
+            IsPaused = _debugController?.IsPaused ?? false;
+        });
+    }
+
+    private void OnDebugVariableChanged(string name, object? value)
+    {
+        var valStr = value?.ToString() ?? "null";
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (name.StartsWith("w:"))
+            {
+                // Wire value tooltip: w:{nodeId} or w:{ctrlNodeId}:{pinName}
+                var remainder = name[2..];
+                var colonIdx = remainder.IndexOf(':');
+                if (colonIdx > 0)
+                {
+                    var nodeId = remainder[..colonIdx];
+                    var pinName = remainder[(colonIdx + 1)..];
+                    BlueprintVM.FindInputConnector(nodeId, pinName)?.RuntimeValue = valStr;
+                }
+                else
+                {
+                    BlueprintVM.FindOutputConnector(remainder)?.RuntimeValue = valStr;
+                }
+            }
+            else
+            {
+                // PubVar change → variable watch panel
+                UpdateRuntimeVariable(name, valStr);
+            }
+        });
+    }
+
+    private void UpdateRuntimeVariable(string name, string value)
+    {
+        var existing = RuntimeVariables.FirstOrDefault(v => v.Name == name);
+        if (existing != null)
+        {
+            existing.Value = value;
+            existing.LastUpdated = DateTime.Now;
+        }
+        else
+        {
+            RuntimeVariables.Add(new RuntimeVariableItem
+            {
+                Name = name,
+                Value = value,
+                LastUpdated = DateTime.Now,
+            });
+        }
+    }
+
+    // ── Debug controls (P4-β) ──
+
+    [RelayCommand]
+    private void DebugPause() => _debugController?.Pause();
+
+    [RelayCommand]
+    private void DebugStep() => _debugController?.StepNext();
+
+    [RelayCommand]
+    private void DebugContinue() => _debugController?.Continue();
+
+    [RelayCommand]
+    private void ToggleBreakpoint(BlueprintNodeVMV6? node)
+    {
+        if (node == null) return;
+        node.IsBreakpoint = !node.IsBreakpoint;
+        if (_debugController != null)
+        {
+            if (node.IsBreakpoint) _debugController.SetBreakpoint(node.BlueprintNodeId);
+            else _debugController.RemoveBreakpoint(node.BlueprintNodeId);
+        }
+    }
+
+    private void SyncBreakpointsToDebugger()
+    {
+        if (_debugController == null) return;
+        _debugController.ClearBreakpoints();
+        foreach (var n in BlueprintVM.Nodes.OfType<BlueprintNodeVMV6>())
+            if (n.IsBreakpoint)
+                _debugController.SetBreakpoint(n.BlueprintNodeId);
+    }
+
+    private void CleanupDebugController()
+    {
+        if (_debugController != null)
+        {
+            _debugController.NodeExecuting -= OnDebugNodeExecuting;
+            _debugController.NodeExecuted -= OnDebugNodeExecuted;
+            _debugController.VariableChanged -= OnDebugVariableChanged;
+            _debugController = null;
+        }
+        BlueprintVM.ClearDebugHighlights();
+        BlueprintVM.ClearRuntimeValues();
+        RuntimeVariables.Clear();
+        IsDebugging = false;
+        IsPaused = false;
     }
 
     [RelayCommand]
     private void ClearOutput() => ExecutionOutput = string.Empty;
+}
+
+/// <summary>
+/// A runtime variable entry shown in the debug variable watch panel.
+/// </summary>
+public partial class RuntimeVariableItem : ObservableObject
+{
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string? _value;
+    [ObservableProperty] private DateTime _lastUpdated;
 }

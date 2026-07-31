@@ -23,9 +23,10 @@
             <controls:NodeInput IsConnected="{Binding IsConnected}"
                                 Anchor="{Binding Anchor, Mode=OneWayToSource}">
                 <ToolTip.Tip>
-                    <MultiBinding StringFormat="{}{0} ({1})">
+                    <MultiBinding StringFormat="{}{0} ({1}){2}">
                         <Binding Path="Title" />
                         <Binding Path="PinTypeText" />
+                        <Binding Path="RuntimeValue" TargetNullValue="" />
                     </MultiBinding>
                 </ToolTip.Tip>
                 <controls:NodeInput.BorderBrush>
@@ -42,9 +43,10 @@
             <controls:NodeOutput IsConnected="{Binding IsConnected}"
                                  Anchor="{Binding Anchor, Mode=OneWayToSource}">
                 <ToolTip.Tip>
-                    <MultiBinding StringFormat="{}{0} ({1})">
+                    <MultiBinding StringFormat="{}{0} ({1}){2}">
                         <Binding Path="Title" />
                         <Binding Path="PinTypeText" />
+                        <Binding Path="RuntimeValue" TargetNullValue="" />
                     </MultiBinding>
                 </ToolTip.Tip>
                 <controls:NodeOutput.BorderBrush>
@@ -107,6 +109,28 @@
                             <icon:MaterialIcon Width="18" Height="18" Kind="Stop" />
                             <TextBlock Text="Stop" VerticalAlignment="Center" />
                         </StackPanel>
+                    </Button>
+
+                    <!-- Debug step controls (visible only during active debugging) -->
+                    <Button Name="DebugPauseButton"
+                            ToolTip.Tip="Pause"
+                            Command="{Binding DebugPauseCommand}"
+                            IsVisible="{Binding IsDebugging}"
+                            IsEnabled="{Binding !IsPaused}">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Pause" />
+                    </Button>
+                    <Button Name="DebugStepButton"
+                            ToolTip.Tip="Step Over"
+                            Command="{Binding DebugStepCommand}"
+                            IsVisible="{Binding IsDebugging}">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="SkipForward" />
+                    </Button>
+                    <Button Name="DebugContinueButton"
+                            ToolTip.Tip="Continue"
+                            Command="{Binding DebugContinueCommand}"
+                            IsVisible="{Binding IsDebugging}"
+                            IsEnabled="{Binding IsPaused}">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="PlaySpeed" />
                     </Button>
                 </StackPanel>
 
@@ -564,15 +588,29 @@
                                             <controls:Node.Header>
                                                 <Border CornerRadius="4,4,0,0"
                                                         Padding="10,4"
-                                                        HorizontalAlignment="Stretch">
+                                                        HorizontalAlignment="Stretch"
+                                                        BorderBrush="{Binding DebugBorderBrushHex, Converter={StaticResource HexToBrushConverter}}"
+                                                        BorderThickness="2">
                                                     <Border.Background>
                                                         <Binding Path="HeaderColorHex"
                                                                  Converter="{StaticResource HexToBrushConverter}" />
                                                     </Border.Background>
-                                                    <TextBlock Text="{Binding DisplayTitle}"
-                                                               Foreground="White"
-                                                               FontWeight="SemiBold"
-                                                               FontSize="12" />
+                                                    <Border.ContextMenu>
+                                                        <ContextMenu>
+                                                            <MenuItem Header="Toggle Breakpoint"
+                                                                      Command="{Binding ToggleBreakpointCommand}" />
+                                                        </ContextMenu>
+                                                    </Border.ContextMenu>
+                                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                                        <Ellipse Width="8" Height="8"
+                                                                 VerticalAlignment="Center"
+                                                                 Fill="#F44336"
+                                                                 IsVisible="{Binding IsBreakpoint}" />
+                                                        <TextBlock Text="{Binding DisplayTitle}"
+                                                                   Foreground="White"
+                                                                   FontWeight="SemiBold"
+                                                                   FontSize="12" />
+                                                    </StackPanel>
                                                 </Border>
                                             </controls:Node.Header>
                                         </controls:Node>
@@ -593,6 +631,26 @@
             <!-- ==================== Column 4: Output Panel ==================== -->
             <Border Grid.Column="4" Background="{DynamicResource LayerFillColorDefaultBrush}" Margin="5" CornerRadius="5">
                 <DockPanel Margin="10">
+                    <!-- Debug variable watch panel (P4-β-3, visible only during debugging) -->
+                    <Expander DockPanel.Dock="Top"
+                              Header="Variables"
+                              IsVisible="{Binding IsDebugging}"
+                              IsExpanded="True"
+                              Margin="0,0,0,5">
+                        <ItemsControl ItemsSource="{Binding RuntimeVariables}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2" ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="11"
+                                                   FontFamily="Cascadia Mono,Consolas,Menlo,monospace" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Expander>
+
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <TextBlock Text="Output"
                                    FontWeight="Bold"
