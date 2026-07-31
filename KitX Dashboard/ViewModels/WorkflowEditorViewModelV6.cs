@@ -15,6 +15,7 @@ using KitX.Core.Event;
 using KitX.Dashboard.Services;
 using KitX.WorkflowV6.Backend.RoslynBackend;
 using KitX.WorkflowV6.Builtin;
+using KitX.WorkflowV6.Ir;
 using KitX.WorkflowV6.Ir.Lowering;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
@@ -435,58 +436,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         return overrides.Count > 0 ? overrides : null;
     }
 
-    /// <summary>
-    /// Renders a user-entered value as a valid C# literal expression for the given
-    /// KS type. This is necessary because v6 codegen inlines <c>InitialValueExpression</c>
-    /// directly into the generated C# source — an unquoted string would be a syntax error.
-    /// </summary>
-    private static string RenderLiteral(string? text, string type)
-    {
-        if (text is null) return "default";
-        if (string.IsNullOrEmpty(type)) return text;
-        return type.ToLowerInvariant() switch
-        {
-            "string" => "\"" + text.Replace("\\", "\\\\").Replace("\"", "\\\"")
-                                   .Replace("\n", "\\n").Replace("\t", "\\t") + "\"",
-            "char" => "'" + text.Replace("\\", "\\\\").Replace("'", "\\'") + "'",
-            "bool" or "int" or "long" or "double" or "float" => text,
-            _ => text   // dict / unknown: pass through (dict uses DictInitializer, not text)
-        };
-    }
-
-    /// <summary>
-    /// Applies user constant overrides to the IR via with-expressions. Unlike v5.1
-    /// which overwrites <c>DefaultValue</c> (runtime seeding), v6 overwrites
-    /// <c>InitialValueExpression</c> (compile-time text inlining) — see decision 6.
-    /// </summary>
-    private V6Workflow ApplyConstantOverridesV6(V6Workflow ir)
-    {
-        var overrides = GetUserConstantOverridesV6();
-        if (overrides is null || overrides.Count == 0) return ir;
-
-        var cBuilder = ir.Constants.ToBuilder();
-        var gBuilder = ir.GlobalVars.ToBuilder();
-        var changed = false;
-
-        foreach (var (name, userText) in overrides)
-        {
-            if (cBuilder.TryGetValue(name, out var c))
-            {
-                cBuilder[name] = c with { InitialValueExpression = RenderLiteral(userText, c.Type) };
-                changed = true;
-            }
-            else if (gBuilder.TryGetValue(name, out var g))
-            {
-                gBuilder[name] = g with { InitialValueExpression = RenderLiteral(userText, g.Type) };
-                changed = true;
-            }
-        }
-
-        return changed
-            ? ir with { Constants = cBuilder.ToImmutable(), GlobalVars = gBuilder.ToImmutable() }
-            : ir;
-    }
-
     // ── KS parse validation (diagnostics-aware) ──
 
     /// <summary>
@@ -869,7 +818,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             return;
         }
 
-        ir = ApplyConstantOverridesV6(ir);
+        ir = WorkflowOverrides.ApplyConstantOverrides(ir, GetUserConstantOverridesV6());
 
         Log.Information("[WorkflowEditorVMV6] Run IR: {Consts} constants, {Vars} vars, {Stmts} statements, lowering={HasLowering}",
             ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length, lowering != null);
@@ -964,7 +913,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             return;
         }
 
-        ir = ApplyConstantOverridesV6(ir);
+        ir = WorkflowOverrides.ApplyConstantOverrides(ir, GetUserConstantOverridesV6());
 
         // Create debugger + wire events.
         _debugController = new RealBlueprintDebugger();

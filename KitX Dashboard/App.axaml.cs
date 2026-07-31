@@ -100,8 +100,15 @@ public partial class App : Application
 
         // S4: WorkflowSessionManager — IWorkflowManagementService orchestrator (run/stop by id
         // via stored IR + IExecutionBackend). Replaces the archived WorkflowManagementService.
+        // Dispatches both v5 (WorkflowIR) and v6 (WorkflowV6) .kcs formats (P3-δ).
         services.AddSingleton<KitX.Core.Contract.Workflow.IWorkflowManagementService,
             KitX.Dashboard.Services.WorkflowSessionManager>();
+
+        // S6: TriggerManager — ITriggerManager implementation (rebuilt from the archived
+        // ServiceLocator-based version with constructor injection). Routes plugin
+        // TriggerFired signals to subscribed workflows (P3-δ).
+        services.AddSingleton<KitX.Core.Contract.Workflow.ITriggerManager,
+            KitX.Dashboard.Services.TriggerManager>();
 
         // Register SignalTasksManager for signal-based coordination
         services.AddSingleton<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
@@ -135,10 +142,10 @@ public partial class App : Application
         // var rpm = provider.GetRequiredService<IRealPluginManagerBridge>();
         // Log.Information("RealPluginManager pre-resolved. HashCode: {HashCode}", rpm.GetHashCode());
 
-        // Initialize TriggerManager from persisted workflow configurations
-        // Phase 12-prep: ITriggerManager implementation archived. Re-enable post-migration.
-        // var triggerManager = provider.GetRequiredService<ITriggerManager>();
-        // triggerManager.InitializeFromPersistedWorkflows();
+        // Initialize TriggerManager from persisted workflow configurations (P3-δ).
+        // Runs before plugins connect so early TriggerFired events still route correctly.
+        var triggerManager = provider.GetRequiredService<KitX.Core.Contract.Workflow.ITriggerManager>();
+        triggerManager.InitializeFromPersistedWorkflows();
 
         Log.Information("Service provider initialized.");
     }

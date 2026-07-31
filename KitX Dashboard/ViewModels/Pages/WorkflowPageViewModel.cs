@@ -15,6 +15,7 @@ using KitX.Dashboard.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
+using Serilog;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
@@ -152,7 +153,12 @@ internal class WorkflowPageViewModel : ViewModelBase
         _eventService.Subscribe(EventNames.WorkflowDataSaved, (s, e) =>
         {
             if (e is WorkflowSavedEventArgs args)
+            {
                 SyncWorkflowMetadata(args.WorkflowId, args.WorkflowName, args.Description, args.Author);
+                // P3-δ: the editor persists TriggerConfig inside the .kcs envelope; refresh
+                // the card's trigger badge after save (WorkflowSavedEventArgs carries no trigger).
+                SyncWorkflowTriggerConfig(args.WorkflowId);
+            }
         });
 
         // Listen for workflow execution results
@@ -243,6 +249,32 @@ internal class WorkflowPageViewModel : ViewModelBase
                 }
                 return;
             }
+        }
+    }
+
+    /// <summary>
+    /// Refreshes a workflow card's <see cref="TriggerConfig"/> from storage after a save
+    /// (the card is a POCO, so the item is replaced to refresh bindings). P3-δ.
+    /// </summary>
+    private async void SyncWorkflowTriggerConfig(string workflowId)
+    {
+        try
+        {
+            var data = await _storageService.LoadWorkflowDataAsync(workflowId);
+            if (data?.TriggerConfig == null) return;
+            for (int i = 0; i < WorkflowCases.Count; i++)
+            {
+                if (WorkflowCases[i].Id != workflowId) continue;
+                var existing = WorkflowCases[i];
+                existing.TriggerConfig = data.TriggerConfig;
+                WorkflowCases.RemoveAt(i);
+                WorkflowCases.Insert(i, existing);
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[WorkflowPage] SyncWorkflowTriggerConfig failed for {WorkflowId}", workflowId);
         }
     }
 
