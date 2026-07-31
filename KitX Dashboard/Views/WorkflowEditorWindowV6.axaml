@@ -682,40 +682,53 @@
                                                                       Command="{Binding ToggleBreakpointCommand}" />
                                                         </ContextMenu>
                                                     </Border.ContextMenu>
-                                                    <StackPanel Orientation="Horizontal" Spacing="5">
-                                                        <Ellipse Width="8" Height="8"
-                                                                 VerticalAlignment="Center"
-                                                                 Fill="#F44336"
-                                                                 IsVisible="{Binding IsBreakpoint}" />
-                                                        <TextBlock Text="{Binding DefinitionTitle}"
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                                            <Ellipse Width="8" Height="8"
+                                                                     VerticalAlignment="Center"
+                                                                     Fill="#F44336"
+                                                                     IsVisible="{Binding IsBreakpoint}" />
+                                                            <TextBlock Text="{Binding DefinitionTitle}"
+                                                                       Foreground="White"
+                                                                       FontWeight="SemiBold"
+                                                                       FontSize="12" />
+                                                            <TextBlock Text="{Binding TerminatorGlyph}"
+                                                                       IsVisible="{Binding IsTerminator}"
+                                                                       Foreground="{Binding TerminatorColorHex, Converter={StaticResource HexToBrushConverter}}"
+                                                                       FontSize="12"
+                                                                       VerticalAlignment="Center"
+                                                                       ToolTip.Tip="终结符：exec 路径在此终止" />
+                                                            <!-- Comment indicator + inline editor -->
+                                                            <TextBlock Text="&#x1F4AC;"
+                                                                       FontSize="10"
+                                                                       Opacity="0.7"
+                                                                       VerticalAlignment="Center"
+                                                                       Cursor="Hand"
+                                                                       ToolTip.Tip="{Binding Comment}"
+                                                                       PointerPressed="OnCommentIndicatorPressed" />
+                                                            <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
+                                                                     IsVisible="{Binding IsEditingComment}"
+                                                                     FontSize="10"
+                                                                     MinWidth="80"
+                                                                     MaxWidth="160"
+                                                                     Padding="2,0"
+                                                                     VerticalAlignment="Center"
+                                                                     Background="White"
+                                                                     Foreground="Black"
+                                                                     KeyDown="OnCommentEditKeyDown"
+                                                                     LostFocus="OnCommentEditLostFocus" />
+                                                        </StackPanel>
+                                                        <!-- Comment bubble: visible default display of the trailing comment -->
+                                                        <TextBlock Text="{Binding CommentBubbleText}"
+                                                                   IsVisible="{Binding ShowCommentBubble}"
                                                                    Foreground="White"
-                                                                   FontWeight="SemiBold"
-                                                                   FontSize="12" />
-                                                        <TextBlock Text="{Binding TerminatorGlyph}"
-                                                                   IsVisible="{Binding IsTerminator}"
-                                                                   Foreground="{Binding TerminatorColorHex, Converter={StaticResource HexToBrushConverter}}"
-                                                                   FontSize="12"
-                                                                   VerticalAlignment="Center"
-                                                                   ToolTip.Tip="终结符：exec 路径在此终止" />
-                                                        <!-- Comment indicator + inline editor -->
-                                                        <TextBlock Text="&#x1F4AC;"
+                                                                   Opacity="0.92"
                                                                    FontSize="10"
-                                                                   Opacity="0.7"
-                                                                   VerticalAlignment="Center"
+                                                                   FontStyle="Italic"
+                                                                   Margin="0,3,0,0"
                                                                    Cursor="Hand"
-                                                                   ToolTip.Tip="{Binding Comment}"
-                                                                   PointerPressed="OnCommentIndicatorPressed" />
-                                                        <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
-                                                                 IsVisible="{Binding IsEditingComment}"
-                                                                 FontSize="10"
-                                                                 MinWidth="80"
-                                                                 MaxWidth="160"
-                                                                 Padding="2,0"
-                                                                 VerticalAlignment="Center"
-                                                                 Background="White"
-                                                                 Foreground="Black"
-                                                                 KeyDown="OnCommentEditKeyDown"
-                                                                 LostFocus="OnCommentEditLostFocus" />
+                                                                   TextWrapping="Wrap"
+                                                                    PointerPressed="OnCommentIndicatorPressed" />
                                                     </StackPanel>
                                                 </Border>
                                             </controls:Node.Header>

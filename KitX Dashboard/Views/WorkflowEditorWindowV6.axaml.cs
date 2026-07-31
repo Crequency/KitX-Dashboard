@@ -494,7 +494,11 @@ public partial class WorkflowEditorWindowV6 : Window
 
     private void OnCommentIndicatorPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
-        if (sender is Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node })
+        if (sender is not Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node }) return;
+        // R5: toggle — clicking again while editing commits; otherwise begin editing.
+        if (node.IsEditingComment)
+            node.CommitCommentCommand.Execute(null);
+        else
             node.StartEditCommentCommand.Execute(null);
     }
 

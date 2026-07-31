@@ -299,6 +299,12 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     /// <summary>Whether the node has a non-empty comment (for UI indicator).</summary>
     public bool HasComment => !string.IsNullOrEmpty(Comment);
 
+    /// <summary>Comment rendered as a leading-`//` bubble under the header (R5).</summary>
+    public string CommentBubbleText => Comment != null ? $"// {Comment}" : string.Empty;
+
+    /// <summary>Shows the comment bubble when a comment exists and inline editing is off (R5).</summary>
+    public bool ShowCommentBubble => HasComment && !IsEditingComment;
+
     /// <summary>Toggles the breakpoint flag on this node (right-click menu).</summary>
     [RelayCommand]
     private void ToggleBreakpoint()
@@ -365,7 +371,12 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     partial void OnCommentChanged(string? value)
     {
         OnPropertyChanged(nameof(HasComment));
+        OnPropertyChanged(nameof(CommentBubbleText));
+        OnPropertyChanged(nameof(ShowCommentBubble));
         // Any comment change (inline edit or programmatic) is written back to the Contract.
         _onCommentCommitted?.Invoke(this, value);
     }
+
+    partial void OnIsEditingCommentChanged(bool value)
+        => OnPropertyChanged(nameof(ShowCommentBubble));
 }

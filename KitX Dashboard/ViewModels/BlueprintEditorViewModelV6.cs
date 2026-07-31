@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Plugin;
@@ -49,6 +53,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>VM→Contract reverse lookup (Connect / hover-preview need Contract pin coords).</summary>
     private readonly Dictionary<BlueprintConnectorVMV6, (string NodeId, string PinId)> _connectorToContract = new();
 
+    /// <summary>Debounced scope-frame refresh after node moves (R6).</summary>
+    private CancellationTokenSource? _scopeRefreshCts;
+
     /// <summary>Whether the canvas currently has any nodes to display.</summary>
     [ObservableProperty]
     private bool _hasContent;
@@ -92,8 +99,58 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _registry = registry;
         _pluginServer = pluginServer;
         PendingConnection.PropertyChanged += OnPendingConnectionPropertyChanged;
+        Nodes.CollectionChanged += OnNodesCollectionChanged;
         PopulatePalette();
         RefreshPluginTriggers();
+    }
+
+    // ── Node move tracking (R6) ──
+
+    /// <summary>
+    /// Tracks node VMs entering/leaving the canvas so drags can write their new location
+    /// back to the Contract and debounce-refresh the scope frames (which would otherwise
+    /// never follow node movement, and saves would drop positions).
+    /// </summary>
+    private void OnNodesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (var item in e.NewItems.OfType<BlueprintNodeVMV6>())
+                item.PropertyChanged += OnNodeVmPropertyChanged;
+        if (e.OldItems != null)
+            foreach (var item in e.OldItems.OfType<BlueprintNodeVMV6>())
+                item.PropertyChanged -= OnNodeVmPropertyChanged;
+    }
+
+    private void OnNodeVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(BlueprintNodeVMV6.Location)) return;
+        if (sender is not BlueprintNodeVMV6 node || _workingBlueprint == null) return;
+
+        // Keep the authoritative Contract copy in sync with the canvas drag.
+        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
+        if (contractNode != null)
+        {
+            contractNode.X = node.Location.X;
+            contractNode.Y = node.Location.Y;
+        }
+        ScheduleScopeRefresh();
+    }
+
+    /// <summary>Debounces scope-frame recalculation during drags (R6).</summary>
+    private void ScheduleScopeRefresh()
+    {
+        _scopeRefreshCts?.Cancel();
+        _scopeRefreshCts = new CancellationTokenSource();
+        var token = _scopeRefreshCts.Token;
+        _ = Task.Delay(200, token).ContinueWith(t =>
+        {
+            if (t.IsCanceled) return;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (token.IsCancellationRequested) return;
+                RefreshScopes();
+            });
+        }, token);
     }
 
     // ── Loading ──
@@ -206,6 +263,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _workingBlueprint!.Nodes.Add(node);
         Nodes.Add(ConvertNodeToViewModel(node));
         HasContent = true;
+        RefreshScopes();
     }
 
     // ── Plugin trigger palette (P3-δ) ──
