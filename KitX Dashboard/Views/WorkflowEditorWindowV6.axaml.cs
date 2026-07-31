@@ -15,6 +15,7 @@ using KitX.Dashboard.ViewModels;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
 using KitX.WorkflowV6.Serialization;
+using Serilog;
 using TextMateSharp.Grammars;
 using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
 
@@ -86,7 +87,10 @@ public partial class WorkflowEditorWindowV6 : Window
 
             var codeEditor = this.FindControl<TextEditor>("CodeEditor");
             if (codeEditor != null)
+            {
+                Log.Information("[WorkflowEditorWindowV6] LoadWorkflowAsync: setting codeEditor.Text to {Length} chars", _viewModel.KsSource.Length);
                 codeEditor.Text = _viewModel.KsSource;
+            }
 
             var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
             if (constantsItemsControl != null)
@@ -113,6 +117,7 @@ public partial class WorkflowEditorWindowV6 : Window
         var textEditor = this.FindControl<TextEditor>("CodeEditor");
         if (textEditor == null) return;
 
+        Log.Information("[WorkflowEditorWindowV6] InitializeEditor: setting Text to {Length} chars", _viewModel.KsSource.Length);
         textEditor.Text = _viewModel.KsSource;
 
         var registryOptions = new RegistryOptions(

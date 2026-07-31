@@ -172,7 +172,17 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     public string KsSource
     {
         get => _ksSource;
-        set { if (SetProperty(ref _ksSource, value)) IsDirty = true; }
+        set
+        {
+            if (SetProperty(ref _ksSource, value))
+            {
+                IsDirty = true;
+                var preview = (value ?? string.Empty);
+                if (preview.Length > 120) preview = preview[..120] + "...";
+                Log.Information("[WorkflowEditorVMV6] KsSource set: {Length} chars, preview: {Preview}",
+                    value?.Length ?? 0, preview);
+            }
+        }
     }
 
     public string ConversionError
@@ -552,6 +562,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// </summary>
     public void LoadFromIr(V6Workflow ir, string name, KcsFileFormat? kcs)
     {
+        Log.Information("[WorkflowEditorVMV6] LoadFromIr: {Consts} constants, {Vars} vars, {Stmts} statements, {Helpers} helpers",
+            ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length, ir.HelperFunctions.Length);
         _lastIr = ir;
         KsSource = _ksTextLens.Project(ir);
         WorkflowName = name;
@@ -610,6 +622,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
         try
         {
+            Log.Information("[WorkflowEditorVMV6] SaveAsync: Mode={Mode}, KsSource={Length} chars", _mode, KsSource.Length);
             var helpers = new List<HelperFunction>(HelperFunctions);
             V6Workflow ir;
             if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint != null
@@ -690,6 +703,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
 
         Log.Information("[WorkflowEditorVMV6] Run invoked: Mode={Mode}, KsSource={Length} chars", _mode, KsSource.Length);
+        Log.Information("[WorkflowEditorVMV6] Run KsSource content (first 500 chars):\n{Content}",
+            KsSource.Length > 500 ? KsSource[..500] : KsSource);
 
         // Obtain IR + lowering (KS: ParseLowering; BP: Reverse).
         V6Workflow ir;
