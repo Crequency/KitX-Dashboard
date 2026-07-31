@@ -92,7 +92,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         "Print(\"hello, v6\")" + Environment.NewLine +
         "0 > counter" + Environment.NewLine +
         "0 > sum" + Environment.NewLine +
-        "forEach Range(0, max, 1) as i:" + Environment.NewLine +
+        "forEach max > Range(0, _, 1) as i:" + Environment.NewLine +
         "    counter > Add(_, 1) > counter" + Environment.NewLine +
         "    counter > sum";
 
