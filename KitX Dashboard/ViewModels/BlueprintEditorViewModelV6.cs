@@ -202,21 +202,34 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     }
 
     /// <summary>
-    /// Magnetically snaps a note to the nearest (non-definition) node's top edge and
-    /// re-anchors it to that statement (Contract AnchorNodeId is updated so Reverse
-    /// attaches the leading comment to the new statement).
+    /// Magnetically snaps a note to the nearest statement *leader* node's top edge and
+    /// re-anchors it to that statement. Only statement leaders (StatementPrimaryNodeIds)
+    /// can carry a leading comment — otherwise the reverse translator would drop it.
+    /// If the target leader already has a group comment, the snap is rejected (KS side
+    /// allows at most one leading comment per statement).
     /// </summary>
     public void SnapGroupCommentToNode(GroupCommentVM vm)
     {
         if (_workingBlueprint == null) return;
 
+        var primaryIds = _workingBlueprint.StatementPrimaryNodeIds;
         var nearest = Nodes
             .OfType<BlueprintNodeVMV6>()
-            .Where(n => !n.IsDefinition)
+            .Where(n => !n.IsDefinition && primaryIds.Contains(n.BlueprintNodeId))
             .OrderBy(n => (n.Location.X - vm.Location.X) * (n.Location.X - vm.Location.X)
                         + (n.Location.Y - vm.Location.Y) * (n.Location.Y - vm.Location.Y))
             .FirstOrDefault();
         if (nearest == null) return;
+
+        // A statement already carrying a group comment cannot take another (KS 1:1).
+        if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == nearest.BlueprintNodeId
+                                                       && gc.AnchorNodeId != vm.AnchorNodeId))
+        {
+            ErrorInfo = new ConstraintViolation("PRE", "Comment",
+                "目标语句已有组注释（KS 侧一句话只能有一个 Leading 注释）。",
+                new[] { nearest.BlueprintNodeId }, null, null, "#FF9800");
+            return;
+        }
 
         var contractComment = _workingBlueprint.GroupComments
             .FirstOrDefault(gc => gc.AnchorNodeId == vm.AnchorNodeId);
@@ -225,16 +238,64 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             contractComment.AnchorNodeId = nearest.BlueprintNodeId;
             contractComment.NodeIds = [nearest.BlueprintNodeId];
         }
-        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == nearest.BlueprintNodeId);
-        var w = contractNode?.Width > 0 ? contractNode.Width : 180;
 
         vm.AnchorNodeId = nearest.BlueprintNodeId;
         vm.NodeIds = [nearest.BlueprintNodeId];
-        vm.HighlightX = nearest.Location.X;
-        vm.HighlightY = nearest.Location.Y;
-        vm.HighlightWidth = w;
-        vm.HighlightHeight = 60;
         vm.Location = new Avalonia.Point(nearest.Location.X, nearest.Location.Y - 26);
+        UpdateGroupCommentBounds(vm);
+        ErrorInfo = null;
+    }
+
+    /// <summary>
+    /// Creates a group comment on the BP canvas for the given node's statement (R-fix):
+    /// adds the Contract BlueprintGroupComment + a note VM, then starts inline editing.
+    /// </summary>
+    [RelayCommand]
+    private void AddGroupComment(BlueprintNodeVMV6? node)
+    {
+        if (node == null || _workingBlueprint == null || node.IsDefinition) return;
+        if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == node.BlueprintNodeId))
+        {
+            ErrorInfo = new ConstraintViolation("PRE", "Comment",
+                "该语句已有组注释（KS 侧一句话只能有一个 Leading 注释）。",
+                new[] { node.BlueprintNodeId }, null, null, "#FF9800");
+            return;
+        }
+
+        var contractComment = new BlueprintGroupComment
+        {
+            AnchorNodeId = node.BlueprintNodeId,
+            NodeIds = [node.BlueprintNodeId],
+            Comment = string.Empty,
+        };
+        _workingBlueprint.GroupComments.Add(contractComment);
+
+        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
+        var w = contractNode?.Width > 0 ? contractNode.Width : 160;
+        var vm = new GroupCommentVM((v, text) => UpdateGroupCommentComment(v, text))
+        {
+            Comment = string.Empty,
+            AnchorNodeId = node.BlueprintNodeId,
+            NodeIds = [node.BlueprintNodeId],
+            Location = new Avalonia.Point(node.Location.X, node.Location.Y - 26),
+            Width = Math.Max(140, w),
+            HighlightX = node.Location.X,
+            HighlightY = node.Location.Y,
+            HighlightWidth = w,
+            HighlightHeight = 60,
+        };
+        _groupCommentVms.Add(vm);
+        Nodes.Add(vm);
+        vm.BeginEdit();
+    }
+
+    /// <summary>Writes an edited group-comment text back to the Contract (R-fix).</summary>
+    private void UpdateGroupCommentComment(GroupCommentVM vm, string? text)
+    {
+        if (_workingBlueprint == null) return;
+        var gc = _workingBlueprint.GroupComments.FirstOrDefault(x => x.AnchorNodeId == vm.AnchorNodeId);
+        if (gc != null)
+            gc.Comment = string.IsNullOrWhiteSpace(text) ? string.Empty : text;
     }
 
     // ── Loading ──
@@ -278,7 +339,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                 maxY = Math.Max(maxY, n.Y + (n.Height > 0 ? n.Height : 60));
             }
 
-            var vm = new GroupCommentVM
+            var vm = new GroupCommentVM((v, text) => UpdateGroupCommentComment(v, text))
             {
                 Comment = groupComment.Comment,
                 Location = new Avalonia.Point(minX, minY - 26),

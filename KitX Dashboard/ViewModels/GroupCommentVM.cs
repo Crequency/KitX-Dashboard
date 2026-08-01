@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NodifyM.Avalonia.ViewModelBase;
@@ -21,6 +22,8 @@ namespace KitX.Dashboard.ViewModels;
 /// </summary>
 public partial class GroupCommentVM : BaseNodeViewModel
 {
+    private readonly Action<GroupCommentVM, string?>? _onCommentEdited;
+
     /// <summary>The comment text (may contain newlines).</summary>
     [ObservableProperty]
     private string _comment = string.Empty;
@@ -43,6 +46,43 @@ public partial class GroupCommentVM : BaseNodeViewModel
     /// <summary>Collapsed shows only a one-line note; expanded shows the full text.</summary>
     [ObservableProperty]
     private bool _isCollapsed;
+
+    /// <summary>True while the note text is being edited inline.</summary>
+    [ObservableProperty]
+    private bool _isEditing;
+
+    /// <summary>Temporary text during inline editing.</summary>
+    [ObservableProperty]
+    private string _commentEditText = string.Empty;
+
+    public GroupCommentVM()
+        : this(null) { }
+
+    public GroupCommentVM(Action<GroupCommentVM, string?>? onCommentEdited)
+    {
+        _onCommentEdited = onCommentEdited;
+    }
+
+    /// <summary>Begins inline editing of the note text.</summary>
+    public void BeginEdit()
+    {
+        CommentEditText = Comment;
+        IsEditing = true;
+    }
+
+    /// <summary>Commits the edited note text back to the Contract.</summary>
+    public void CommitEdit()
+    {
+        IsEditing = false;
+        Comment = CommentEditText;
+        _onCommentEdited?.Invoke(this, Comment);
+    }
+
+    /// <summary>Discards the inline edit.</summary>
+    public void CancelEdit()
+    {
+        IsEditing = false;
+    }
 
     /// <summary>Bounding box of the comment's data subgraph (NodeIds) — dashed frame on hover.</summary>
     [ObservableProperty]

@@ -534,6 +534,15 @@ public partial class WorkflowEditorWindowV6 : Window
     private void OnGroupCommentPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
         if (sender is not Avalonia.Controls.Control c || c.DataContext is not GroupCommentVM vm) return;
+
+        // Double-click begins inline text editing (and does not start a drag).
+        if (e.ClickCount >= 2)
+        {
+            vm.BeginEdit();
+            e.Handled = true;
+            return;
+        }
+
         var editor = this.FindControl<NodifyM.Avalonia.Controls.NodifyEditor>("EditorControl");
         if (editor == null) return;
         _gcDragStartPointer = e.GetPosition(editor);
@@ -572,9 +581,30 @@ public partial class WorkflowEditorWindowV6 : Window
                 if (_gcClickCandidate)
                     vm.IsCollapsed = !vm.IsCollapsed;   // click toggles collapse
                 else
-                    _viewModel.BlueprintVM.SnapGroupCommentToNode(vm);   // magnetic snap to nearest node
+                    _viewModel.BlueprintVM.SnapGroupCommentToNode(vm);   // magnetic snap to nearest leader
             }
         }
         e.Handled = true;
+    }
+
+    private void OnGroupCommentEditKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    {
+        if (sender is not Avalonia.Controls.Control { DataContext: GroupCommentVM vm }) return;
+        if (e.Key == Avalonia.Input.Key.Enter)
+        {
+            vm.CommitEdit();
+            e.Handled = true;
+        }
+        else if (e.Key == Avalonia.Input.Key.Escape)
+        {
+            vm.CancelEdit();
+            e.Handled = true;
+        }
+    }
+
+    private void OnGroupCommentEditLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Avalonia.Controls.Control { DataContext: GroupCommentVM vm })
+            vm.CommitEdit();
     }
 }
