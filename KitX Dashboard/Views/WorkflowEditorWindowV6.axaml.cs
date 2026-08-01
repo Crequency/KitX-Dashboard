@@ -3,10 +3,14 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.LogicalTree;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -72,7 +76,14 @@ public partial class WorkflowEditorWindowV6 : Window
 
         var editor = this.FindControl<NodifyM.Avalonia.Controls.NodifyEditor>("EditorControl");
         if (editor != null)
-            editor.ContextRequested += OnEditorContextRequested;
+        {
+            // Reliable right-click channel (NodifyM RightClick event — independent of Avalonia's
+            // fragile ContextRequested which TextBox etc. suppress).
+            editor.RightClick += OnEditorRightClick;
+            // Route NodifyM pointer diagnostics into the Dashboard log (troubleshooting F1).
+            NodifyM.Avalonia.Controls.NodifyEditor.PointerDiagnostics =
+                msg => Log.Information("[NodifyM] {Msg}", msg);
+        }
 
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         ActualThemeVariantChanged += (_, _) => InitializeEditor();
@@ -416,46 +427,81 @@ public partial class WorkflowEditorWindowV6 : Window
 
     // ── Editor-level right-click menus (F2) ──
 
+    private Popup? _contextPopup;
+
     /// <summary>
-    /// Shows the right-click menu at the editor level. A press landing on a node opens
-    /// the node menu (breakpoint / group comment / delete); anywhere else opens the
-    /// canvas menu. This replaces the fragile per-Header ContextMenu (Avalonia's
-    /// ContextRequested needs the press+release source to coincide inside the menu's
-    /// visual subtree).
+    /// Shows the right-click menu via NodifyM's reliable <c>RightClick</c> channel (v5.1
+    /// custom-Popup pattern — Avalonia's ContextRequested/ContextMenu is unreliable, e.g.
+    /// suppressed when the pressed element is a TextBox). A press landing on a node opens
+    /// the node menu; anywhere else opens the canvas menu.
     /// </summary>
-    private void OnEditorContextRequested(object? sender, ContextRequestedEventArgs e)
+    private void OnEditorRightClick(object? sender, NodifyM.Avalonia.Events.RightClickEventArgs e)
     {
-        if (sender is not NodifyM.Avalonia.Controls.NodifyEditor editor) return;
-        var source = e.Source as Avalonia.Controls.Control;
+        Log.Information("[WorkflowEditorWindowV6] RightClick: source={Source}, position={Pos}", e.PressedSource?.GetType().Name, e.Position);
+        var source = e.PressedSource as Avalonia.Controls.Control;
         var nodeVm = source?.GetSelfAndVisualAncestors()
             .OfType<NodifyM.Avalonia.Controls.Node>()
             .Select(n => n.DataContext as BlueprintNodeVMV6)
             .FirstOrDefault(dc => dc != null);
 
-        var menu = new ContextMenu();
+        var panel = new StackPanel { Spacing = 2 };
         if (nodeVm != null)
         {
-            menu.Items.Add(new MenuItem { Header = "Toggle Breakpoint", Command = nodeVm.ToggleBreakpointCommand });
-            menu.Items.Add(new MenuItem
-            {
-                Header = "添加组注释",
-                Command = _viewModel.BlueprintVM.AddGroupCommentCommand,
-                CommandParameter = nodeVm,
-            });
-            menu.Items.Add(new MenuItem
-            {
-                Header = "删除节点",
-                Command = _viewModel.BlueprintVM.DeleteNodeCommand,
-                CommandParameter = nodeVm,
-            });
+            panel.Children.Add(CreateMenuButton("Toggle Breakpoint", nodeVm.ToggleBreakpointCommand, null));
+            panel.Children.Add(CreateMenuButton("添加组注释", _viewModel.BlueprintVM.AddGroupCommentCommand, nodeVm));
+            panel.Children.Add(CreateMenuButton("删除节点", _viewModel.BlueprintVM.DeleteNodeCommand, nodeVm));
         }
         else
         {
-            menu.Items.Add(new MenuItem { Header = "画布菜单（开发中）", IsEnabled = false });
+            panel.Children.Add(CreateMenuButton("画布菜单（开发中）", null, null));
         }
+        ShowContextPopup(panel);
+    }
 
-        e.Handled = true;
-        menu.Open(editor);
+    private static Button CreateMenuButton(string text, System.Windows.Input.ICommand? command, object? parameter) => new()
+    {
+        Content = text,
+        Command = command,
+        CommandParameter = parameter,
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+        HorizontalContentAlignment = HorizontalAlignment.Left,
+        Padding = new Thickness(10, 5),
+        Margin = new Thickness(1),
+        MinWidth = 130,
+        FontSize = 12,
+    };
+
+    private void ShowContextPopup(StackPanel panel)
+    {
+        CloseContextPopup();
+        var border = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(242, 36, 38, 43)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(2),
+            Child = panel,
+        };
+        _contextPopup = new Popup
+        {
+            Placement = PlacementMode.Pointer,
+            PlacementTarget = this,
+            IsLightDismissEnabled = true,
+            Child = border,
+        };
+        ((ISetLogicalParent)_contextPopup).SetParent(this);
+        _contextPopup.Open();
+    }
+
+    private void CloseContextPopup()
+    {
+        if (_contextPopup != null)
+        {
+            _contextPopup.Close();
+            ((ISetLogicalParent)_contextPopup).SetParent(null);
+            _contextPopup = null;
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -588,11 +634,16 @@ public partial class WorkflowEditorWindowV6 : Window
     /// </summary>
     private void OnGroupCommentGridPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
+        // Swallow the press so it does not bubble to NodifyEditor's Pan. (Diagnostics for F1.)
+        Log.Information("[GroupComment] Grid pressed: src={Source}, handled={Handled}",
+            e.Source?.GetType().Name, e.Handled);
         e.Handled = true;
     }
 
     private void OnGroupCommentPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
+        Log.Information("[GroupComment] Note pressed: src={Source}, click={Click}, buttons={Buttons}",
+            e.Source?.GetType().Name, e.ClickCount, e.GetCurrentPoint(null).Properties.PointerUpdateKind);
         if (sender is not Avalonia.Controls.Control c || c.DataContext is not GroupCommentVM vm) return;
 
         // Double-click begins inline text editing (and does not start a drag).
