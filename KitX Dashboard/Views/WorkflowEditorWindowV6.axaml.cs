@@ -624,26 +624,32 @@ public partial class WorkflowEditorWindowV6 : Window
 
     private bool _gcDragging;
     private bool _gcClickCandidate;
+    private bool _gcPressedIsNote;
     private Avalonia.Point _gcDragStartPointer;
     private Avalonia.Point _gcDragStartLocation;
 
     /// <summary>
-    /// The ghost note's bounding-box Grid covers the whole data subgraph. Swallowing the
-    /// press here stops it bubbling to NodifyEditor's Pan (which would otherwise grab the
-    /// drag away from the note). The note itself still handles its own drag first.
+    /// The ghost note's bounding-box Grid covers the whole data subgraph. It participates
+    /// in the same drag state machine as the note itself — dragging anywhere on the note
+    /// (note or its frame) moves it, instead of falling through to NodifyEditor's Pan.
     /// </summary>
     private void OnGroupCommentGridPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
-        // Swallow the press so it does not bubble to NodifyEditor's Pan. (Diagnostics for F1.)
-        Log.Information("[GroupComment] Grid pressed: src={Source}, handled={Handled}",
-            e.Source?.GetType().Name, e.Handled);
-        e.Handled = true;
+        Log.Information("[GroupComment] Grid pressed: src={Source}, click={Click}",
+            e.Source?.GetType().Name, e.ClickCount);
+        if (sender is not Avalonia.Controls.Control c || c.DataContext is not GroupCommentVM vm) return;
+        if (e.ClickCount >= 2)
+        {
+            e.Handled = true;
+            return;
+        }
+        StartGroupCommentDrag(c, vm, e);
     }
 
     private void OnGroupCommentPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
-        Log.Information("[GroupComment] Note pressed: src={Source}, click={Click}, buttons={Buttons}",
-            e.Source?.GetType().Name, e.ClickCount, e.GetCurrentPoint(null).Properties.PointerUpdateKind);
+        Log.Information("[GroupComment] Note pressed: src={Source}, click={Click}",
+            e.Source?.GetType().Name, e.ClickCount);
         if (sender is not Avalonia.Controls.Control c || c.DataContext is not GroupCommentVM vm) return;
 
         // Double-click begins inline text editing (and does not start a drag).
@@ -653,13 +659,18 @@ public partial class WorkflowEditorWindowV6 : Window
             e.Handled = true;
             return;
         }
+        StartGroupCommentDrag(c, vm, e);
+    }
 
+    private void StartGroupCommentDrag(Avalonia.Controls.Control c, GroupCommentVM vm, Avalonia.Input.PointerPressedEventArgs e)
+    {
         var editor = this.FindControl<NodifyM.Avalonia.Controls.NodifyEditor>("EditorControl");
         if (editor == null) return;
         _gcDragStartPointer = e.GetPosition(editor);
         _gcDragStartLocation = vm.Location;
         _gcDragging = true;
         _gcClickCandidate = true;
+        _gcPressedIsNote = c is not Grid;
         _viewModel.BlueprintVM.SetGroupCommentDragging(vm);
         e.Pointer.Capture(c);
         e.Handled = true;  // prevent NodifyEditor node selection/drag
@@ -690,9 +701,15 @@ public partial class WorkflowEditorWindowV6 : Window
             if (c.DataContext is GroupCommentVM vm)
             {
                 if (_gcClickCandidate)
-                    vm.IsCollapsed = !vm.IsCollapsed;   // click toggles collapse
+                {
+                    // Click on the note toggles collapse; click on the frame does nothing.
+                    if (_gcPressedIsNote)
+                        vm.IsCollapsed = !vm.IsCollapsed;
+                }
                 else
+                {
                     _viewModel.BlueprintVM.SnapGroupCommentToNode(vm);   // magnetic snap to nearest leader
+                }
             }
         }
         e.Handled = true;
