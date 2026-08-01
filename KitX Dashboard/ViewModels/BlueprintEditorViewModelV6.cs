@@ -197,20 +197,19 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         vm.HighlightY = minY;
         vm.HighlightWidth = maxX - minX;
         vm.HighlightHeight = maxY - minY;
-        // F3: the note follows its statement leader (anchor) node — not the subgraph's
-        // top edge — so it matches the KS→BP anchoring position.
-        var anchor = _workingBlueprint?.Nodes.FirstOrDefault(n => n.Id == vm.AnchorNodeId);
-        vm.Location = anchor != null
-            ? new Avalonia.Point(anchor.X, anchor.Y - 26)
-            : new Avalonia.Point(minX, minY - 26);
+        // Follow the subgraph bounding box only while the note is docked; a freely-placed
+        // (user-dragged-away) note keeps its position.
+        if (vm.IsDocked)
+            vm.Location = new Avalonia.Point(minX, minY);
     }
 
     /// <summary>
-    /// Magnetically snaps a note to the nearest statement *leader* node's top edge and
-    /// re-anchors it to that statement. Only statement leaders (StatementPrimaryNodeIds)
-    /// can carry a leading comment — otherwise the reverse translator would drop it.
-    /// If the target leader already has a group comment, the snap is rejected (KS side
-    /// allows at most one leading comment per statement).
+    /// Magnetically snaps a note to a nearby statement *leader* node's subgraph and
+    /// docks it there. Only statement leaders (StatementPrimaryNodeIds) can carry a
+    /// leading comment — otherwise the reverse translator would drop it. If the target
+    /// leader already has a group comment, the snap is rejected (KS side allows at most
+    /// one leading comment per statement). Dragging far from any leader leaves the note
+    /// at a free position (undocked).
     /// </summary>
     public void SnapGroupCommentToNode(GroupCommentVM vm)
     {
@@ -224,6 +223,16 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                         + (n.Location.Y - vm.Location.Y) * (n.Location.Y - vm.Location.Y))
             .FirstOrDefault();
         if (nearest == null) return;
+
+        // Only dock when the note was dropped near a leader; otherwise keep it free.
+        var distSq = (nearest.Location.X - vm.Location.X) * (nearest.Location.X - vm.Location.X)
+                   + (nearest.Location.Y - vm.Location.Y) * (nearest.Location.Y - vm.Location.Y);
+        if (distSq > 120 * 120)
+        {
+            vm.IsDocked = false;
+            vm.IsCollapsed = false;
+            return;
+        }
 
         // A statement already carrying a group comment cannot take another (KS 1:1).
         if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == nearest.BlueprintNodeId
@@ -245,7 +254,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
         vm.AnchorNodeId = nearest.BlueprintNodeId;
         vm.NodeIds = [nearest.BlueprintNodeId];
-        vm.Location = new Avalonia.Point(nearest.Location.X, nearest.Location.Y - 26);
+        vm.IsDocked = true;
         UpdateGroupCommentBounds(vm);
         ErrorInfo = null;
     }
@@ -276,17 +285,18 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
         var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
         var w = contractNode?.Width > 0 ? contractNode.Width : 160;
+        var h = contractNode?.Height > 0 ? contractNode.Height : 60;
         var vm = new GroupCommentVM((v, text) => UpdateGroupCommentComment(v, text))
         {
             Comment = string.Empty,
             AnchorNodeId = node.BlueprintNodeId,
             NodeIds = [node.BlueprintNodeId],
-            Location = new Avalonia.Point(node.Location.X, node.Location.Y - 26),
+            Location = new Avalonia.Point(node.Location.X, node.Location.Y),
             Width = Math.Max(140, w),
             HighlightX = node.Location.X,
             HighlightY = node.Location.Y,
             HighlightWidth = w,
-            HighlightHeight = 60,
+            HighlightHeight = h,
         };
         _groupCommentVms.Add(vm);
         Nodes.Add(vm);
@@ -346,9 +356,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             var vm = new GroupCommentVM((v, text) => UpdateGroupCommentComment(v, text))
             {
                 Comment = groupComment.Comment,
-                // F3: the note sits above its statement leader (anchor) node — matching
-                // the KS→BP anchoring — not above the subgraph's topmost node.
-                Location = new Avalonia.Point(anchor.X, anchor.Y - 26),
+                // The grid's Location is the subgraph bounding-box top-left, so the dashed
+                // frame lines up exactly with the data subgraph; the note floats above it.
+                Location = new Avalonia.Point(minX, minY),
                 Width = Math.Max(140, anchor.Width),
                 AnchorNodeId = groupComment.AnchorNodeId,
                 NodeIds = groupComment.NodeIds.ToHashSet(),

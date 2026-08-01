@@ -635,9 +635,9 @@ public partial class WorkflowEditorWindowV6 : Window
     /// </summary>
     private void OnGroupCommentGridPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
-        Log.Information("[GroupComment] Grid pressed: src={Source}, click={Click}",
-            e.Source?.GetType().Name, e.ClickCount);
         if (sender is not Avalonia.Controls.Control c || c.DataContext is not GroupCommentVM vm) return;
+        Log.Information("[GroupComment] Grid pressed: src={Source}, click={Click}, anchor={Anchor}, loc={Loc}",
+            e.Source?.GetType().Name, e.ClickCount, vm.AnchorNodeId, vm.Location);
         if (e.ClickCount >= 2)
         {
             e.Handled = true;
@@ -648,9 +648,9 @@ public partial class WorkflowEditorWindowV6 : Window
 
     private void OnGroupCommentPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
-        Log.Information("[GroupComment] Note pressed: src={Source}, click={Click}",
-            e.Source?.GetType().Name, e.ClickCount);
         if (sender is not Avalonia.Controls.Control c || c.DataContext is not GroupCommentVM vm) return;
+        Log.Information("[GroupComment] Note pressed: src={Source}, click={Click}, anchor={Anchor}, loc={Loc}",
+            e.Source?.GetType().Name, e.ClickCount, vm.AnchorNodeId, vm.Location);
 
         // Double-click begins inline text editing (and does not start a drag).
         if (e.ClickCount >= 2)
@@ -660,6 +660,18 @@ public partial class WorkflowEditorWindowV6 : Window
             return;
         }
         StartGroupCommentDrag(c, vm, e);
+    }
+
+    private void OnGroupCommentPointerEntered(object? sender, Avalonia.Input.PointerEventArgs e)
+    {
+        if (sender is Avalonia.Controls.Control { DataContext: GroupCommentVM vm })
+            vm.IsHovered = true;
+    }
+
+    private void OnGroupCommentPointerExited(object? sender, Avalonia.Input.PointerEventArgs e)
+    {
+        if (sender is Avalonia.Controls.Control { DataContext: GroupCommentVM vm })
+            vm.IsHovered = false;
     }
 
     private void StartGroupCommentDrag(Avalonia.Controls.Control c, GroupCommentVM vm, Avalonia.Input.PointerPressedEventArgs e)
