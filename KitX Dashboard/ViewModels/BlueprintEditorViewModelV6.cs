@@ -62,6 +62,12 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>Group-comment note currently being dragged by the user (skip bounds-following).</summary>
     private GroupCommentVM? _draggingGroupComment;
 
+    /// <summary>The single shared dashed-frame overlay (top Z-order, pure decoration).</summary>
+    private GroupCommentHighlightVM? _highlightVm;
+
+    /// <summary>The note currently hovered — drives the shared dashed frame.</summary>
+    private GroupCommentVM? _hoveredGroupComment;
+
     /// <summary>Whether the canvas currently has any nodes to display.</summary>
     [ObservableProperty]
     private bool _hasContent;
@@ -160,57 +166,78 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         }, token);
     }
 
-    // ── Group-comment bounds following + magnetic snap (R-fix) ──
+    // ── Group-comment notes: docking, magnetic snap, shared highlight (2026-08-02) ──
 
     /// <summary>Marks a note as being dragged so bounds-following skips it (code-behind calls this).</summary>
     public void SetGroupCommentDragging(GroupCommentVM? vm) => _draggingGroupComment = vm;
 
-    /// <summary>Recomputes every note's subgraph bounding box and re-follows its top edge.</summary>
+    /// <summary>
+    /// Re-docks every note to its statement leader (only while docked; the note being
+    /// dragged is skipped), then refreshes the shared dashed frame for the hovered note.
+    /// Called from the node-move debounce.
+    /// </summary>
     public void UpdateGroupCommentBounds()
     {
         if (_workingBlueprint == null) return;
         foreach (var vm in _groupCommentVms)
         {
             if (vm == _draggingGroupComment) continue;
-            UpdateGroupCommentBounds(vm);
+            if (!vm.IsDocked) continue;
+            DockNote(vm);
         }
+        UpdateGroupCommentHighlight(_hoveredGroupComment);
     }
 
-    private void UpdateGroupCommentBounds(GroupCommentVM vm)
+    /// <summary>Positions a docked note above its statement leader (primary node).</summary>
+    private void DockNote(GroupCommentVM vm)
     {
+        var anchor = _workingBlueprint?.Nodes.FirstOrDefault(n => n.Id == vm.AnchorNodeId);
+        if (anchor == null) return;
+        vm.Location = new Avalonia.Point(anchor.X, anchor.Y - 26);
+    }
+
+    /// <summary>
+    /// Drives the SINGLE shared dashed frame: hovering a note positions the frame over
+    /// that statement's data subgraph (NodeIds bounding box); null hides it (size zero —
+    /// effectively absent, never conflicting with other controls).
+    /// </summary>
+    public void UpdateGroupCommentHighlight(GroupCommentVM? vm)
+    {
+        _hoveredGroupComment = vm;
+        if (_highlightVm == null) return;
+        if (vm == null || _workingBlueprint == null)
+        {
+            _highlightVm.Location = default;
+            _highlightVm.Width = 0;
+            _highlightVm.Height = 0;
+            return;
+        }
+
         double minX = double.MaxValue, minY = double.MaxValue;
         double maxX = double.MinValue, maxY = double.MinValue;
-        var any = false;
         foreach (var id in vm.NodeIds)
         {
-            var n = _workingBlueprint?.Nodes.FirstOrDefault(x => x.Id == id);
+            var n = _workingBlueprint.Nodes.FirstOrDefault(x => x.Id == id);
             if (n == null) continue;
             minX = Math.Min(minX, n.X);
             minY = Math.Min(minY, n.Y);
             maxX = Math.Max(maxX, n.X + (n.Width > 0 ? n.Width : 180));
             maxY = Math.Max(maxY, n.Y + (n.Height > 0 ? n.Height : 60));
-            any = true;
         }
-        if (!any) return;
+        if (minX == double.MaxValue) return;
 
-        vm.HighlightX = minX;
-        vm.HighlightY = minY;
-        vm.HighlightWidth = maxX - minX;
-        vm.HighlightHeight = maxY - minY;
-        // F3: the note follows its statement leader (anchor) node — not the subgraph's
-        // top edge — so it matches the KS→BP anchoring position.
-        var anchor = _workingBlueprint?.Nodes.FirstOrDefault(n => n.Id == vm.AnchorNodeId);
-        vm.Location = anchor != null
-            ? new Avalonia.Point(anchor.X, anchor.Y - 26)
-            : new Avalonia.Point(minX, minY - 26);
+        _highlightVm.Location = new Avalonia.Point(minX, minY);
+        _highlightVm.Width = maxX - minX;
+        _highlightVm.Height = maxY - minY;
     }
 
     /// <summary>
-    /// Magnetically snaps a note to the nearest statement *leader* node's top edge and
-    /// re-anchors it to that statement. Only statement leaders (StatementPrimaryNodeIds)
-    /// can carry a leading comment — otherwise the reverse translator would drop it.
-    /// If the target leader already has a group comment, the snap is rejected (KS side
-    /// allows at most one leading comment per statement).
+    /// Magnetically snaps a note to a nearby statement *leader* node (KS→BP anchoring:
+    /// the note sits above the statement's primary node). Only statement leaders
+    /// (StatementPrimaryNodeIds) can carry a leading comment — otherwise the reverse
+    /// translator would drop it; a leader already carrying a group comment rejects the
+    /// snap (KS side allows at most one leading comment per statement). Dropping far
+    /// from any leader leaves the note at a free position (undocked).
     /// </summary>
     public void SnapGroupCommentToNode(GroupCommentVM vm)
     {
@@ -225,7 +252,16 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             .FirstOrDefault();
         if (nearest == null) return;
 
-        // A statement already carrying a group comment cannot take another (KS 1:1).
+        var distSq = (nearest.Location.X - vm.Location.X) * (nearest.Location.X - vm.Location.X)
+                   + (nearest.Location.Y - vm.Location.Y) * (nearest.Location.Y - vm.Location.Y);
+        if (distSq > 80 * 80)
+        {
+            // Far from any leader: free placement — node moves no longer pull the note.
+            vm.IsDocked = false;
+            vm.IsCollapsed = false;
+            return;
+        }
+
         if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == nearest.BlueprintNodeId
                                                        && gc.AnchorNodeId != vm.AnchorNodeId))
         {
@@ -245,8 +281,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
         vm.AnchorNodeId = nearest.BlueprintNodeId;
         vm.NodeIds = [nearest.BlueprintNodeId];
-        vm.Location = new Avalonia.Point(nearest.Location.X, nearest.Location.Y - 26);
-        UpdateGroupCommentBounds(vm);
+        vm.IsDocked = true;
+        DockNote(vm);
         ErrorInfo = null;
     }
 
@@ -281,12 +317,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             Comment = string.Empty,
             AnchorNodeId = node.BlueprintNodeId,
             NodeIds = [node.BlueprintNodeId],
+            // Docked above the leader node; appended to Nodes → top Z-order.
             Location = new Avalonia.Point(node.Location.X, node.Location.Y - 26),
             Width = Math.Max(140, w),
-            HighlightX = node.Location.X,
-            HighlightY = node.Location.Y,
-            HighlightWidth = w,
-            HighlightHeight = 60,
+            IsDocked = true,
         };
         _groupCommentVms.Add(vm);
         Nodes.Add(vm);
@@ -322,45 +356,6 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         foreach (var scope in scopes)
             Nodes.Add(CreateScopeFrame(scope));
 
-        // Phase 1b: leading group comments (decorative notes with a dashed subgraph frame).
-        _groupCommentVms.Clear();
-        foreach (var groupComment in blueprint.GroupComments)
-        {
-            var anchor = blueprint.Nodes.FirstOrDefault(n => n.Id == groupComment.AnchorNodeId);
-            if (anchor == null) continue;
-
-            // Bounding box over the data subgraph (NodeIds), falling back to the anchor node.
-            double minX = anchor.X, minY = anchor.Y;
-            double maxX = anchor.X + (anchor.Width > 0 ? anchor.Width : 180);
-            double maxY = anchor.Y + (anchor.Height > 0 ? anchor.Height : 60);
-            foreach (var id in groupComment.NodeIds)
-            {
-                var n = blueprint.Nodes.FirstOrDefault(x => x.Id == id);
-                if (n == null) continue;
-                minX = Math.Min(minX, n.X);
-                minY = Math.Min(minY, n.Y);
-                maxX = Math.Max(maxX, n.X + (n.Width > 0 ? n.Width : 180));
-                maxY = Math.Max(maxY, n.Y + (n.Height > 0 ? n.Height : 60));
-            }
-
-            var vm = new GroupCommentVM((v, text) => UpdateGroupCommentComment(v, text))
-            {
-                Comment = groupComment.Comment,
-                // F3: the note sits above its statement leader (anchor) node — matching
-                // the KS→BP anchoring — not above the subgraph's topmost node.
-                Location = new Avalonia.Point(anchor.X, anchor.Y - 26),
-                Width = Math.Max(140, anchor.Width),
-                AnchorNodeId = groupComment.AnchorNodeId,
-                NodeIds = groupComment.NodeIds.ToHashSet(),
-                HighlightX = minX,
-                HighlightY = minY,
-                HighlightWidth = maxX - minX,
-                HighlightHeight = maxY - minY,
-            };
-            _groupCommentVms.Add(vm);
-            Nodes.Add(vm);
-        }
-
         // Phase 2: create node VMs + their connector VMs.
         foreach (var node in blueprint.Nodes)
         {
@@ -376,6 +371,31 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                 Connections.Add(connectionVm);
         }
 
+        // Phase 4: group-comment notes — placed AFTER the real nodes so they sit on top
+        // of the Z-order (always hit-testable, even inside scope frames with dense nodes).
+        _groupCommentVms.Clear();
+        foreach (var groupComment in blueprint.GroupComments)
+        {
+            var anchor = blueprint.Nodes.FirstOrDefault(n => n.Id == groupComment.AnchorNodeId);
+            if (anchor == null) continue;
+            var vm = new GroupCommentVM((v, text) => UpdateGroupCommentComment(v, text))
+            {
+                Comment = groupComment.Comment,
+                // Docked above the statement's primary (leader) node — KS→BP anchoring.
+                Location = new Avalonia.Point(anchor.X, anchor.Y - 26),
+                Width = Math.Max(140, anchor.Width),
+                AnchorNodeId = groupComment.AnchorNodeId,
+                NodeIds = groupComment.NodeIds.ToHashSet(),
+                IsDocked = true,
+            };
+            _groupCommentVms.Add(vm);
+            Nodes.Add(vm);
+        }
+
+        // Phase 5: the single shared dashed-frame overlay (top-most, pure decoration).
+        _highlightVm = new GroupCommentHighlightVM();
+        Nodes.Add(_highlightVm);
+
         HasContent = blueprint.Nodes.Count > 0;
     }
 
@@ -390,6 +410,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         ErrorInfo = null;
         HoverErrorText = null;
         _groupCommentVms.Clear();
+        _highlightVm = null;
+        _hoveredGroupComment = null;
         HasContent = false;
     }
 

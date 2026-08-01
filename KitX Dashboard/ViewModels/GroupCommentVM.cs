@@ -6,19 +6,23 @@ using NodifyM.Avalonia.ViewModelBase;
 namespace KitX.Dashboard.ViewModels;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GroupCommentVM — decorative leading-comment label anchored to a statement's data
-// subgraph (R7).
+// GroupCommentVM — the *note* of a group comment (the only interactive part).
 //
-// Maps Contract BlueprintGroupComment (KScript-Blueprint-Correspondence.md §3.5:
-// leading `// group comment` lines attach to the statement's primary node; NodeIds
-// cover the statement's data-connection subgraph). The comment renders as a sticky
-// note that can be dragged, collapsed, and — on hover — reveals a dashed frame
-// covering the data subgraph (NodeIds bounding box).
+// Per the user-driven design (2026-08-02): every group comment contributes exactly
+// ONE interactive control — this note. It is a plain ghost item placed at the TOP of
+// the Z-order (after real nodes) so it is always hit-testable, even inside scope
+// frames with dense nodes. The note is positioned above its statement's primary
+// (leader) node while docked; dragging it with a proximity threshold either re-docks
+// it to a nearby leader or leaves it at a free position.
+//
+// The dashed frame covering the statement's data subgraph is a SINGLE shared overlay
+// (GroupCommentHighlightVM) driven by this note's IsHovered — there is no per-note
+// frame control, so notes can never steal each other's hit-test area.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// <summary>
-/// ViewModel for a draggable group-comment note with a hover-revealed dashed frame
-/// covering its data subgraph.
+/// ViewModel for a group-comment note: draggable, click-to-collapse, double-click to
+/// edit. The single shared dashed-frame overlay shows its data subgraph while hovered.
 /// </summary>
 public partial class GroupCommentVM : BaseNodeViewModel
 {
@@ -28,18 +32,18 @@ public partial class GroupCommentVM : BaseNodeViewModel
     [ObservableProperty]
     private string _comment = string.Empty;
 
-    /// <summary>The statement's primary (anchor) node id this comment is attached to.</summary>
+    /// <summary>The statement's primary (anchor/leader) node id this comment is attached to.</summary>
     [ObservableProperty]
     private string _anchorNodeId = string.Empty;
 
-    /// <summary>Node ids covered by this comment's data subgraph (drives the dashed frame).</summary>
+    /// <summary>Node ids of the statement's data subgraph — drives the shared dashed frame.</summary>
     public HashSet<string> NodeIds { get; set; } = new();
 
     /// <summary>Note width.</summary>
     [ObservableProperty]
     private double _width = 180;
 
-    /// <summary>Note height.</summary>
+    /// <summary>Note height (expanded).</summary>
     [ObservableProperty]
     private double _height = 28;
 
@@ -55,6 +59,18 @@ public partial class GroupCommentVM : BaseNodeViewModel
     [ObservableProperty]
     private string _commentEditText = string.Empty;
 
+    /// <summary>True while the mouse hovers the note — reveals the shared dashed frame.</summary>
+    [ObservableProperty]
+    private bool _isHovered;
+
+    /// <summary>
+    /// True while the note is docked to its statement leader (follows the leader's
+    /// position). Set false when the user drags it far from any leader (free placement —
+    /// node moves no longer pull it).
+    /// </summary>
+    [ObservableProperty]
+    private bool _isDocked = true;
+
     public GroupCommentVM()
         : this(null) { }
 
@@ -62,6 +78,14 @@ public partial class GroupCommentVM : BaseNodeViewModel
     {
         _onCommentEdited = onCommentEdited;
     }
+
+    /// <summary>Note text: full comment expanded, one line (ellipsised) when collapsed.</summary>
+    public string BubbleText => IsCollapsed
+        ? "// " + (Comment.Length > 32 ? Comment[..32] + "…" : Comment)
+        : Comment;
+
+    /// <summary>Expanded note height grows with the text.</summary>
+    public double EffectiveHeight => IsCollapsed ? 24 : Height;
 
     /// <summary>Begins inline editing of the note text.</summary>
     public void BeginEdit()
@@ -83,30 +107,6 @@ public partial class GroupCommentVM : BaseNodeViewModel
     {
         IsEditing = false;
     }
-
-    /// <summary>Bounding box of the comment's data subgraph (NodeIds) — dashed frame on hover.</summary>
-    [ObservableProperty]
-    private double _highlightX;
-
-    [ObservableProperty]
-    private double _highlightY;
-
-    [ObservableProperty]
-    private double _highlightWidth;
-
-    [ObservableProperty]
-    private double _highlightHeight;
-
-    /// <summary>True when a NodeIds bounding box is available to frame.</summary>
-    public bool HasHighlight => HighlightWidth > 0 && HighlightHeight > 0;
-
-    /// <summary>Note text: full comment expanded, one line (ellipsised) when collapsed.</summary>
-    public string BubbleText => IsCollapsed
-        ? "// " + (Comment.Length > 32 ? Comment[..32] + "…" : Comment)
-        : Comment;
-
-    /// <summary>Expanded note height grows with the text.</summary>
-    public double EffectiveHeight => IsCollapsed ? 24 : Height;
 
     partial void OnIsCollapsedChanged(bool value)
     {

@@ -670,58 +670,57 @@
                                         </Border>
                                     </DataTemplate>
 
-                                    <!-- Leading group comment (sticky note + dashed subgraph frame on hover) -->
+                                    <!-- Group-comment NOTE: the only interactive part of a group
+                                         comment. Top Z-order, no frame/bounding-box grid — a note can
+                                         never steal another control's hit-test area. -->
                                     <DataTemplate DataType="{x:Type viewModels:GroupCommentVM}">
-                                        <Grid Width="{Binding HighlightWidth}"
-                                              Height="{Binding HighlightHeight}"
-                                              Background="Transparent"
-                                              PointerPressed="OnGroupCommentGridPressed">
-                                            <!-- Dashed frame covering the statement's data subgraph
-                                                 (revealed only while hovering the note itself) -->
-                                            <Rectangle Stroke="#FFB300"
-                                                       StrokeDashArray="4,3"
-                                                       StrokeThickness="1.5"
-                                                       IsHitTestVisible="False"
-                                                       IsVisible="{Binding IsPointerOver, ElementName=GroupNoteBorder}">
-                                                <Rectangle.Fill>
-                                                    <SolidColorBrush Color="#14FFB300" />
-                                                </Rectangle.Fill>
-                                            </Rectangle>
-                                            <!-- Sticky note (draggable; click toggles collapse; double-click edits) -->
-                                            <Border x:Name="GroupNoteBorder"
-                                                    Width="{Binding Width}"
-                                                    Height="{Binding EffectiveHeight}"
-                                                    VerticalAlignment="Top"
-                                                    HorizontalAlignment="Left"
-                                                    CornerRadius="6"
-                                                    Padding="6,3"
-                                                    Background="#FFF8E1"
-                                                    BorderBrush="#FFB300"
-                                                    BorderThickness="1"
-                                                    Cursor="Hand"
-                                                    ToolTip.Tip="数据子图注释（拖动吸附 / 点击折叠 / 双击编辑）"
-                                                    PointerPressed="OnGroupCommentPointerPressed"
-                                                    PointerMoved="OnGroupCommentPointerMoved"
-                                                    PointerReleased="OnGroupCommentPointerReleased">
-                                                <Grid>
-                                                    <TextBlock Text="{Binding BubbleText}"
-                                                               IsVisible="{Binding !IsEditing}"
-                                                               FontSize="10"
-                                                               FontStyle="Italic"
-                                                               Foreground="#6D4C00"
-                                                               TextWrapping="Wrap"
-                                                               TextTrimming="CharacterEllipsis" />
-                                                    <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
-                                                             IsVisible="{Binding IsEditing}"
-                                                             FontSize="10"
-                                                             Background="White"
-                                                             Foreground="Black"
-                                                             Padding="2,0"
-                                                             KeyDown="OnGroupCommentEditKeyDown"
-                                                             LostFocus="OnGroupCommentEditLostFocus" />
-                                                </Grid>
-                                            </Border>
-                                        </Grid>
+                                        <Border Width="{Binding Width}"
+                                                Height="{Binding EffectiveHeight}"
+                                                CornerRadius="6"
+                                                Padding="6,3"
+                                                Background="#FFF8E1"
+                                                BorderBrush="#FFB300"
+                                                BorderThickness="1"
+                                                Cursor="Hand"
+                                                ToolTip.Tip="数据子图注释（拖动吸附 / 点击折叠 / 双击编辑）"
+                                                PointerPressed="OnGroupCommentPointerPressed"
+                                                PointerMoved="OnGroupCommentPointerMoved"
+                                                PointerReleased="OnGroupCommentPointerReleased"
+                                                PointerEntered="OnGroupCommentPointerEntered"
+                                                PointerExited="OnGroupCommentPointerExited">
+                                            <Grid>
+                                                <TextBlock Text="{Binding BubbleText}"
+                                                           IsVisible="{Binding !IsEditing}"
+                                                           FontSize="10"
+                                                           FontStyle="Italic"
+                                                           Foreground="#6D4C00"
+                                                           TextWrapping="Wrap"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
+                                                         IsVisible="{Binding IsEditing}"
+                                                         FontSize="10"
+                                                         Background="White"
+                                                         Foreground="Black"
+                                                         Padding="2,0"
+                                                         KeyDown="OnGroupCommentEditKeyDown"
+                                                         LostFocus="OnGroupCommentEditLostFocus" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+
+                                    <!-- Shared dashed-frame overlay (single instance, top Z-order,
+                                         pure decoration; zero size when no note is hovered). -->
+                                    <DataTemplate DataType="{x:Type viewModels:GroupCommentHighlightVM}">
+                                        <Rectangle Width="{Binding Width}"
+                                                   Height="{Binding Height}"
+                                                   Stroke="#FFB300"
+                                                   StrokeDashArray="4,3"
+                                                   StrokeThickness="1.5"
+                                                   IsHitTestVisible="False">
+                                            <Rectangle.Fill>
+                                                <SolidColorBrush Color="#14FFB300" />
+                                            </Rectangle.Fill>
+                                        </Rectangle>
                                     </DataTemplate>
 
                                     <!-- Blueprint node -->
