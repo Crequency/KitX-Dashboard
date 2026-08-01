@@ -232,21 +232,21 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     }
 
     /// <summary>
-    /// Magnetically snaps a note to a nearby statement *leader* node (KS→BP anchoring:
-    /// the note sits above the statement's primary node). Only statement leaders
-    /// (StatementPrimaryNodeIds) can carry a leading comment — otherwise the reverse
-    /// translator would drop it; a leader already carrying a group comment rejects the
-    /// snap (KS side allows at most one leading comment per statement). Dropping far
-    /// from any leader leaves the note at a free position (undocked).
+    /// Magnetically snaps a note to a nearby data node. The note lands on the *containing
+    /// statement's* primary (leader) node — any data node can receive the snap, it is
+    /// mapped to its data subgraph's primary via the backend's StatementNodeToPrimary
+    /// (KS→BP anchoring). A statement already carrying a group comment rejects the snap
+    /// (KS side allows at most one leading comment per statement). Dropping far from any
+    /// node leaves the note at a free position (undocked).
     /// </summary>
     public void SnapGroupCommentToNode(GroupCommentVM vm)
     {
         if (_workingBlueprint == null) return;
 
-        var primaryIds = _workingBlueprint.StatementPrimaryNodeIds;
+        // 1. Nearest non-definition node (any data node can host a snap).
         var nearest = Nodes
             .OfType<BlueprintNodeVMV6>()
-            .Where(n => !n.IsDefinition && primaryIds.Contains(n.BlueprintNodeId))
+            .Where(n => !n.IsDefinition)
             .OrderBy(n => (n.Location.X - vm.Location.X) * (n.Location.X - vm.Location.X)
                         + (n.Location.Y - vm.Location.Y) * (n.Location.Y - vm.Location.Y))
             .FirstOrDefault();
@@ -256,31 +256,46 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                    + (nearest.Location.Y - vm.Location.Y) * (nearest.Location.Y - vm.Location.Y);
         if (distSq > 80 * 80)
         {
-            // Far from any leader: free placement — node moves no longer pull the note.
+            // Far from any node: free placement — node moves no longer pull the note.
             vm.IsDocked = false;
             vm.IsCollapsed = false;
             return;
         }
 
-        if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == nearest.BlueprintNodeId
+        // 2. Resolve the containing statement's primary (leader) via the backend mapping.
+        var primaryId = _workingBlueprint.StatementNodeToPrimary.TryGetValue(nearest.BlueprintNodeId, out var pid)
+            ? pid
+            : nearest.BlueprintNodeId;
+
+        // 3. Conflict: that statement already carries a group comment (KS 1:1).
+        if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == primaryId
                                                        && gc.AnchorNodeId != vm.AnchorNodeId))
         {
             ErrorInfo = new ConstraintViolation("PRE", "Comment",
                 "目标语句已有组注释（KS 侧一句话只能有一个 Leading 注释）。",
-                new[] { nearest.BlueprintNodeId }, null, null, "#FF9800");
+                new[] { primaryId }, null, null, "#FF9800");
             return;
         }
+
+        // 4. Re-anchor: update the Contract GroupComment + the note's subgraph (all nodes
+        //    of the containing statement's data subgraph).
+        var subgraphNodes = _workingBlueprint.StatementNodeToPrimary
+            .Where(kvp => kvp.Value == primaryId)
+            .Select(kvp => kvp.Key)
+            .ToList();
+        if (subgraphNodes.Count == 0)
+            subgraphNodes = [primaryId];
 
         var contractComment = _workingBlueprint.GroupComments
             .FirstOrDefault(gc => gc.AnchorNodeId == vm.AnchorNodeId);
         if (contractComment != null)
         {
-            contractComment.AnchorNodeId = nearest.BlueprintNodeId;
-            contractComment.NodeIds = [nearest.BlueprintNodeId];
+            contractComment.AnchorNodeId = primaryId;
+            contractComment.NodeIds = subgraphNodes;
         }
 
-        vm.AnchorNodeId = nearest.BlueprintNodeId;
-        vm.NodeIds = [nearest.BlueprintNodeId];
+        vm.AnchorNodeId = primaryId;
+        vm.NodeIds = subgraphNodes.ToHashSet();
         vm.IsDocked = true;
         DockNote(vm);
         ErrorInfo = null;
@@ -294,31 +309,45 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     private void AddGroupComment(BlueprintNodeVMV6? node)
     {
         if (node == null || _workingBlueprint == null || node.IsDefinition) return;
-        if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == node.BlueprintNodeId))
+
+        // The comment anchors to the containing statement's primary (leader) node — the
+        // backend maps every data node to its statement's primary.
+        var primaryId = _workingBlueprint.StatementNodeToPrimary.TryGetValue(node.BlueprintNodeId, out var pid)
+            ? pid
+            : node.BlueprintNodeId;
+        if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == primaryId))
         {
             ErrorInfo = new ConstraintViolation("PRE", "Comment",
                 "该语句已有组注释（KS 侧一句话只能有一个 Leading 注释）。",
-                new[] { node.BlueprintNodeId }, null, null, "#FF9800");
+                new[] { primaryId }, null, null, "#FF9800");
             return;
         }
 
+        var subgraphNodes = _workingBlueprint.StatementNodeToPrimary
+            .Where(kvp => kvp.Value == primaryId)
+            .Select(kvp => kvp.Key)
+            .ToList();
+        if (subgraphNodes.Count == 0)
+            subgraphNodes = [primaryId];
+
         var contractComment = new BlueprintGroupComment
         {
-            AnchorNodeId = node.BlueprintNodeId,
-            NodeIds = [node.BlueprintNodeId],
+            AnchorNodeId = primaryId,
+            NodeIds = subgraphNodes,
             Comment = string.Empty,
         };
         _workingBlueprint.GroupComments.Add(contractComment);
 
-        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
+        var primaryVm = FindNodeById(primaryId) ?? node;
+        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == primaryId);
         var w = contractNode?.Width > 0 ? contractNode.Width : 160;
         var vm = new GroupCommentVM((v, text) => UpdateGroupCommentComment(v, text))
         {
             Comment = string.Empty,
-            AnchorNodeId = node.BlueprintNodeId,
-            NodeIds = [node.BlueprintNodeId],
+            AnchorNodeId = primaryId,
+            NodeIds = subgraphNodes.ToHashSet(),
             // Docked above the leader node; appended to Nodes → top Z-order.
-            Location = new Avalonia.Point(node.Location.X, node.Location.Y - 26),
+            Location = new Avalonia.Point(primaryVm.Location.X, primaryVm.Location.Y - 26),
             Width = Math.Max(140, w),
             IsDocked = true,
         };
