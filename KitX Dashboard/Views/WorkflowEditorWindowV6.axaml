@@ -674,7 +674,8 @@
                                     <DataTemplate DataType="{x:Type viewModels:GroupCommentVM}">
                                         <Grid Width="{Binding HighlightWidth}"
                                               Height="{Binding HighlightHeight}"
-                                              Background="Transparent">
+                                              Background="Transparent"
+                                              PointerPressed="OnGroupCommentGridPressed">
                                             <!-- Dashed frame covering the statement's data subgraph
                                                  (revealed only while hovering the note itself) -->
                                             <Rectangle Stroke="#FFB300"
@@ -741,15 +742,6 @@
                                                         <Binding Path="EffectiveHeaderColorHex"
                                                                  Converter="{StaticResource HexToBrushConverter}" />
                                                     </Border.Background>
-                                                    <Border.ContextMenu>
-                                                        <ContextMenu>
-                                                            <MenuItem Header="Toggle Breakpoint"
-                                                                      Command="{Binding ToggleBreakpointCommand}" />
-                                                            <MenuItem Header="添加组注释"
-                                                                      Command="{Binding DataContext.BlueprintVM.AddGroupCommentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                      CommandParameter="{Binding}" />
-                                                        </ContextMenu>
-                                                    </Border.ContextMenu>
                                                     <StackPanel>
                                                         <StackPanel Orientation="Horizontal" Spacing="5">
                                                             <Ellipse Width="8" Height="8"

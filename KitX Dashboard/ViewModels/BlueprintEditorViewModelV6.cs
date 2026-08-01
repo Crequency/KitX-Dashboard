@@ -197,8 +197,12 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         vm.HighlightY = minY;
         vm.HighlightWidth = maxX - minX;
         vm.HighlightHeight = maxY - minY;
-        // Follow the subgraph frame's top edge.
-        vm.Location = new Avalonia.Point(minX, minY - 26);
+        // F3: the note follows its statement leader (anchor) node — not the subgraph's
+        // top edge — so it matches the KS→BP anchoring position.
+        var anchor = _workingBlueprint?.Nodes.FirstOrDefault(n => n.Id == vm.AnchorNodeId);
+        vm.Location = anchor != null
+            ? new Avalonia.Point(anchor.X, anchor.Y - 26)
+            : new Avalonia.Point(minX, minY - 26);
     }
 
     /// <summary>
@@ -342,7 +346,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             var vm = new GroupCommentVM((v, text) => UpdateGroupCommentComment(v, text))
             {
                 Comment = groupComment.Comment,
-                Location = new Avalonia.Point(minX, minY - 26),
+                // F3: the note sits above its statement leader (anchor) node — matching
+                // the KS→BP anchoring — not above the subgraph's topmost node.
+                Location = new Avalonia.Point(anchor.X, anchor.Y - 26),
                 Width = Math.Max(140, anchor.Width),
                 AnchorNodeId = groupComment.AnchorNodeId,
                 NodeIds = groupComment.NodeIds.ToHashSet(),
@@ -638,10 +644,20 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
     /// <summary>Deletes all selected nodes and their connections (canvas + Contract).</summary>
     [RelayCommand]
-    private void DeleteSelectedNodes()    {
-        if (_workingBlueprint == null) return;
-        var toRemove = SelectedNodes.OfType<BlueprintNodeVMV6>().ToList();
-        if (toRemove.Count == 0) return;
+    private void DeleteSelectedNodes()
+        => DeleteNodes(SelectedNodes.OfType<BlueprintNodeVMV6>().ToList());
+
+    /// <summary>Deletes a single node (context menu).</summary>
+    [RelayCommand]
+    private void DeleteNode(BlueprintNodeVMV6? node)
+    {
+        if (node != null)
+            DeleteNodes([node]);
+    }
+
+    private void DeleteNodes(List<BlueprintNodeVMV6> toRemove)
+    {
+        if (_workingBlueprint == null || toRemove.Count == 0) return;
 
         var nodeIds = toRemove.Select(n => n.BlueprintNodeId).ToHashSet();
 

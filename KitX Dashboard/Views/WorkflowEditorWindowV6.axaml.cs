@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -8,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
 using KitX.Core.Contract.Workflow;
@@ -67,6 +69,10 @@ public partial class WorkflowEditorWindowV6 : Window
         InitializeEditor();
         WireUpHelperFunctions();
         WireUpConstants();
+
+        var editor = this.FindControl<NodifyM.Avalonia.Controls.NodifyEditor>("EditorControl");
+        if (editor != null)
+            editor.ContextRequested += OnEditorContextRequested;
 
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         ActualThemeVariantChanged += (_, _) => InitializeEditor();
@@ -408,6 +414,50 @@ public partial class WorkflowEditorWindowV6 : Window
 
     // ── Mode switch synchronization ──
 
+    // ── Editor-level right-click menus (F2) ──
+
+    /// <summary>
+    /// Shows the right-click menu at the editor level. A press landing on a node opens
+    /// the node menu (breakpoint / group comment / delete); anywhere else opens the
+    /// canvas menu. This replaces the fragile per-Header ContextMenu (Avalonia's
+    /// ContextRequested needs the press+release source to coincide inside the menu's
+    /// visual subtree).
+    /// </summary>
+    private void OnEditorContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (sender is not NodifyM.Avalonia.Controls.NodifyEditor editor) return;
+        var source = e.Source as Avalonia.Controls.Control;
+        var nodeVm = source?.GetSelfAndVisualAncestors()
+            .OfType<NodifyM.Avalonia.Controls.Node>()
+            .Select(n => n.DataContext as BlueprintNodeVMV6)
+            .FirstOrDefault(dc => dc != null);
+
+        var menu = new ContextMenu();
+        if (nodeVm != null)
+        {
+            menu.Items.Add(new MenuItem { Header = "Toggle Breakpoint", Command = nodeVm.ToggleBreakpointCommand });
+            menu.Items.Add(new MenuItem
+            {
+                Header = "添加组注释",
+                Command = _viewModel.BlueprintVM.AddGroupCommentCommand,
+                CommandParameter = nodeVm,
+            });
+            menu.Items.Add(new MenuItem
+            {
+                Header = "删除节点",
+                Command = _viewModel.BlueprintVM.DeleteNodeCommand,
+                CommandParameter = nodeVm,
+            });
+        }
+        else
+        {
+            menu.Items.Add(new MenuItem { Header = "画布菜单（开发中）", IsEnabled = false });
+        }
+
+        e.Handled = true;
+        menu.Open(editor);
+    }
+
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(WorkflowEditorViewModelV6.Mode) && _viewModel.IsBlockScriptMode)
@@ -530,6 +580,16 @@ public partial class WorkflowEditorWindowV6 : Window
     private bool _gcClickCandidate;
     private Avalonia.Point _gcDragStartPointer;
     private Avalonia.Point _gcDragStartLocation;
+
+    /// <summary>
+    /// The ghost note's bounding-box Grid covers the whole data subgraph. Swallowing the
+    /// press here stops it bubbling to NodifyEditor's Pan (which would otherwise grab the
+    /// drag away from the note). The note itself still handles its own drag first.
+    /// </summary>
+    private void OnGroupCommentGridPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        e.Handled = true;
+    }
 
     private void OnGroupCommentPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
