@@ -666,8 +666,7 @@
                                                        Opacity="0.7"
                                                        HorizontalAlignment="Left"
                                                        VerticalAlignment="Top"
-                                                       Margin="8,4"
-                                                       IsHitTestVisible="False" />
+                                                       Margin="8,4" />
                                         </Border>
                                     </DataTemplate>
 
@@ -678,37 +677,32 @@
                                               Background="Transparent"
                                               PointerPressed="OnGroupCommentGridPressed">
                                             <!-- Dashed frame covering the statement's data subgraph
-                                                 (revealed only while hovering the note itself; no hit-test) -->
+                                                 (revealed only while hovering the note itself) -->
                                             <Rectangle Stroke="#FFB300"
                                                        StrokeDashArray="4,3"
                                                        StrokeThickness="1.5"
                                                        IsHitTestVisible="False"
-                                                       IsVisible="{Binding IsHovered}">
+                                                       IsVisible="{Binding IsPointerOver, ElementName=GroupNoteBorder}">
                                                 <Rectangle.Fill>
                                                     <SolidColorBrush Color="#14FFB300" />
                                                 </Rectangle.Fill>
                                             </Rectangle>
-                                            <!-- Sticky note (draggable; click toggles collapse; double-click edits;
-                                                 floats above the frame — only this is hoverable/hit-testable) -->
+                                            <!-- Sticky note (draggable; click toggles collapse; double-click edits) -->
                                             <Border x:Name="GroupNoteBorder"
                                                     Width="{Binding Width}"
                                                     Height="{Binding EffectiveHeight}"
                                                     VerticalAlignment="Top"
                                                     HorizontalAlignment="Left"
-                                                    Margin="4,-28,0,0"
                                                     CornerRadius="6"
                                                     Padding="6,3"
                                                     Background="#FFF8E1"
                                                     BorderBrush="#FFB300"
                                                     BorderThickness="1"
                                                     Cursor="Hand"
-                                                    IsHitTestVisible="True"
                                                     ToolTip.Tip="数据子图注释（拖动吸附 / 点击折叠 / 双击编辑）"
                                                     PointerPressed="OnGroupCommentPointerPressed"
                                                     PointerMoved="OnGroupCommentPointerMoved"
-                                                    PointerReleased="OnGroupCommentPointerReleased"
-                                                    PointerEntered="OnGroupCommentPointerEntered"
-                                                    PointerExited="OnGroupCommentPointerExited">
+                                                    PointerReleased="OnGroupCommentPointerReleased">
                                                 <Grid>
                                                     <TextBlock Text="{Binding BubbleText}"
                                                                IsVisible="{Binding !IsEditing}"

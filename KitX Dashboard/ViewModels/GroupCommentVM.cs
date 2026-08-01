@@ -47,24 +47,13 @@ public partial class GroupCommentVM : BaseNodeViewModel
     [ObservableProperty]
     private bool _isCollapsed;
 
-    /// <summary>True while the inline editing is off.</summary>
+    /// <summary>True while the note text is being edited inline.</summary>
     [ObservableProperty]
     private bool _isEditing;
 
     /// <summary>Temporary text during inline editing.</summary>
     [ObservableProperty]
     private string _commentEditText = string.Empty;
-
-    /// <summary>True while the mouse hovers the note itself — drives the dashed-frame reveal.</summary>
-    [ObservableProperty]
-    private bool _isHovered;
-
-    /// <summary>
-    /// True while the note is "docked" to its statement leader (follows the subgraph
-    /// bounding box). Set false when the user drags it far from any leader (free placement).
-    /// </summary>
-    [ObservableProperty]
-    private bool _isDocked = true;
 
     public GroupCommentVM()
         : this(null) { }
