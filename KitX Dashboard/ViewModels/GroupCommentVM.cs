@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NodifyM.Avalonia.ViewModelBase;
 
@@ -23,6 +24,13 @@ public partial class GroupCommentVM : BaseNodeViewModel
     /// <summary>The comment text (may contain newlines).</summary>
     [ObservableProperty]
     private string _comment = string.Empty;
+
+    /// <summary>The statement's primary (anchor) node id this comment is attached to.</summary>
+    [ObservableProperty]
+    private string _anchorNodeId = string.Empty;
+
+    /// <summary>Node ids covered by this comment's data subgraph (drives the dashed frame).</summary>
+    public HashSet<string> NodeIds { get; set; } = new();
 
     /// <summary>Note width.</summary>
     [ObservableProperty]

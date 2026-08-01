@@ -540,6 +540,7 @@ public partial class WorkflowEditorWindowV6 : Window
         _gcDragStartLocation = vm.Location;
         _gcDragging = true;
         _gcClickCandidate = true;
+        _viewModel.BlueprintVM.SetGroupCommentDragging(vm);
         e.Pointer.Capture(c);
         e.Handled = true;  // prevent NodifyEditor node selection/drag
     }
@@ -562,6 +563,7 @@ public partial class WorkflowEditorWindowV6 : Window
     {
         if (!_gcDragging) return;
         _gcDragging = false;
+        _viewModel.BlueprintVM.SetGroupCommentDragging(null);
         if (sender is Avalonia.Controls.Control c)
         {
             e.Pointer.Capture(null);
@@ -570,19 +572,9 @@ public partial class WorkflowEditorWindowV6 : Window
                 if (_gcClickCandidate)
                     vm.IsCollapsed = !vm.IsCollapsed;   // click toggles collapse
                 else
-                    SnapGroupComment(vm);
+                    _viewModel.BlueprintVM.SnapGroupCommentToNode(vm);   // magnetic snap to nearest node
             }
         }
         e.Handled = true;
-    }
-
-    /// <summary>Snaps the note back onto its subgraph frame top when dropped nearby (R7).</summary>
-    private static void SnapGroupComment(GroupCommentVM vm)
-    {
-        var targetX = vm.HighlightX;
-        var targetY = vm.HighlightY - 26;
-        var x = Math.Abs(vm.Location.X - targetX) < 100 ? targetX : vm.Location.X;
-        var y = Math.Abs(vm.Location.Y - targetY) < 90 ? targetY : vm.Location.Y;
-        vm.Location = new Avalonia.Point(x, y);
     }
 }
