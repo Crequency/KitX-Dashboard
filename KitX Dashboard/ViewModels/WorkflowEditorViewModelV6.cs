@@ -508,8 +508,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     }
 
     /// <summary>
-    /// Panel→BP: restores user overrides from the Variable Constants panel onto the
-    /// freshly rebuilt definition nodes, so switching KS→BP keeps BP-side overrides.
+    /// Panel→BP: mirrors the Variable Constants panel (UserValue, the effective
+    /// initial value) onto the freshly rebuilt definition nodes, so switching KS→BP
+    /// shows the user's override on the BP canvas. Written unconditionally — a
+    /// cleared panel value clears the node's user value (falls back to the default).
     /// </summary>
     private void RestoreUserValuesFromPanel(Blueprint bp)
     {
@@ -517,7 +519,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         foreach (var constant in VariableConstants)
         {
             var usr = constant.UserValue?.ToString();
-            if (string.IsNullOrEmpty(usr)) continue;
             foreach (var node in bp.Nodes)
             {
                 if (node is ConstNode cn && cn.ConstName == constant.Name)

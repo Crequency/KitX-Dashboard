@@ -483,7 +483,7 @@
                                                 <TextBlock Text="{Binding Type}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="10" />
                                             </StackPanel>
                                             <TextBox Grid.Column="1"
-                                                     Text="{Binding UserValue, Mode=TwoWay}"
+                                                     Text="{Binding UserValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                      Margin="5,0" />
                                             <Button Grid.Column="2"
                                                     Content="R"
