@@ -296,7 +296,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         get => _helperFunctions;
         set => SetProperty(ref _helperFunctions, value);
     }
-
     public ObservableCollection<HelperFunctionParameter> Parameters
     {
         get => _parameters;
@@ -588,6 +587,21 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     public BlueprintEditorViewModelV6 BlueprintVM { get; private set; } = null!;
 
+    // ── BP → IR (with helper re-injection) ──
+    //
+    // The BP graph does NOT carry helper-function metadata (helper bodies live only
+    // in the IR), so a reverse projection loses them. The generated C# class G
+    // derives its helper methods from ir.HelperFunctions — without re-injecting,
+    // BP-mode Run/Save/Debug compiles against a G that lacks every helper method
+    // (e.g. BF interpreter: CS1061 'G' does not contain 'CharCodeAt').
+
+    /// <summary>Reverses a blueprint and re-attaches the editor's helper functions.</summary>
+    private V6Workflow ReverseWithHelpers(Blueprint bp)
+    {
+        var ir = _bpGraphLens.Reverse(bp);
+        return ir with { HelperFunctions = [.. HelperFunctions] };
+    }
+
     // ── Mode switch ──
 
     [RelayCommand]
@@ -606,7 +620,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                     // reverse projection only carries the KS script defaults.
                     SyncUserValuesFromBlueprint(bp);
                     RestoreTriggerFromBlueprint(bp);
-                    var ir = _bpGraphLens.Reverse(bp);
+                    var ir = ReverseWithHelpers(bp);
                     Log.Information("[WorkflowEditorVMV6] BP→KS: bp={BpNodes} nodes, ir={Consts} consts/{Vars} vars/{Stmts} stmts",
                         bp.Nodes.Count, ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length);
                     _lastIr = ir;
@@ -833,7 +847,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 // Mirror definition-node user values into the panel so the saved .kcs
                 // VariableConstants carry the overrides.
                 SyncUserValuesFromBlueprint(BlueprintVM.WorkingBlueprint);
-                ir = _bpGraphLens.Reverse(BlueprintVM.WorkingBlueprint);
+                ir = ReverseWithHelpers(BlueprintVM.WorkingBlueprint);
             }
             else
             {
@@ -944,7 +958,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 // Mirror BP definition-node user values into the panel BEFORE running so
                 // the override layer applies them at runtime.
                 SyncUserValuesFromBlueprint(bp);
-                ir = _bpGraphLens.Reverse(bp);
+                ir = ReverseWithHelpers(bp);
                 lowering = null; // ScriptCompiler fallback infers PubVarTypes from ir.GlobalVars
             }
             else
@@ -1044,7 +1058,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint is { Nodes.Count: > 0 } bp)
             {
                 SyncUserValuesFromBlueprint(bp);
-                ir = _bpGraphLens.Reverse(bp);
+                ir = ReverseWithHelpers(bp);
                 lowering = null;
             }
             else
