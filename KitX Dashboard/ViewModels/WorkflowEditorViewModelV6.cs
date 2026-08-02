@@ -464,6 +464,14 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     // script text (the script keeps its defaults).
 
     /// <summary>
+    /// True for a definition node: the standalone declaration (no connections).
+    /// Usage nodes (same name, wired into data/exec edges) must be excluded — they
+    /// carry no user value and would otherwise clobber the definition's override.
+    /// </summary>
+    private static bool IsDefinitionNode(Blueprint bp, BlueprintNode node)
+        => !bp.Connections.Any(c => c.SourceNodeId == node.Id || c.TargetNodeId == node.Id);
+
+    /// <summary>
     /// BP→panel: copies user values from definition nodes into the Variable Constants
     /// panel (UserValue). Definition nodes absent from the panel are added with their
     /// default (usually empty — the user created them on the BP side).
@@ -471,8 +479,11 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private void SyncUserValuesFromBlueprint(Blueprint bp)
     {
         if (bp == null) return;
+        Log.Information("[WFEVM] SyncUserValuesFromBlueprint: {Nodes} nodes, panel has {Consts} entries",
+            bp.Nodes.Count, VariableConstants.Count);
         foreach (var node in bp.Nodes)
         {
+            if (!IsDefinitionNode(bp, node)) continue;
             string? name = null, type = null, defaultValue = null, userValue = null;
             switch (node)
             {
@@ -493,6 +504,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 // Always mirror the node's value — a cleared user value falls back to
                 // the default (no override), otherwise the panel keeps a stale value.
                 existing.UserValue = userValue ?? existing.DefaultValue;
+                Log.Information("[WFEVM] Sync: {Name} nodeUser={User} → panel UserValue={Panel}",
+                    name, userValue, existing.UserValue);
             }
             else
             {
@@ -503,6 +516,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                     DefaultValue = defaultValue,
                     UserValue = userValue,
                 });
+                Log.Information("[WFEVM] Sync: {Name} added to panel (user={User})", name, userValue);
             }
         }
     }
@@ -516,15 +530,27 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private void RestoreUserValuesFromPanel(Blueprint bp)
     {
         if (bp == null) return;
+        Log.Information("[WFEVM] RestoreUserValuesFromPanel: {Consts} constants → {Nodes} nodes",
+            VariableConstants.Count, bp.Nodes.Count);
         foreach (var constant in VariableConstants)
         {
             var usr = constant.UserValue?.ToString();
+            Log.Information("[WFEVM] Restore: {Name} UserValue={User}", constant.Name, usr);
             foreach (var node in bp.Nodes)
             {
+                // Only the standalone definition node (no connections) carries the
+                // user value; usage nodes must stay untouched.
+                if (!IsDefinitionNode(bp, node)) continue;
                 if (node is ConstNode cn && cn.ConstName == constant.Name)
+                {
                     cn.ConstValue = usr;
+                    Log.Information("[WFEVM] Restore: const {Name} → ConstValue={User}", constant.Name, usr);
+                }
                 else if (node is VariableNode vn && vn.VarName == constant.Name && vn.VarKind == VariableKind.PubVar)
+                {
                     vn.VarInitialValue = usr;
+                    Log.Information("[WFEVM] Restore: var {Name} → VarInitialValue={User}", constant.Name, usr);
+                }
             }
         }
     }
@@ -708,6 +734,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
             var bp = _bpGraphLens.Project(ir);
             ApplyTriggerToBlueprint(bp);
+            Log.Information("[WFEVM] RenderBlueprintFromKs: bp={Nodes} nodes, panel={Consts} entries — restoring panel user values",
+                bp.Nodes.Count, VariableConstants.Count);
             // Re-apply user overrides from the Variable Constants panel onto the freshly
             // rebuilt definition nodes (KS→BP switches must not lose BP-side overrides).
             RestoreUserValuesFromPanel(bp);

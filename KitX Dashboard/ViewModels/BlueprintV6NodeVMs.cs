@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Workflow;
 using NodifyM.Avalonia.ViewModelBase;
+using Serilog;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -329,7 +330,27 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             OnPropertyChanged();
             OnPropertyChanged(nameof(DefinitionValue));
             OnPropertyChanged(nameof(DefinitionTitle));
+            Log.Information("[BPNodeVM] DefaultValue set: id={Id} value={Value}", _blueprintNodeId, value);
         }
+    }
+
+    /// <summary>
+    /// Applies the full definition state straight from the Contract node during
+    /// blueprint loading. Assigns backing fields directly and raises change
+    /// notifications WITHOUT invoking the edit callbacks — a load must never
+    /// write the (still uninitialised) VM state back over the Contract values.
+    /// </summary>
+    public void ApplyDefinitionFromContract(string? name, string? type, string? defaultValue, string? userValue)
+    {
+        _definitionName = name;
+        _definitionType = type;
+        _defaultValue = defaultValue;
+        _definitionValue = userValue;
+        OnPropertyChanged(nameof(DefinitionName));
+        OnPropertyChanged(nameof(DefinitionType));
+        OnPropertyChanged(nameof(DefaultValue));
+        OnPropertyChanged(nameof(DefinitionValue));
+        OnPropertyChanged(nameof(DefinitionTitle));
     }
 
     /// <summary>
@@ -350,6 +371,8 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             if (_definitionValue == userValue) return;
             _definitionValue = userValue;
             OnPropertyChanged();
+            Log.Information("[BPNodeVM] DefinitionValue set: id={Id} user={User} default={Def}",
+                _blueprintNodeId, userValue, _defaultValue);
             // oldName == newName == current name: value edits must NOT trigger the
             // rename path in UpdateDefinitionNode.
             _onDefinitionEdited?.Invoke(this, DefinitionName, DefinitionName, userValue);

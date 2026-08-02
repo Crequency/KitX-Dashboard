@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -1150,21 +1151,21 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         };
 
         // Definition nodes carry editable declaration name/type/value (R8).
+        // ApplyDefinitionFromContract assigns fields directly (no edit callbacks) so
+        // loading can never write uninitialised VM state back over the Contract.
         if (isDefinition)
         {
             switch (node)
             {
                 case ConstNode cn:
-                    nodeVm.DefinitionName = cn.ConstName;
-                    nodeVm.DefinitionType = cn.ConstType;
-                    nodeVm.DefaultValue = cn.DefaultValue;
-                    nodeVm.DefinitionValue = cn.ConstValue;
+                    nodeVm.ApplyDefinitionFromContract(cn.ConstName, cn.ConstType, cn.DefaultValue, cn.ConstValue);
+                    Log.Information("[BPEditVM] ConvertNode definition const: id={Id} name={Name} default={Def} user={User}",
+                        node.Id, cn.ConstName, cn.DefaultValue, cn.ConstValue);
                     break;
                 case VariableNode vn:
-                    nodeVm.DefinitionName = vn.VarName;
-                    nodeVm.DefinitionType = vn.VarType;
-                    nodeVm.DefaultValue = vn.DefaultValue;
-                    nodeVm.DefinitionValue = vn.VarInitialValue;
+                    nodeVm.ApplyDefinitionFromContract(vn.VarName, vn.VarType, vn.DefaultValue, vn.VarInitialValue);
+                    Log.Information("[BPEditVM] ConvertNode definition var: id={Id} name={Name} default={Def} user={User}",
+                        node.Id, vn.VarName, vn.DefaultValue, vn.VarInitialValue);
                     break;
             }
         }
@@ -1239,8 +1240,18 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// </summary>
     private void UpdateDefinitionNode(BlueprintNodeVMV6 node, string? oldName, string? newName, string? value)
     {
-        if (_workingBlueprint == null) return;
+        if (_workingBlueprint == null)
+        {
+            Log.Warning("[BPEditVM] UpdateDefinitionNode: working blueprint is NULL — edit dropped (id={Id} value={Value})", node.BlueprintNodeId, value);
+            return;
+        }
         var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
+        if (contractNode == null)
+        {
+            Log.Warning("[BPEditVM] UpdateDefinitionNode: contract node NOT FOUND (id={Id} value={Value})", node.BlueprintNodeId, value);
+            return;
+        }
+        Log.Information("[BPEditVM] UpdateDefinitionNode: id={Id} name={NewName} value={Value}", node.BlueprintNodeId, newName, value);
         switch (contractNode)
         {
             case ConstNode cn:
@@ -1283,3 +1294,4 @@ public sealed record PluginTriggerPaletteItemV6(string PluginName, string Trigge
 {
     public string DisplayName => $"Trigger: {PluginName}.{TriggerName}";
 }
+
