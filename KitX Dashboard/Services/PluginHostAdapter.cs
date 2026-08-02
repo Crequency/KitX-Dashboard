@@ -3,16 +3,15 @@ namespace KitX.Dashboard.Services;
 using System;
 using Kscript.CSharp.Parser.Core;
 using Kscript.CSharp.Parser.Models;
-using KitX.Workflow.Backend.Runtime;
+using KitX.WorkflowV6.Backend.Runtime;
 using Serilog;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PluginHostAdapter — bridges the Dashboard's active RealPluginManager (the
-// Kscript.CSharp.Parser plugin system) to BOTH workflow IPluginHost abstractions:
-// the WorkflowIR (v5.1) contract and the WorkflowV6 contract (identical
-// signatures — one implementation satisfies both interfaces). Registered for
-// each interface in DI (see App.axaml.cs) so v5 and v6 PluginCall builtins can
-// invoke real plugins at runtime.
+// Kscript.CSharp.Parser plugin system) to the WorkflowV6 IPluginHost contract.
+// (The v5.1 WorkflowIR contract was archived; only the v6 contract remains.)
+// Registered as a singleton in DI (see App.axaml.cs) so v6 PluginCall builtins
+// can invoke real plugins at runtime.
 //
 // It wraps RealPluginManager.Call<string>, which returns the raw JSON response
 // string. ExecutionGlobals.PluginCall then normalizes that string to a
@@ -25,12 +24,10 @@ using Serilog;
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// <summary>
-/// Adapts <see cref="RealPluginManager"/> to the WorkflowIR <see cref="IPluginHost"/>
+/// Adapts <see cref="RealPluginManager"/> to the WorkflowV6 <see cref="IPluginHost"/>
 /// contract. Registered as a singleton in DI (see App.axaml.cs).
 /// </summary>
-public sealed class PluginHostAdapter
-    : KitX.Workflow.Backend.Runtime.IPluginHost
-    , KitX.WorkflowV6.Backend.Runtime.IPluginHost
+public sealed class PluginHostAdapter : KitX.WorkflowV6.Backend.Runtime.IPluginHost
 {
     private readonly IPluginManager _pluginManager;
 

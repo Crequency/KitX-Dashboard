@@ -83,17 +83,8 @@ internal class WorkflowPageViewModel : ViewModelBase
 
     public sealed override void InitCommands()
     {
+        // v5.1 archived: all workflows are created as v6 format (empty v6 IR).
         CreateWorkflowCommand = ReactiveCommand.CreateFromTask(async () =>
-        {
-            var workflow = await _storageService.CreateWorkflowAsync(
-                TranslateTextWithSuffix("Workflow", "NewWorkflow") ?? "New Workflow");
-            WorkflowCases.Add(workflow);
-            _eventService.Publish(EventNames.WorkflowCreated, EventArgs.Empty);
-        });
-
-        // P5-A4: create a v6-format workflow (empty v6 IR). The v6 editor opens when the
-        // card is double-clicked (OpenWorkflowEditorAsync dispatches on IrVersion == "v6").
-        CreateV6WorkflowCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             var workflow = await _storageService.CreateWorkflowAsync(
                 TranslateTextWithSuffix("Workflow", "NewWorkflow") ?? "New Workflow", null, "v6");
@@ -299,19 +290,10 @@ internal class WorkflowPageViewModel : ViewModelBase
                 return;
             }
 
-            // Detect IR version: load the .kcs envelope and check IrVersion.
-            // "v6" → WorkflowEditorWindowV6 (v6 grammar editor); default → v5 editor.
-            var kcsData = await _storageService.LoadWorkflowDataAsync(workflow.Id);
-            var isV6 = kcsData?.IrVersion == "v6";
-
-            Window editorWindow = isV6
-                ? new Views.WorkflowEditorWindowV6()
-                : new Views.WorkflowEditorWindow();
-
-            if (editorWindow is Views.WorkflowEditorWindowV6 v6Window)
-                await v6Window.LoadWorkflowAsync(workflow.Id);
-            else if (editorWindow is Views.WorkflowEditorWindow v5Window)
-                await v5Window.LoadWorkflowAsync(workflow.Id);
+            // v5.1 editor archived: every workflow opens in the v6 grammar editor.
+            // (Legacy v5 .kcs envelopes show a "Not a v6 workflow" status in the window.)
+            var editorWindow = new Views.WorkflowEditorWindowV6();
+            await editorWindow.LoadWorkflowAsync(workflow.Id);
 
             // Track the window
             UIStateService.WorkflowEditorWindows[workflow.Id] = editorWindow;
@@ -611,9 +593,6 @@ internal class WorkflowPageViewModel : ViewModelBase
     internal static ObservableCollection<IWorkflowCase> WorkflowCases => UIStateService.WorkflowCases;
 
     internal ReactiveCommand<Unit, Unit>? CreateWorkflowCommand { get; set; }
-
-    /// <summary>Creates a v6-format (WorkflowV6 IR) workflow (P5-A4).</summary>
-    internal ReactiveCommand<Unit, Unit>? CreateV6WorkflowCommand { get; set; }
 
     internal ReactiveCommand<IWorkflowCase, Unit>? OpenWorkflowCommand { get; set; }
 

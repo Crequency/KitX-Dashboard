@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\KitX Dashboard\KitX.Dashboard.csproj" />
-    <ProjectReference Include="..\..\KitX Workflow\KitX.WorkflowIR\KitX.WorkflowIR.csproj" />
   </ItemGroup>
 
 </Project>

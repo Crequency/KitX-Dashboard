@@ -18,7 +18,6 @@ using KitX.Core.Contract.Workflow;
 using KitX.Core.DI;
 using KitX.Core.Event;
 using KitX.Dashboard.Services;
-using KitX.Workflow.Hosting;
 using KitX.WorkflowV6.Hosting;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.ViewModels.Pages.Controls;
@@ -54,21 +53,9 @@ public partial class App : Application
         // Register Core services from KitX.Core
         services.AddCoreServices();
 
-        // V6 workflow services. Registered *before* V5 so that the V6 concrete types
-        // (KsTextLens, BpGraphLens, SyncService, IScopeAnalyzer) are resolvable for the
-        // v6 editor, while the shared interface registrations (ILens<>, IExecutionBackend)
-        // remain pointed at V5 implementations — the v5 editor is still the active one.
+        // V6 workflow services — the only workflow backend since v5.1 was archived.
+        // Shared interface registrations (ILens<>, IExecutionBackend) now resolve to V6.
         services.AddKitXWorkflowV6();
-
-        // Phase F1: register the WorkflowIR (v5) library services (IR/Lens/Diff/Backend/Session).
-        // Registered after V6 so shared interfaces (ILens<>, IExecutionBackend) resolve to V5.
-        // This replaces the archived AddKitXWorkflow() entry (CoreServiceCollectionExtensions.cs:117).
-        services.AddKitXWorkflowIR();
-
-        // NodeFactory: replaces the orphaned INodeRegistry (uses BuiltinFunctionRegistry).
-        services.AddSingleton<KitX.Dashboard.Services.NodeFactory>(sp =>
-            new KitX.Dashboard.Services.NodeFactory(
-                sp.GetRequiredService<KitX.Workflow.Builtin.BuiltinFunctionRegistry>()));
 
         // §2.3 fix: bridge the Dashboard's plugin services to Kscript's IPluginServiceProvider,
         // then register RealPluginManager as the live IPluginManager. This replaces the
@@ -81,22 +68,15 @@ public partial class App : Application
             new Kscript.CSharp.Parser.Core.RealPluginManager(
                 sp.GetRequiredService<Kscript.CSharp.Parser.Core.IPluginServiceProvider>()));
 
-        // IPluginHost adapter: wraps RealPluginManager for workflow PluginCall execution.
+        // IPluginHost adapter: wraps RealPluginManager for v6 workflow PluginCall execution.
         // Resolves the live IPluginManager (registered above); NoOpPluginManager remains as a
         // defensive fallback if the registration is ever removed.
-        services.AddSingleton<KitX.Workflow.Backend.Runtime.IPluginHost>(sp =>
+        services.AddSingleton<KitX.WorkflowV6.Backend.Runtime.IPluginHost>(sp =>
         {
             return new KitX.Dashboard.Services.PluginHostAdapter(
                 sp.GetService<Kscript.CSharp.Parser.Core.IPluginManager>()
                     ?? new NoOpPluginManager());
         });
-
-        // The v6 workflow runtime uses the same adapter (identical interface contract).
-        // Without this registration StructuredRoslynBackend's optional IPluginHost
-        // parameter resolves to null and v6 PluginCall silently returns null.
-        services.AddSingleton<KitX.WorkflowV6.Backend.Runtime.IPluginHost>(sp =>
-            (KitX.WorkflowV6.Backend.Runtime.IPluginHost)
-                sp.GetRequiredService<KitX.Workflow.Backend.Runtime.IPluginHost>());
 
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
@@ -106,8 +86,7 @@ public partial class App : Application
             KitX.Dashboard.Services.WorkflowStorageService>();
 
         // S4: WorkflowSessionManager — IWorkflowManagementService orchestrator (run/stop by id
-        // via stored IR + IExecutionBackend). Replaces the archived WorkflowManagementService.
-        // Dispatches both v5 (WorkflowIR) and v6 (WorkflowV6) .kcs formats (P3-δ).
+        // via stored IR + IExecutionBackend). Dispatches v6 .kcs format (v5.1 archived).
         services.AddSingleton<KitX.Core.Contract.Workflow.IWorkflowManagementService,
             KitX.Dashboard.Services.WorkflowSessionManager>();
 
@@ -123,7 +102,6 @@ public partial class App : Application
         // Register Dashboard ViewModels (for DI auto-resolution without ActivatorUtilities fallback)
         // S5: WorkflowScriptEditorWindowViewModel retired — functionality merged into WorkflowEditorViewModel.
         services.AddTransient<DebugWindowViewModel>();
-        services.AddTransient<BlueprintEditorViewModel>();
         services.AddTransient<Settings_GeneralViewModel>();
         services.AddTransient<Settings_PerformenceViewModel>();
 
@@ -137,9 +115,8 @@ public partial class App : Application
         // so workflow code created outside DI (builtin functions, lazy singletons) can
         // resolve shared services (IPluginService, IDeviceServer, workflow services, ...).
         //
-        // Phase 12-prep: legacy KitX.Workflow.Hosting.ServiceLocator archived; the new
-        // KitX.WorkflowIR library will expose its own service-locator / DI entry once the
-        // editor migrates. Workflow eager-resolution is intentionally disabled for now.
+        // Phase 12-prep: legacy KitX.Workflow.Hosting.ServiceLocator archived; v6 runs
+        // fully through the DI container. Workflow eager-resolution is intentionally disabled.
         // KitX.Workflow.Hosting.ServiceLocator.Initialize(provider);
 
         // Pre-resolve the plugin manager bridge to force eager singleton construction

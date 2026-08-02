@@ -6,8 +6,6 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using KitX.Core.Contract.Workflow;
-using KitX.Workflow.Ir;
-using KitX.Workflow.Serialization;
 using Serilog;
 using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
 
@@ -19,8 +17,8 @@ using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
 //   • No ServiceLocator/Instance static — pure DI.
 //   • No LoadKcsFileResilient fallback — IrDto has no polymorphic $type, so the
 //     single-pass JSON deserialize cannot hit the legacy BlueprintNode failure.
-//   • CreateWorkflowAsync stores an empty IR (not a BS text template) — the
-//     default content is produced by the host on first open via BsTextLens.Project.
+//   • CreateWorkflowAsync stores an empty v6 IR (not a BS text template) — the
+//     default content is produced by the host on first open via KsTextLens.Project.
 //
 // File layout: {StorageDirectory}/{workflowId}.kcs — a JSON-serialized KcsFileFormat.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -46,16 +44,16 @@ public class WorkflowStorageService : IWorkflowStorageService
     public string StorageDirectory => _storageDirectory;
 
     /// <inheritdoc/>
-    public async Task<IWorkflowCase> CreateWorkflowAsync(string name, string? description = null, string irVersion = "v5")
+    /// <param name="irVersion">Ignored — v5.1 archived; all workflows are created as v6.</param>
+    public async Task<IWorkflowCase> CreateWorkflowAsync(string name, string? description = null, string irVersion = "v6")
     {
         EnsureDirectoryExists();
 
         var id = Guid.NewGuid().ToString();
         var now = DateTime.UtcNow;
 
-        // P5-A4: "v6" stores an empty v6 Workflow IR (the v6 editor opens with it and
-        // projects an empty KS buffer); the default "v5" keeps the v5 empty IR path.
-        var isV6 = irVersion == "v6";
+        // v6 only since v5.1 was archived: store an empty v6 Workflow IR (the v6
+        // editor opens with it and projects an empty KS buffer).
         var kcs = new KcsFileFormat
         {
             Id = id,
@@ -65,12 +63,10 @@ public class WorkflowStorageService : IWorkflowStorageService
             CreatedTime = now,
             LastModifiedTime = now,
             VariableConstants = new Dictionary<string, object?>(),
-            IrVersion = isV6 ? "v6" : "v5",
-            // v2: store an empty IR (one #MainBlock, no statements). The host projects
-            // BS/BP views on demand when the editor opens.
-            IrData = isV6
-                ? KitX.WorkflowV6.Serialization.WorkflowSerializer.Serialize(new V6Workflow())
-                : IrSerializer.Serialize(NewEmptyWorkflow()),
+            IrVersion = "v6",
+            // v2: store an empty v6 IR (no statements). The host projects KS/BP views
+            // on demand when the editor opens.
+            IrData = KitX.WorkflowV6.Serialization.WorkflowSerializer.Serialize(new V6Workflow()),
         };
 
         var filePath = GetWorkflowFilePath(id);
@@ -231,21 +227,6 @@ public class WorkflowStorageService : IWorkflowStorageService
         var json = JsonSerializer.Serialize(data, _jsonOptions);
         await File.WriteAllTextAsync(filePath, json);
     }
-
-    /// <summary>
-    /// Builds a minimal valid IrWorkflow: one empty <c>#MainBlock</c> entry block.
-    /// Used as the initial stored form for newly-created workflows.
-    /// </summary>
-    private static IrWorkflow NewEmptyWorkflow() => new()
-    {
-        MainBlockName = "#MainBlock",
-        Blocks = System.Collections.Immutable.ImmutableArray.Create(new IrBlock
-        {
-            Name = "#MainBlock",
-            Kind = IrBlockKind.Entry,
-            Statements = System.Collections.Immutable.ImmutableArray<IrStatement>.Empty,
-        }),
-    };
 }
 
 /// <summary>
