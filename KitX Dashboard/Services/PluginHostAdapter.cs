@@ -8,14 +8,15 @@ using Serilog;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PluginHostAdapter — bridges the Dashboard's active RealPluginManager (the
-// Kscript.CSharp.Parser plugin system) to the WorkflowIR library's IPluginHost
-// abstraction (Dashboard-Frontend-Refactor-Handoff.md §六.3, IR-Architecture-v6.0 §6).
+// Kscript.CSharp.Parser plugin system) to BOTH workflow IPluginHost abstractions:
+// the WorkflowIR (v5.1) contract and the WorkflowV6 contract (identical
+// signatures — one implementation satisfies both interfaces). Registered for
+// each interface in DI (see App.axaml.cs) so v5 and v6 PluginCall builtins can
+// invoke real plugins at runtime.
 //
-// The new IR library's RoslynExecutionBackend optionally injects an IPluginHost so
-// PluginCall/PluginCallWithTarget builtins can invoke real plugins at runtime. This
-// adapter is the single implementation: it wraps RealPluginManager.Call<string>,
-// which returns the raw JSON response string. ExecutionGlobals.PluginCall then
-// normalizes that string to a JsonElement via AsJsonElement (List-Port-And-Json-
+// It wraps RealPluginManager.Call<string>, which returns the raw JSON response
+// string. ExecutionGlobals.PluginCall then normalizes that string to a
+// JsonElement via AsJsonElement (List-Port-And-Json-
 // Functions-Design.md §1).
 //
 // Lifecycle methods (StartPlugin/StopPlugin/etc.) are stubbed for now — the Dashboard's
@@ -27,7 +28,9 @@ using Serilog;
 /// Adapts <see cref="RealPluginManager"/> to the WorkflowIR <see cref="IPluginHost"/>
 /// contract. Registered as a singleton in DI (see App.axaml.cs).
 /// </summary>
-public sealed class PluginHostAdapter : IPluginHost
+public sealed class PluginHostAdapter
+    : KitX.Workflow.Backend.Runtime.IPluginHost
+    , KitX.WorkflowV6.Backend.Runtime.IPluginHost
 {
     private readonly IPluginManager _pluginManager;
 

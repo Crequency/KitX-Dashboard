@@ -91,6 +91,13 @@ public partial class App : Application
                     ?? new NoOpPluginManager());
         });
 
+        // The v6 workflow runtime uses the same adapter (identical interface contract).
+        // Without this registration StructuredRoslynBackend's optional IPluginHost
+        // parameter resolves to null and v6 PluginCall silently returns null.
+        services.AddSingleton<KitX.WorkflowV6.Backend.Runtime.IPluginHost>(sp =>
+            (KitX.WorkflowV6.Backend.Runtime.IPluginHost)
+                sp.GetRequiredService<KitX.Workflow.Backend.Runtime.IPluginHost>());
+
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
 
