@@ -171,6 +171,20 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>Marks a note as being dragged so bounds-following skips it (code-behind calls this).</summary>
     public void SetGroupCommentDragging(GroupCommentVM? vm) => _draggingGroupComment = vm;
 
+    /// <summary>Re-evaluates theme-dependent connector/line colours after a theme switch.</summary>
+    public void RefreshThemeColors()
+    {
+        foreach (var nodeVm in Nodes.OfType<BlueprintNodeVMV6>())
+        {
+            foreach (var c in nodeVm.Input.OfType<BlueprintConnectorVMV6>())
+                c.RefreshThemeColor();
+            foreach (var c in nodeVm.Output.OfType<BlueprintConnectorVMV6>())
+                c.RefreshThemeColor();
+        }
+        foreach (var c in Connections.OfType<BlueprintConnectionVMV6>())
+            c.RefreshStrokeColor();
+    }
+
     /// <summary>
     /// Re-docks every note to its statement leader (only while docked; the note being
     /// dragged is skipped), then refreshes the shared dashed frame for the hovered note.

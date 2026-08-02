@@ -1,4 +1,6 @@
 using System;
+using Avalonia;
+using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Workflow;
@@ -72,7 +74,8 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
     /// </summary>
     public bool IsDanglingExec => IsExecution && !IsConnected && Flow == ConnectorFlow.Output;
 
-    /// <summary>Maps PinType to hex colour for visual rendering.</summary>
+    /// <summary>Maps PinType to hex colour for visual rendering. Any (white) is theme-aware:
+    /// dark grey on Light themes so lines/pins stay visible, white on Dark.</summary>
     public static string GetHexColorForPinType(PinType pinType) => pinType switch
     {
         PinType.Execution => "#32CD32",     // LimeGreen
@@ -82,8 +85,16 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
         PinType.String => "#FFFF00",        // Yellow
         PinType.Json => "#4FC3F7",          // Light Blue
         PinType.Dict => "#A9A9A9",          // DarkGray
-        _ => "#FFFFFF"                      // White (Any)
+        _ => Application.Current?.RequestedThemeVariant == ThemeVariant.Dark ? "#FFFFFF" : "#3A3A3A",  // Any
     };
+
+    /// <summary>Re-evaluates theme-dependent colours after a theme switch (host calls this).</summary>
+    public void RefreshThemeColor()
+    {
+        OnPropertyChanged(nameof(PinTypeColorHex));
+        OnPropertyChanged(nameof(EffectiveBorderColorHex));
+        OnPropertyChanged(nameof(ShowDefaultValue));
+    }
 
     public BlueprintConnectorVMV6()
         : this(null) { }
@@ -154,6 +165,13 @@ public partial class BlueprintConnectionVMV6 : ConnectionViewModelBase
     private void OnSourceConnectorPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(BlueprintConnectorVMV6.PinTypeColorHex) && _sourceConnector != null)
+            StrokeColorHex = _sourceConnector.PinTypeColorHex;
+    }
+
+    /// <summary>Re-evaluates the stroke colour after a theme switch (the source connector's Any colour is theme-aware).</summary>
+    public void RefreshStrokeColor()
+    {
+        if (_sourceConnector != null)
             StrokeColorHex = _sourceConnector.PinTypeColorHex;
     }
 }

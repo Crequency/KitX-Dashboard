@@ -86,7 +86,11 @@ public partial class WorkflowEditorWindowV6 : Window
         }
 
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        ActualThemeVariantChanged += (_, _) => InitializeEditor();
+        ActualThemeVariantChanged += (_, _) =>
+        {
+            InitializeEditor();
+            _viewModel.BlueprintVM.RefreshThemeColors();
+        };
 
         Closing += OnWindowClosing;
     }
