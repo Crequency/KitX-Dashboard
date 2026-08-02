@@ -180,10 +180,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             if (SetProperty(ref _ksSource, value))
             {
                 IsDirty = true;
-                var preview = (value ?? string.Empty);
-                if (preview.Length > 120) preview = preview[..120] + "...";
-                Log.Information("[WorkflowEditorVMV6] KsSource set: {Length} chars, preview: {Preview}",
-                    value?.Length ?? 0, preview);
+                // Log the full KS source — KScript documents are short, truncating adds
+                // no value and hides the tail that users are actually editing.
+                Log.Information("[WorkflowEditorVMV6] KsSource set: {Length} chars, full source:\n{Preview}",
+                    value?.Length ?? 0, value ?? string.Empty);
             }
         }
     }
