@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Immutable;
@@ -108,6 +108,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         try { pluginServer = App.GetService<IPluginServer>(); } catch { /* host without DI */ }
         BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens, registry, pluginServer);
 
+        // W11: BP-side edits (wiring/comments/definition values) must mark the workflow
+        // dirty — otherwise closing the window silently drops every BP change.
+        BlueprintVM.BlueprintEdited += () => IsDirty = true;
+
         // Resolve the v6 execution backend (shared interface points elsewhere; use concrete type).
         try { _executionBackend = App.GetService<StructuredRoslynBackend>(); } catch { /* host without DI */ }
 
@@ -180,10 +184,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             if (SetProperty(ref _ksSource, value))
             {
                 IsDirty = true;
-                // Log the full KS source — KScript documents are short, truncating adds
-                // no value and hides the tail that users are actually editing.
-                Log.Information("[WorkflowEditorVMV6] KsSource set: {Length} chars, full source:\n{Preview}",
-                    value?.Length ?? 0, value ?? string.Empty);
+                // Debug-level: full-source logging on every keystroke is O(n) I/O per
+                // edit; the tail of the document is visible in the editor itself.
+                Log.Debug("[WorkflowEditorVMV6] KsSource set: {Length} chars", value?.Length ?? 0);
             }
         }
     }
@@ -438,21 +441,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// Collects user-modified constant/var overrides (UserValue != DefaultValue).
     /// Returns null when nothing is overridden. Unlike v5.1 which compares
     /// evaluated objects, v6 compares the raw text (InitialValueExpression strings).
+    /// Semantics owned by <see cref="DefinitionValueSynchronizer"/>.
     /// </summary>
     private Dictionary<string, string?>? GetUserConstantOverridesV6()
-    {
-        if (VariableConstants.Count == 0) return null;
-
-        var overrides = new Dictionary<string, string?>();
-        foreach (var constant in VariableConstants)
-        {
-            var def = constant.DefaultValue?.ToString();
-            var usr = constant.UserValue?.ToString();
-            if (!string.Equals(def, usr, StringComparison.Ordinal))
-                overrides[constant.Name] = usr;
-        }
-        return overrides.Count > 0 ? overrides : null;
-    }
+        => DefinitionValueSynchronizer.GetUserOverrides(VariableConstants);
 
     // ── BP ↔ Variable Constants panel sync (2026-08-02) ──
     //
@@ -460,99 +452,17 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     // and a USER value (ConstValue / VarInitialValue) that is the BP-side counterpart
     // of the KS editor's Variable Constants panel UserValue. The two are synced on
     // mode switches / save / run so overrides survive without ever rewriting the KS
-    // script text (the script keeps its defaults).
+    // script text (the script keeps its defaults). The semantics live in the single
+    // DefinitionValueSynchronizer service (B7); the VM only wires it at the right
+    // points: before Reverse (BP→panel) and after Project (panel→BP).
 
-    /// <summary>
-    /// True for a definition node: the standalone declaration (no connections).
-    /// Usage nodes (same name, wired into data/exec edges) must be excluded — they
-    /// carry no user value and would otherwise clobber the definition's override.
-    /// </summary>
-    private static bool IsDefinitionNode(Blueprint bp, BlueprintNode node)
-        => !bp.Connections.Any(c => c.SourceNodeId == node.Id || c.TargetNodeId == node.Id);
-
-    /// <summary>
-    /// BP→panel: copies user values from definition nodes into the Variable Constants
-    /// panel (UserValue). Definition nodes absent from the panel are added with their
-    /// default (usually empty — the user created them on the BP side).
-    /// </summary>
+    /// <summary>BP→panel: copies user values from definition nodes into the panel.</summary>
     private void SyncUserValuesFromBlueprint(Blueprint bp)
-    {
-        if (bp == null) return;
-        Log.Information("[WFEVM] SyncUserValuesFromBlueprint: {Nodes} nodes, panel has {Consts} entries",
-            bp.Nodes.Count, VariableConstants.Count);
-        foreach (var node in bp.Nodes)
-        {
-            if (!IsDefinitionNode(bp, node)) continue;
-            string? name = null, type = null, defaultValue = null, userValue = null;
-            switch (node)
-            {
-                case ConstNode cn:
-                    name = cn.ConstName; type = cn.ConstType;
-                    defaultValue = cn.DefaultValue; userValue = cn.ConstValue;
-                    break;
-                case VariableNode vn when vn.VarKind == VariableKind.PubVar:
-                    name = vn.VarName; type = vn.VarType;
-                    defaultValue = vn.DefaultValue; userValue = vn.VarInitialValue;
-                    break;
-            }
-            if (string.IsNullOrEmpty(name)) continue;
+        => DefinitionValueSynchronizer.SyncBlueprintToPanel(bp, VariableConstants);
 
-            var existing = VariableConstants.FirstOrDefault(c => c.Name == name);
-            if (existing != null)
-            {
-                // Always mirror the node's value — a cleared user value falls back to
-                // the default (no override), otherwise the panel keeps a stale value.
-                existing.UserValue = userValue ?? existing.DefaultValue;
-                Log.Information("[WFEVM] Sync: {Name} nodeUser={User} → panel UserValue={Panel}",
-                    name, userValue, existing.UserValue);
-            }
-            else
-            {
-                VariableConstants.Add(new VariableConstant
-                {
-                    Name = name,
-                    Type = type ?? "object",
-                    DefaultValue = defaultValue,
-                    UserValue = userValue,
-                });
-                Log.Information("[WFEVM] Sync: {Name} added to panel (user={User})", name, userValue);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Panel→BP: mirrors the Variable Constants panel (UserValue, the effective
-    /// initial value) onto the freshly rebuilt definition nodes, so switching KS→BP
-    /// shows the user's override on the BP canvas. Written unconditionally — a
-    /// cleared panel value clears the node's user value (falls back to the default).
-    /// </summary>
+    /// <summary>Panel→BP: mirrors panel UserValues onto freshly rebuilt definition nodes.</summary>
     private void RestoreUserValuesFromPanel(Blueprint bp)
-    {
-        if (bp == null) return;
-        Log.Information("[WFEVM] RestoreUserValuesFromPanel: {Consts} constants → {Nodes} nodes",
-            VariableConstants.Count, bp.Nodes.Count);
-        foreach (var constant in VariableConstants)
-        {
-            var usr = constant.UserValue?.ToString();
-            Log.Information("[WFEVM] Restore: {Name} UserValue={User}", constant.Name, usr);
-            foreach (var node in bp.Nodes)
-            {
-                // Only the standalone definition node (no connections) carries the
-                // user value; usage nodes must stay untouched.
-                if (!IsDefinitionNode(bp, node)) continue;
-                if (node is ConstNode cn && cn.ConstName == constant.Name)
-                {
-                    cn.ConstValue = usr;
-                    Log.Information("[WFEVM] Restore: const {Name} → ConstValue={User}", constant.Name, usr);
-                }
-                else if (node is VariableNode vn && vn.VarName == constant.Name && vn.VarKind == VariableKind.PubVar)
-                {
-                    vn.VarInitialValue = usr;
-                    Log.Information("[WFEVM] Restore: var {Name} → VarInitialValue={User}", constant.Name, usr);
-                }
-            }
-        }
-    }
+        => DefinitionValueSynchronizer.RestorePanelToBlueprint(VariableConstants, bp);
 
     // ── KS parse validation (diagnostics-aware) ──
 
@@ -587,22 +497,64 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     public BlueprintEditorViewModelV6 BlueprintVM { get; private set; } = null!;
 
-    // ── BP → IR (with helper re-injection) ──
-    //
-    // The BP graph does NOT carry helper-function metadata (helper bodies live only
-    // in the IR), so a reverse projection loses them. The generated C# class G
-    // derives its helper methods from ir.HelperFunctions — without re-injecting,
-    // BP-mode Run/Save/Debug compiles against a G that lacks every helper method
-    // (e.g. BF interpreter: CS1061 'G' does not contain 'CharCodeAt').
+    // ── Mode switch ──
 
-    /// <summary>Reverses a blueprint and re-attaches the editor's helper functions.</summary>
-    private V6Workflow ReverseWithHelpers(Blueprint bp)
+    /// <summary>
+    /// Obtains the IR (+ lowering) for the current mode — the shared "get IR" pipeline
+    /// for Run / DebugRun / Save (previously three near-identical copies):
+    ///   • KS mode: snapshot the editor text, parse via ParseLowering.
+    ///   • BP mode: mirror definition-node user values into the panel, then reverse
+    ///     the working blueprint with the editor's helper functions re-attached.
+    /// On failure returns a fully formatted error message (parse errors carry the
+    /// indent hint; exceptions are prefixed); callers present it and abort.
+    /// </summary>
+    private (V6Workflow? Ir, LoweringResult? Lowering, string? Error) BuildIrForCurrentMode()
     {
-        var ir = _bpGraphLens.Reverse(bp);
-        return ir with { HelperFunctions = [.. HelperFunctions] };
+        // R1: take an explicit snapshot from the editor before parsing (KS mode only).
+        if (_mode != EditorMode.Blueprint)
+            SyncFromEditorText();
+
+        try
+        {
+            if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint is { Nodes.Count: > 0 } bp)
+            {
+                // Mirror BP definition-node user values into the panel BEFORE running so
+                // the override layer applies them at runtime.
+                SyncUserValuesFromBlueprint(bp);
+                var ir = _bpGraphLens.Reverse(bp, HelperFunctions);
+                // ScriptCompiler fallback infers PubVarTypes from ir.GlobalVars.
+                return (ir, null, null);
+            }
+
+            var parseError = ValidateKsParse();
+            if (parseError != null)
+                return (null, null,
+                    $"KS 解析错误：\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。");
+            var helpers = new List<HelperFunction>(HelperFunctions);
+            var (ksIr, lowering) = _ksTextLens.ParseLowering(KsSource, helpers);
+            return (ksIr, lowering, null);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[WorkflowEditorVMV6] BuildIrForCurrentMode failed");
+            return (null, null, $"解析失败: {ex.Message}");
+        }
     }
 
-    // ── Mode switch ──
+    /// <summary>
+    /// Rebuilds the BP canvas from a Workflow IR (reverse → project → load). Used by
+    /// DebugRun so canvas node IDs are the FNV-1a statement IDs the debugger emits —
+    /// palette-added nodes (random IDs) otherwise never highlight. Mirrors the
+    /// KS→BP switch flow (trigger entry + panel user values re-applied).
+    /// </summary>
+    private void ReloadCanvasFromIr(V6Workflow ir)
+    {
+        var bp = _bpGraphLens.Project(ir);
+        ApplyTriggerToBlueprint(bp);
+        RestoreUserValuesFromPanel(bp);
+        var scopes = _bpGraphLens.AnalyzeScopes(bp);
+        BlueprintVM.LoadBlueprint(bp, scopes);
+    }
 
     [RelayCommand]
     private void SwitchToBlockScript()
@@ -620,7 +572,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                     // reverse projection only carries the KS script defaults.
                     SyncUserValuesFromBlueprint(bp);
                     RestoreTriggerFromBlueprint(bp);
-                    var ir = ReverseWithHelpers(bp);
+                    var ir = _bpGraphLens.Reverse(bp, HelperFunctions);
                     Log.Information("[WorkflowEditorVMV6] BP→KS: bp={BpNodes} nodes, ir={Consts} consts/{Vars} vars/{Stmts} stmts",
                         bp.Nodes.Count, ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length);
                     _lastIr = ir;
@@ -647,6 +599,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 Log.Warning(ex, "[WorkflowEditorVMV6] BP→KS reverse failed");
             }
         }
+        // Design §2.2: a failed conversion must NOT switch modes — the user stays in the
+        // current view to fix the error. The developer option bypasses the guard.
+        if (!string.IsNullOrEmpty(ConversionError) && !IsDeveloperOptionEnabled)
+            return;
         Mode = EditorMode.BlockScript;
     }
 
@@ -655,7 +611,29 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     {
         if (_mode == EditorMode.BlockScript)
             RenderBlueprintFromKs();
+        // Design §2.2: a failed KS parse must NOT switch modes — the user stays in the
+        // KS editor to fix the error. The developer option bypasses the guard.
+        if (!string.IsNullOrEmpty(ConversionError) && !IsDeveloperOptionEnabled)
+            return;
         Mode = EditorMode.Blueprint;
+    }
+
+    /// <summary>
+    /// True when the Dashboard's developer option is enabled (Settings → General).
+    /// While enabled, failed KS↔BP conversions are allowed to switch modes anyway —
+    /// useful for inspecting half-parsed graphs during development.
+    /// </summary>
+    private static bool IsDeveloperOptionEnabled
+    {
+        get
+        {
+            try
+            {
+                var cfg = App.GetService<KitX.Core.Contract.Configuration.IConfigService>();
+                return cfg?.AppConfig?.App?.DeveloperSetting == true;
+            }
+            catch { return false; }
+        }
     }
 
     // ── Trigger ↔ Blueprint entry node (P3-δ) ──
@@ -665,13 +643,13 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// (v5.1 pattern): restores the persisted entry coordinates from
     /// <see cref="TriggerConfig.EntryNodeX/Y"/>, then — when the trigger type is
     /// PluginEvent with a plugin selected — swaps the synthetic EntryNode for a
-    /// <see cref="PluginTriggerNode"/> carrying PluginName/TriggerName. The node keeps
-    /// the Entry's Id and output-pin Id so existing connections stay valid, and the
-    /// swap happens before scope analysis so the canvas renders the trigger entry.
+    /// <see cref="PluginTriggerNode"/> carrying PluginName/TriggerName (in place,
+    /// preserving Id/pin Id via <see cref="TriggerEntrySwapper"/>), so the canvas
+    /// renders the trigger entry before scope analysis.
     /// </summary>
     private void ApplyTriggerToBlueprint(Blueprint bp)
     {
-        var entry = bp.Nodes.FirstOrDefault(n => n is EntryNode);
+        var entry = TriggerEntrySwapper.FindEntry(bp);
         if (entry is null) return;
 
         // Restore persisted entry coordinates (they live in TriggerConfig, not IR).
@@ -684,18 +662,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         if (TriggerType != "PluginEvent" || string.IsNullOrEmpty(TriggerPluginName))
             return;
 
-        var idx = bp.Nodes.IndexOf(entry);
-        var trigger = new PluginTriggerNode
-        {
-            Id = entry.Id,
-            Name = "PluginTrigger",
-            X = entry.X,
-            Y = entry.Y,
-            PluginName = TriggerPluginName,
-            TriggerName = TriggerName ?? string.Empty,
-        };
-        trigger.OutputPins[0].Id = entry.OutputPins[0].Id;
-        bp.Nodes[idx] = trigger;
+        TriggerEntrySwapper.SwapToPlugin(bp, TriggerPluginName, TriggerName ?? string.Empty);
     }
 
     /// <summary>
@@ -707,7 +674,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// </summary>
     private void RestoreTriggerFromBlueprint(Blueprint bp)
     {
-        var trigger = bp.Nodes.FirstOrDefault(n => n is PluginTriggerNode) as PluginTriggerNode;
+        var trigger = TriggerEntrySwapper.SwapBackToEntry(bp);
         if (trigger is not null)
         {
             TriggerType = "PluginEvent";
@@ -716,11 +683,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             _triggerConfig ??= new TriggerConfig();
             _triggerConfig.EntryNodeX = trigger.X;
             _triggerConfig.EntryNodeY = trigger.Y;
-
-            var idx = bp.Nodes.IndexOf(trigger);
-            var entry = new EntryNode { Id = trigger.Id, Name = "Entry", X = trigger.X, Y = trigger.Y };
-            entry.OutputPins[0].Id = trigger.OutputPins[0].Id;
-            bp.Nodes[idx] = entry;
         }
         else
         {
@@ -835,32 +797,15 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
         try
         {
-            if (_mode != EditorMode.Blueprint)
-                SyncFromEditorText();
             Log.Information("[WorkflowEditorVMV6] SaveAsync: Mode={Mode}, KsSource={Length} chars", _mode, KsSource.Length);
-            var helpers = new List<HelperFunction>(HelperFunctions);
-            V6Workflow ir;
-            if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint != null
-                && BlueprintVM.WorkingBlueprint.Nodes.Count > 0)
+            var (ir, _, error) = BuildIrForCurrentMode();
+            if (error is not null || ir is null)
             {
-                // BP mode: reverse the edited blueprint instead of re-parsing stale KS text.
-                // Mirror definition-node user values into the panel so the saved .kcs
-                // VariableConstants carry the overrides.
-                SyncUserValuesFromBlueprint(BlueprintVM.WorkingBlueprint);
-                ir = ReverseWithHelpers(BlueprintVM.WorkingBlueprint);
-            }
-            else
-            {
-                var parseError = ValidateKsParse();
-                if (parseError != null)
-                {
-                    // Abort the save — persisting a partially-parsed IR would permanently
-                    // corrupt the .kcs file (const/var/body silently dropped).
-                    StatusText = $"Save aborted — KS 解析错误:\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
-                    Log.Warning("[WorkflowEditorVMV6] SaveAsync aborted due to parse errors");
-                    return;
-                }
-                ir = _ksTextLens.Parse(KsSource, helpers);
+                // Abort the save — persisting a partially-parsed IR would permanently
+                // corrupt the .kcs file (const/var/body silently dropped).
+                StatusText = $"Save aborted — {error}";
+                Log.Warning("[WorkflowEditorVMV6] SaveAsync aborted: {Error}", error);
+                return;
             }
             _lastIr = ir;
 
@@ -948,36 +893,12 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         Log.Information("[WorkflowEditorVMV6] Run KsSource content (first 500 chars):\n{Content}",
             KsSource.Length > 500 ? KsSource[..500] : KsSource);
 
-        // Obtain IR + lowering (KS: ParseLowering; BP: Reverse).
-        V6Workflow ir;
-        LoweringResult? lowering;
-        try
+        // Obtain IR + lowering (shared pipeline: KS ParseLowering / BP Reverse).
+        var (ir, lowering, error) = BuildIrForCurrentMode();
+        if (error is not null || ir is null)
         {
-            if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint is { Nodes.Count: > 0 } bp)
-            {
-                // Mirror BP definition-node user values into the panel BEFORE running so
-                // the override layer applies them at runtime.
-                SyncUserValuesFromBlueprint(bp);
-                ir = ReverseWithHelpers(bp);
-                lowering = null; // ScriptCompiler fallback infers PubVarTypes from ir.GlobalVars
-            }
-            else
-            {
-                var parseError = ValidateKsParse();
-                if (parseError != null)
-                {
-                    ExecutionOutput = $"KS 解析错误，无法执行:\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
-                    StatusText = "Parse Error";
-                    return;
-                }
-                var helpers = new List<HelperFunction>(HelperFunctions);
-                (ir, lowering) = _ksTextLens.ParseLowering(KsSource, helpers);
-            }
-        }
-        catch (Exception ex)
-        {
-            ExecutionOutput = $"解析失败: {ex.Message}";
-            Log.Error(ex, "[WorkflowEditorVMV6] Run parse failed");
+            ExecutionOutput = error ?? "解析失败";
+            StatusText = "Error (v6)";
             return;
         }
 
@@ -1046,42 +967,24 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             return;
         }
 
-        // R1: take an explicit snapshot from the editor before parsing (KS mode only).
-        if (_mode != EditorMode.Blueprint)
-            SyncFromEditorText();
-
-        // Obtain IR + lowering (same as Run).
-        V6Workflow ir;
-        LoweringResult? lowering;
-        try
+        // Obtain IR + lowering (shared pipeline: KS ParseLowering / BP Reverse).
+        var (ir, lowering, error) = BuildIrForCurrentMode();
+        if (error is not null || ir is null)
         {
-            if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint is { Nodes.Count: > 0 } bp)
-            {
-                SyncUserValuesFromBlueprint(bp);
-                ir = ReverseWithHelpers(bp);
-                lowering = null;
-            }
-            else
-            {
-                var parseError = ValidateKsParse();
-                if (parseError != null)
-                {
-                    ExecutionOutput = $"KS 解析错误，无法调试:\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
-                    StatusText = "Parse Error";
-                    return;
-                }
-                var helpers = new List<HelperFunction>(HelperFunctions);
-                (ir, lowering) = _ksTextLens.ParseLowering(KsSource, helpers);
-            }
-        }
-        catch (Exception ex)
-        {
-            ExecutionOutput = $"解析失败: {ex.Message}";
-            Log.Error(ex, "[WorkflowEditorVMV6] DebugRun parse failed");
+            ExecutionOutput = $"KS 解析错误，无法调试:\n{error}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
+            StatusText = "Parse Error";
             return;
         }
 
         ir = WorkflowOverrides.ApplyConstantOverrides(ir, GetUserConstantOverridesV6());
+
+        // F1: palette-added BP nodes carry random (non-FNV) IDs that can never match
+        // DebugCodegen's statement IDs — reload the canvas from the reversed IR so every
+        // executed node's VM ID equals its statement ID and debug highlighting works for
+        // BP-added nodes too. (Coordinates reset to the layout — consistent with the
+        // documented non-persistence of node positions.)
+        if (_mode == EditorMode.Blueprint)
+            ReloadCanvasFromIr(ir);
 
         // Create debugger + wire events.
         _debugController = new RealBlueprintDebugger();

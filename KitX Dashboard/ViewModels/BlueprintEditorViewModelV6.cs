@@ -48,6 +48,17 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>Public accessor for the working blueprint (Reverse / save consume it).</summary>
     public Blueprint? WorkingBlueprint => _workingBlueprint;
 
+    /// <summary>
+    /// Raised after any edit that changes the persisted workflow content (structure,
+    /// comments, definition values). The host VM subscribes to mark the workflow dirty —
+    /// without it, BP-side edits would be silently dropped on window close (the IsDirty
+    /// pipeline only covered KS-side setters). Pure canvas moves are excluded: positions
+    /// are decorative and not persisted.
+    /// </summary>
+    public event Action? BlueprintEdited;
+
+    private void NotifyBlueprintEdited() => BlueprintEdited?.Invoke();
+
     /// <summary>Contract→VM lookup (rendering connections from Contract).</summary>
     private readonly Dictionary<(string NodeId, string PinId), BlueprintConnectorVMV6> _contractToConnector = new();
 
@@ -314,6 +325,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         vm.IsDocked = true;
         DockNote(vm);
         ErrorInfo = null;
+        NotifyBlueprintEdited();
     }
 
     /// <summary>
@@ -369,6 +381,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _groupCommentVms.Add(vm);
         Nodes.Add(vm);
         vm.BeginEdit();
+        NotifyBlueprintEdited();
     }
 
     /// <summary>Writes an edited group-comment text back to the Contract (R-fix).</summary>
@@ -378,6 +391,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var gc = _workingBlueprint.GroupComments.FirstOrDefault(x => x.AnchorNodeId == vm.AnchorNodeId);
         if (gc != null)
             gc.Comment = string.IsNullOrWhiteSpace(text) ? string.Empty : text;
+        NotifyBlueprintEdited();
     }
 
     // ── Loading ──
@@ -534,6 +548,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         Nodes.Add(ConvertNodeToViewModel(node));
         HasContent = true;
         RefreshScopes();
+        NotifyBlueprintEdited();
     }
 
     // ── Plugin trigger palette (P3-δ) ──
@@ -573,23 +588,15 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (item == null || _workingBlueprint == null) return;
         var node = NodeFactoryV6.CreatePluginTriggerNode(item.PluginName, item.TriggerName);
 
-        var existing = _workingBlueprint.Nodes.FirstOrDefault(n => n is EntryNode);
-        if (existing != null)
-        {
-            var idx = _workingBlueprint.Nodes.IndexOf(existing);
-            node.Id = existing.Id;
-            node.X = existing.X;
-            node.Y = existing.Y;
-            node.OutputPins[0].Id = existing.OutputPins[0].Id;
-            _workingBlueprint.Nodes[idx] = node;
-        }
-        else
+        // In-place entry swap (single entry guarantee) — see TriggerEntrySwapper.
+        if (TriggerEntrySwapper.SwapToPlugin(_workingBlueprint, item.PluginName, item.TriggerName) is null)
         {
             AddNodeToCanvas(node);
         }
 
         // Rebuild the canvas from the Contract so VM connectors match the new root.
         ReloadCanvas();
+        NotifyBlueprintEdited();
     }
 
     /// <summary>Rebuilds all node/connection VMs from the working blueprint (preserves Contract coordinates).</summary>
@@ -663,6 +670,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         ErrorInfo = null;
         TryExpandVariadicPins(src, tgt);
         RefreshScopes();
+        NotifyBlueprintEdited();
     }
 
     /// <summary>
@@ -691,6 +699,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         RefreshIsConnected();
         RefreshScopes();
         ErrorInfo = null;
+        NotifyBlueprintEdited();
     }
 
     /// <summary>
@@ -706,6 +715,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         RefreshIsConnected();
         RefreshScopes();
         ErrorInfo = null;
+        NotifyBlueprintEdited();
     }
 
     /// <summary>Deletes all selected nodes and their connections (canvas + Contract).</summary>
@@ -758,14 +768,32 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             }
         }
 
-        // Drop group comments anchored to any deleted node (P5-B2).
-        if (_workingBlueprint.GroupComments.Count > 0)
+        // Drop group comments anchored to any deleted node (P5-B2): Contract entries AND
+        // their live note VMs + the shared highlight (an orphaned note would otherwise
+        // float over the canvas after its anchor is deleted).
+        if (_workingBlueprint.GroupComments.Count > 0 || _groupCommentVms.Count > 0)
+        {
             _workingBlueprint.GroupComments.RemoveAll(gc => nodeIds.Contains(gc.AnchorNodeId));
+            var orphanedNotes = _groupCommentVms
+                .Where(vm => nodeIds.Contains(vm.AnchorNodeId))
+                .ToList();
+            foreach (var vm in orphanedNotes)
+            {
+                _groupCommentVms.Remove(vm);
+                Nodes.Remove(vm);
+            }
+            if (_hoveredGroupComment != null && nodeIds.Contains(_hoveredGroupComment.AnchorNodeId))
+            {
+                _hoveredGroupComment = null;
+                UpdateGroupCommentHighlight(null);
+            }
+        }
 
         SelectedNodes.Clear();
         RefreshIsConnected();
         RefreshScopes();
         ErrorInfo = null;
+        NotifyBlueprintEdited();
     }
 
     // ── Frontend pre-validation ──
@@ -860,16 +888,11 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         return FindNodeById(coord.NodeId)?.IsDefinition == true;
     }
 
-    // Violation codes introduced by a connection (rejected during edit). Global-completeness
-    // codes (KS100/KS120/KS130) come from orphan nodes / missing declarations and are tolerated
-    // during editing — they surface only at the switch/save completeness check.
-    private static readonly HashSet<string> ConnectionStructuralCodes = new()
-    {
-        "KS101", "KS102", "KS111", "KS105", "KS110", "KS140",
-    };
-
+    // Connection-structural classification lives on the backend ConstraintViolation
+    // (IsConnectionStructural) — the frontend never hardcodes the code set, so adding
+    // new rejection codes cannot silently misclassify edits.
     private static bool IsConnectionStructural(ConstraintViolation? v)
-        => v != null && ConnectionStructuralCodes.Contains(v.Code);
+        => v?.IsConnectionStructural == true;
 
     // ── Hover preview (inductive invariant enforcement) ──
 
@@ -1129,11 +1152,15 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var headerColor = BlueprintNodeVMV6.GetHeaderColor(node.NodeType, functionName);
         var displayTitle = node.GetDisplayTitle();
 
-        // Definition nodes (const/var block declarations) carry NO Exec pins — that is
-        // the only reliable discriminator between a definition and a usage node.
-        bool isDefinition = node is ConstNode or VariableNode
-            && !node.InputPins.Any(p => p.Type == PinType.Execution)
-            && !node.OutputPins.Any(p => p.Type == PinType.Execution);
+        // Definition nodes (const/var block declarations) are flagged by the renderer
+        // (BpRenderer sets IsDefinition on /def/ nodes) — definition-ness is fixed at
+        // creation and must not be re-inferred from pin presence or connectivity.
+        bool isDefinition = node switch
+        {
+            ConstNode cn => cn.IsDefinition,
+            VariableNode vn => vn.IsDefinition,
+            _ => false,
+        };
 
         var nodeVm = new BlueprintNodeVMV6(
             (node, comment) => UpdateNodeComment(node.BlueprintNodeId, comment),
@@ -1222,6 +1249,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var pin = node?.InputPins.Find(p => p.Id == pinId);
         if (pin != null)
             pin.DefaultValue = value;
+        NotifyBlueprintEdited();
     }
 
     /// <summary>Writes an edited node comment back to the Contract node (P5-B2, trailing comment).</summary>
@@ -1231,6 +1259,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var node = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == nodeId);
         if (node != null)
             node.Comment = string.IsNullOrWhiteSpace(comment) ? null : comment;
+        NotifyBlueprintEdited();
     }
 
     /// <summary>
@@ -1270,6 +1299,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                 vn.VarInitialValue = string.IsNullOrWhiteSpace(value) ? null : value;
                 break;
         }
+        NotifyBlueprintEdited();
     }
 
     private BlueprintConnectionVMV6? ConvertConnectionToViewModel(BlueprintConnection conn)

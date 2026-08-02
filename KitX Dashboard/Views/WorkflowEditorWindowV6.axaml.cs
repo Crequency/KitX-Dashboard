@@ -80,15 +80,16 @@ public partial class WorkflowEditorWindowV6 : Window
             // Reliable right-click channel (NodifyM RightClick event — independent of Avalonia's
             // fragile ContextRequested which TextBox etc. suppress).
             editor.RightClick += OnEditorRightClick;
-            // Route NodifyM pointer diagnostics into the Dashboard log (troubleshooting F1).
-            NodifyM.Avalonia.Controls.NodifyEditor.PointerDiagnostics =
-                msg => Log.Information("[NodifyM] {Msg}", msg);
         }
 
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         ActualThemeVariantChanged += (_, _) =>
         {
-            InitializeEditor();
+            // C2: never overwrite the document on theme changes — the editor may be showing
+            // a helper function's code, and a programmatic Text assignment would route the
+            // main program text into the helper's Code via OnEditorTextChanged. Only
+            // re-install the grammar/theme; the document keeps its current context.
+            InitializeEditor(refreshDocument: false);
             _viewModel.BlueprintVM.RefreshThemeColors();
         };
 
@@ -138,13 +139,16 @@ public partial class WorkflowEditorWindowV6 : Window
 
     // ── AvaloniaEdit initialization ──
 
-    private void InitializeEditor()
+    private void InitializeEditor(bool refreshDocument = true)
     {
         var textEditor = this.FindControl<TextEditor>("CodeEditor");
         if (textEditor == null) return;
 
-        Log.Information("[WorkflowEditorWindowV6] InitializeEditor: setting Text to {Length} chars", _viewModel.KsSource.Length);
-        textEditor.Text = _viewModel.KsSource;
+        if (refreshDocument)
+        {
+            Log.Information("[WorkflowEditorWindowV6] InitializeEditor: setting Text to {Length} chars", _viewModel.KsSource.Length);
+            textEditor.Text = _viewModel.KsSource;
+        }
 
         // KS grammar requires 4-space indents and forbids Tab (KS001).
         // Configure the editor so pressing Tab inserts 4 spaces instead of a Tab char.

@@ -15,7 +15,8 @@ namespace KitX.Dashboard.ViewModels;
 
 /// <summary>
 /// ViewModel for the shared dashed subgraph frame shown while a group-comment note is
-/// hovered. Zero size when hidden.
+/// hovered. Zero size when hidden (the XAML template renders Width/Height only — a
+/// zero-size Rectangle is effectively absent, no hit-test conflict).
 /// </summary>
 public partial class GroupCommentHighlightVM : BaseNodeViewModel
 {
@@ -24,10 +25,4 @@ public partial class GroupCommentHighlightVM : BaseNodeViewModel
 
     [ObservableProperty]
     private double _height;
-
-    /// <summary>True while the frame covers a subgraph (non-zero size).</summary>
-    public bool IsVisible => Width > 0 && Height > 0;
-
-    partial void OnWidthChanged(double value) => OnPropertyChanged(nameof(IsVisible));
-    partial void OnHeightChanged(double value) => OnPropertyChanged(nameof(IsVisible));
 }
