@@ -310,19 +310,45 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     private string? _definitionType;
 
     /// <summary>
-    /// Editable initial value for definition nodes (ConstValue / VarInitialValue).
-    /// Empty → null (a var with no initial value).
+    /// KS-script default value for definition nodes (ConstNode.DefaultValue /
+    /// VariableNode.DefaultValue) — read-only on the BP side. The node's value box
+    /// displays the USER value when set, otherwise falls back to this default
+    /// (<see cref="DefinitionValue"/> getter). Kept in sync with the KS editor's
+    /// Variable Constants panel DefaultValue.
+    /// </summary>
+    private string? _defaultValue;
+    public string? DefaultValue
+    {
+        get => _defaultValue;
+        set
+        {
+            if (_defaultValue == value) return;
+            _defaultValue = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(DefinitionValue));
+            OnPropertyChanged(nameof(DefinitionTitle));
+        }
+    }
+
+    /// <summary>
+    /// Editable USER value for definition nodes (ConstValue / VarInitialValue) — the
+    /// override entered on the BP node (maps to the KS editor's Variable Constants
+    /// panel UserValue). Empty → null (fall back to <see cref="DefaultValue"/>).
+    /// The getter falls back to the KS-script default while the user value is empty,
+    /// so the box always shows what the variable would effectively initialise to.
     /// </summary>
     private string? _definitionValue;
     public string? DefinitionValue
     {
-        get => _definitionValue;
+        get => _definitionValue ?? _defaultValue;
         set
         {
-            if (_definitionValue == value) return;
-            _definitionValue = value;
+            // Normalise empty input to null (use the default).
+            var userValue = string.IsNullOrWhiteSpace(value) ? null : value;
+            if (_definitionValue == userValue) return;
+            _definitionValue = userValue;
             OnPropertyChanged();
-            _onDefinitionEdited?.Invoke(this, null, DefinitionName, value);
+            _onDefinitionEdited?.Invoke(this, null, DefinitionName, userValue);
         }
     }
 

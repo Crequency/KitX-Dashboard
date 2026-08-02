@@ -455,6 +455,78 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         return overrides.Count > 0 ? overrides : null;
     }
 
+    // ── BP ↔ Variable Constants panel sync (2026-08-02) ──
+    //
+    // BP definition nodes carry the KS-script initialiser as a READ-ONLY DefaultValue
+    // and a USER value (ConstValue / VarInitialValue) that is the BP-side counterpart
+    // of the KS editor's Variable Constants panel UserValue. The two are synced on
+    // mode switches / save / run so overrides survive without ever rewriting the KS
+    // script text (the script keeps its defaults).
+
+    /// <summary>
+    /// BP→panel: copies user values from definition nodes into the Variable Constants
+    /// panel (UserValue). Definition nodes absent from the panel are added with their
+    /// default (usually empty — the user created them on the BP side).
+    /// </summary>
+    private void SyncUserValuesFromBlueprint(Blueprint bp)
+    {
+        if (bp == null) return;
+        foreach (var node in bp.Nodes)
+        {
+            string? name = null, type = null, defaultValue = null, userValue = null;
+            switch (node)
+            {
+                case ConstNode cn:
+                    name = cn.ConstName; type = cn.ConstType;
+                    defaultValue = cn.DefaultValue; userValue = cn.ConstValue;
+                    break;
+                case VariableNode vn when vn.VarKind == VariableKind.PubVar:
+                    name = vn.VarName; type = vn.VarType;
+                    defaultValue = vn.DefaultValue; userValue = vn.VarInitialValue;
+                    break;
+            }
+            if (string.IsNullOrEmpty(name)) continue;
+
+            var existing = VariableConstants.FirstOrDefault(c => c.Name == name);
+            if (existing != null)
+            {
+                if (userValue is not null)
+                    existing.UserValue = userValue;
+            }
+            else
+            {
+                VariableConstants.Add(new VariableConstant
+                {
+                    Name = name,
+                    Type = type ?? "object",
+                    DefaultValue = defaultValue,
+                    UserValue = userValue,
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Panel→BP: restores user overrides from the Variable Constants panel onto the
+    /// freshly rebuilt definition nodes, so switching KS→BP keeps BP-side overrides.
+    /// </summary>
+    private void RestoreUserValuesFromPanel(Blueprint bp)
+    {
+        if (bp == null) return;
+        foreach (var constant in VariableConstants)
+        {
+            var usr = constant.UserValue?.ToString();
+            if (string.IsNullOrEmpty(usr)) continue;
+            foreach (var node in bp.Nodes)
+            {
+                if (node is ConstNode cn && cn.ConstName == constant.Name)
+                    cn.ConstValue = usr;
+                else if (node is VariableNode vn && vn.VarName == constant.Name && vn.VarKind == VariableKind.PubVar)
+                    vn.VarInitialValue = usr;
+            }
+        }
+    }
+
     // ── KS parse validation (diagnostics-aware) ──
 
     /// <summary>
@@ -501,6 +573,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 var bp = BlueprintVM.WorkingBlueprint;
                 if (bp != null && bp.Nodes.Count > 0)
                 {
+                    // User values live on the BP definition nodes — mirror them into the
+                    // Variable Constants panel (as overrides) BEFORE reversing, so the
+                    // reverse projection only carries the KS script defaults.
+                    SyncUserValuesFromBlueprint(bp);
                     RestoreTriggerFromBlueprint(bp);
                     var ir = _bpGraphLens.Reverse(bp);
                     Log.Information("[WorkflowEditorVMV6] BP→KS: bp={BpNodes} nodes, ir={Consts} consts/{Vars} vars/{Stmts} stmts",
@@ -630,6 +706,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
             var bp = _bpGraphLens.Project(ir);
             ApplyTriggerToBlueprint(bp);
+            // Re-apply user overrides from the Variable Constants panel onto the freshly
+            // rebuilt definition nodes (KS→BP switches must not lose BP-side overrides).
+            RestoreUserValuesFromPanel(bp);
             var scopes = _bpGraphLens.AnalyzeScopes(bp);
 
             BlueprintVM.LoadBlueprint(bp, scopes);
@@ -721,6 +800,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 && BlueprintVM.WorkingBlueprint.Nodes.Count > 0)
             {
                 // BP mode: reverse the edited blueprint instead of re-parsing stale KS text.
+                // Mirror definition-node user values into the panel so the saved .kcs
+                // VariableConstants carry the overrides.
+                SyncUserValuesFromBlueprint(BlueprintVM.WorkingBlueprint);
                 ir = _bpGraphLens.Reverse(BlueprintVM.WorkingBlueprint);
             }
             else
@@ -829,6 +911,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         {
             if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint is { Nodes.Count: > 0 } bp)
             {
+                // Mirror BP definition-node user values into the panel BEFORE running so
+                // the override layer applies them at runtime.
+                SyncUserValuesFromBlueprint(bp);
                 ir = _bpGraphLens.Reverse(bp);
                 lowering = null; // ScriptCompiler fallback infers PubVarTypes from ir.GlobalVars
             }
@@ -928,6 +1013,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         {
             if (_mode == EditorMode.Blueprint && BlueprintVM.WorkingBlueprint is { Nodes.Count: > 0 } bp)
             {
+                SyncUserValuesFromBlueprint(bp);
                 ir = _bpGraphLens.Reverse(bp);
                 lowering = null;
             }

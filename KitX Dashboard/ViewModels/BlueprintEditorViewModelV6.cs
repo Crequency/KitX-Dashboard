@@ -1157,11 +1157,13 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                 case ConstNode cn:
                     nodeVm.DefinitionName = cn.ConstName;
                     nodeVm.DefinitionType = cn.ConstType;
+                    nodeVm.DefaultValue = cn.DefaultValue;
                     nodeVm.DefinitionValue = cn.ConstValue;
                     break;
                 case VariableNode vn:
                     nodeVm.DefinitionName = vn.VarName;
                     nodeVm.DefinitionType = vn.VarType;
+                    nodeVm.DefaultValue = vn.DefaultValue;
                     nodeVm.DefinitionValue = vn.VarInitialValue;
                     break;
             }

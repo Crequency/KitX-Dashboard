@@ -830,7 +830,7 @@
                                                                          Width="110"
                                                                          Padding="2,0"
                                                                          VerticalAlignment="Center"
-                                                                         ToolTip.Tip="初始值（留空 = 无初始值）" />
+                                                                          ToolTip.Tip="用户值（留空 = 使用脚本默认值；对应 Variable Constants 栏 UserValue）" />
                                                             </StackPanel>
                                                         </StackPanel>
                                                     </StackPanel>
