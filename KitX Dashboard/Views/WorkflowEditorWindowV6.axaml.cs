@@ -195,6 +195,21 @@ public partial class WorkflowEditorWindowV6 : Window
                 registryOptions.GetScopeByLanguageId(registryOptions.GetLanguageByExtension(".cs").Id));
         }
 
+        // Apply the KS-aware theme: the built-in LightPlus/DarkPlus themes carry no
+        // rules for source.ks scopes, so without this every pipeline element would
+        // render in the default colour. The wrapper appends VS-palette rules for the
+        // KS scopes on top of the base theme.
+        try
+        {
+            var isDark = ActualThemeVariant != ThemeVariant.Light;
+            installation.SetTheme(new KitX.Dashboard.Services.KScriptTheme(
+                registryOptions.GetDefaultTheme(), isDark));
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[WorkflowEditorWindowV6] Failed to apply KS theme, using base theme");
+        }
+
         // Single TextChanged routing point (R1): wire once, not per theme-change call.
         if (!_textChangedWired)
         {

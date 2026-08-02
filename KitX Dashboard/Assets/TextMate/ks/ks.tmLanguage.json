@@ -12,7 +12,8 @@
     { "include": "#constants" },
     { "include": "#pipe" },
     { "include": "#placeholders" },
-    { "include": "#function-calls" }
+    { "include": "#function-calls" },
+    { "include": "#variables" }
   ],
   "repository": {
     "comments": {
@@ -51,12 +52,12 @@
     },
     "types": {
       "patterns": [
-        { "name": "storage.type.ks", "match": "\\b(int|float|double|bool|string|char)\\b" }
+        { "name": "storage.type.ks", "match": "\\b(int|float|double|bool|string|char|dynamic)\\b" }
       ]
     },
     "keywords": {
       "patterns": [
-        { "name": "keyword.control.ks", "match": "\\b(if|else|switch|forEach|while|break|continue|const|var|as)\\b" }
+        { "name": "keyword.control.ks", "match": "\\b(if|else|switch|forEach|while|break|continue|const|var|as|default)\\b" }
       ]
     },
     "constants": {
@@ -78,7 +79,18 @@
     },
     "function-calls": {
       "patterns": [
-        { "name": "support.function.ks", "match": "\\b[A-Z][A-Za-z0-9]*(?=\\()" }
+        {
+          "name": "support.function.ks",
+          "match": "\\b[A-Z][A-Za-z0-9]*\\b"
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.other.ks",
+          "match": "\\b[a-z_][A-Za-z0-9_]*\\b"
+        }
       ]
     }
   }
