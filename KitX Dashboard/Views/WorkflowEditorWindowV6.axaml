@@ -808,22 +808,22 @@
                                                                            Opacity="0.8"
                                                                            Width="34"
                                                                            VerticalAlignment="Center" />
-                                                                <TextBox Text="{Binding DefinitionName, Mode=TwoWay}"
-                                                                         FontSize="10"
-                                                                         Background="White"
-                                                                         Foreground="Black"
-                                                                         Width="110"
-                                                                         Padding="2,0"
-                                                                         VerticalAlignment="Center"
-                                                                         ToolTip.Tip="重命名会同步所有同名使用节点" />
-                                                            </StackPanel>
-                                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <TextBlock Text="Value"
-                                                                           FontSize="9"
-                                                                           Opacity="0.8"
-                                                                           Width="34"
-                                                                           VerticalAlignment="Center" />
-                                                                <TextBox Text="{Binding DefinitionValue, Mode=TwoWay}"
+                                                                 <TextBox Text="{Binding DefinitionName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                          FontSize="10"
+                                                                          Background="White"
+                                                                          Foreground="Black"
+                                                                          Width="110"
+                                                                          Padding="2,0"
+                                                                          VerticalAlignment="Center"
+                                                                          ToolTip.Tip="重命名会同步所有同名使用节点" />
+                                                             </StackPanel>
+                                                             <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                 <TextBlock Text="Value"
+                                                                            FontSize="9"
+                                                                            Opacity="0.8"
+                                                                            Width="34"
+                                                                            VerticalAlignment="Center" />
+                                                                 <TextBox Text="{Binding DefinitionValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                          FontSize="10"
                                                                          Background="White"
                                                                          Foreground="Black"

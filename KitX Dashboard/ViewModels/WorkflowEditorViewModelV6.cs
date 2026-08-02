@@ -490,8 +490,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             var existing = VariableConstants.FirstOrDefault(c => c.Name == name);
             if (existing != null)
             {
-                if (userValue is not null)
-                    existing.UserValue = userValue;
+                // Always mirror the node's value — a cleared user value falls back to
+                // the default (no override), otherwise the panel keeps a stale value.
+                existing.UserValue = userValue ?? existing.DefaultValue;
             }
             else
             {

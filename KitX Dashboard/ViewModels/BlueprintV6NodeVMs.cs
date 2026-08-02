@@ -301,7 +301,9 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             _definitionName = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(DefinitionTitle));
-            _onDefinitionEdited?.Invoke(this, oldName, value, DefinitionValue);
+            // Pass the RAW user value (not the getter's fallback) so a rename never
+            // accidentally writes the KS default into the user-value slot.
+            _onDefinitionEdited?.Invoke(this, oldName, value, _definitionValue);
         }
     }
 
@@ -348,7 +350,9 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             if (_definitionValue == userValue) return;
             _definitionValue = userValue;
             OnPropertyChanged();
-            _onDefinitionEdited?.Invoke(this, null, DefinitionName, userValue);
+            // oldName == newName == current name: value edits must NOT trigger the
+            // rename path in UpdateDefinitionNode.
+            _onDefinitionEdited?.Invoke(this, DefinitionName, DefinitionName, userValue);
         }
     }
 
