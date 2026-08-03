@@ -75,8 +75,10 @@ public sealed class RealBlueprintDebugger : IBlueprintDebugController
 
     public void StepNext()
     {
-        // Release the waiting checkpoint; _breakOnCheckpoint stays armed so the NEXT
-        // checkpoint pauses again — exactly one statement executes per step.
+        // Re-arm step-pausing (a Continue may have disarmed it — e.g. breakpoint-hit
+        // pauses followed by Step must still pause at the NEXT checkpoint) and release
+        // the waiting checkpoint: exactly one statement executes per step.
+        _breakOnCheckpoint = true;
         _stepSignal.Release();
     }
 
