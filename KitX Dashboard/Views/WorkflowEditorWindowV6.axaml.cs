@@ -80,6 +80,15 @@ public partial class WorkflowEditorWindowV6 : Window
             // Reliable right-click channel (NodifyM RightClick event — independent of Avalonia's
             // fragile ContextRequested which TextBox etc. suppress).
             editor.RightClick += OnEditorRightClick;
+
+            // Drag-to-blank → in-place node selector: the PendingConnection control marks
+            // the completion event handled (then drops the connection), so the window must
+            // listen with handledEventsToo: true to observe blank releases.
+            editor.AddHandler(
+                NodifyM.Avalonia.Controls.Connector.PendingConnectionCompletedEvent,
+                new EventHandler<NodifyM.Avalonia.Events.PendingConnectionEventArgs>(OnPendingConnectionCompleted),
+                RoutingStrategies.Bubble,
+                handledEventsToo: true);
         }
 
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -608,6 +617,47 @@ public partial class WorkflowEditorWindowV6 : Window
     {
         var focus = FocusManager?.GetFocusedElement();
         return focus is TextBox or TextEditor;
+    }
+
+    // ── In-place node selector (drag from output port onto blank canvas) ──
+
+    /// <summary>
+    /// Observed with handledEventsToo: true — fires after the PendingConnection control
+    /// has already handled the completion. A release on blank canvas (null target, not
+    /// cancelled) of an OUTPUT port opens the selector at the drop point; input-port
+    /// drags are a design no-op and valid targets flow through the normal Connect path.
+    /// </summary>
+    private void OnPendingConnectionCompleted(object? sender, NodifyM.Avalonia.Events.PendingConnectionEventArgs e)
+    {
+        if (e.Canceled || e.TargetConnector != null) return;
+        if (e.SourceConnector is not BlueprintConnectorVMV6 src) return;
+        if (src.Flow != NodifyM.Avalonia.ViewModelBase.ConnectorViewModelBase.ConnectorFlow.Output) return;
+
+        // Drop point in canvas coordinates (matches the PendingConnection control's own
+        // TargetAnchor computation — anchor + drag offset).
+        var drop = new Avalonia.Point(e.Anchor.X + e.OffsetX, e.Anchor.Y + e.OffsetY);
+        _viewModel.BlueprintVM.OpenNodeSelector(src, drop);
+    }
+
+    private void OnNodeSelectorPopupOpened(object? sender, EventArgs e)
+    {
+        this.FindControl<TextBox>("NodeSelectorSearchBox")?.Focus();
+    }
+
+    private void OnNodeSelectorSearchKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    {
+        if (e.Key == Avalonia.Input.Key.Enter)
+        {
+            var first = _viewModel.BlueprintVM.NodeSelectorItems.FirstOrDefault();
+            if (first != null)
+                _viewModel.BlueprintVM.SelectNodeSelectorItemCommand.Execute(first);
+            e.Handled = true;
+        }
+        else if (e.Key == Avalonia.Input.Key.Escape)
+        {
+            _viewModel.BlueprintVM.CloseNodeSelector();
+            e.Handled = true;
+        }
     }
 
     // ── Inline node comment editing (P5-B2) ──

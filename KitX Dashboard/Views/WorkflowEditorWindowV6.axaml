@@ -847,6 +847,50 @@
                                 </controls:NodeTemplateSelector>
                             </controls:NodifyEditor.ItemTemplate>
                         </controls:NodifyEditor>
+
+                        <!-- In-place node selector: drag from an output port onto blank
+                             canvas → pick a node → created at the drop point and wired
+                             (exec chain insertion + data edge). -->
+                        <Popup Name="NodeSelectorPopup"
+                               IsOpen="{Binding BlueprintVM.IsNodeSelectorOpen, Mode=TwoWay}"
+                               Placement="Pointer"
+                               IsLightDismissEnabled="True"
+                               HorizontalOffset="10"
+                               VerticalOffset="10"
+                               Opened="OnNodeSelectorPopupOpened">
+                            <Border Background="{DynamicResource LayerFillColorDefaultBrush}"
+                                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    BoxShadow="0 4 12 0 #66000000"
+                                    Padding="6">
+                                <StackPanel MinWidth="220" MaxHeight="340">
+                                    <TextBox Name="NodeSelectorSearchBox"
+                                             Text="{Binding BlueprintVM.NodeSelectorSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="搜索节点…（Enter 选择 / Esc 关闭）"
+                                             FontSize="11"
+                                             Padding="6,4"
+                                             Margin="0,0,0,6"
+                                             KeyDown="OnNodeSelectorSearchKeyDown" />
+                                    <ScrollViewer MaxHeight="280" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding BlueprintVM.NodeSelectorItems}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                                    <Button Content="{Binding DisplayName}"
+                                                            Command="{Binding DataContext.BlueprintVM.SelectNodeSelectorItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Margin="0,1"
+                                                            HorizontalAlignment="Stretch"
+                                                            HorizontalContentAlignment="Left"
+                                                            Padding="8,4"
+                                                            FontSize="12" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
                     </Grid>
                 </Border>
             </Grid>

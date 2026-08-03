@@ -541,15 +541,211 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
     private void AddNodeToCanvas(BlueprintNode node)
     {
-        node.X = 200 + (_nodeCounter % 5) * 230;
-        node.Y = 120 + (_nodeCounter / 5) * 140;
+        var x = 200 + (_nodeCounter % 5) * 230;
+        var y = 120 + (_nodeCounter / 5) * 140;
         _nodeCounter++;
-        _workingBlueprint!.Nodes.Add(node);
+        AddNodeToCanvas(node, x, y);
+    }
+
+    /// <summary>Adds a node to canvas + working blueprint at an explicit canvas position.</summary>
+    private void AddNodeToCanvas(BlueprintNode node, double x, double y)
+    {
+        if (_workingBlueprint == null) return;
+        node.X = x;
+        node.Y = y;
+        _workingBlueprint.Nodes.Add(node);
         Nodes.Add(ConvertNodeToViewModel(node));
         HasContent = true;
         RefreshScopes();
         NotifyBlueprintEdited();
     }
+
+    // ── Node selector popup (drag-from-output → create node in place) ──
+
+    /// <summary>True while the in-place node selector popup is open.</summary>
+    [ObservableProperty]
+    private bool _isNodeSelectorOpen;
+
+    /// <summary>Search text filtering the selector list.</summary>
+    [ObservableProperty]
+    private string _nodeSelectorSearchText = string.Empty;
+
+    /// <summary>Nodes compatible with the dragged source pin, filtered by <see cref="NodeSelectorSearchText"/>.</summary>
+    public ObservableCollection<PaletteItemV6> NodeSelectorItems { get; } = new();
+
+    /// <summary>The full compatible list (pre-filter), refreshed by search.</summary>
+    private readonly List<PaletteItemV6> _nodeSelectorAll = new();
+
+    private BlueprintConnectorVMV6? _selectorSource;
+    private Avalonia.Point _selectorDropPosition;
+
+    partial void OnNodeSelectorSearchTextChanged(string value) => RefreshNodeSelectorItems();
+
+    /// <summary>
+    /// Opens the in-place node selector for a drag released on blank canvas. Only
+    /// OUTPUT-port drags open it (design decision: input-port drags never create
+    /// nodes — replacing a source would require re-wiring the consumer chain).
+    /// Items are filtered to nodes that can actually accept the dragged value.
+    /// </summary>
+    public void OpenNodeSelector(BlueprintConnectorVMV6 source, Avalonia.Point canvasPos)
+    {
+        if (source.Flow != ConnectorViewModelBase.ConnectorFlow.Output) return;
+        if (_workingBlueprint == null || _registry == null) return;
+        _selectorSource = source;
+        _selectorDropPosition = canvasPos;
+        _nodeSelectorAll.Clear();
+        foreach (var item in PaletteItems)
+            if (IsSelectorCompatible(source, item))
+                _nodeSelectorAll.Add(item);
+        NodeSelectorSearchText = string.Empty;
+        RefreshNodeSelectorItems();
+        IsNodeSelectorOpen = true;
+    }
+
+    /// <summary>Closes the selector and clears its transient state.</summary>
+    public void CloseNodeSelector()
+    {
+        IsNodeSelectorOpen = false;
+        _selectorSource = null;
+        _nodeSelectorAll.Clear();
+        NodeSelectorItems.Clear();
+        NodeSelectorSearchText = string.Empty;
+    }
+
+    private void RefreshNodeSelectorItems()
+    {
+        NodeSelectorItems.Clear();
+        var q = NodeSelectorSearchText?.Trim();
+        foreach (var item in _nodeSelectorAll)
+        {
+            if (!string.IsNullOrEmpty(q)
+                && item.DisplayName.Contains(q, StringComparison.OrdinalIgnoreCase) == false)
+                continue;
+            NodeSelectorItems.Add(item);
+        }
+    }
+
+    /// <summary>
+    /// Whether a palette node can accept a connection from the dragged source pin:
+    /// the node must expose a compatible input pin (Exec→Exec; data→data with
+    /// exact-type-or-Any compatibility). Probed on a throwaway NodeFactoryV6 instance
+    /// that never enters the canvas.
+    /// </summary>
+    private bool IsSelectorCompatible(BlueprintConnectorVMV6 source, PaletteItemV6 item)
+    {
+        BlueprintNode node;
+        try
+        {
+            node = item.Kind switch
+            {
+                "ControlFlow" => NodeFactoryV6.CreateControlFlowNode(item.FunctionName!),
+                "Builtin" => NodeFactoryV6.CreateBuiltinFunctionNode(item.FunctionName!, _registry!),
+                _ => null!,
+            };
+        }
+        catch
+        {
+            return false;
+        }
+        if (node == null) return false;
+
+        return source.IsExecution
+            ? node.InputPins.Any(p => p.Type == PinType.Execution)
+            : node.InputPins.Any(p => p.Type != PinType.Execution
+                && (p.Type == PinType.Any || p.Type == source.PinType));
+    }
+
+    /// <summary>
+    /// Creates the selected node at the drop position and auto-wires it to the dragged
+    /// source: exec edges first (the new node joins the main exec chain via insertion),
+    /// then the data edge (which would otherwise be rejected as cross-region while the
+    /// node is still exec-unreachable).
+    /// </summary>
+    [RelayCommand]
+    private void SelectNodeSelectorItem(PaletteItemV6? item)
+    {
+        var source = _selectorSource;
+        var drop = _selectorDropPosition;
+        CloseNodeSelector();
+        if (item == null || source == null || _workingBlueprint == null || _registry == null)
+            return;
+
+        BlueprintNode node = item.Kind switch
+        {
+            "ControlFlow" => NodeFactoryV6.CreateControlFlowNode(item.FunctionName!),
+            "Builtin" => NodeFactoryV6.CreateBuiltinFunctionNode(item.FunctionName!, _registry),
+            _ => null!,
+        };
+        if (node == null) return;
+
+        AddNodeToCanvas(node, drop.X, drop.Y);
+        var nodeVm = FindNodeById(node.Id);
+        if (nodeVm == null) return;
+
+        var newExecIn = nodeVm.Input.OfType<BlueprintConnectorVMV6>()
+            .FirstOrDefault(c => c.IsExecution);
+
+        if (source.IsExecution)
+        {
+            // Exec source: insert the new node right after the source (chain insertion
+            // keeps the source's old successor — nothing gets orphaned).
+            if (newExecIn != null)
+                InsertIntoExecChain(source, newExecIn);
+            return;
+        }
+
+        // Data source: join the exec chain along the data-flow direction — the source
+        // node's Exec output feeds the new node (inserted mid-chain when occupied).
+        var sourceNodeId = FindNodeIdForConnector(source);
+        var sourceExecOut = sourceNodeId is null ? null
+            : FindNodeById(sourceNodeId)?.Output.OfType<BlueprintConnectorVMV6>()
+                .FirstOrDefault(c => c.IsExecution);
+        if (newExecIn != null && sourceExecOut != null)
+            InsertIntoExecChain(sourceExecOut, newExecIn);
+
+        // Then the data edge (Any-typed input preferred over exact-type pins so e.g.
+        // Compare receives a value on A/B rather than overwriting its Op literal).
+        var dataPin = nodeVm.Input.OfType<BlueprintConnectorVMV6>()
+            .FirstOrDefault(c => !c.IsExecution && c.PinType == PinType.Any)
+            ?? nodeVm.Input.OfType<BlueprintConnectorVMV6>()
+                .FirstOrDefault(c => !c.IsExecution && c.PinType == source.PinType);
+        if (dataPin != null)
+            Connect(source, dataPin);
+    }
+
+    /// <summary>
+    /// Inserts a node between <paramref name="execOut"/> and its current exec successor
+    /// (or appends it when the output is free). The old successor is re-attached to the
+    /// new node, so no sub-graph is ever orphaned by this operation.
+    /// </summary>
+    private void InsertIntoExecChain(BlueprintConnectorVMV6 execOut, BlueprintConnectorVMV6 newExecIn)
+    {
+        var oldEdge = Connections.OfType<BlueprintConnectionVMV6>()
+            .FirstOrDefault(c => c.Source == execOut);
+        if (oldEdge == null)
+        {
+            Connect(execOut, newExecIn);
+            return;
+        }
+
+        Connections.Remove(oldEdge);
+        RemoveConnectionFromWorkingBlueprint(oldEdge);
+        Connect(execOut, newExecIn);
+
+        var newNodeId = FindNodeIdForConnector(newExecIn);
+        var newNodeExecOut = newNodeId is null ? null
+            : FindNodeById(newNodeId)?.Output.OfType<BlueprintConnectorVMV6>()
+                .FirstOrDefault(c => c.IsExecution);
+        if (newNodeExecOut != null)
+            Connect(newNodeExecOut, oldEdge.Target);
+        // Both connects are structurally guaranteed to succeed (the new node's exec
+        // input is free; the old successor's exec input was just released), so a
+        // failure would leave the graph in a legal mid-state the user can repair.
+    }
+
+    /// <summary>Connector → owning node id via the reverse lookup table.</summary>
+    private string? FindNodeIdForConnector(BlueprintConnectorVMV6 connector)
+        => _connectorToContract.TryGetValue(connector, out var coord) ? coord.NodeId : null;
 
     // ── Plugin trigger palette (P3-δ) ──
 
@@ -617,6 +813,13 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// the working blueprint and StructuralReducer validates the full graph. If the
     /// graph remains legal the connection is committed, otherwise it is rolled back.
     /// Inductive invariant: the graph is always structurally legal after this call.
+    ///
+    /// Reroute semantics (output port already occupied): "respect the user's latest
+    /// operation" — the source output's existing edge is disconnected first, then the
+    /// new edge is validated and committed. When the rerouted edge is an EXEC edge,
+    /// the old chain tail becomes a preserved detached graph (BP-side privilege, see
+    /// Workflow.DetachedGraphs) and a warning is surfaced. On validation failure the
+    /// disconnected edge is restored.
     /// </summary>
     public override void Connect(ConnectorViewModelBase source, ConnectorViewModelBase target)
     {
@@ -625,7 +828,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (_workingBlueprint == null || _bpGraphLens == null)
             return;
 
-        // 1. Frontend pre-check (fast, pin-precise).
+        // 1. Frontend pre-check (fast, pin-precise). A busy source output no longer
+        //    rejects — the existing edge is re-routed below.
         var preViolation = ValidateConnectionV6(src, tgt);
         if (preViolation != null)
         {
@@ -643,7 +847,28 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             ? (srcPin, tgtPin, src, tgt)
             : (tgtPin, srcPin, tgt, src);
 
-        // 3. Add candidate edge to the working blueprint, then validate the full graph.
+        // 3. Reroute: disconnect the source output's existing edge (at most one by the
+        //    single-consumer invariant). An EXEC reroute orphans the old chain tail —
+        //    preserved as a detached graph (BP privilege) and surfaced as a warning.
+        var oldEdge = Connections.OfType<BlueprintConnectionVMV6>()
+            .FirstOrDefault(c => c.Source == outVm);
+        bool execRerouted = false;
+        string? detachedTailId = null;
+        if (oldEdge != null)
+        {
+            Connections.Remove(oldEdge);
+            RemoveConnectionFromWorkingBlueprint(oldEdge);
+            RefreshIsConnected();
+            if (outVm.IsExecution
+                && oldEdge.Target is BlueprintConnectorVMV6 oldTargetVm
+                && _connectorToContract.TryGetValue(oldTargetVm, out var oldTgtCoord))
+            {
+                execRerouted = true;
+                detachedTailId = oldTgtCoord.NodeId;
+            }
+        }
+
+        // 4. Add candidate edge to the working blueprint, then validate the full graph.
         var candidate = new BlueprintConnection
         {
             Id = Guid.NewGuid().ToString(),
@@ -658,19 +883,117 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (IsConnectionStructural(violation))
         {
             _workingBlueprint.Connections.Remove(candidate);
+            // Roll back the reroute so the graph stays in its previous (legal) state.
+            if (oldEdge != null)
+                RestoreConnection(oldEdge);
             ErrorInfo = violation;
             return;
         }
 
-        // 4. Commit: create the VM connection + refresh IsConnected + scopes.
+        // 5. Commit: create the VM connection + refresh IsConnected + scopes.
         var connVm = new BlueprintConnectionVMV6(this, outVm, inVm);
         Connections.Add(connVm);
         outVm.IsConnected = true;
         inVm.IsConnected = true;
         ErrorInfo = null;
+
+        // 6. Exec-reroute warning: the old chain tail is now a preserved detached graph
+        //    (unless it is still data-proxy reachable from the main chain).
+        if (execRerouted && detachedTailId is not null && !IsReachable(detachedTailId))
+            ErrorInfo = new ConstraintViolation("WARN", "Detach",
+                $"已断开节点 '{detachedTailId}' 的执行连线：其执行后继已脱离主执行流，将保留为孤立子图（BP 特权，KS 不可见）。可从主链拖线接回。",
+                new[] { detachedTailId }, null,
+                "如需保持执行顺序，请从输出端口拖出并选择新节点（自动链插入）。", "#FF9800");
+
         TryExpandVariadicPins(src, tgt);
         RefreshScopes();
         NotifyBlueprintEdited();
+    }
+
+    /// <summary>Re-commits a previously disconnected VM connection (VM + Contract double-write).</summary>
+    private void RestoreConnection(BlueprintConnectionVMV6 cvm)
+    {
+        if (_workingBlueprint == null) return;
+        if (cvm.Source is not BlueprintConnectorVMV6 s || cvm.Target is not BlueprintConnectorVMV6 t) return;
+        if (!_connectorToContract.TryGetValue(s, out var sc) ||
+            !_connectorToContract.TryGetValue(t, out var tc)) return;
+        _workingBlueprint.Connections.Add(new BlueprintConnection
+        {
+            Id = Guid.NewGuid().ToString(),
+            SourceNodeId = sc.NodeId,
+            SourcePinId = sc.PinId,
+            TargetNodeId = tc.NodeId,
+            TargetPinId = tc.PinId,
+        });
+        Connections.Add(cvm);
+        s.IsConnected = true;
+        t.IsConnected = true;
+    }
+
+    /// <summary>
+    /// True when the node is reachable from the Entry/PluginTrigger root via exec edges
+    /// or data-proxy edges (mirrors StructuralReducer's E1 reachability semantics).
+    /// Used by the detached-graph warning and the cross-region data-edge guard.
+    /// </summary>
+    private bool IsReachable(string nodeId) => ComputeReachableIds().Contains(nodeId);
+
+    /// <summary>Computes the set of nodes reachable from the exec root (exec + data-proxy BFS).</summary>
+    private HashSet<string> ComputeReachableIds()
+    {
+        var reachable = new HashSet<string>();
+        if (_workingBlueprint == null) return reachable;
+        var nodes = _workingBlueprint.Nodes;
+        var entry = nodes.FirstOrDefault(n => n is EntryNode or PluginTriggerNode);
+        if (entry == null) return reachable;
+
+        var queue = new Queue<string>();
+        queue.Enqueue(entry.Id);
+        while (queue.Count > 0)
+        {
+            var id = queue.Dequeue();
+            if (!reachable.Add(id)) continue;
+            var node = nodes.FirstOrDefault(n => n.Id == id);
+            if (node == null) continue;
+            foreach (var outPin in node.OutputPins)
+            {
+                if (outPin.Type != PinType.Execution) continue;
+                foreach (var conn in _workingBlueprint.Connections)
+                    if (conn.SourceNodeId == id && conn.SourcePinId == outPin.Id)
+                        queue.Enqueue(conn.TargetNodeId);
+            }
+        }
+
+        // Data-proxy reachability (StructuralReducer E1): nodes fed by data edges from
+        // reachable nodes are themselves reachable.
+        var data = new HashSet<string>();
+        var dq = new Queue<string>();
+        foreach (var rid in reachable)
+        {
+            var node = nodes.FirstOrDefault(n => n.Id == rid);
+            if (node == null) continue;
+            foreach (var inPin in node.InputPins)
+            {
+                if (inPin.Type == PinType.Execution) continue;
+                foreach (var conn in _workingBlueprint.Connections)
+                    if (conn.TargetNodeId == rid && conn.TargetPinId == inPin.Id && data.Add(conn.SourceNodeId))
+                        dq.Enqueue(conn.SourceNodeId);
+            }
+        }
+        while (dq.Count > 0)
+        {
+            var id = dq.Dequeue();
+            var node = nodes.FirstOrDefault(n => n.Id == id);
+            if (node == null) continue;
+            foreach (var inPin in node.InputPins)
+            {
+                if (inPin.Type == PinType.Execution) continue;
+                foreach (var conn in _workingBlueprint.Connections)
+                    if (conn.TargetNodeId == id && conn.TargetPinId == inPin.Id && data.Add(conn.SourceNodeId))
+                        dq.Enqueue(conn.SourceNodeId);
+            }
+        }
+        reachable.UnionWith(data);
+        return reachable;
     }
 
     /// <summary>
@@ -856,14 +1179,18 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                     "Data input 已有入边，不允许多入边。", highlight);
         }
 
-        // Source uniqueness (R4): a single output pin may only drive ONE target — the KS
-        // side cannot express a single output fanning out to multiple consumers without a
-        // variable (each reference becomes its own usage node), and exec stays linear.
-        bool outputHasOutgoing = Connections.OfType<BlueprintConnectionVMV6>()
-            .Any(c => c.Source == output);
-        if (outputHasOutgoing)
-            return new ConstraintViolation("PRE", "Outgoing",
-                "输出端已有出边：KS 无法表达单输出多消费者（多路使用需经变量）。", highlight);
+        // Cross-region data edges (detached-graph privilege): a data edge between the
+        // main exec chain and a detached (exec-unreachable) sub-graph cannot be
+        // expressed — the detached graph never executes, so the value would never flow,
+        // and Reverse would silently drop one endpoint's wiring. Both endpoints must be
+        // on the same side of the reachability boundary. (Exec edges are unaffected.)
+        if (!output.IsExecution)
+        {
+            var reachable = ComputeReachableIds();
+            if (reachable.Contains(srcCoord.NodeId) != reachable.Contains(tgtCoord.NodeId))
+                return new ConstraintViolation("PRE", "Region",
+                    "跨区数据连线不允许：孤立子图与主执行链之间的数据引用无法表达（孤立图不执行，值不会流动）。", highlight);
+        }
 
         // Duplicate edge: identical (output, input) pair already exists.
         bool duplicate = Connections.OfType<BlueprintConnectionVMV6>()
@@ -929,6 +1256,14 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             tgt.CanConnect = false;
             HoverErrorText = preViolation.Message;
             return;
+        }
+
+        // Reroute notice: the source output already has an outgoing edge — dropping
+        // here will disconnect it (respect-the-latest-operation semantics).
+        if (src.Flow == ConnectorViewModelBase.ConnectorFlow.Output)
+        {
+            if (Connections.OfType<BlueprintConnectionVMV6>().Any(c => c.Source == src))
+                HoverErrorText = "该输出已有连接：释放后将断开旧连接（重路由）。";
         }
 
         // StructuralReducer simulation: tentatively add the edge, validate, then revert.
