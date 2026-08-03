@@ -75,6 +75,18 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
     /// </summary>
     public bool IsDanglingExec => IsExecution && !IsConnected && Flow == ConnectorFlow.Output;
 
+    /// <summary>
+    /// True when this dangling Exec output sits INSIDE a While/Each loop body — the
+    /// dangling tail means "back to the loop head, condition re-evaluated" (loop-back),
+    /// rendered as ↺ instead of the natural-end ground icon ⎍. Set by the Blueprint VM
+    /// from the scope analysis (RefreshLoopBodyMarkers).
+    /// </summary>
+    [ObservableProperty]
+    private bool _isLoopBodyDangling;
+
+    /// <summary>Dangling Exec output that is NOT a loop body tail → natural end (⎍).</summary>
+    public bool IsDanglingExecNatural => IsDanglingExec && !IsLoopBodyDangling;
+
     /// <summary>Maps PinType to hex colour for visual rendering. Any (white) is theme-aware:
     /// dark grey on Light themes so lines/pins stay visible, white on Dark.</summary>
     public static string GetHexColorForPinType(PinType pinType) => pinType switch
@@ -112,7 +124,10 @@ public partial class BlueprintConnectorVMV6 : ConnectorViewModelBase
             {
                 OnPropertyChanged(nameof(ShowDefaultValue));
                 OnPropertyChanged(nameof(IsDanglingExec));
+                OnPropertyChanged(nameof(IsDanglingExecNatural));
             }
+            if (e.PropertyName == nameof(IsLoopBodyDangling))
+                OnPropertyChanged(nameof(IsDanglingExecNatural));
         };
     }
 

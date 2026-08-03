@@ -1,3 +1,4 @@
+using Avalonia.Collections;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NodifyM.Avalonia.ViewModelBase;
 
@@ -44,11 +45,30 @@ public partial class ScopeFrameVM : BaseNodeViewModel
     [ObservableProperty]
     private double _frameHeight;
 
+    /// <summary>
+    /// True for a CONDITION/SOURCE frame — the data sub-graph feeding a control-flow
+    /// node's Condition/List/Selector pin (e.g. the `i, 3 > Compare("BLT")` nodes in
+    /// front of a While). Rendered as a dashed selection-style frame so it reads as
+    /// background decoration, distinct from the solid sub-scope body frames.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isConditionFrame;
+
     /// <summary>Background colour hex, cycling by depth (4-colour palette, semi-transparent).</summary>
     public string BackgroundColorHex => DepthPalette(Depth, alpha: "1A");
 
-    /// <summary>Border colour hex, cycling by depth (solid, more opaque).</summary>
-    public string BorderColorHex => DepthPalette(Depth, alpha: "66");
+    /// <summary>
+    /// Border colour hex, cycling by depth (solid, more opaque). Condition frames use
+    /// a lower-opacity dashed border so they stay background-like.
+    /// </summary>
+    public string BorderColorHex => DepthPalette(Depth, alpha: IsConditionFrame ? "4D" : "66");
+
+    /// <summary>
+    /// Stroke dash array for the frame border: dashed for condition/source frames
+    /// (selection-style background), null for solid sub-scope body frames.
+    /// </summary>
+    public AvaloniaList<double>? BorderDashArray
+        => IsConditionFrame ? new AvaloniaList<double> { 4, 3 } : null;
 
     /// <summary>
     /// 4-colour palette cycling by depth: Blue → Green → Yellow → Red.
@@ -65,5 +85,11 @@ public partial class ScopeFrameVM : BaseNodeViewModel
     {
         OnPropertyChanged(nameof(BackgroundColorHex));
         OnPropertyChanged(nameof(BorderColorHex));
+    }
+
+    partial void OnIsConditionFrameChanged(bool value)
+    {
+        OnPropertyChanged(nameof(BorderColorHex));
+        OnPropertyChanged(nameof(BorderDashArray));
     }
 }

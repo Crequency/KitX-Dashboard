@@ -67,14 +67,21 @@
                 <controls:NodeOutput.Header>
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="11" />
-                        <!-- Dangling exec-out: sub-scope tail naturally ends here (hover to reveal). -->
+                        <!-- Dangling exec-out: sub-scope tail naturally ends here, or loops
+                             back to the loop head inside a While/Each body (hover to reveal). -->
                         <StackPanel IsVisible="{Binding IsPointerOver, RelativeSource={RelativeSource AncestorType=controls:NodeOutput}}">
                             <TextBlock Text="⎍"
-                                       IsVisible="{Binding IsDanglingExec}"
+                                       IsVisible="{Binding IsDanglingExecNatural}"
                                        Foreground="#666666"
                                        FontSize="11"
                                        VerticalAlignment="Center"
                                        ToolTip.Tip="body 自然结束，回到控制流节点 End" />
+                            <TextBlock Text="↺"
+                                       IsVisible="{Binding IsLoopBodyDangling}"
+                                       Foreground="#FF9800"
+                                       FontSize="11"
+                                       VerticalAlignment="Center"
+                                       ToolTip.Tip="循环 body 自然结束：回到循环头重新求值条件" />
                         </StackPanel>
                     </StackPanel>
                 </controls:NodeOutput.Header>
@@ -686,30 +693,27 @@
 
                             <controls:NodifyEditor.ItemTemplate>
                                 <controls:NodeTemplateSelector>
-                                    <!-- Scope frame: decorative background -->
+                                    <!-- Scope frame: decorative background (sub-scope body frames
+                                         solid; condition/source frames dashed). Right angles, thin
+                                         grid-aligned borders — reads as background selection, not a
+                                         draggable container. -->
                                     <DataTemplate DataType="{x:Type viewModels:ScopeFrameVM}">
-                                        <Border Width="{Binding FrameWidth}"
-                                                Height="{Binding FrameHeight}"
-                                                CornerRadius="8"
-                                                BorderThickness="2"
-                                                IsHitTestVisible="False"
-                                                IsVisible="{Binding DataContext.BlueprintVM.ShowScopeFrames, RelativeSource={RelativeSource AncestorType=Window}}">
-                                            <Border.Background>
-                                                <Binding Path="BackgroundColorHex"
-                                                         Converter="{StaticResource HexToBrushConverter}" />
-                                            </Border.Background>
-                                            <Border.BorderBrush>
-                                                <Binding Path="BorderColorHex"
-                                                         Converter="{StaticResource HexToBrushConverter}" />
-                                            </Border.BorderBrush>
+                                        <Grid Width="{Binding FrameWidth}"
+                                              Height="{Binding FrameHeight}"
+                                              IsHitTestVisible="False"
+                                              IsVisible="{Binding DataContext.BlueprintVM.ShowScopeFrames, RelativeSource={RelativeSource AncestorType=Window}}">
+                                            <Rectangle Fill="{Binding BackgroundColorHex, Converter={StaticResource HexToBrushConverter}}" />
+                                            <Rectangle Stroke="{Binding BorderColorHex, Converter={StaticResource HexToBrushConverter}}"
+                                                       StrokeDashArray="{Binding BorderDashArray}"
+                                                       StrokeThickness="1" />
                                             <TextBlock Text="{Binding Title}"
-                                                       FontSize="10"
+                                                       FontSize="9"
                                                        FontWeight="SemiBold"
-                                                       Opacity="0.7"
+                                                       Opacity="0.5"
                                                        HorizontalAlignment="Left"
                                                        VerticalAlignment="Top"
-                                                       Margin="8,4" />
-                                        </Border>
+                                                       Margin="4,2" />
+                                        </Grid>
                                     </DataTemplate>
 
                                     <!-- Group-comment NOTE: the only interactive part of a group

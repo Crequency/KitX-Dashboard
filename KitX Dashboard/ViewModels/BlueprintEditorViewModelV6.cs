@@ -447,6 +447,11 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         foreach (var scope in scopes)
             Nodes.Add(CreateScopeFrame(scope));
 
+        // Condition/source frames (dashed) — added after the scope frames, still
+        // beneath the real nodes.
+        foreach (var frame in CreateConditionFrames())
+            Nodes.Add(frame);
+
         // Phase 2: create node VMs + their connector VMs.
         foreach (var node in blueprint.Nodes)
         {
@@ -489,6 +494,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
         HasContent = blueprint.Nodes.Count > 0;
         RefreshDefinitionNames();
+        RefreshLoopBodyMarkers(scopes);
     }
 
     /// <summary>Clears the canvas and discards the working blueprint.</summary>
@@ -1365,7 +1371,11 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
     // ── Scope frame refresh ──
 
-    /// <summary>Recomputes scope regions from the working blueprint and refreshes frames.</summary>
+    /// <summary>
+    /// Recomputes scope regions from the working blueprint and refreshes frames:
+    /// sub-scope body frames (solid) + condition/source frames (dashed, derived from
+    /// StatementNodeToPrimary) + loop-body dangling markers.
+    /// </summary>
     private void RefreshScopes()
     {
         if (_bpGraphLens == null || _workingBlueprint == null) return;
@@ -1388,17 +1398,113 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         // keeps the original index ordering for nested scopes).
         for (int i = scopes.Count - 1; i >= 0; i--)
             Nodes.Insert(0, CreateScopeFrame(scopes[i]));
+
+        // Condition/source frames (dashed) + loop-body dangling markers.
+        foreach (var frame in CreateConditionFrames())
+            Nodes.Insert(0, frame);
+        RefreshLoopBodyMarkers(scopes);
     }
+
+    /// <summary>
+    /// Builds dashed background frames for every control-flow node's CONDITION/SOURCE
+    /// data sub-graph (the nodes feeding While.Condition / Branch.Condition /
+    /// Switch.Selector / Each.List). The node set is derived from
+    /// StatementNodeToPrimary (BpRenderer's data-component map — condition sub-graph
+    /// nodes map to their control-flow primary), so no backend change is needed.
+    /// </summary>
+    private List<ScopeFrameVM> CreateConditionFrames()
+    {
+        var result = new List<ScopeFrameVM>();
+        if (_workingBlueprint == null) return result;
+
+        foreach (var node in _workingBlueprint.Nodes.OfType<BuiltinFunctionNode>())
+        {
+            string? pinLabel = node.FunctionName switch
+            {
+                "Branch" => "condition",
+                "While" => "condition",
+                "Each" => "list",
+                "Switch" => "selector",
+                _ => null,
+            };
+            if (pinLabel == null) continue;
+
+            var subgraph = _workingBlueprint.StatementNodeToPrimary
+                .Where(kvp => kvp.Value == node.Id && kvp.Key != node.Id)
+                .Select(kvp => kvp.Key)
+                .ToList();
+            if (subgraph.Count == 0) continue;
+
+            double minX = double.MaxValue, minY = double.MaxValue;
+            double maxX = double.MinValue, maxY = double.MinValue;
+            foreach (var id in subgraph)
+            {
+                var n = _workingBlueprint.Nodes.FirstOrDefault(x => x.Id == id);
+                if (n == null) continue;
+                minX = Math.Min(minX, n.X);
+                minY = Math.Min(minY, n.Y);
+                maxX = Math.Max(maxX, n.X + (n.Width > 0 ? n.Width : 180));
+                maxY = Math.Max(maxY, n.Y + (n.Height > 0 ? n.Height : 60));
+            }
+            if (minX == double.MaxValue) continue;
+
+            result.Add(new ScopeFrameVM
+            {
+                Title = pinLabel,
+                OwnerFunctionName = node.FunctionName,
+                Depth = 0,
+                IsConditionFrame = true,
+                Location = new Avalonia.Point(AlignToGrid(minX), AlignToGrid(minY)),
+                FrameWidth = AlignToGrid(maxX) - AlignToGrid(minX),
+                FrameHeight = AlignToGrid(maxY) - AlignToGrid(minY),
+            });
+        }
+        return result;
+    }
+
+    /// <summary>Grid step used by the canvas background (LargeGridLine Spacing).</summary>
+    private const double GridStep = 15;
+
+    /// <summary>Rounds a canvas coordinate DOWN to the grid so frame edges sit on grid lines.</summary>
+    private static double AlignToGrid(double v) => Math.Floor(v / GridStep) * GridStep;
 
     private static ScopeFrameVM CreateScopeFrame(ScopeRegion scope) => new()
     {
         Title = scope.ScopeKind,
         OwnerFunctionName = scope.OwnerFunctionName,
         Depth = scope.Depth,
-        Location = new Avalonia.Point(scope.X, scope.Y),
-        FrameWidth = scope.Width,
-        FrameHeight = scope.Height,
+        // Grid alignment: the frame must read as background (edges on grid lines),
+        // not as a draggable container. Floor the origin and the far edges outward so
+        // parent frames still contain their children.
+        Location = new Avalonia.Point(AlignToGrid(scope.X), AlignToGrid(scope.Y)),
+        FrameWidth = AlignToGrid(scope.X + scope.Width) - AlignToGrid(scope.X),
+        FrameHeight = AlignToGrid(scope.Y + scope.Height) - AlignToGrid(scope.Y),
     };
+
+    /// <summary>Node ids inside a While/Each loop BODY — their dangling exec-out is a loop-back.</summary>
+    private HashSet<string> _loopBodyNodeIds = new();
+
+    /// <summary>
+    /// Marks dangling Exec outputs inside loop bodies as LOOP-BACK (↺ — "back to the
+    /// loop head, condition re-evaluated") instead of the natural-end ground icon (⎍).
+    /// </summary>
+    private void RefreshLoopBodyMarkers(IReadOnlyList<ScopeRegion> scopes)
+    {
+        var loopBody = new HashSet<string>();
+        foreach (var s in scopes)
+        {
+            if (s.ScopeKind != "Body") continue;
+            if (s.OwnerFunctionName is not ("While" or "Each")) continue;
+            foreach (var id in s.NodeIds) loopBody.Add(id);
+        }
+        _loopBodyNodeIds = loopBody;
+
+        foreach (var nodeVm in Nodes.OfType<BlueprintNodeVMV6>())
+        {
+            foreach (var c in nodeVm.Output.OfType<BlueprintConnectorVMV6>())
+                c.IsLoopBodyDangling = loopBody.Contains(nodeVm.BlueprintNodeId) && c.IsDanglingExec;
+        }
+    }
 
     // ── Helpers ──
 
