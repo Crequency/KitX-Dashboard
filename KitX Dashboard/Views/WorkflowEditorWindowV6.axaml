@@ -368,6 +368,42 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <TextBlock Text="定义"
+                                       FontWeight="SemiBold"
+                                       FontSize="10"
+                                       Opacity="0.7"
+                                       Margin="0,10,0,3" />
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.FilteredDefinitionItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                        <Button Content="{Binding DisplayName}"
+                                                Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Padding="8,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="使用"
+                                       FontWeight="SemiBold"
+                                       FontSize="10"
+                                       Opacity="0.7"
+                                       Margin="0,10,0,3" />
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.FilteredUsageItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                        <Button Content="{Binding DisplayName}"
+                                                Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Padding="8,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                             <TextBlock Text="内置函数"
                                        FontWeight="SemiBold"
                                        FontSize="10"
@@ -837,6 +873,47 @@
                                                                          Padding="2,0"
                                                                          VerticalAlignment="Center"
                                                                           ToolTip.Tip="用户值（留空 = 使用脚本默认值；对应 Variable Constants 栏 UserValue）" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <!-- Usage VariableNode: referenced name selector (2026-08-03) -->
+                                                        <StackPanel IsVisible="{Binding IsUsageVariableNode}"
+                                                                    Margin="0,5,0,0"
+                                                                    Spacing="3">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Name"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                <ComboBox ItemsSource="{Binding DataContext.BlueprintVM.DefinitionNames, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                          Text="{Binding UsageName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                          IsEditable="True"
+                                                                          FontSize="10"
+                                                                          Width="110"
+                                                                          Padding="2,0"
+                                                                          VerticalAlignment="Center"
+                                                                          ToolTip.Tip="选择或输入引用的变量/常量名" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <!-- Usage ConstNode: literal value editor (2026-08-03) -->
+                                                        <StackPanel IsVisible="{Binding IsUsageConstNode}"
+                                                                    Margin="0,5,0,0"
+                                                                    Spacing="3">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Value"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBox Text="{Binding UsageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                         FontSize="10"
+                                                                         Background="White"
+                                                                         Foreground="Black"
+                                                                         Width="110"
+                                                                         Padding="2,0"
+                                                                         VerticalAlignment="Center"
+                                                                         Watermark="字面量值"
+                                                                         ToolTip.Tip="管道源字面量值（Reverse 时写回 KS 文本）" />
                                                             </StackPanel>
                                                         </StackPanel>
                                                     </StackPanel>

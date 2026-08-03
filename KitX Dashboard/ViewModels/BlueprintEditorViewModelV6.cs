@@ -112,6 +112,39 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     public string EmptyBanner =>
         "蓝图视图为空。在 KS 模式中编写工作流代码后切换到 BP 模式即可看到可视化蓝图。";
 
+    // ── Declared const/var names (usage-node ComboBox source, 2026-08-03) ──
+
+    /// <summary>
+    /// All declared variable/constant names on the canvas (definition ConstNode/VariableNode
+    /// names + Each loop ItemName). Backs the usage-VariableNode's name ComboBox; refreshed
+    /// whenever definitions change (load / add / rename / delete).
+    /// </summary>
+    public ObservableCollection<string> DefinitionNames { get; } = new();
+
+    /// <summary>Rebuilds <see cref="DefinitionNames"/> from the working blueprint's definition nodes.</summary>
+    public void RefreshDefinitionNames()
+    {
+        DefinitionNames.Clear();
+        if (_workingBlueprint == null) return;
+        foreach (var node in _workingBlueprint.Nodes)
+        {
+            switch (node)
+            {
+                case ConstNode cn when !string.IsNullOrEmpty(cn.ConstName):
+                    DefinitionNames.Add(cn.ConstName);
+                    break;
+                case VariableNode vn when vn.IsDefinition && !string.IsNullOrEmpty(vn.VarName):
+                    DefinitionNames.Add(vn.VarName);
+                    break;
+                case BuiltinFunctionNode fn when fn.FunctionName == "Each"
+                                                 && fn.Properties.TryGetValue("ItemName", out var item)
+                                                 && !string.IsNullOrEmpty(item):
+                    DefinitionNames.Add(item);
+                    break;
+            }
+        }
+    }
+
     /// <summary>Parameterless constructor (kept for designer/test compatibility).</summary>
     public BlueprintEditorViewModelV6() { }
 
@@ -455,6 +488,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         Nodes.Add(_highlightVm);
 
         HasContent = blueprint.Nodes.Count > 0;
+        RefreshDefinitionNames();
     }
 
     /// <summary>Clears the canvas and discards the working blueprint.</summary>
@@ -488,6 +522,12 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>Builtin-function palette items filtered by <see cref="SearchText"/> (R9).</summary>
     public ObservableCollection<PaletteItemV6> FilteredBuiltinItems { get; } = new();
 
+    /// <summary>Definition-node palette items (const/var block declarations) filtered by <see cref="SearchText"/>.</summary>
+    public ObservableCollection<PaletteItemV6> FilteredDefinitionItems { get; } = new();
+
+    /// <summary>Usage-node palette items (literal const / variable reference) filtered by <see cref="SearchText"/>.</summary>
+    public ObservableCollection<PaletteItemV6> FilteredUsageItems { get; } = new();
+
     partial void OnSearchTextChanged(string value) => RefreshFilteredPalette();
 
     /// <summary>Refreshes the grouped/filtered palette collections from <see cref="PaletteItems"/>.</summary>
@@ -496,16 +536,25 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var q = SearchText?.Trim();
         FilteredControlFlowItems.Clear();
         FilteredBuiltinItems.Clear();
+        FilteredDefinitionItems.Clear();
+        FilteredUsageItems.Clear();
         foreach (var item in PaletteItems)
         {
             if (!string.IsNullOrEmpty(q)
                 && item.DisplayName.Contains(q, StringComparison.OrdinalIgnoreCase) == false)
                 continue;
-            (item.Kind == "ControlFlow" ? FilteredControlFlowItems : FilteredBuiltinItems).Add(item);
+            var target = item.Kind switch
+            {
+                "ControlFlow" => FilteredControlFlowItems,
+                "Definition" => FilteredDefinitionItems,
+                "Usage" => FilteredUsageItems,
+                _ => FilteredBuiltinItems,
+            };
+            target.Add(item);
         }
     }
 
-    /// <summary>Fills the palette from the builtin registry + hardcoded control-flow set.</summary>
+    /// <summary>Fills the palette from the builtin registry + hardcoded control-flow/definition/usage set.</summary>
     private void PopulatePalette()
     {
         PaletteItems.Clear();
@@ -515,6 +564,11 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         PaletteItems.Add(new PaletteItemV6("switch (Switch)", "ControlFlow", "Switch"));
         PaletteItems.Add(new PaletteItemV6("break", "ControlFlow", "break"));
         PaletteItems.Add(new PaletteItemV6("continue", "ControlFlow", "continue"));
+        // Const/var nodes (2026-08-03): definition declarations + usage references.
+        PaletteItems.Add(new PaletteItemV6("const（定义）", "Definition", "const"));
+        PaletteItems.Add(new PaletteItemV6("var（定义）", "Definition", "var"));
+        PaletteItems.Add(new PaletteItemV6("常量（字面量）", "Usage", "literal"));
+        PaletteItems.Add(new PaletteItemV6("变量（使用）", "Usage", "var"));
         if (_registry != null)
             foreach (var fn in _registry.All.OrderBy(f => f.Name))
                 PaletteItems.Add(new PaletteItemV6(fn.Name, "Builtin", fn.Name));
@@ -529,12 +583,25 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         BlueprintNode node = item.Kind switch
         {
             "ControlFlow" => NodeFactoryV6.CreateControlFlowNode(item.FunctionName!),
+            "Definition" => item.FunctionName switch
+            {
+                "const" => NodeFactoryV6.CreateConstDefinitionNode(),
+                "var" => NodeFactoryV6.CreateVariableDefinitionNode(),
+                _ => null!,
+            },
+            "Usage" => item.FunctionName switch
+            {
+                "literal" => NodeFactoryV6.CreateConstUsageNode(),
+                "var" => NodeFactoryV6.CreateVariableUsageNode(),
+                _ => null!,
+            },
             "Builtin" when _registry != null
                 => NodeFactoryV6.CreateBuiltinFunctionNode(item.FunctionName!, _registry),
             _ => null!,
         };
         if (node == null) return;
         AddNodeToCanvas(node);
+        RefreshDefinitionNames();
     }
 
     private int _nodeCounter;
@@ -1116,6 +1183,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         RefreshIsConnected();
         RefreshScopes();
         ErrorInfo = null;
+        RefreshDefinitionNames();
         NotifyBlueprintEdited();
     }
 
@@ -1499,7 +1567,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
         var nodeVm = new BlueprintNodeVMV6(
             (node, comment) => UpdateNodeComment(node.BlueprintNodeId, comment),
-            (node, oldName, newName, value) => UpdateDefinitionNode(node, oldName, newName, value))
+            (node, oldName, newName, value) => UpdateDefinitionNode(node, oldName, newName, value),
+            (node, name) => UpdateUsageNodeName(node, name),
+            (node, value) => UpdateUsageConstValue(node, value))
         {
             BlueprintNodeId = node.Id,
             NodeType = node.NodeType,
@@ -1528,6 +1598,21 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                     nodeVm.ApplyDefinitionFromContract(vn.VarName, vn.VarType, vn.DefaultValue, vn.VarInitialValue);
                     Log.Information("[BPEditVM] ConvertNode definition var: id={Id} name={Name} default={Def} user={User}",
                         node.Id, vn.VarName, vn.DefaultValue, vn.VarInitialValue);
+                    break;
+            }
+        }
+        else
+        {
+            // Usage nodes (2026-08-03): VariableNode → editable referenced name;
+            // ConstNode (literal) → editable literal value. Direct field assignment,
+            // no edit callbacks (same load-safety rationale as the definition path).
+            switch (node)
+            {
+                case VariableNode vn:
+                    nodeVm.ApplyUsageFromContract(vn.VarName, null);
+                    break;
+                case ConstNode cn:
+                    nodeVm.ApplyUsageFromContract(null, cn.ConstValue);
                     break;
             }
         }
@@ -1598,6 +1683,35 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     }
 
     /// <summary>
+    /// Writes an edited usage-VariableNode's referenced name back to the Contract
+    /// (2026-08-03). Renaming a usage node re-points its reference — Reverse re-emits
+    /// the identifier under the new name. Unnamed/blank edits are ignored (the node
+    /// keeps its previous reference).
+    /// </summary>
+    private void UpdateUsageNodeName(BlueprintNodeVMV6 node, string? newName)
+    {
+        if (_workingBlueprint == null || string.IsNullOrWhiteSpace(newName)) return;
+        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
+        if (contractNode is VariableNode vn)
+            vn.VarName = newName.Trim();
+        NotifyBlueprintEdited();
+    }
+
+    /// <summary>
+    /// Writes an edited usage-ConstNode's literal value back to the Contract
+    /// (2026-08-03). Reverse's NodeToKsNode reads ConstValue ?? ConstName, so the
+    /// literal round-trips into the KS text.
+    /// </summary>
+    private void UpdateUsageConstValue(BlueprintNodeVMV6 node, string? value)
+    {
+        if (_workingBlueprint == null) return;
+        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
+        if (contractNode is ConstNode cn)
+            cn.ConstValue = string.IsNullOrWhiteSpace(value) ? null : value;
+        NotifyBlueprintEdited();
+    }
+
+    /// <summary>
     /// Writes an edited definition node's declaration name/value back to the Contract (R8).
     /// Renaming a definition node synchronises all same-named usage nodes in the working
     /// blueprint so Reverse produces a consistent declaration + references.
@@ -1630,6 +1744,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                     foreach (var other in _workingBlueprint.Nodes.OfType<VariableNode>())
                         if (!ReferenceEquals(other, vn) && other.VarName == oldName)
                             other.VarName = newName;
+                    RefreshDefinitionNames();
                 }
                 vn.VarInitialValue = string.IsNullOrWhiteSpace(value) ? null : value;
                 break;

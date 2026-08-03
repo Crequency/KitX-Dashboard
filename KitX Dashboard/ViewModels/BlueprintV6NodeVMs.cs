@@ -194,6 +194,8 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
 {
     private readonly Action<BlueprintNodeVMV6, string?>? _onCommentCommitted;
     private readonly Action<BlueprintNodeVMV6, string? /*oldName*/, string? /*newName*/, string? /*value*/>? _onDefinitionEdited;
+    private readonly Action<BlueprintNodeVMV6, string?>? _onUsageNameEdited;
+    private readonly Action<BlueprintNodeVMV6, string?>? _onUsageValueEdited;
 
     /// <summary>Original BlueprintNode.Id for round-trip export.</summary>
     [ObservableProperty]
@@ -240,6 +242,17 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     {
         _onCommentCommitted = onCommentCommitted;
         _onDefinitionEdited = onDefinitionEdited;
+    }
+
+    public BlueprintNodeVMV6(Action<BlueprintNodeVMV6, string?>? onCommentCommitted,
+        Action<BlueprintNodeVMV6, string?, string?, string?>? onDefinitionEdited,
+        Action<BlueprintNodeVMV6, string?>? onUsageNameEdited,
+        Action<BlueprintNodeVMV6, string?>? onUsageValueEdited)
+    {
+        _onCommentCommitted = onCommentCommitted;
+        _onDefinitionEdited = onDefinitionEdited;
+        _onUsageNameEdited = onUsageNameEdited;
+        _onUsageValueEdited = onUsageValueEdited;
     }
 
     /// <summary>Begins inline comment editing.</summary>
@@ -387,6 +400,67 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         IsDefinition && HeaderColorHex.Length == 7
             ? HeaderColorHex + "66"
             : HeaderColorHex;
+
+    // ── Usage-node editing (2026-08-03) ──
+
+    /// <summary>True for a usage VariableNode (a var reference — const references are
+    /// VariableNodes in the BP model too, since BpRenderer renders every identifier
+    /// the same way).</summary>
+    public bool IsUsageVariableNode
+        => !IsDefinition && NodeType == BlueprintNodeType.Variable;
+
+    /// <summary>True for a usage ConstNode (a pipeline literal source).</summary>
+    public bool IsUsageConstNode
+        => !IsDefinition && NodeType == BlueprintNodeType.Const;
+
+    /// <summary>
+    /// Editable referenced name for usage VariableNodes (VariableNode.VarName).
+    /// Backed by a ComboBox of declared const/var names; edits write back to the
+    /// Contract so Reverse re-emits the reference under the new name.
+    /// </summary>
+    private string? _usageName;
+    public string? UsageName
+    {
+        get => _usageName;
+        set
+        {
+            if (_usageName == value) return;
+            _usageName = value;
+            OnPropertyChanged();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                DisplayTitle = value;
+                Title = value;
+            }
+            _onUsageNameEdited?.Invoke(this, value);
+        }
+    }
+
+    /// <summary>
+    /// Editable literal value for usage ConstNodes (ConstNode.ConstValue). Reverse's
+    /// NodeToKsNode reads ConstValue ?? ConstName, so the literal round-trips.
+    /// </summary>
+    private string? _usageValue;
+    public string? UsageValue
+    {
+        get => _usageValue;
+        set
+        {
+            if (_usageValue == value) return;
+            _usageValue = value;
+            OnPropertyChanged();
+            _onUsageValueEdited?.Invoke(this, value);
+        }
+    }
+
+    /// <summary>Applies usage-node state straight from the Contract during load (no edit callbacks).</summary>
+    public void ApplyUsageFromContract(string? varName, string? literalValue)
+    {
+        _usageName = varName;
+        _usageValue = literalValue;
+        OnPropertyChanged(nameof(UsageName));
+        OnPropertyChanged(nameof(UsageValue));
+    }
 
     /// <summary>Whether this node is currently executing (debug highlight).</summary>
     [ObservableProperty]

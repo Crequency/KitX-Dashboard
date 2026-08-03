@@ -64,6 +64,74 @@ public static class NodeFactoryV6
         TriggerName = triggerName,
     };
 
+    // ── Definition / usage nodes for const & var (palette, 2026-08-03) ──
+
+    /// <summary>
+    /// Creates a const DEFINITION node (a <c>const { ... }</c> block declaration).
+    /// No Exec pins — lives in the initialisation region; Reverse folds it into
+    /// Workflow.Constants. Name/type/value are edited on the node (R8 declaration card).
+    /// </summary>
+    public static ConstNode CreateConstDefinitionNode() => new()
+    {
+        Id = NewId(),
+        Name = "const",
+        ConstName = string.Empty,
+        ConstType = "int",
+        IsDefinition = true,
+    };
+
+    /// <summary>
+    /// Creates a var DEFINITION node (a <c>var { ... }</c> block declaration).
+    /// No Exec pins; Reverse folds it into Workflow.GlobalVars.
+    /// </summary>
+    public static VariableNode CreateVariableDefinitionNode() => new()
+    {
+        Id = NewId(),
+        Name = "var",
+        VarName = string.Empty,
+        VarType = "int",
+        VarKind = VariableKind.PubVar,
+        IsDefinition = true,
+    };
+
+    /// <summary>
+    /// Creates a const USAGE node (a pipeline literal source). Exec in/out pins are
+    /// prepended (matching BpRenderer.AddUsageNode's ordering) so the node can join the
+    /// exec chain; the literal value is edited on the node (ConstValue).
+    /// </summary>
+    public static ConstNode CreateConstUsageNode()
+    {
+        var n = new ConstNode
+        {
+            Id = NewId(),
+            Name = "literal",
+            ConstName = string.Empty,
+            IsDefinition = false,
+        };
+        n.InputPins.Insert(0, MakePin("Exec", PinDirection.Input, PinType.Execution));
+        n.OutputPins.Insert(0, MakePin("Exec", PinDirection.Output, PinType.Execution));
+        return n;
+    }
+
+    /// <summary>
+    /// Creates a var USAGE node (a variable read/write/tap reference). Exec in/out
+    /// pins prepended; the referenced VarName is picked on the node (ComboBox).
+    /// </summary>
+    public static VariableNode CreateVariableUsageNode()
+    {
+        var n = new VariableNode
+        {
+            Id = NewId(),
+            Name = "var",
+            VarName = string.Empty,
+            VarKind = VariableKind.PubVar,
+            IsDefinition = false,
+        };
+        n.InputPins.Insert(0, MakePin("Exec", PinDirection.Input, PinType.Execution));
+        n.OutputPins.Insert(0, MakePin("Exec", PinDirection.Output, PinType.Execution));
+        return n;
+    }
+
     /// <summary>Creates a control-flow node with the pin layout defined in the correspondence doc.</summary>
     public static BuiltinFunctionNode CreateControlFlowNode(string functionName) => functionName switch    {
         "Branch" => CreateBranch(),
