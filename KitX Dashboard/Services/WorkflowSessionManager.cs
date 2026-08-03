@@ -18,12 +18,11 @@ using Serilog;
 // through the backend. Run/stop state is tracked by id via a CancellationToken
 // per active run.
 //
-// Since P3-δ the manager dispatches v6 workflows (KcsFileFormat.IrVersion ==
-// "v6"): it deserializes via the v6 WorkflowSerializer, applies the persisted
-// VariableConstants overrides (the same semantics the editor uses at Run-time), and
-// executes through StructuredRoslynBackend. This closes the "run-by-id for v6"
-// gap that the ITriggerManager routing path depends on. (v5.1 archived — the v6
-// path is now the only one.)
+// The manager always dispatches v6 workflows (v5.1 archived — the v6 path is the
+// only one, no IrVersion branching): it deserializes via the v6 WorkflowSerializer,
+// applies the persisted VariableConstants overrides (the same semantics the editor
+// uses at Run-time), and executes through StructuredRoslynBackend. This closes the
+// "run-by-id for v6" gap that the ITriggerManager routing path depends on.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// <summary>
