@@ -638,9 +638,9 @@
                                                ItemsSource="{Binding Nodes}"
                                                Connections="{Binding Connections}"
                                                PendingConnection="{Binding PendingConnection}"
-                                               SelectedItems="{Binding SelectedNodes}"
-                                               DisconnectConnectorCommand="{Binding DisconnectConnectorCommand}"
-                                               RemoveConnectionCommand="{Binding RemoveConnectionCommand}"
+                                                SelectedItems="{Binding SelectedNodes}"
+                                                DisconnectConnectorCommand="{Binding DisconnectConnectorCommand}"
+                                                RemoveConnectionCommand="{Binding RemoveConnectionCommand}"
                                                Background="Transparent">
 
                             <controls:NodifyEditor.GridLineTemplate>
@@ -662,19 +662,13 @@
                                                          Target="{Binding Target.Anchor}"
                                                          StrokeThickness="2.5"
                                                          Spacing="20"
-                                                         Direction="Forward">
+                                                         Direction="Forward"
+                                                         DisconnectCommand="{Binding $parent[controls:NodifyEditor].RemoveConnectionCommand}">
                                         <controls:Connection.Stroke>
                                             <Binding Path="StrokeColorHex"
                                                      Converter="{StaticResource HexToBrushConverter}" />
                                         </controls:Connection.Stroke>
-                                        <controls:Connection.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem Header="断开连线"
-                                                          Command="{Binding DataContext.BlueprintVM.RemoveConnectionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          CommandParameter="{Binding}" />
-                                            </ContextMenu>
-                                        </controls:Connection.ContextMenu>
-                                        <ToolTip.Tip>Alt+点击连接或端点可断开连线</ToolTip.Tip>
+                                        <ToolTip.Tip>Alt+点击连接或端点可断开连线；右键可断开</ToolTip.Tip>
                                     </controls:Connection>
                                 </DataTemplate>
                             </controls:NodifyEditor.ConnectionTemplate>

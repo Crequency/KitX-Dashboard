@@ -475,13 +475,21 @@ public partial class WorkflowEditorWindowV6 : Window
             .OfType<NodifyM.Avalonia.Controls.Node>()
             .Select(n => n.DataContext as BlueprintNodeVMV6)
             .FirstOrDefault(dc => dc != null);
+        var connectionVm = source?.GetSelfAndVisualAncestors()
+            .OfType<NodifyM.Avalonia.Controls.BaseConnection>()
+            .Select(c => c.DataContext as BlueprintConnectionVMV6)
+            .FirstOrDefault(dc => dc != null);
 
         var panel = new StackPanel { Spacing = 2 };
         if (nodeVm != null)
         {
-            panel.Children.Add(CreateMenuButton("Toggle Breakpoint", nodeVm.ToggleBreakpointCommand, null));
+            panel.Children.Add(CreateMenuButton("Toggle Breakpoint", _viewModel.ToggleBreakpointCommand, nodeVm));
             panel.Children.Add(CreateMenuButton("添加组注释", _viewModel.BlueprintVM.AddGroupCommentCommand, nodeVm));
             panel.Children.Add(CreateMenuButton("删除节点", _viewModel.BlueprintVM.DeleteNodeCommand, nodeVm));
+        }
+        else if (connectionVm != null)
+        {
+            panel.Children.Add(CreateMenuButton("断开连线", _viewModel.BlueprintVM.RemoveConnectionCommand, connectionVm));
         }
         else
         {
@@ -571,6 +579,12 @@ public partial class WorkflowEditorWindowV6 : Window
 
     // ── Auto-save ──
 
+    /// <summary>
+    /// Periodic dirty check (3 s interval, self-rescheduling). Runs for the whole
+    /// window lifetime — a single fire at construction (the old behaviour) would only
+    /// ever auto-save once, leaving every later edit to the window-close path.
+    /// Cancelled on window closing (OnWindowClosing) so the loop stops cleanly.
+    /// </summary>
     private void ScheduleAutoSave()
     {
         _autoSaveCts?.Cancel();
@@ -583,6 +597,9 @@ public partial class WorkflowEditorWindowV6 : Window
             {
                 if (_viewModel.IsDirty)
                     await _viewModel.SaveAsync();
+                // Self-reschedule: keep watching for edits for the window's lifetime.
+                if (!token.IsCancellationRequested)
+                    ScheduleAutoSave();
             });
         }, token);
     }

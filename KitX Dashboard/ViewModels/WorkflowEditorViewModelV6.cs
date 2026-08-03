@@ -66,6 +66,13 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private string _conversionError = string.Empty;
     private V6Workflow? _lastIr;
 
+    /// <summary>
+    /// BP canvas layout persisted in the last loaded .kcs (canonical node id → position).
+    /// Re-applied on every re-projection (KS→BP switch, DebugRun reload) so node
+    /// positions survive round-trips. Null when the file carried no layout.
+    /// </summary>
+    private Dictionary<string, BlueprintLayoutEntry>? _savedLayout;
+
     // ─── Trigger Configuration ──────────────────────────────────────────
     private string _triggerType = "Manual";
     private string? _triggerPluginName;
@@ -505,10 +512,13 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     ///   • KS mode: snapshot the editor text, parse via ParseLowering.
     ///   • BP mode: mirror definition-node user values into the panel, then reverse
     ///     the working blueprint with the editor's helper functions re-attached.
+    /// <paramref name="nodeIdToCanonicalId"/> is non-null only in BP mode: the canvas
+    /// node id → canonical (FNV path) id map of the reversal (see
+    /// <see cref="BpGraphLens.ReverseWithNodePaths"/>).
     /// On failure returns a fully formatted error message (parse errors carry the
     /// indent hint; exceptions are prefixed); callers present it and abort.
     /// </summary>
-    private (V6Workflow? Ir, LoweringResult? Lowering, string? Error) BuildIrForCurrentMode()
+    private (V6Workflow? Ir, LoweringResult? Lowering, string? Error, IReadOnlyDictionary<string, string>? NodeIdToCanonicalId) BuildIrForCurrentMode()
     {
         // R1: take an explicit snapshot from the editor before parsing (KS mode only).
         if (_mode != EditorMode.Blueprint)
@@ -521,23 +531,23 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 // Mirror BP definition-node user values into the panel BEFORE running so
                 // the override layer applies them at runtime.
                 SyncUserValuesFromBlueprint(bp);
-                var ir = _bpGraphLens.Reverse(bp, HelperFunctions);
+                var (ir, idMap) = _bpGraphLens.ReverseWithNodePaths(bp, HelperFunctions);
                 // ScriptCompiler fallback infers PubVarTypes from ir.GlobalVars.
-                return (ir, null, null);
+                return (ir, null, null, idMap);
             }
 
             var parseError = ValidateKsParse();
             if (parseError != null)
                 return (null, null,
-                    $"KS 解析错误：\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。");
+                    $"KS 解析错误：\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。", null);
             var helpers = new List<HelperFunction>(HelperFunctions);
             var (ksIr, lowering) = _ksTextLens.ParseLowering(KsSource, helpers);
-            return (ksIr, lowering, null);
+            return (ksIr, lowering, null, null);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "[WorkflowEditorVMV6] BuildIrForCurrentMode failed");
-            return (null, null, $"解析失败: {ex.Message}");
+            return (null, null, $"解析失败: {ex.Message}", null);
         }
     }
 
@@ -551,14 +561,42 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     {
         var bp = _bpGraphLens.Project(ir);
         ApplyTriggerToBlueprint(bp);
+        ApplySavedLayout(bp);
         RestoreUserValuesFromPanel(bp);
         var scopes = _bpGraphLens.AnalyzeScopes(bp);
         BlueprintVM.LoadBlueprint(bp, scopes);
     }
 
-    [RelayCommand]
-    private void SwitchToBlockScript()
+    /// <summary>
+    /// Overrides projected node coordinates with the persisted layout (T5). The layout
+    /// keys are CANONICAL node ids — exactly the ids Project just produced — so nodes
+    /// map 1:1 back to their saved canvas positions. Entry/PluginTriggerNode ride
+    /// TriggerConfig instead; DetachedGraph nodes keep their snapshot coordinates
+    /// (their random ids can never match a canonical key).
+    /// </summary>
+    private void ApplySavedLayout(Blueprint bp)
     {
+        if (_savedLayout is not { Count: > 0 } layout) return;
+        foreach (var node in bp.Nodes)
+        {
+            if (node is EntryNode or PluginTriggerNode) continue;
+            if (layout.TryGetValue(node.Id, out var pos))
+            {
+                node.X = pos.X;
+                node.Y = pos.Y;
+            }
+        }
+    }
+
+    [RelayCommand]
+    private async Task SwitchToBlockScript()
+    {
+        // Auto-save before leaving the BP canvas: the dirty state includes node
+        // positions (T5), and SaveAsync writes the layout envelope — without this,
+        // a BP edit followed by a KS round-trip loses coordinates.
+        if (_mode == EditorMode.Blueprint && IsDirty)
+            await SaveAsync();
+
         if (_mode == EditorMode.Blueprint)
         {
             try
@@ -607,8 +645,12 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     }
 
     [RelayCommand]
-    private void SwitchToBlueprint()
+    private async Task SwitchToBlueprint()
     {
+        // Auto-save before leaving the KS editor (mirror of SwitchToBlockScript).
+        if (_mode == EditorMode.BlockScript && IsDirty)
+            await SaveAsync();
+
         if (_mode == EditorMode.BlockScript)
             RenderBlueprintFromKs();
         // Design §2.2: a failed KS parse must NOT switch modes — the user stays in the
@@ -710,6 +752,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
             var bp = _bpGraphLens.Project(ir);
             ApplyTriggerToBlueprint(bp);
+            ApplySavedLayout(bp);
             Log.Information("[WFEVM] RenderBlueprintFromKs: bp={Nodes} nodes, panel={Consts} entries — restoring panel user values",
                 bp.Nodes.Count, VariableConstants.Count);
             // Re-apply user overrides from the Variable Constants panel onto the freshly
@@ -744,6 +787,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         WorkflowName = name;
         IsDirty = false;
         StatusText = "Loaded (v6)";
+
+        // T5: remember the persisted BP layout so any later re-projection
+        // (KS→BP switch / DebugRun reload) restores node positions.
+        _savedLayout = kcs?.BlueprintLayout;
 
         // Restore helper functions from IR
         HelperFunctions.Clear();
@@ -798,7 +845,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         try
         {
             Log.Information("[WorkflowEditorVMV6] SaveAsync: Mode={Mode}, KsSource={Length} chars", _mode, KsSource.Length);
-            var (ir, _, error) = BuildIrForCurrentMode();
+            var (ir, _, error, idMap) = BuildIrForCurrentMode();
             if (error is not null || ir is null)
             {
                 // Abort the save — persisting a partially-parsed IR would permanently
@@ -818,6 +865,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
             // Persist the entry/trigger node coordinates (P3-δ): they are not part of
             // the IR annotation system — they follow the trigger envelope in TriggerConfig.
+            Dictionary<string, BlueprintLayoutEntry>? layout = null;
             if (BlueprintVM.WorkingBlueprint is { } wb)
             {
                 var root = wb.Nodes.FirstOrDefault(n => n is EntryNode or PluginTriggerNode);
@@ -825,6 +873,26 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 {
                     tc.EntryNodeX = root.X;
                     tc.EntryNodeY = root.Y;
+                }
+
+                // T5: persist the BP canvas layout. Keys are CANONICAL node ids
+                // (FNV-1a of the BpRenderer path, from the Reverse id map) — never the
+                // random palette ids — so the load side can look them up straight after
+                // Project re-projection. Entry/PluginTriggerNode ride TriggerConfig (above);
+                // DetachedGraph nodes have no path → no map key → naturally excluded.
+                if (_mode == EditorMode.Blueprint && idMap is { Count: > 0 })
+                {
+                    layout = new Dictionary<string, BlueprintLayoutEntry>();
+                    foreach (var node in wb.Nodes)
+                    {
+                        if (node is EntryNode or PluginTriggerNode) continue;
+                        if (idMap.TryGetValue(node.Id, out var canonical))
+                            layout[canonical] = new BlueprintLayoutEntry { X = node.X, Y = node.Y };
+                    }
+                    // Keep the in-memory layout in sync: a later re-projection
+                    // (KS→BP switch / DebugRun reload) must restore THESE positions,
+                    // not the ones from the originally loaded file.
+                    _savedLayout = layout;
                 }
             }
 
@@ -840,6 +908,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                     ? ov.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value)
                     : new Dictionary<string, object?>(),
                 TriggerConfig = tc,
+                // KS-mode saves must NOT clobber the persisted BP layout (the layout is
+                // BP-side state; KS edits don't touch it) — carry the last known table.
+                BlueprintLayout = _mode == EditorMode.Blueprint ? layout : _savedLayout,
             };
 
             await _storageService.SaveWorkflowDataAsync(_workflowId, data);
@@ -894,7 +965,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             KsSource.Length > 500 ? KsSource[..500] : KsSource);
 
         // Obtain IR + lowering (shared pipeline: KS ParseLowering / BP Reverse).
-        var (ir, lowering, error) = BuildIrForCurrentMode();
+        var (ir, lowering, error, _) = BuildIrForCurrentMode();
         if (error is not null || ir is null)
         {
             ExecutionOutput = error ?? "解析失败";
@@ -968,7 +1039,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
 
         // Obtain IR + lowering (shared pipeline: KS ParseLowering / BP Reverse).
-        var (ir, lowering, error) = BuildIrForCurrentMode();
+        var (ir, lowering, error, idMap) = BuildIrForCurrentMode();
         if (error is not null || ir is null)
         {
             ExecutionOutput = $"KS 解析错误，无法调试:\n{error}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
@@ -984,7 +1055,28 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         // BP-added nodes too. (Coordinates reset to the layout — consistent with the
         // documented non-persistence of node positions.)
         if (_mode == EditorMode.Blueprint)
+        {
+            // Breakpoint migration (2026-08-06): breakpoints live on VM instances, which
+            // ReloadCanvasFromIr destroys wholesale — snapshot the marked node ids BEFORE
+            // the reload and re-apply them AFTER it, translating canvas ids through the
+            // Reverse node-id map (random palette ids → canonical FNV ids) so breakpoints
+            // survive the re-projection and Continue still stops at them.
+            var breakpointIds = BlueprintVM.Nodes.OfType<BlueprintNodeVMV6>()
+                .Where(n => n.IsBreakpoint)
+                .Select(n => n.BlueprintNodeId)
+                .ToHashSet();
+            var breakpointCanonicalIds = breakpointIds
+                .Select(id => idMap is not null && idMap.TryGetValue(id, out var canonical) ? canonical : id)
+                .ToHashSet();
+
             ReloadCanvasFromIr(ir);
+
+            foreach (var n in BlueprintVM.Nodes.OfType<BlueprintNodeVMV6>())
+            {
+                if (breakpointCanonicalIds.Contains(n.BlueprintNodeId))
+                    n.IsBreakpoint = true;
+            }
+        }
 
         // Create debugger + wire events.
         _debugController = new RealBlueprintDebugger();

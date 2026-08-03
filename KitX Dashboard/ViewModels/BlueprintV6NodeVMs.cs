@@ -526,13 +526,6 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     /// <summary>Shows the comment bubble when a comment exists and inline editing is off (R5).</summary>
     public bool ShowCommentBubble => HasComment && !IsEditingComment;
 
-    /// <summary>Toggles the breakpoint flag on this node (right-click menu).</summary>
-    [RelayCommand]
-    private void ToggleBreakpoint()
-    {
-        IsBreakpoint = !IsBreakpoint;
-    }
-
     /// <summary>Category colour for a given node type + function name.</summary>
     public static string GetHeaderColor(BlueprintNodeType type, string? functionName) => type switch
     {

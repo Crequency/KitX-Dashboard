@@ -52,8 +52,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// Raised after any edit that changes the persisted workflow content (structure,
     /// comments, definition values). The host VM subscribes to mark the workflow dirty —
     /// without it, BP-side edits would be silently dropped on window close (the IsDirty
-    /// pipeline only covered KS-side setters). Pure canvas moves are excluded: positions
-    /// are decorative and not persisted.
+    /// pipeline only covered KS-side setters). Pure canvas moves ARE included since T5:
+    /// positions are persisted in the .kcs BlueprintLayout envelope, so a drag must
+    /// mark the workflow dirty to reach SaveAsync.
     /// </summary>
     public event Action? BlueprintEdited;
 
@@ -190,6 +191,11 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             contractNode.X = node.Location.X;
             contractNode.Y = node.Location.Y;
         }
+        // T5: positions are persisted now — a drag is a real edit, mark dirty so
+        // SaveAsync (which writes the layout envelope) is reached on close/autosave.
+        // Fires repeatedly during a drag; the host only flips IsDirty, which is cheap
+        // (the autosave timer is debounced upstream).
+        NotifyBlueprintEdited();
         ScheduleScopeRefresh();
     }
 
