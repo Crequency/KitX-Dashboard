@@ -1120,7 +1120,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 }
                 else
                 {
-                    BlueprintVM.FindOutputConnector(remainder)?.RuntimeValue = valStr;
+                    // Set the output-port value and propagate it along the wire onto
+                    // the connected input ports (input tooltips mirror the upstream value).
+                    BlueprintVM.SetOutputWireValue(remainder, valStr);
                 }
             }
             else if (name.StartsWith("print:"))

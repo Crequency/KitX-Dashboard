@@ -1420,6 +1420,26 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                .FirstOrDefault(c => !c.IsExecution);
 
     /// <summary>
+    /// Sets the runtime value on a node's data-output connector AND propagates it along
+    /// every wire leaving that output onto the target input connectors — so input-port
+    /// tooltips show the flowing value without per-pin backend instrumentation. The
+    /// single-consumer invariant (R4) keeps propagation 1:1 per output. Control-flow
+    /// data inputs keep their dedicated <c>w:{ctrlNodeId}:{pinName}</c> wires (their
+    /// condition sub-graph has no standalone output wire).
+    /// </summary>
+    public void SetOutputWireValue(string nodeId, string value)
+    {
+        var outConnector = FindOutputConnector(nodeId);
+        if (outConnector == null) return;
+        outConnector.RuntimeValue = value;
+        foreach (var c in Connections.OfType<BlueprintConnectionVMV6>())
+        {
+            if (c.Source == outConnector && c.Target is BlueprintConnectorVMV6 inConn)
+                inConn.RuntimeValue = value;
+        }
+    }
+
+    /// <summary>
     /// Finds a specific input connector by node ID + pin name. Used for control-flow
     /// data-input wire tooltips: wireId <c>w:{ctrlNodeId}:{pinName}</c>.
     /// </summary>
