@@ -18,13 +18,19 @@ namespace KitX.Dashboard.Services;
 //
 // Rebuilt from the archived Package/Archive/KitX.Workflow/Services/TriggerManager.cs
 // (P3-δ): the archived version depended on the deleted KitX.Workflow.Hosting
-// ServiceLocator; this version takes the same four services via constructor
-// injection (all resolvable from the Dashboard DI container).
+// ServiceLocator; this version takes its services via constructor injection (all
+// resolvable from the Dashboard DI container).
 //
 // A trigger is a pure signal (equivalent to pressing "Run"): plugins fire it via the
 // TriggerFired WebCommand; this manager matches the firing plugin/trigger against
 // registered TriggerConfig subscriptions ("PluginName.TriggerName" or wildcard
 // "PluginName.*") and runs each matching workflow by id.
+//
+// Subscriptions are RUNTIME state only: RegisterWorkflowTrigger is called when the
+// user starts a PluginEvent workflow (Run button — which also verifies the plugin is
+// connected), UnregisterWorkflowTrigger on Stop. There is no startup re-subscription
+// from persisted TriggerConfig (the archived InitializeFromPersistedWorkflows silently
+// armed every saved workflow at launch without syncing the card's mounted indicator).
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// <summary>
@@ -33,7 +39,6 @@ namespace KitX.Dashboard.Services;
 public class TriggerManager : ITriggerManager
 {
     private readonly IPluginServer _pluginServer;
-    private readonly IWorkflowStorageService _storageService;
     private readonly IWorkflowManagementService _workflowManagement;
     private readonly IEventService _eventService;
     private readonly JsonSerializerOptions _serializerOptions = new()
@@ -49,11 +54,10 @@ public class TriggerManager : ITriggerManager
     /// <summary>Workflow trigger configurations: key = workflowId.</summary>
     private readonly Dictionary<string, TriggerConfig> _workflowTriggers = new();
 
-    public TriggerManager(IPluginServer pluginServer, IWorkflowStorageService storageService,
+    public TriggerManager(IPluginServer pluginServer,
         IWorkflowManagementService workflowManagement, IEventService eventService)
     {
         _pluginServer = pluginServer ?? throw new ArgumentNullException(nameof(pluginServer));
-        _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
         _workflowManagement = workflowManagement ?? throw new ArgumentNullException(nameof(workflowManagement));
         _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
         _pluginServer.PluginMessageReceived += OnPluginMessageReceived;
@@ -81,31 +85,6 @@ public class TriggerManager : ITriggerManager
         {
             RebuildSubscriptionIndex();
             Log.Information("[TriggerManager] Unregistered trigger for workflow {WorkflowId}", workflowId);
-        }
-    }
-
-    /// <inheritdoc/>
-    public async void InitializeFromPersistedWorkflows()
-    {
-        try
-        {
-            var workflows = await _storageService.DiscoverWorkflowsAsync();
-
-            foreach (var workflow in workflows)
-            {
-                if (workflow.TriggerConfig != null
-                    && !string.IsNullOrEmpty(workflow.TriggerConfig.PluginName))
-                {
-                    RegisterWorkflowTrigger(workflow.Id, workflow.TriggerConfig);
-                }
-            }
-
-            Log.Information("[TriggerManager] Initialized {Count} trigger subscriptions from persisted workflows",
-                _triggerSubscriptions.Count);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "[TriggerManager] Failed to initialize from persisted workflows");
         }
     }
 

@@ -126,10 +126,11 @@ public partial class App : Application
         // var rpm = provider.GetRequiredService<IRealPluginManagerBridge>();
         // Log.Information("RealPluginManager pre-resolved. HashCode: {HashCode}", rpm.GetHashCode());
 
-        // Initialize TriggerManager from persisted workflow configurations (P3-δ).
-        // Runs before plugins connect so early TriggerFired events still route correctly.
-        var triggerManager = provider.GetRequiredService<KitX.Core.Contract.Workflow.ITriggerManager>();
-        triggerManager.InitializeFromPersistedWorkflows();
+        // NOTE: no startup trigger re-subscription — a workflow is armed ONLY while the
+        // user keeps it Running (Run=register, Stop=unregister). The old
+        // InitializeFromPersistedWorkflows silently armed every saved PluginEvent
+        // workflow at launch without touching the card's mounted indicator (and without
+        // checking plugin connectivity), desyncing the UI from actual trigger routing.
 
         Log.Information("Service provider initialized.");
     }
