@@ -1409,11 +1409,15 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         => Nodes.OfType<BlueprintNodeVMV6>().FirstOrDefault(n => n.BlueprintNodeId == nodeId);
 
     /// <summary>
-    /// Finds the primary output connector for a node. Used for wire-value tooltip
-    /// mapping: wireId <c>w:{nodeId}</c> → node's first output connector.
+    /// Finds the primary DATA output connector for a node. Used for wire-value tooltip
+    /// mapping: wireId <c>w:{nodeId}</c> → the node's first non-Exec output connector.
+    /// The Exec output sits at index 0 (AddUsageNode prepends it), so a plain
+    /// FirstOrDefault would hang the runtime value on the Exec pin instead of the
+    /// data pin — the tooltip would never show the flowing value.
     /// </summary>
     public BlueprintConnectorVMV6? FindOutputConnector(string nodeId)
-        => FindNodeById(nodeId)?.Output.OfType<BlueprintConnectorVMV6>().FirstOrDefault();
+        => FindNodeById(nodeId)?.Output.OfType<BlueprintConnectorVMV6>()
+               .FirstOrDefault(c => !c.IsExecution);
 
     /// <summary>
     /// Finds a specific input connector by node ID + pin name. Used for control-flow

@@ -999,6 +999,26 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         _debugController.ExecutionResumed += OnDebugExecutionResumed;
         SyncBreakpointsToDebugger();
 
+        // Pre-fill the variable watch panel with every declared const/var (overrides
+        // already applied) so it is never empty — consts are read-only and only vars
+        // publish runtime updates via OnVarChanged, so declarations alone would leave
+        // the panel blank for workflows without assignments.
+        RuntimeVariables.Clear();
+        foreach (var (name, c) in ir.Constants)
+            RuntimeVariables.Add(new RuntimeVariableItem
+            {
+                Name = name,
+                Value = c.InitialValueExpression ?? (c.DictInitializer is not null ? "{...}" : "null"),
+                LastUpdated = DateTime.Now,
+            });
+        foreach (var (name, g) in ir.GlobalVars)
+            RuntimeVariables.Add(new RuntimeVariableItem
+            {
+                Name = name,
+                Value = g.InitialValueExpression ?? (g.DictInitializer is not null ? "{...}" : ""),
+                LastUpdated = DateTime.Now,
+            });
+
         IsDebugging = true;
         IsPaused = false;
         ExecutionOutput = "调试中...";
