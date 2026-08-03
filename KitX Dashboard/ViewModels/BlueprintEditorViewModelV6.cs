@@ -1448,15 +1448,19 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             }
             if (minX == double.MaxValue) continue;
 
+            // Pad outward like ScopeAnalyzer.ComputeBox (FramePadding), then align to
+            // the grid with the origin floored and the far edges CEILED — a floor on
+            // the far edge would shrink the frame under the nodes (the condition frame
+            // has no padding to absorb it, unlike body frames).
             result.Add(new ScopeFrameVM
             {
                 Title = pinLabel,
                 OwnerFunctionName = node.FunctionName,
                 Depth = 0,
                 IsConditionFrame = true,
-                Location = new Avalonia.Point(AlignToGrid(minX), AlignToGrid(minY)),
-                FrameWidth = AlignToGrid(maxX) - AlignToGrid(minX),
-                FrameHeight = AlignToGrid(maxY) - AlignToGrid(minY),
+                Location = new Avalonia.Point(AlignFloor(minX - FramePadding), AlignFloor(minY - FramePadding)),
+                FrameWidth = AlignCeil(maxX + FramePadding) - AlignFloor(minX - FramePadding),
+                FrameHeight = AlignCeil(maxY + FramePadding) - AlignFloor(minY - FramePadding),
             });
         }
         return result;
@@ -1465,8 +1469,14 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>Grid step used by the canvas background (LargeGridLine Spacing).</summary>
     private const double GridStep = 15;
 
-    /// <summary>Rounds a canvas coordinate DOWN to the grid so frame edges sit on grid lines.</summary>
-    private static double AlignToGrid(double v) => Math.Floor(v / GridStep) * GridStep;
+    /// <summary>Frame padding around the contained nodes' bounding box (mirrors ScopeAnalyzer).</summary>
+    private const double FramePadding = 24;
+
+    /// <summary>Rounds a canvas coordinate DOWN to the grid (origin alignment — outward).</summary>
+    private static double AlignFloor(double v) => Math.Floor(v / GridStep) * GridStep;
+
+    /// <summary>Rounds a canvas coordinate UP to the grid (far-edge alignment — outward).</summary>
+    private static double AlignCeil(double v) => Math.Ceiling(v / GridStep) * GridStep;
 
     private static ScopeFrameVM CreateScopeFrame(ScopeRegion scope) => new()
     {
@@ -1474,11 +1484,11 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         OwnerFunctionName = scope.OwnerFunctionName,
         Depth = scope.Depth,
         // Grid alignment: the frame must read as background (edges on grid lines),
-        // not as a draggable container. Floor the origin and the far edges outward so
-        // parent frames still contain their children.
-        Location = new Avalonia.Point(AlignToGrid(scope.X), AlignToGrid(scope.Y)),
-        FrameWidth = AlignToGrid(scope.X + scope.Width) - AlignToGrid(scope.X),
-        FrameHeight = AlignToGrid(scope.Y + scope.Height) - AlignToGrid(scope.Y),
+        // not as a draggable container. Floor the origin and CEIL the far edges so
+        // parent frames still contain their children and no node pokes out.
+        Location = new Avalonia.Point(AlignFloor(scope.X), AlignFloor(scope.Y)),
+        FrameWidth = AlignCeil(scope.X + scope.Width) - AlignFloor(scope.X),
+        FrameHeight = AlignCeil(scope.Y + scope.Height) - AlignFloor(scope.Y),
     };
 
     /// <summary>Node ids inside a While/Each loop BODY — their dangling exec-out is a loop-back.</summary>
