@@ -1123,6 +1123,17 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                     BlueprintVM.FindOutputConnector(remainder)?.RuntimeValue = valStr;
                 }
             }
+            else if (name.StartsWith("print:"))
+            {
+                // Live output streaming: each Print line during the debug session is
+                // appended to the Output panel in real time (the completion summary
+                // replaces this text when the run finishes).
+                var line = name["print:".Length..];
+                _liveDebugOutput = _liveDebugOutput.Length == 0
+                    ? line
+                    : _liveDebugOutput + "\n" + line;
+                ExecutionOutput = _liveDebugOutput;
+            }
             else
             {
                 // PubVar change → variable watch panel
@@ -1130,6 +1141,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             }
         });
     }
+
+    /// <summary>Accumulates live Print output during a debug session (streamed to the Output panel).</summary>
+    private string _liveDebugOutput = string.Empty;
 
     private void UpdateRuntimeVariable(string name, string value)
     {
@@ -1196,6 +1210,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         BlueprintVM.ClearDebugHighlights();
         BlueprintVM.ClearRuntimeValues();
         RuntimeVariables.Clear();
+        _liveDebugOutput = string.Empty;
         IsDebugging = false;
         IsPaused = false;
     }
