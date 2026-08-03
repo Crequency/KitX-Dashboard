@@ -145,7 +145,8 @@
                     <Button Name="DebugStepButton"
                             ToolTip.Tip="Step Over"
                             Command="{Binding DebugStepCommand}"
-                            IsVisible="{Binding IsDebugging}">
+                            IsVisible="{Binding IsDebugging}"
+                            IsEnabled="{Binding IsPaused}">
                         <icon:MaterialIcon Width="18" Height="18" Kind="SkipForward" />
                     </Button>
                     <Button Name="DebugContinueButton"

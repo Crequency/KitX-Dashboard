@@ -988,10 +988,15 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
         // Create debugger + wire events.
         _debugController = new RealBlueprintDebugger();
-        _debugController.SetSpeed(ExecutionSpeed.RealTime);
+        // D2-1: debug starts in step-through mode — execution pauses at the first
+        // checkpoint (first statement), then Step runs one statement and pauses again,
+        // Continue free-runs to the next breakpoint.
+        _debugController.SetSpeed(ExecutionSpeed.StepByStep);
         _debugController.NodeExecuting += OnDebugNodeExecuting;
         _debugController.NodeExecuted += OnDebugNodeExecuted;
         _debugController.VariableChanged += OnDebugVariableChanged;
+        _debugController.ExecutionPaused += OnDebugExecutionPaused;
+        _debugController.ExecutionResumed += OnDebugExecutionResumed;
         SyncBreakpointsToDebugger();
 
         IsDebugging = true;
@@ -1051,6 +1056,29 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 node.ExecutionCompleted = true;
             }
             IsPaused = _debugController?.IsPaused ?? false;
+        });
+    }
+
+    /// <summary>
+    /// Event-driven pause state (D2-3): the debugger raises this when a checkpoint
+    /// begins waiting (start / step / breakpoint / manual pause). Reflects the state
+    /// on the UI thread without polling in the node callbacks.
+    /// </summary>
+    private void OnDebugExecutionPaused()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            IsPaused = true;
+            StatusText = "调试已暂停";
+        });
+    }
+
+    private void OnDebugExecutionResumed()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            IsPaused = false;
+            StatusText = "调试运行中...";
         });
     }
 
@@ -1141,6 +1169,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             _debugController.NodeExecuting -= OnDebugNodeExecuting;
             _debugController.NodeExecuted -= OnDebugNodeExecuted;
             _debugController.VariableChanged -= OnDebugVariableChanged;
+            _debugController.ExecutionPaused -= OnDebugExecutionPaused;
+            _debugController.ExecutionResumed -= OnDebugExecutionResumed;
             _debugController = null;
         }
         BlueprintVM.ClearDebugHighlights();
