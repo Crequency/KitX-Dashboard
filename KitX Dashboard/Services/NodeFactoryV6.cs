@@ -20,11 +20,20 @@ namespace KitX.Dashboard.Services;
 
 public static class NodeFactoryV6
 {
-    /// <summary>Creates a BuiltinFunctionNode with Exec + data pins from the registry's PortSpec.</summary>
+    /// <summary>
+    /// Creates a BuiltinFunctionNode with Exec + data pins from the registry's PortSpec.
+    /// DictNew is special-cased (same switch-on-name pattern as CreateControlFlowNode):
+    /// it is an IR primitive definition node (a <c>var name = { ... }</c> dict literal),
+    /// NOT registered in BuiltinFunctionRegistry, so no Exec pins are created and the
+    /// registry lookup is skipped entirely.
+    /// </summary>
     public static BuiltinFunctionNode CreateBuiltinFunctionNode(
-        string functionName, BuiltinFunctionRegistry registry)
+        string functionName, BuiltinFunctionRegistry? registry)
     {
-        var builtin = registry.Get(functionName)
+        if (functionName == "DictNew")
+            return CreateDictNewDefinitionNode();
+
+        var builtin = registry?.Get(functionName)
             ?? throw new ArgumentException(
                 $"Builtin function '{functionName}' not registered.", nameof(functionName));
 
@@ -129,6 +138,32 @@ public static class NodeFactoryV6
         };
         n.InputPins.Insert(0, MakePin("Exec", PinDirection.Input, PinType.Execution));
         n.OutputPins.Insert(0, MakePin("Exec", PinDirection.Output, PinType.Execution));
+        return n;
+    }
+
+    /// <summary>
+    /// Creates a DictNew DEFINITION node (a <c>var name = { ... }</c> dict literal
+    /// declaration). No Exec pins — like const/var definitions it lives in the
+    /// initialisation region and is NOT registered in BuiltinFunctionRegistry (IR
+    /// primitive, per KScript-Blueprint-Correspondence.md). Key/value pairs are edited
+    /// on the node card; each pair is a Key{i}/Value{i} input pin whose DefaultValue
+    /// carries the key/value literal text. Default DeclKind is "var" (const semantics
+    /// are a later enhancement); the initial node ships one empty pair (Key0/Value0).
+    /// </summary>
+    public static BuiltinFunctionNode CreateDictNewDefinitionNode()
+    {
+        var n = new BuiltinFunctionNode
+        {
+            Id = NewId(),
+            Name = "DictNew",
+            FunctionName = "DictNew",
+            NodeType = BlueprintNodeType.BuiltinFunction,
+        };
+        n.Properties["DeclKind"] = "var";
+        n.Properties["DeclName"] = string.Empty;   // same default-name behaviour as CreateVariableDefinitionNode
+        foreach (var (pinName, pinType) in VariadicPairHelper.DictNewSpec.EnumeratePair(0))
+            n.InputPins.Add(MakePin(pinName, PinDirection.Input, pinType));
+        n.OutputPins.Add(MakePin("Dict", PinDirection.Output, PinType.Dict));
         return n;
     }
 

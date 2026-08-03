@@ -828,8 +828,9 @@
                                                                    Cursor="Hand"
                                                                    TextWrapping="Wrap"
                                                                    PointerPressed="OnCommentIndicatorPressed" />
-                                                        <!-- Definition node declaration editor (R8) -->
-                                                        <StackPanel IsVisible="{Binding IsDefinition}"
+                                                        <!-- Definition node declaration editor (R8) — const/var only;
+                                                             DictNew shows its own key/value pair editor below. -->
+                                                        <StackPanel IsVisible="{Binding ShowDefinitionEditor}"
                                                                     Margin="0,5,0,0"
                                                                     Spacing="3">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
@@ -914,6 +915,52 @@
                                                                          Watermark="字面量值"
                                                                          ToolTip.Tip="管道源字面量值（Reverse 时写回 KS 文本）" />
                                                             </StackPanel>
+                                                        </StackPanel>
+                                                        <!-- DictNew definition node: key/value pair editor (T8).
+                                                             Each row edits one Key{i}/Value{i} input pin pair; the
+                                                             value textbox follows the inline DefaultValue literal
+                                                             semantics (backend Reverse parses per the pin type). -->
+                                                        <StackPanel IsVisible="{Binding IsDictNewNode}"
+                                                                    Margin="0,5,0,0"
+                                                                    Spacing="3">
+                                                            <ItemsControl ItemsSource="{Binding DictPairs}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate DataType="{x:Type viewModels:DictPairRowVM}">
+                                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                            <TextBox Text="{Binding KeyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                     Width="64"
+                                                                                     FontSize="10"
+                                                                                     Background="White"
+                                                                                     Foreground="Black"
+                                                                                     Padding="2,0"
+                                                                                     VerticalAlignment="Center"
+                                                                                     Watermark="Key"
+                                                                                     ToolTip.Tip="键字面量（写入 Key pin 的 DefaultValue）" />
+                                                                            <TextBox Text="{Binding ValueText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                     Width="64"
+                                                                                     FontSize="10"
+                                                                                     Background="White"
+                                                                                     Foreground="Black"
+                                                                                     Padding="2,0"
+                                                                                     VerticalAlignment="Center"
+                                                                                     Watermark="Value"
+                                                                                     ToolTip.Tip="值字面量（bool/int/double/string/char/null 文本，写入 Value pin 的 DefaultValue）" />
+                                                                            <Button Content="×"
+                                                                                    Padding="5,0"
+                                                                                    FontSize="10"
+                                                                                    VerticalAlignment="Center"
+                                                                                    ToolTip.Tip="删除该键值对"
+                                                                                    Command="{Binding DataContext.RemoveDictPairCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                                    CommandParameter="{Binding}" />
+                                                                        </StackPanel>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                            <Button Content="添加键值对"
+                                                                    Command="{Binding AddDictPairCommand}"
+                                                                    FontSize="10"
+                                                                    Padding="6,1"
+                                                                    HorizontalAlignment="Stretch" />
                                                         </StackPanel>
                                                     </StackPanel>
                                                 </Border>

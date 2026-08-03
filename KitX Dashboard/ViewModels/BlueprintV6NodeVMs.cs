@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -8,6 +9,59 @@ using NodifyM.Avalonia.ViewModelBase;
 using Serilog;
 
 namespace KitX.Dashboard.ViewModels;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DictNew key/value pair row ViewModel (T8).
+//
+// One row in a DictNew definition node's pair editor. KeyText/ValueText map 1:1 to
+// the Key{i}/Value{i} input pins' DefaultValue (the key/value literal text), written
+// back to the Contract through the editor callback. ApplyFromContract loads a pair
+// without invoking callbacks — a load must never write VM state over the Contract.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// <summary>A single Key/Value row of a DictNew definition node's pair editor.</summary>
+public partial class DictPairRowVM : ObservableObject
+{
+    private readonly Action<string?, string?>? _onTextEdited;
+
+    /// <summary>Contract pin id of the Key{i} input pin backing this row.</summary>
+    public string? KeyPinId { get; internal set; }
+
+    /// <summary>Contract pin id of the Value{i} input pin backing this row.</summary>
+    public string? ValuePinId { get; internal set; }
+
+    /// <summary>Key literal text (written to the Key pin's DefaultValue).</summary>
+    [ObservableProperty]
+    private string? _keyText;
+
+    /// <summary>Value literal text (written to the Value pin's DefaultValue).</summary>
+    [ObservableProperty]
+    private string? _valueText;
+
+    public DictPairRowVM()
+        : this(null) { }
+
+    /// <param name="onTextEdited">Invoked with (pinId, text) on either field edit.</param>
+    public DictPairRowVM(Action<string?, string?>? onTextEdited)
+    {
+        _onTextEdited = onTextEdited;
+    }
+
+    partial void OnKeyTextChanged(string? value) => _onTextEdited?.Invoke(KeyPinId, value);
+
+    partial void OnValueTextChanged(string? value) => _onTextEdited?.Invoke(ValuePinId, value);
+
+    /// <summary>Loads a pair straight from the Contract pins — no edit callbacks.</summary>
+    public void ApplyFromContract(string? keyPinId, string? valuePinId, string? keyText, string? valueText)
+    {
+        KeyPinId = keyPinId;
+        ValuePinId = valuePinId;
+        _keyText = keyText;
+        _valueText = valueText;
+        OnPropertyChanged(nameof(KeyText));
+        OnPropertyChanged(nameof(ValueText));
+    }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // V6 Blueprint connector (pin) ViewModel.
@@ -211,6 +265,8 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     private readonly Action<BlueprintNodeVMV6, string? /*oldName*/, string? /*newName*/, string? /*value*/>? _onDefinitionEdited;
     private readonly Action<BlueprintNodeVMV6, string?>? _onUsageNameEdited;
     private readonly Action<BlueprintNodeVMV6, string?>? _onUsageValueEdited;
+    private readonly Action<BlueprintNodeVMV6>? _onAddDictPair;
+    private readonly Action<BlueprintNodeVMV6, DictPairRowVM>? _onRemoveDictPair;
 
     /// <summary>Original BlueprintNode.Id for round-trip export.</summary>
     [ObservableProperty]
@@ -262,12 +318,16 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     public BlueprintNodeVMV6(Action<BlueprintNodeVMV6, string?>? onCommentCommitted,
         Action<BlueprintNodeVMV6, string?, string?, string?>? onDefinitionEdited,
         Action<BlueprintNodeVMV6, string?>? onUsageNameEdited,
-        Action<BlueprintNodeVMV6, string?>? onUsageValueEdited)
+        Action<BlueprintNodeVMV6, string?>? onUsageValueEdited,
+        Action<BlueprintNodeVMV6>? onAddDictPair,
+        Action<BlueprintNodeVMV6, DictPairRowVM>? onRemoveDictPair)
     {
         _onCommentCommitted = onCommentCommitted;
         _onDefinitionEdited = onDefinitionEdited;
         _onUsageNameEdited = onUsageNameEdited;
         _onUsageValueEdited = onUsageValueEdited;
+        _onAddDictPair = onAddDictPair;
+        _onRemoveDictPair = onRemoveDictPair;
     }
 
     /// <summary>Begins inline comment editing.</summary>
@@ -308,12 +368,37 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             : DisplayTitle;
 
     /// <summary>Definition keyword ("const" / "var") for the header title (R8).</summary>
-    public string DefinitionKindText => NodeType switch
+    public string DefinitionKindText => IsDictNewNode
+        ? "var"   // DictNew definitions default to DeclKind="var" (T8)
+        : NodeType switch
+        {
+            BlueprintNodeType.Const => "const",
+            BlueprintNodeType.Variable => "var",
+            _ => "def",
+        };
+
+    // ── DictNew definition nodes (T8) ──
+
+    /// <summary>True for DictNew definition nodes (renders the key/value pair editor).</summary>
+    public bool IsDictNewNode => FunctionName == "DictNew";
+
+    /// <summary>True for const/var definition nodes — shows the Type/Name/Value declaration editor.</summary>
+    public bool ShowDefinitionEditor => IsDefinition && !IsDictNewNode;
+
+    /// <summary>Key/value rows of a DictNew definition node (edited on the card).</summary>
+    public ObservableCollection<DictPairRowVM> DictPairs { get; } = new();
+
+    /// <summary>Appends a new key/value pair to a DictNew node (Contract + VM double-write).</summary>
+    [RelayCommand]
+    private void AddDictPair() => _onAddDictPair?.Invoke(this);
+
+    /// <summary>Removes the given key/value row (and its pins) from a DictNew node.</summary>
+    [RelayCommand]
+    private void RemoveDictPair(DictPairRowVM? row)
     {
-        BlueprintNodeType.Const => "const",
-        BlueprintNodeType.Variable => "var",
-        _ => "def",
-    };
+        if (row != null)
+            _onRemoveDictPair?.Invoke(this, row);
+    }
 
     /// <summary>
     /// Editable declaration name for definition nodes (ConstNode.ConstName / VariableNode.VarName).
@@ -577,6 +662,13 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     {
         OnPropertyChanged(nameof(DefinitionTitle));
         OnPropertyChanged(nameof(EffectiveHeaderColorHex));
+        OnPropertyChanged(nameof(ShowDefinitionEditor));
+    }
+
+    partial void OnFunctionNameChanged(string? value)
+    {
+        OnPropertyChanged(nameof(IsDictNewNode));
+        OnPropertyChanged(nameof(DefinitionKindText));
     }
 
     partial void OnHeaderColorHexChanged(string value)

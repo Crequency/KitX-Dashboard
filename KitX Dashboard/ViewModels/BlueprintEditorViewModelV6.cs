@@ -579,6 +579,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         // Const/var nodes (2026-08-03): definition declarations + usage references.
         PaletteItems.Add(new PaletteItemV6("const（定义）", "Definition", "const"));
         PaletteItems.Add(new PaletteItemV6("var（定义）", "Definition", "var"));
+        // DictNew definition node (T8): a `var name = { ... }` dict literal declaration.
+        // Hardcoded here — NOT in the builtin registry (IR primitive, see
+        // NodeFactoryV6.CreateDictNewDefinitionNode), so registry.AllNames can't feed it.
+        PaletteItems.Add(new PaletteItemV6("DictNew（新建 dict 定义）", "Definition", "DictNew"));
         PaletteItems.Add(new PaletteItemV6("常量（字面量）", "Usage", "literal"));
         PaletteItems.Add(new PaletteItemV6("变量（使用）", "Usage", "var"));
         if (_registry != null)
@@ -599,6 +603,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             {
                 "const" => NodeFactoryV6.CreateConstDefinitionNode(),
                 "var" => NodeFactoryV6.CreateVariableDefinitionNode(),
+                "DictNew" => NodeFactoryV6.CreateBuiltinFunctionNode(item.FunctionName!, _registry),
                 _ => null!,
             },
             "Usage" => item.FunctionName switch
@@ -1641,15 +1646,36 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
     private void TryExpandVariadicSide(BlueprintConnectorVMV6 connector, bool isOutput)
     {
-        if (_workingBlueprint == null || _registry == null) return;
+        if (_workingBlueprint == null) return;
         if (!_connectorToContract.TryGetValue(connector, out var coord)) return;
         var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == coord.NodeId);
         if (contractNode is not BuiltinFunctionNode fn) return;
-        var spec = _registry.Get(fn.FunctionName)?.InputVariadic;
+
+        // Spec source: the builtin's registered InputVariadic; DictNew (an IR primitive
+        // definition node, absent from the registry) falls back to a hardcoded paired spec.
+        var spec = _registry?.Get(fn.FunctionName)?.InputVariadic;
+        if (spec == null && fn.FunctionName == "DictNew")
+            spec = VariadicPairHelper.DictNewSpec;
         if (spec == null) return;
 
         var nodeVm = FindNodeById(fn.Id);
         if (nodeVm == null) return;
+
+        // Paired (multi-prefix) mode: the group grows one full pair per connection of
+        // its LAST pin (e.g. DictNew connects Value1 → append Key2/Value2). Group
+        // membership is collected by PREFIX (PinType alone would miss half the pair
+        // when the paired types differ, e.g. Key=String vs Value=Any).
+        if (spec.PinNamePrefixes is { Length: > 0 } prefixes
+            && spec.PinTypes is { Length: > 0 } types
+            && prefixes.Length == types.Length)
+        {
+            var groupPins = nodeVm.Input.OfType<BlueprintConnectorVMV6>()
+                .Where(c => prefixes.Any(p => c.Title.StartsWith(p, StringComparison.Ordinal)))
+                .ToList();
+            if (groupPins.Count == 0 || connector != groupPins[^1]) return;
+            AppendVariadicGroup(fn, nodeVm, spec);
+            return;
+        }
 
         // Legacy single-PinType mode: collect the node's pins belonging to the variadic
         // group (matching PinType). Expand only when the LAST pin was just connected.
@@ -1693,6 +1719,43 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         RegisterConnector(connectorVm, fn.Id, newPin.Id);
     }
 
+    /// <summary>
+    /// Appends one growth iteration of a PAIRED variadic group to both the Contract
+    /// node and the VM (v6 double-write): one pin per prefix at the next group index,
+    /// e.g. Key1/Value1 after Key0/Value0. Shared by the connect-triggered expansion
+    /// and the DictNew node card's "添加键值对" button. The next index is derived from
+    /// the node's current pins (never mutates the spec), so each node instance counts
+    /// independently and survives save/load round-trips.
+    /// </summary>
+    private void AppendVariadicGroup(BuiltinFunctionNode fn, BlueprintNodeVMV6 nodeVm, VariadicPinSpec spec)
+    {
+        var nextIndex = VariadicPairHelper.ComputeNextIndex(
+            spec.PinNamePrefixes!, spec.StartIndex, fn.InputPins.Select(p => p.Name));
+        foreach (var (pinName, pinType) in spec.EnumeratePair(nextIndex))
+        {
+            var newPin = new BlueprintPin
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = pinName,
+                Direction = PinDirection.Input,
+                Type = pinType,
+            };
+            fn.InputPins.Add(newPin);
+
+            var connectorVm = new BlueprintConnectorVMV6(
+                (c, value) => UpdatePinDefaultValue(fn.Id, c.OriginalPinId, value))
+            {
+                Title = pinName,
+                PinType = pinType,
+                OriginalPinId = newPin.Id,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+                IsDefinitionPin = nodeVm.IsDefinition,
+            };
+            nodeVm.Input.Add(connectorVm);
+            RegisterConnector(connectorVm, fn.Id, newPin.Id);
+        }
+    }
+
     // ── Contract → ViewModel conversion ──
 
     private BlueprintNodeVMV6 ConvertNodeToViewModel(BlueprintNode node)
@@ -1704,10 +1767,13 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         // Definition nodes (const/var block declarations) are flagged by the renderer
         // (BpRenderer sets IsDefinition on /def/ nodes) — definition-ness is fixed at
         // creation and must not be re-inferred from pin presence or connectivity.
+        // DictNew is also a definition node (a `var name = { ... }` dict declaration):
+        // same no-wiring, initialisation-region semantics as const/var (T8).
         bool isDefinition = node switch
         {
             ConstNode cn => cn.IsDefinition,
             VariableNode vn => vn.IsDefinition,
+            BuiltinFunctionNode fn when fn.FunctionName == "DictNew" => true,
             _ => false,
         };
 
@@ -1715,7 +1781,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             (node, comment) => UpdateNodeComment(node.BlueprintNodeId, comment),
             (node, oldName, newName, value) => UpdateDefinitionNode(node, oldName, newName, value),
             (node, name) => UpdateUsageNodeName(node, name),
-            (node, value) => UpdateUsageConstValue(node, value))
+            (node, value) => UpdateUsageConstValue(node, value),
+            node => AddDictPair(node),
+            (node, row) => RemoveDictPair(node, row))
         {
             BlueprintNodeId = node.Id,
             NodeType = node.NodeType,
@@ -1744,6 +1812,13 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                     nodeVm.ApplyDefinitionFromContract(vn.VarName, vn.VarType, vn.DefaultValue, vn.VarInitialValue);
                     Log.Information("[BPEditVM] ConvertNode definition var: id={Id} name={Name} default={Def} user={User}",
                         node.Id, vn.VarName, vn.DefaultValue, vn.VarInitialValue);
+                    break;
+                case BuiltinFunctionNode fn when fn.FunctionName == "DictNew":
+                    // DictNew definition node (T8): header shows `var {DeclName}`; the
+                    // key/value rows are rebuilt from the Key{i}/Value{i} pins below.
+                    fn.Properties.TryGetValue("DeclName", out var declName);
+                    nodeVm.ApplyDefinitionFromContract(declName, "dict", null, null);
+                    RebuildDictPairs(nodeVm, fn);
                     break;
             }
         }
@@ -1803,8 +1878,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _connectorToContract[connector] = (nodeId, pinId);
     }
 
-    /// <summary>
-    /// Writes an edited inline default value back to the Contract pin (P5-A1). The
+    /// <summary>Writes an edited inline default value back to the Contract pin (P5-A1). The
     /// working blueprint is the authoritative copy, so any later Reverse → KS
     /// round-trip picks the new literal up automatically.
     /// </summary>
@@ -1816,6 +1890,76 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (pin != null)
             pin.DefaultValue = value;
         NotifyBlueprintEdited();
+    }
+
+    // ── DictNew key/value pair editing (T8) ──
+
+    /// <summary>
+    /// Appends a new Key/Value pair to a DictNew node: Contract + VM double-write via
+    /// the shared paired-group appender (same machinery as TryExpandVariadicSide),
+    /// then the row VMs are rebuilt from the updated pins. DictNew's Key/Value pins are
+    /// hidden (definition node) — the pair editor on the card is the only handle.
+    /// </summary>
+    private void AddDictPair(BlueprintNodeVMV6 nodeVm)
+    {
+        if (_workingBlueprint == null) return;
+        var fn = _workingBlueprint.Nodes
+            .FirstOrDefault(n => n.Id == nodeVm.BlueprintNodeId) as BuiltinFunctionNode;
+        if (fn == null || fn.FunctionName != "DictNew") return;
+
+        AppendVariadicGroup(fn, nodeVm, VariadicPairHelper.DictNewSpec);
+        RebuildDictPairs(nodeVm, fn);
+        NotifyBlueprintEdited();
+    }
+
+    /// <summary>
+    /// Removes a Key/Value row and its Contract pins/VM connectors from a DictNew node.
+    /// Definition nodes never wire, so no connections can reference the removed pins.
+    /// </summary>
+    private void RemoveDictPair(BlueprintNodeVMV6 nodeVm, DictPairRowVM row)
+    {
+        if (_workingBlueprint == null) return;
+        var fn = _workingBlueprint.Nodes
+            .FirstOrDefault(n => n.Id == nodeVm.BlueprintNodeId) as BuiltinFunctionNode;
+        if (fn == null || fn.FunctionName != "DictNew") return;
+
+        RemoveDictPin(fn, nodeVm, row.KeyPinId);
+        RemoveDictPin(fn, nodeVm, row.ValuePinId);
+        nodeVm.DictPairs.Remove(row);
+        NotifyBlueprintEdited();
+    }
+
+    private void RemoveDictPin(BuiltinFunctionNode fn, BlueprintNodeVMV6 nodeVm, string? pinId)
+    {
+        if (string.IsNullOrEmpty(pinId)) return;
+        var pin = fn.InputPins.Find(p => p.Id == pinId);
+        if (pin == null) return;
+        fn.InputPins.Remove(pin);
+        if (_contractToConnector.TryGetValue((fn.Id, pinId), out var connector))
+        {
+            nodeVm.Input.Remove(connector);
+            _connectorToContract.Remove(connector);
+            _contractToConnector.Remove((fn.Id, pinId));
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds a DictNew node's key/value row VMs from its Key{i}/Value{i} input pins
+    /// (T8 load path). Rows are loaded with ApplyFromContract (no edit callbacks) — a
+    /// load must never write the freshly built VM state back over the Contract values.
+    /// </summary>
+    private void RebuildDictPairs(BlueprintNodeVMV6 nodeVm, BuiltinFunctionNode fn)
+    {
+        nodeVm.DictPairs.Clear();
+        foreach (var key in fn.InputPins.Where(p => p.Name.StartsWith("Key", StringComparison.Ordinal)))
+        {
+            if (!int.TryParse(key.Name["Key".Length..], out var idx)) continue;
+            var value = fn.InputPins.Find(p => p.Name == $"Value{idx}");
+            if (value == null) continue;
+            var row = new DictPairRowVM((pinId, text) => UpdatePinDefaultValue(fn.Id, pinId, text));
+            row.ApplyFromContract(key.Id, value.Id, key.DefaultValue, value.DefaultValue);
+            nodeVm.DictPairs.Add(row);
+        }
     }
 
     /// <summary>Writes an edited node comment back to the Contract node (P5-B2, trailing comment).</summary>
