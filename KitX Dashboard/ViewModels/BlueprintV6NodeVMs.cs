@@ -415,8 +415,10 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
 
     /// <summary>
     /// Editable referenced name for usage VariableNodes (VariableNode.VarName).
-    /// Backed by a ComboBox of declared const/var names; edits write back to the
-    /// Contract so Reverse re-emits the reference under the new name.
+    /// Backed by an AutoCompleteBox of declared const/var names; edits write back to
+    /// the Contract so Reverse re-emits the reference under the new name. The header
+    /// title mirrors the change (same `PubVar: {name}` format as the renderer's
+    /// GetDisplayTitle) so the read-only title and the editor never diverge.
     /// </summary>
     private string? _usageName;
     public string? UsageName
@@ -429,8 +431,8 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             OnPropertyChanged();
             if (!string.IsNullOrWhiteSpace(value))
             {
-                DisplayTitle = value;
-                Title = value;
+                DisplayTitle = $"PubVar: {value}";
+                Title = DisplayTitle;
             }
             _onUsageNameEdited?.Invoke(this, value);
         }

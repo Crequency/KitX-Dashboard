@@ -885,14 +885,15 @@
                                                                            Opacity="0.8"
                                                                            Width="34"
                                                                            VerticalAlignment="Center" />
-                                                                <ComboBox ItemsSource="{Binding DataContext.BlueprintVM.DefinitionNames, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                          Text="{Binding UsageName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                                          IsEditable="True"
-                                                                          FontSize="10"
-                                                                          Width="110"
-                                                                          Padding="2,0"
-                                                                          VerticalAlignment="Center"
-                                                                          ToolTip.Tip="选择或输入引用的变量/常量名" />
+                                                                <AutoCompleteBox ItemsSource="{Binding DataContext.BlueprintVM.DefinitionNames, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                                 Text="{Binding UsageName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                 FilterMode="Contains"
+                                                                                 MaxDropDownHeight="160"
+                                                                                 FontSize="10"
+                                                                                 Width="110"
+                                                                                 Padding="2,0"
+                                                                                 VerticalAlignment="Center"
+                                                                                 ToolTip.Tip="选择或输入引用的变量/常量名" />
                                                             </StackPanel>
                                                         </StackPanel>
                                                         <!-- Usage ConstNode: literal value editor (2026-08-03) -->
