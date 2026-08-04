@@ -875,9 +875,13 @@
                                                             </StackPanel>
                                                         </StackPanel>
                                                         <!-- Usage VariableNode: referenced name selector (2026-08-03).
-                                                             Three states: idle TextBlock (click to edit) ↔ editing
-                                                             AutoCompleteBox (Enter commits / Esc cancels / blur commits).
-                                                             Invalid names are rejected by the VM and rolled back. -->
+                                                             Entry into editing is EXPLICIT via the Edit icon button (the
+                                                             text itself is never a click target — the editor must not
+                                                             fight the canvas for pointer/focus; the dropdown Popup never
+                                                             takes focus, so no premature commit on selection). States:
+                                                             idle name + Edit button ↔ editing AutoCompleteBox (Enter
+                                                             commits / Esc cancels / blur commits). Invalid names are
+                                                             rejected by the VM and rolled back. -->
                                                         <StackPanel IsVisible="{Binding IsUsageVariableNode}"
                                                                     Margin="0,5,0,0"
                                                                     Spacing="3">
@@ -892,17 +896,25 @@
                                                                            FontSize="10"
                                                                            MinWidth="60"
                                                                            VerticalAlignment="Center"
-                                                                           Cursor="Hand"
                                                                            TextTrimming="CharacterEllipsis"
-                                                                           PointerPressed="OnUsageNameIndicatorPressed" />
+                                                                           ToolTip.Tip="引用的变量/常量/dict 名（点击右侧编辑按钮修改）" />
                                                                 <TextBlock Text="选择变量…"
                                                                            IsVisible="{Binding ShowUsageNamePlaceholder}"
                                                                            FontSize="10"
                                                                            MinWidth="60"
                                                                            Opacity="0.5"
-                                                                           VerticalAlignment="Center"
-                                                                           Cursor="Hand"
-                                                                           PointerPressed="OnUsageNameIndicatorPressed" />
+                                                                           VerticalAlignment="Center" />
+                                                                <!-- Explicit Edit entry (Material icon, same pattern as the
+                                                                     comment indicator): while editing it acts as a commit
+                                                                     button; clicking elsewhere commits via blur. -->
+                                                                <icon:MaterialIcon Width="14"
+                                                                                   Height="14"
+                                                                                   Kind="Pencil"
+                                                                                   VerticalAlignment="Center"
+                                                                                   Cursor="Hand"
+                                                                                   Opacity="0.8"
+                                                                                   ToolTip.Tip="编辑引用的名称"
+                                                                                   PointerPressed="OnUsageNameEditButtonPressed" />
                                                                 <AutoCompleteBox Text="{Binding UsageEditText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                                  ItemsSource="{Binding DataContext.BlueprintVM.DefinitionNames, RelativeSource={RelativeSource AncestorType=Window}}"
                                                                                  IsVisible="{Binding IsEditingUsageName}"
@@ -912,10 +924,10 @@
                                                                                  Width="110"
                                                                                  Padding="2,0"
                                                                                  VerticalAlignment="Center"
-                                                                                  GotFocus="OnUsageNameBoxGotFocus"
-                                                                                  KeyDown="OnUsageNameEditKeyDown"
-                                                                                  LostFocus="OnUsageNameEditLostFocus"
-                                                                                  ToolTip.Tip="选择或输入引用的变量/常量/dict 名" />
+                                                                                 GotFocus="OnUsageNameBoxGotFocus"
+                                                                                 KeyDown="OnUsageNameEditKeyDown"
+                                                                                 LostFocus="OnUsageNameEditLostFocus"
+                                                                                 ToolTip.Tip="选择或输入引用的变量/常量/dict 名" />
                                                             </StackPanel>
                                                             <!-- Usage-kind label: const references are read-only (no Value
                                                                  input pin), var references are read/write. The kind is FIXED

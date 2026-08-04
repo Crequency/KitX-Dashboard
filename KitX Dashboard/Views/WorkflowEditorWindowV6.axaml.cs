@@ -710,23 +710,22 @@ public partial class WorkflowEditorWindowV6 : Window
             node.CommitCommentCommand.Execute(null);
     }
 
-    // ── Inline usage-name editing (2026-08-03: click-to-edit + validation) ──
+    // ── Inline usage-name editing (2026-08-03: explicit Edit-button entry) ──
 
-    private void OnUsageNameIndicatorPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    private void OnUsageNameEditButtonPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
         if (sender is not Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node }) return;
-        // Toggle: clicking again while editing commits; otherwise begin editing (same
-        // pattern as the comment editor).
+        // The Edit icon button is the ONLY entry into editing — no click-on-text
+        // shortcut, so the editor never has to fight the canvas for focus.
         if (node.IsEditingUsageName)
             node.CommitUsageNameCommand.Execute(null);
         else
         {
             node.StartEditUsageNameCommand.Execute(null);
-            // Focus must be DEFERRED: IsEditingUsageName flips IsVisible on the next
-            // layout pass, and an invisible control cannot take focus synchronously —
-            // the immediate Focus() above silently no-ops and the editor never gets
-            // the keyboard. Posting lets the AutoCompleteBox become visible first;
-            // its GotFocus handler then opens the candidate dropdown.
+            // Deferred focus: IsEditingUsageName flips IsVisible on the next layout
+            // pass, and an invisible control cannot take focus synchronously. Posting
+            // lets the AutoCompleteBox become visible; its GotFocus handler then opens
+            // the candidate dropdown.
             if (sender is Avalonia.Controls.Control c && c.Parent is Avalonia.Controls.Panel panel)
             {
                 var box = panel.GetVisualDescendants().OfType<AutoCompleteBox>().FirstOrDefault();
@@ -734,8 +733,7 @@ public partial class WorkflowEditorWindowV6 : Window
                     Dispatcher.UIThread.Post(() => box.Focus());
             }
         }
-        // Do not let the press propagate to the canvas (node select/drag would steal
-        // focus from the just-shown editor).
+        // Keep the press on the button (never propagate to the canvas select/drag).
         e.Handled = true;
     }
 
@@ -744,7 +742,8 @@ public partial class WorkflowEditorWindowV6 : Window
         if (sender is not AutoCompleteBox box) return;
         // Open the candidate dropdown on focus: full list when the text is empty,
         // filtered list otherwise. Post-dispatched so the dropdown opens after the
-        // focus-driven layout/render settles.
+        // focus-driven layout/render settles. The Popup does NOT steal focus from
+        // the box (Popup stays non-focusable), so no LostFocus storm here.
         Dispatcher.UIThread.Post(() => box.IsDropDownOpen = true);
     }
 
@@ -765,6 +764,11 @@ public partial class WorkflowEditorWindowV6 : Window
 
     private void OnUsageNameEditLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        // Commit on blur — but ONLY while editing is still active. Escape already
+        // ended the editing state; the LostFocus that fires as the editor hides must
+        // not resurrect the discarded text (CommitUsageName is guarded on
+        // IsEditingUsageName). Likewise the dropdown Popup never takes focus, so a
+        // click into it does not commit prematurely.
         if (sender is Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node })
             node.CommitUsageNameCommand.Execute(null);
     }

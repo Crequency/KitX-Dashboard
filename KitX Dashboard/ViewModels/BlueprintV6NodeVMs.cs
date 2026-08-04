@@ -378,7 +378,11 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         OnPropertyChanged(nameof(ShowUsageNamePlaceholder));
     }
 
-    /// <summary>Begins usage-name editing, seeding the temp text from the current reference.</summary>
+    /// <summary>
+    /// Begins usage-name editing, seeding the temp text from the current reference.
+    /// Entered ONLY via the explicit Edit icon button (no click-on-text shortcut — the
+    /// editor must not fight the canvas for pointer/focus).
+    /// </summary>
     [RelayCommand]
     private void StartEditUsageName()
     {
@@ -386,10 +390,13 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         IsEditingUsageName = true;
     }
 
-    /// <summary>Commits the edited usage name (flows through the UsageName setter → editor callback).</summary>
+    /// <summary>Commits the edited usage name (flows through the UsageName setter → editor callback).
+    /// Guarded: once the editing state has already ended (Esc / explicit cancel), a late
+    /// LostFocus from the disappearing editor must NOT re-commit the discarded text.</summary>
     [RelayCommand]
     private void CommitUsageName()
     {
+        if (!IsEditingUsageName) return;
         IsEditingUsageName = false;
         UsageName = UsageEditText;
     }
