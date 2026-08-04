@@ -266,7 +266,6 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     private readonly Action<BlueprintNodeVMV6, string? /*oldName*/, string? /*newName*/, string? /*value*/>? _onDefinitionEdited;
     private readonly Action<BlueprintNodeVMV6, string?>? _onUsageNameEdited;
     private readonly Action<BlueprintNodeVMV6, string?>? _onUsageValueEdited;
-    private readonly Action<BlueprintNodeVMV6, VariableKind>? _onUsageKindEdited;
     private readonly Action<BlueprintNodeVMV6>? _onAddDictPair;
     private readonly Action<BlueprintNodeVMV6, DictPairRowVM>? _onRemoveDictPair;
 
@@ -321,7 +320,6 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         Action<BlueprintNodeVMV6, string?, string?, string?>? onDefinitionEdited,
         Action<BlueprintNodeVMV6, string?>? onUsageNameEdited,
         Action<BlueprintNodeVMV6, string?>? onUsageValueEdited,
-        Action<BlueprintNodeVMV6, VariableKind>? onUsageKindEdited,
         Action<BlueprintNodeVMV6>? onAddDictPair,
         Action<BlueprintNodeVMV6, DictPairRowVM>? onRemoveDictPair)
     {
@@ -329,7 +327,6 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         _onDefinitionEdited = onDefinitionEdited;
         _onUsageNameEdited = onUsageNameEdited;
         _onUsageValueEdited = onUsageValueEdited;
-        _onUsageKindEdited = onUsageKindEdited;
         _onAddDictPair = onAddDictPair;
         _onRemoveDictPair = onRemoveDictPair;
     }
@@ -614,11 +611,10 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         }
     }
 
-    /// <summary>
-    /// Editable storage-tier kind of a usage VariableNode (const = read-only reference,
-    /// var = read/write reference). Mirrors VariableNode.VarKind; edits write back to
-    /// the Contract and re-shape the Value input pin via the editor callback.
-    /// </summary>
+    /// <summary>Read-only storage-tier kind of this usage VariableNode (const = read-only
+    /// reference, var = read/write reference). FIXED at creation by the palette node type
+    /// ("常量（使用）" vs "变量（使用）") — there is no runtime kind switch; the backend
+    /// renders the same shape for the corresponding KS reference.</summary>
     private VariableKind _usageVarKind = VariableKind.PubVar;
     public VariableKind UsageVarKind
     {
@@ -628,28 +624,18 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             if (_usageVarKind == value) return;
             _usageVarKind = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(UsageKindText));
-            _onUsageKindEdited?.Invoke(this, value);
+            OnPropertyChanged(nameof(IsConstUsageRefNode));
+            OnPropertyChanged(nameof(IsVarUsageRefNode));
         }
     }
 
-    /// <summary>"const"/"var" options for the usage name editor's kind switcher.</summary>
-    public static IReadOnlyList<string> UsageKindOptions { get; } = ["const", "var"];
+    /// <summary>True for a const usage reference node (VarKind=Const, read-only).</summary>
+    public bool IsConstUsageRefNode => !IsDefinition && NodeType == BlueprintNodeType.Variable
+        && _usageVarKind == VariableKind.Const;
 
-    /// <summary>Kind text of the usage VariableNode ("const"/"var"); TwoWay-binding the
-    /// ComboBox's SelectedItem is the edit channel (writes back through UsageVarKind).</summary>
-    public string UsageKindText
-    {
-        get => UsageVarKind == VariableKind.Const ? "const" : "var";
-        set
-        {
-            var kind = string.Equals(value, "const", StringComparison.Ordinal)
-                ? VariableKind.Const
-                : VariableKind.PubVar;
-            if (kind != UsageVarKind)
-                UsageVarKind = kind;
-        }
-    }
+    /// <summary>True for a var usage reference node (VarKind=PubVar, read/write).</summary>
+    public bool IsVarUsageRefNode => !IsDefinition && NodeType == BlueprintNodeType.Variable
+        && _usageVarKind == VariableKind.PubVar;
 
     /// <summary>
     /// Editable literal value for usage ConstNodes (ConstNode.ConstValue). Reverse's
@@ -678,7 +664,12 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         _usageName = varName;
         _usageValue = literalValue;
         if (varKind.HasValue)
+        {
             _usageVarKind = varKind.Value;
+            OnPropertyChanged(nameof(UsageVarKind));
+            OnPropertyChanged(nameof(IsConstUsageRefNode));
+            OnPropertyChanged(nameof(IsVarUsageRefNode));
+        }
         if (!string.IsNullOrEmpty(varName))
         {
             // Usage VariableNode headers mirror the bare referenced name (matches the
@@ -688,19 +679,8 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         }
         OnPropertyChanged(nameof(UsageName));
         OnPropertyChanged(nameof(UsageValue));
-        OnPropertyChanged(nameof(UsageVarKind));
-        OnPropertyChanged(nameof(UsageKindText));
         OnPropertyChanged(nameof(ShowUsageNameText));
         OnPropertyChanged(nameof(ShowUsageNamePlaceholder));
-    }
-
-    /// <summary>Restores just the usage kind from the Contract without invoking edit callbacks.</summary>
-    public void ApplyUsageKindFromContract(VariableKind varKind)
-    {
-        if (_usageVarKind == varKind) return;
-        _usageVarKind = varKind;
-        OnPropertyChanged(nameof(UsageVarKind));
-        OnPropertyChanged(nameof(UsageKindText));
     }
 
     /// <summary>Whether this node is currently executing (debug highlight).</summary>

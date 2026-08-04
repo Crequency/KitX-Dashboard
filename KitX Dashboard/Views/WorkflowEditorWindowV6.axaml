@@ -912,26 +912,31 @@
                                                                                  Width="110"
                                                                                  Padding="2,0"
                                                                                  VerticalAlignment="Center"
-                                                                                 GotFocus="OnUsageNameBoxGotFocus"
-                                                                                 KeyDown="OnUsageNameEditKeyDown"
-                                                                                 LostFocus="OnUsageNameEditLostFocus"
-                                                                                 ToolTip.Tip="选择或输入引用的变量/常量/dict 名" />
+                                                                                  GotFocus="OnUsageNameBoxGotFocus"
+                                                                                  KeyDown="OnUsageNameEditKeyDown"
+                                                                                  LostFocus="OnUsageNameEditLostFocus"
+                                                                                  ToolTip.Tip="选择或输入引用的变量/常量/dict 名" />
                                                             </StackPanel>
-                                                            <!-- const/var kind switcher: const references are read-only
-                                                                 (no Value input pin), var references are read/write. -->
+                                                            <!-- Usage-kind label: const references are read-only (no Value
+                                                                 input pin), var references are read/write. The kind is FIXED
+                                                                 by the palette node type — two distinct usage node types,
+                                                                 mirroring the definition nodes (no runtime switch). -->
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <TextBlock Text="Kind"
                                                                            FontSize="9"
                                                                            Opacity="0.8"
                                                                            Width="34"
                                                                            VerticalAlignment="Center" />
-                                                                <ComboBox ItemsSource="{Binding UsageKindOptions}"
-                                                                          SelectedItem="{Binding UsageKindText, Mode=TwoWay}"
-                                                                          FontSize="10"
-                                                                          Width="52"
-                                                                          Padding="2,0"
-                                                                          VerticalAlignment="Center"
-                                                                          ToolTip.Tip="const=只读引用；var=可读写引用" />
+                                                                <TextBlock Text="const"
+                                                                           IsVisible="{Binding IsConstUsageRefNode}"
+                                                                           FontSize="10"
+                                                                           Foreground="#4FC3F7"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBlock Text="var"
+                                                                           IsVisible="{Binding IsVarUsageRefNode}"
+                                                                           FontSize="10"
+                                                                           Foreground="#81C784"
+                                                                           VerticalAlignment="Center" />
                                                             </StackPanel>
                                                         </StackPanel>
                                                         <!-- Usage ConstNode: literal value editor (2026-08-03) -->

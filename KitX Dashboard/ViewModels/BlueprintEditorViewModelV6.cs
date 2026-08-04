@@ -593,8 +593,13 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         // second entry creates one with DeclKind="const" (2026-08-03).
         PaletteItems.Add(new PaletteItemV6("DictNew（新建 dict 定义）", "Definition", "DictNew"));
         PaletteItems.Add(new PaletteItemV6("DictNew（新建 const dict 定义）", "Definition", "DictNew", "const"));
-        PaletteItems.Add(new PaletteItemV6("常量（字面量）", "Usage", "literal"));
+        // Usage references (2026-08-03): TWO distinct usage node types mirroring the
+        // definition nodes — a const reference (VarKind=Const, read-only, no Value
+        // input pin) and a var reference (VarKind=PubVar, read/write). The literal
+        // ConstNode ("常量（字面量）") remains a separate pipeline-source node.
+        PaletteItems.Add(new PaletteItemV6("常量（使用）", "Usage", "constRef"));
         PaletteItems.Add(new PaletteItemV6("变量（使用）", "Usage", "var"));
+        PaletteItems.Add(new PaletteItemV6("常量（字面量）", "Usage", "literal"));
         if (_registry != null)
             foreach (var fn in _registry.All.OrderBy(f => f.Name))
                 PaletteItems.Add(new PaletteItemV6(fn.Name, "Builtin", fn.Name));
@@ -618,8 +623,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             },
             "Usage" => item.FunctionName switch
             {
-                "literal" => NodeFactoryV6.CreateConstUsageNode(),
+                "constRef" => NodeFactoryV6.CreateConstUsageVariableNode(),
                 "var" => NodeFactoryV6.CreateVariableUsageNode(),
+                "literal" => NodeFactoryV6.CreateConstUsageNode(),
                 _ => null!,
             },
             "Builtin" when _registry != null
@@ -1792,7 +1798,6 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             (node, oldName, newName, value) => UpdateDefinitionNode(node, oldName, newName, value),
             (node, name) => UpdateUsageNodeName(node, name),
             (node, value) => UpdateUsageConstValue(node, value),
-            (node, kind) => UpdateUsageNodeKind(node, kind),
             node => AddDictPair(node),
             (node, row) => RemoveDictPair(node, row))
         {
@@ -2020,84 +2025,6 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         vn.VarName = trimmed;
         ErrorInfo = null;
         NotifyBlueprintEdited();
-    }
-
-    /// <summary>
-    /// Writes an edited usage-VariableNode's kind (const/var) back to the Contract and
-    /// syncs the Value input pin shape (2026-08-03): const references are READ-ONLY —
-    /// their Value input pin is removed (only Value out remains); var references keep
-    /// the Value in/out pair. The backend renders the same shape on load; this keeps
-    /// the canvas consistent for edits made at runtime. Switching to const is rejected
-    /// while a data edge feeds the Value input pin (a const cannot be written).
-    /// </summary>
-    private void UpdateUsageNodeKind(BlueprintNodeVMV6 node, VariableKind kind)
-    {
-        if (_workingBlueprint == null) return;
-        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
-        if (contractNode is not VariableNode vn) return;
-
-        if (kind == VariableKind.Const)
-        {
-            var valueIn = vn.InputPins.Find(p => p.Name == "Value" && p.Direction == PinDirection.Input);
-            if (valueIn != null
-                && _workingBlueprint.Connections.Any(c => c.TargetNodeId == vn.Id && c.TargetPinId == valueIn.Id))
-            {
-                node.ApplyUsageKindFromContract(vn.VarKind);
-                ErrorInfo = new ConstraintViolation("PRE", "UsageKind",
-                    "无法切换到 const：该引用节点的 Value 输入 pin 已有数据连线（const 引用只读）。",
-                    new[] { vn.Id }, null, "请先断开该数据连线再切换。", "#FF9800");
-                return;
-            }
-        }
-
-        vn.VarKind = kind;
-        UpdateUsageNodeValuePinShape(node, vn, kind);
-        ErrorInfo = null;
-        NotifyBlueprintEdited();
-    }
-
-    /// <summary>
-    /// Double-writes the usage VariableNode's Value INPUT pin shape between const
-    /// (absent — read-only reference) and var (present — writable reference), keeping
-    /// the Contract pins and the VM connectors in tandem (same pattern as RemoveDictPin
-    /// and the pin creation loop in ConvertNodeToViewModel).
-    /// </summary>
-    private void UpdateUsageNodeValuePinShape(BlueprintNodeVMV6 node, VariableNode vn, VariableKind kind)
-    {
-        var valueIn = vn.InputPins.Find(p => p.Name == "Value" && p.Direction == PinDirection.Input);
-        if (kind == VariableKind.Const && valueIn != null)
-        {
-            vn.InputPins.Remove(valueIn);
-            if (_contractToConnector.TryGetValue((vn.Id, valueIn.Id), out var connector))
-            {
-                node.Input.Remove(connector);
-                _connectorToContract.Remove(connector);
-                _contractToConnector.Remove((vn.Id, valueIn.Id));
-            }
-        }
-        else if (kind == VariableKind.PubVar && valueIn == null)
-        {
-            var pin = new BlueprintPin
-            {
-                Id = Guid.NewGuid().ToString(),
-                Name = "Value",
-                Direction = PinDirection.Input,
-                Type = PinType.Any,
-            };
-            vn.InputPins.Add(pin);
-            var connector = new BlueprintConnectorVMV6(
-                (conn, value) => UpdatePinDefaultValue(vn.Id, conn.OriginalPinId, value))
-            {
-                Title = pin.Name,
-                PinType = pin.Type,
-                OriginalPinId = pin.Id,
-                DefaultValue = pin.DefaultValue,
-                Flow = ConnectorViewModelBase.ConnectorFlow.Input,
-                IsDefinitionPin = false,
-            };
-            node.Input.Add(connector);
-            RegisterConnector(connector, vn.Id, pin.Id);
-        }
     }
 
     /// <summary>

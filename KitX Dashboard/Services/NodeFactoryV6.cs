@@ -142,6 +142,34 @@ public static class NodeFactoryV6
     }
 
     /// <summary>
+    /// Creates a const USAGE node (a READ-ONLY reference to a const-block declaration).
+    /// VarKind=Const and NO Value INPUT pin (matching the backend's usage shape for
+    /// const references — a write into a const is structurally impossible); Value
+    /// output pin carries the read. Exec in/out pins prepended so it can join the exec
+    /// chain. This is a distinct palette node type from the literal ConstNode usage
+    /// ("常量（字面量）").
+    /// </summary>
+    public static VariableNode CreateConstUsageVariableNode()
+    {
+        var n = new VariableNode
+        {
+            Id = NewId(),
+            Name = "const",
+            VarName = string.Empty,
+            VarKind = VariableKind.Const,
+            IsDefinition = false,
+        };
+        // Drop the descriptor-seeded Value INPUT pin (read-only reference): the
+        // constructor seeds Value in + Value out; remove the input before the Exec
+        // pins are prepended.
+        var valueIn = n.InputPins.Find(p => p.Name == "Value" && p.Direction == PinDirection.Input);
+        if (valueIn is not null) n.InputPins.Remove(valueIn);
+        n.InputPins.Insert(0, MakePin("Exec", PinDirection.Input, PinType.Execution));
+        n.OutputPins.Insert(0, MakePin("Exec", PinDirection.Output, PinType.Execution));
+        return n;
+    }
+
+    /// <summary>
     /// Creates a DictNew DEFINITION node (a <c>var name = { ... }</c> dict literal
     /// declaration). No Exec pins — like const/var definitions it lives in the
     /// initialisation region and is NOT registered in BuiltinFunctionRegistry (IR

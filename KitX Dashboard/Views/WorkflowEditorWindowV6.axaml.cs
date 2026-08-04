@@ -722,22 +722,30 @@ public partial class WorkflowEditorWindowV6 : Window
         else
         {
             node.StartEditUsageNameCommand.Execute(null);
-            // Focus the editor so its GotFocus handler can open the full suggestion list.
+            // Focus must be DEFERRED: IsEditingUsageName flips IsVisible on the next
+            // layout pass, and an invisible control cannot take focus synchronously —
+            // the immediate Focus() above silently no-ops and the editor never gets
+            // the keyboard. Posting lets the AutoCompleteBox become visible first;
+            // its GotFocus handler then opens the candidate dropdown.
             if (sender is Avalonia.Controls.Control c && c.Parent is Avalonia.Controls.Panel panel)
             {
                 var box = panel.GetVisualDescendants().OfType<AutoCompleteBox>().FirstOrDefault();
-                box?.Focus();
+                if (box is not null)
+                    Dispatcher.UIThread.Post(() => box.Focus());
             }
         }
+        // Do not let the press propagate to the canvas (node select/drag would steal
+        // focus from the just-shown editor).
+        e.Handled = true;
     }
 
     private void OnUsageNameBoxGotFocus(object? sender, GotFocusEventArgs e)
     {
         if (sender is not AutoCompleteBox box) return;
-        // Empty text: open the FULL candidate list on focus (2026-08-03). Post-dispatched
-        // so the dropdown opens after the focus-driven layout/render settles.
-        if (string.IsNullOrEmpty(box.Text))
-            Dispatcher.UIThread.Post(() => box.IsDropDownOpen = true);
+        // Open the candidate dropdown on focus: full list when the text is empty,
+        // filtered list otherwise. Post-dispatched so the dropdown opens after the
+        // focus-driven layout/render settles.
+        Dispatcher.UIThread.Post(() => box.IsDropDownOpen = true);
     }
 
     private void OnUsageNameEditKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
