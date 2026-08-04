@@ -238,7 +238,7 @@ public static class AppFramework
 
                             if (devicesServer != null)
                             {
-                                devicesServer.ConfigurePort((int)(config.Web.UserSpecifiedPluginsServerPort ?? 0));
+                                devicesServer.ConfigurePort((int)(config.Web.UserSpecifiedDevicesServerPort ?? 0));
                                 devicesServer.Run();
                             }
 
