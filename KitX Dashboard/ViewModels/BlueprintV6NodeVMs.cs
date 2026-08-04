@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Styling;
@@ -265,6 +266,7 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     private readonly Action<BlueprintNodeVMV6, string? /*oldName*/, string? /*newName*/, string? /*value*/>? _onDefinitionEdited;
     private readonly Action<BlueprintNodeVMV6, string?>? _onUsageNameEdited;
     private readonly Action<BlueprintNodeVMV6, string?>? _onUsageValueEdited;
+    private readonly Action<BlueprintNodeVMV6, VariableKind>? _onUsageKindEdited;
     private readonly Action<BlueprintNodeVMV6>? _onAddDictPair;
     private readonly Action<BlueprintNodeVMV6, DictPairRowVM>? _onRemoveDictPair;
 
@@ -319,6 +321,7 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         Action<BlueprintNodeVMV6, string?, string?, string?>? onDefinitionEdited,
         Action<BlueprintNodeVMV6, string?>? onUsageNameEdited,
         Action<BlueprintNodeVMV6, string?>? onUsageValueEdited,
+        Action<BlueprintNodeVMV6, VariableKind>? onUsageKindEdited,
         Action<BlueprintNodeVMV6>? onAddDictPair,
         Action<BlueprintNodeVMV6, DictPairRowVM>? onRemoveDictPair)
     {
@@ -326,6 +329,7 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         _onDefinitionEdited = onDefinitionEdited;
         _onUsageNameEdited = onUsageNameEdited;
         _onUsageValueEdited = onUsageValueEdited;
+        _onUsageKindEdited = onUsageKindEdited;
         _onAddDictPair = onAddDictPair;
         _onRemoveDictPair = onRemoveDictPair;
     }
@@ -353,6 +357,53 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         IsEditingComment = false;
     }
 
+    // ── Inline usage-name editing (2026-08-03: click-to-edit, same pattern as comment) ──
+
+    /// <summary>Whether the usage name selector is in editing mode (AutoCompleteBox visible).</summary>
+    [ObservableProperty]
+    private bool _isEditingUsageName;
+
+    /// <summary>Temporary text during usage-name editing (committed via CommitUsageName).</summary>
+    [ObservableProperty]
+    private string _usageEditText = string.Empty;
+
+    /// <summary>Idle-state display of the referenced name (click to edit).</summary>
+    public bool ShowUsageNameText
+        => !IsEditingUsageName && !string.IsNullOrEmpty(UsageName);
+
+    /// <summary>Idle-state placeholder shown while no name is referenced yet.</summary>
+    public bool ShowUsageNamePlaceholder
+        => !IsEditingUsageName && string.IsNullOrEmpty(UsageName);
+
+    partial void OnIsEditingUsageNameChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowUsageNameText));
+        OnPropertyChanged(nameof(ShowUsageNamePlaceholder));
+    }
+
+    /// <summary>Begins usage-name editing, seeding the temp text from the current reference.</summary>
+    [RelayCommand]
+    private void StartEditUsageName()
+    {
+        UsageEditText = UsageName ?? string.Empty;
+        IsEditingUsageName = true;
+    }
+
+    /// <summary>Commits the edited usage name (flows through the UsageName setter → editor callback).</summary>
+    [RelayCommand]
+    private void CommitUsageName()
+    {
+        IsEditingUsageName = false;
+        UsageName = UsageEditText;
+    }
+
+    /// <summary>Discards the usage-name edit.</summary>
+    [RelayCommand]
+    private void CancelEditUsageName()
+    {
+        IsEditingUsageName = false;
+    }
+
     /// <summary>
     /// True for *definition* nodes (const/var block declarations). Definition nodes
     /// have no Exec pins and no connections — they live in the initialisation region,
@@ -367,9 +418,27 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             ? $"{DefinitionKindText} {DefinitionName ?? DisplayTitle}"
             : DisplayTitle;
 
+    /// <summary>
+    /// DeclKind of a DictNew definition node ("const"/"var"), loaded from the Contract's
+    /// Properties["DeclKind"] (2026-08-03: const dict declarations are legal KS and the
+    /// backend renders them; the header must reflect the declared kind, not hardcode "var").
+    /// </summary>
+    private string? _dictDeclKind;
+    public string? DictDeclKind
+    {
+        get => _dictDeclKind;
+        set
+        {
+            if (_dictDeclKind == value) return;
+            _dictDeclKind = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(DefinitionKindText));
+        }
+    }
+
     /// <summary>Definition keyword ("const" / "var") for the header title (R8).</summary>
     public string DefinitionKindText => IsDictNewNode
-        ? "var"   // DictNew definitions default to DeclKind="var" (T8)
+        ? DictDeclKind ?? "var"
         : NodeType switch
         {
             BlueprintNodeType.Const => "const",
@@ -453,17 +522,21 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     /// notifications WITHOUT invoking the edit callbacks — a load must never
     /// write the (still uninitialised) VM state back over the Contract values.
     /// </summary>
-    public void ApplyDefinitionFromContract(string? name, string? type, string? defaultValue, string? userValue)
+    public void ApplyDefinitionFromContract(string? name, string? type, string? defaultValue,
+        string? userValue, string? dictDeclKind = null)
     {
         _definitionName = name;
         _definitionType = type;
         _defaultValue = defaultValue;
         _definitionValue = userValue;
+        _dictDeclKind = dictDeclKind;
         OnPropertyChanged(nameof(DefinitionName));
         OnPropertyChanged(nameof(DefinitionType));
         OnPropertyChanged(nameof(DefaultValue));
         OnPropertyChanged(nameof(DefinitionValue));
         OnPropertyChanged(nameof(DefinitionTitle));
+        OnPropertyChanged(nameof(DictDeclKind));
+        OnPropertyChanged(nameof(DefinitionKindText));
     }
 
     /// <summary>
@@ -517,8 +590,9 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     /// Editable referenced name for usage VariableNodes (VariableNode.VarName).
     /// Backed by an AutoCompleteBox of declared const/var names; edits write back to
     /// the Contract so Reverse re-emits the reference under the new name. The header
-    /// title mirrors the change (same `PubVar: {name}` format as the renderer's
-    /// GetDisplayTitle) so the read-only title and the editor never diverge.
+    /// title mirrors the bare referenced name (same as the renderer's GetDisplayTitle —
+    /// no "PubVar:" prefix). Invalid edits are rejected by the editor callback, which
+    /// rolls the VM back via <see cref="ApplyUsageFromContract"/>.
     /// </summary>
     private string? _usageName;
     public string? UsageName
@@ -529,12 +603,51 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             if (_usageName == value) return;
             _usageName = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ShowUsageNameText));
+            OnPropertyChanged(nameof(ShowUsageNamePlaceholder));
             if (!string.IsNullOrWhiteSpace(value))
             {
-                DisplayTitle = $"PubVar: {value}";
-                Title = DisplayTitle;
+                DisplayTitle = value;
+                Title = value;
             }
             _onUsageNameEdited?.Invoke(this, value);
+        }
+    }
+
+    /// <summary>
+    /// Editable storage-tier kind of a usage VariableNode (const = read-only reference,
+    /// var = read/write reference). Mirrors VariableNode.VarKind; edits write back to
+    /// the Contract and re-shape the Value input pin via the editor callback.
+    /// </summary>
+    private VariableKind _usageVarKind = VariableKind.PubVar;
+    public VariableKind UsageVarKind
+    {
+        get => _usageVarKind;
+        set
+        {
+            if (_usageVarKind == value) return;
+            _usageVarKind = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(UsageKindText));
+            _onUsageKindEdited?.Invoke(this, value);
+        }
+    }
+
+    /// <summary>"const"/"var" options for the usage name editor's kind switcher.</summary>
+    public static IReadOnlyList<string> UsageKindOptions { get; } = ["const", "var"];
+
+    /// <summary>Kind text of the usage VariableNode ("const"/"var"); TwoWay-binding the
+    /// ComboBox's SelectedItem is the edit channel (writes back through UsageVarKind).</summary>
+    public string UsageKindText
+    {
+        get => UsageVarKind == VariableKind.Const ? "const" : "var";
+        set
+        {
+            var kind = string.Equals(value, "const", StringComparison.Ordinal)
+                ? VariableKind.Const
+                : VariableKind.PubVar;
+            if (kind != UsageVarKind)
+                UsageVarKind = kind;
         }
     }
 
@@ -555,13 +668,39 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         }
     }
 
-    /// <summary>Applies usage-node state straight from the Contract during load (no edit callbacks).</summary>
-    public void ApplyUsageFromContract(string? varName, string? literalValue)
+    /// <summary>
+    /// Applies usage-node state straight from the Contract during load (no edit callbacks)
+    /// and is the rollback path for rejected name edits — restores the VM's name, kind
+    /// and header title from the Contract's current values.
+    /// </summary>
+    public void ApplyUsageFromContract(string? varName, string? literalValue, VariableKind? varKind = null)
     {
         _usageName = varName;
         _usageValue = literalValue;
+        if (varKind.HasValue)
+            _usageVarKind = varKind.Value;
+        if (!string.IsNullOrEmpty(varName))
+        {
+            // Usage VariableNode headers mirror the bare referenced name (matches the
+            // contract's GetDisplayTitle — no "PubVar:" prefix).
+            DisplayTitle = varName;
+            Title = varName;
+        }
         OnPropertyChanged(nameof(UsageName));
         OnPropertyChanged(nameof(UsageValue));
+        OnPropertyChanged(nameof(UsageVarKind));
+        OnPropertyChanged(nameof(UsageKindText));
+        OnPropertyChanged(nameof(ShowUsageNameText));
+        OnPropertyChanged(nameof(ShowUsageNamePlaceholder));
+    }
+
+    /// <summary>Restores just the usage kind from the Contract without invoking edit callbacks.</summary>
+    public void ApplyUsageKindFromContract(VariableKind varKind)
+    {
+        if (_usageVarKind == varKind) return;
+        _usageVarKind = varKind;
+        OnPropertyChanged(nameof(UsageVarKind));
+        OnPropertyChanged(nameof(UsageKindText));
     }
 
     /// <summary>Whether this node is currently executing (debug highlight).</summary>

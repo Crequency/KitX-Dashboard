@@ -710,6 +710,57 @@ public partial class WorkflowEditorWindowV6 : Window
             node.CommitCommentCommand.Execute(null);
     }
 
+    // ── Inline usage-name editing (2026-08-03: click-to-edit + validation) ──
+
+    private void OnUsageNameIndicatorPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        if (sender is not Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node }) return;
+        // Toggle: clicking again while editing commits; otherwise begin editing (same
+        // pattern as the comment editor).
+        if (node.IsEditingUsageName)
+            node.CommitUsageNameCommand.Execute(null);
+        else
+        {
+            node.StartEditUsageNameCommand.Execute(null);
+            // Focus the editor so its GotFocus handler can open the full suggestion list.
+            if (sender is Avalonia.Controls.Control c && c.Parent is Avalonia.Controls.Panel panel)
+            {
+                var box = panel.GetVisualDescendants().OfType<AutoCompleteBox>().FirstOrDefault();
+                box?.Focus();
+            }
+        }
+    }
+
+    private void OnUsageNameBoxGotFocus(object? sender, GotFocusEventArgs e)
+    {
+        if (sender is not AutoCompleteBox box) return;
+        // Empty text: open the FULL candidate list on focus (2026-08-03). Post-dispatched
+        // so the dropdown opens after the focus-driven layout/render settles.
+        if (string.IsNullOrEmpty(box.Text))
+            Dispatcher.UIThread.Post(() => box.IsDropDownOpen = true);
+    }
+
+    private void OnUsageNameEditKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    {
+        if (sender is not Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node }) return;
+        if (e.Key == Avalonia.Input.Key.Enter)
+        {
+            node.CommitUsageNameCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Avalonia.Input.Key.Escape)
+        {
+            node.CancelEditUsageNameCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnUsageNameEditLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node })
+            node.CommitUsageNameCommand.Execute(null);
+    }
+
     // ── GroupComment note: drag / collapse / edit / hover (2026-08-02) ──
 
     private bool _gcDragging;

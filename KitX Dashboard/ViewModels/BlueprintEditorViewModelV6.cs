@@ -142,6 +142,13 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                                                  && !string.IsNullOrEmpty(item):
                     DefinitionNames.Add(item);
                     break;
+                case BuiltinFunctionNode fn when fn.FunctionName == "DictNew"
+                                                 && fn.Properties.TryGetValue("DeclName", out var decl)
+                                                 && !string.IsNullOrEmpty(decl):
+                    // DictNew DeclNames are declared names too (any DeclKind, matching
+                    // the backend KS130 check) — usage nodes may reference dicts.
+                    DefinitionNames.Add(decl);
+                    break;
             }
         }
     }
@@ -582,7 +589,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         // DictNew definition node (T8): a `var name = { ... }` dict literal declaration.
         // Hardcoded here — NOT in the builtin registry (IR primitive, see
         // NodeFactoryV6.CreateDictNewDefinitionNode), so registry.AllNames can't feed it.
+        // const dict declarations (`const { dict d = {...} }`) are legal KS — the
+        // second entry creates one with DeclKind="const" (2026-08-03).
         PaletteItems.Add(new PaletteItemV6("DictNew（新建 dict 定义）", "Definition", "DictNew"));
+        PaletteItems.Add(new PaletteItemV6("DictNew（新建 const dict 定义）", "Definition", "DictNew", "const"));
         PaletteItems.Add(new PaletteItemV6("常量（字面量）", "Usage", "literal"));
         PaletteItems.Add(new PaletteItemV6("变量（使用）", "Usage", "var"));
         if (_registry != null)
@@ -603,7 +613,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             {
                 "const" => NodeFactoryV6.CreateConstDefinitionNode(),
                 "var" => NodeFactoryV6.CreateVariableDefinitionNode(),
-                "DictNew" => NodeFactoryV6.CreateBuiltinFunctionNode(item.FunctionName!, _registry),
+                "DictNew" => NodeFactoryV6.CreateDictNewDefinitionNode(item.Tag == "const" ? "const" : "var"),
                 _ => null!,
             },
             "Usage" => item.FunctionName switch
@@ -1782,6 +1792,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             (node, oldName, newName, value) => UpdateDefinitionNode(node, oldName, newName, value),
             (node, name) => UpdateUsageNodeName(node, name),
             (node, value) => UpdateUsageConstValue(node, value),
+            (node, kind) => UpdateUsageNodeKind(node, kind),
             node => AddDictPair(node),
             (node, row) => RemoveDictPair(node, row))
         {
@@ -1814,10 +1825,11 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                         node.Id, vn.VarName, vn.DefaultValue, vn.VarInitialValue);
                     break;
                 case BuiltinFunctionNode fn when fn.FunctionName == "DictNew":
-                    // DictNew definition node (T8): header shows `var {DeclName}`; the
-                    // key/value rows are rebuilt from the Key{i}/Value{i} pins below.
+                    // DictNew definition node (T8): header shows `{DeclKind} {DeclName}`;
+                    // the key/value rows are rebuilt from the Key{i}/Value{i} pins below.
                     fn.Properties.TryGetValue("DeclName", out var declName);
-                    nodeVm.ApplyDefinitionFromContract(declName, "dict", null, null);
+                    fn.Properties.TryGetValue("DeclKind", out var declKind);
+                    nodeVm.ApplyDefinitionFromContract(declName, "dict", null, null, declKind);
                     RebuildDictPairs(nodeVm, fn);
                     break;
             }
@@ -1830,7 +1842,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             switch (node)
             {
                 case VariableNode vn:
-                    nodeVm.ApplyUsageFromContract(vn.VarName, null);
+                    nodeVm.ApplyUsageFromContract(vn.VarName, null, vn.VarKind);
                     break;
                 case ConstNode cn:
                     nodeVm.ApplyUsageFromContract(null, cn.ConstValue);
@@ -1975,16 +1987,117 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>
     /// Writes an edited usage-VariableNode's referenced name back to the Contract
     /// (2026-08-03). Renaming a usage node re-points its reference — Reverse re-emits
-    /// the identifier under the new name. Unnamed/blank edits are ignored (the node
-    /// keeps its previous reference).
+    /// the identifier under the new name.
+    /// Validation (2026-08-03): the name must match a declared const/var/dict/Each-item
+    /// name exactly (Ordinal case sensitivity). Invalid input is REJECTED — the VM is
+    /// rolled back to the Contract's current reference (no callback, so nothing is
+    /// written) and a visible error is raised.
     /// </summary>
     private void UpdateUsageNodeName(BlueprintNodeVMV6 node, string? newName)
     {
-        if (_workingBlueprint == null || string.IsNullOrWhiteSpace(newName)) return;
+        if (_workingBlueprint == null) return;
         var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
-        if (contractNode is VariableNode vn)
-            vn.VarName = newName.Trim();
+        if (contractNode is not VariableNode vn) return;
+
+        var trimmed = newName?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            node.ApplyUsageFromContract(vn.VarName, null);
+            ErrorInfo = new ConstraintViolation("PRE", "UsageName",
+                "变量引用名称不能为空。",
+                new[] { vn.Id }, null, "请从列表中选择已声明的名称。", "#FF9800");
+            return;
+        }
+        if (!UsageNameValidator.IsDeclaredName(trimmed, DefinitionNames))
+        {
+            node.ApplyUsageFromContract(vn.VarName, null);
+            ErrorInfo = new ConstraintViolation("PRE", "UsageName",
+                $"未找到引用的声明 '{trimmed}'。",
+                new[] { vn.Id }, null, "请从列表中选择已声明的 const/var/dict 名称。", "#FF9800");
+            return;
+        }
+
+        vn.VarName = trimmed;
+        ErrorInfo = null;
         NotifyBlueprintEdited();
+    }
+
+    /// <summary>
+    /// Writes an edited usage-VariableNode's kind (const/var) back to the Contract and
+    /// syncs the Value input pin shape (2026-08-03): const references are READ-ONLY —
+    /// their Value input pin is removed (only Value out remains); var references keep
+    /// the Value in/out pair. The backend renders the same shape on load; this keeps
+    /// the canvas consistent for edits made at runtime. Switching to const is rejected
+    /// while a data edge feeds the Value input pin (a const cannot be written).
+    /// </summary>
+    private void UpdateUsageNodeKind(BlueprintNodeVMV6 node, VariableKind kind)
+    {
+        if (_workingBlueprint == null) return;
+        var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == node.BlueprintNodeId);
+        if (contractNode is not VariableNode vn) return;
+
+        if (kind == VariableKind.Const)
+        {
+            var valueIn = vn.InputPins.Find(p => p.Name == "Value" && p.Direction == PinDirection.Input);
+            if (valueIn != null
+                && _workingBlueprint.Connections.Any(c => c.TargetNodeId == vn.Id && c.TargetPinId == valueIn.Id))
+            {
+                node.ApplyUsageKindFromContract(vn.VarKind);
+                ErrorInfo = new ConstraintViolation("PRE", "UsageKind",
+                    "无法切换到 const：该引用节点的 Value 输入 pin 已有数据连线（const 引用只读）。",
+                    new[] { vn.Id }, null, "请先断开该数据连线再切换。", "#FF9800");
+                return;
+            }
+        }
+
+        vn.VarKind = kind;
+        UpdateUsageNodeValuePinShape(node, vn, kind);
+        ErrorInfo = null;
+        NotifyBlueprintEdited();
+    }
+
+    /// <summary>
+    /// Double-writes the usage VariableNode's Value INPUT pin shape between const
+    /// (absent — read-only reference) and var (present — writable reference), keeping
+    /// the Contract pins and the VM connectors in tandem (same pattern as RemoveDictPin
+    /// and the pin creation loop in ConvertNodeToViewModel).
+    /// </summary>
+    private void UpdateUsageNodeValuePinShape(BlueprintNodeVMV6 node, VariableNode vn, VariableKind kind)
+    {
+        var valueIn = vn.InputPins.Find(p => p.Name == "Value" && p.Direction == PinDirection.Input);
+        if (kind == VariableKind.Const && valueIn != null)
+        {
+            vn.InputPins.Remove(valueIn);
+            if (_contractToConnector.TryGetValue((vn.Id, valueIn.Id), out var connector))
+            {
+                node.Input.Remove(connector);
+                _connectorToContract.Remove(connector);
+                _contractToConnector.Remove((vn.Id, valueIn.Id));
+            }
+        }
+        else if (kind == VariableKind.PubVar && valueIn == null)
+        {
+            var pin = new BlueprintPin
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = "Value",
+                Direction = PinDirection.Input,
+                Type = PinType.Any,
+            };
+            vn.InputPins.Add(pin);
+            var connector = new BlueprintConnectorVMV6(
+                (conn, value) => UpdatePinDefaultValue(vn.Id, conn.OriginalPinId, value))
+            {
+                Title = pin.Name,
+                PinType = pin.Type,
+                OriginalPinId = pin.Id,
+                DefaultValue = pin.DefaultValue,
+                Flow = ConnectorViewModelBase.ConnectorFlow.Input,
+                IsDefinitionPin = false,
+            };
+            node.Input.Add(connector);
+            RegisterConnector(connector, vn.Id, pin.Id);
+        }
     }
 
     /// <summary>
@@ -2057,7 +2170,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 }
 
 /// <summary>A palette entry describing a creatable node.</summary>
-public sealed record PaletteItemV6(string DisplayName, string Kind, string? FunctionName);
+public sealed record PaletteItemV6(string DisplayName, string Kind, string? FunctionName, string? Tag = null);
 
 /// <summary>A dynamic palette entry for a plugin trigger (replaces the EntryNode on the canvas).</summary>
 public sealed record PluginTriggerPaletteItemV6(string PluginName, string TriggerName)

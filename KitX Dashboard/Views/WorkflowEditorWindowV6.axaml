@@ -874,7 +874,10 @@
                                                                           ToolTip.Tip="用户值（留空 = 使用脚本默认值；对应 Variable Constants 栏 UserValue）" />
                                                             </StackPanel>
                                                         </StackPanel>
-                                                        <!-- Usage VariableNode: referenced name selector (2026-08-03) -->
+                                                        <!-- Usage VariableNode: referenced name selector (2026-08-03).
+                                                             Three states: idle TextBlock (click to edit) ↔ editing
+                                                             AutoCompleteBox (Enter commits / Esc cancels / blur commits).
+                                                             Invalid names are rejected by the VM and rolled back. -->
                                                         <StackPanel IsVisible="{Binding IsUsageVariableNode}"
                                                                     Margin="0,5,0,0"
                                                                     Spacing="3">
@@ -884,15 +887,51 @@
                                                                            Opacity="0.8"
                                                                            Width="34"
                                                                            VerticalAlignment="Center" />
-                                                                <AutoCompleteBox ItemsSource="{Binding DataContext.BlueprintVM.DefinitionNames, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                                 Text="{Binding UsageName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                <TextBlock Text="{Binding UsageName}"
+                                                                           IsVisible="{Binding ShowUsageNameText}"
+                                                                           FontSize="10"
+                                                                           MinWidth="60"
+                                                                           VerticalAlignment="Center"
+                                                                           Cursor="Hand"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           PointerPressed="OnUsageNameIndicatorPressed" />
+                                                                <TextBlock Text="选择变量…"
+                                                                           IsVisible="{Binding ShowUsageNamePlaceholder}"
+                                                                           FontSize="10"
+                                                                           MinWidth="60"
+                                                                           Opacity="0.5"
+                                                                           VerticalAlignment="Center"
+                                                                           Cursor="Hand"
+                                                                           PointerPressed="OnUsageNameIndicatorPressed" />
+                                                                <AutoCompleteBox Text="{Binding UsageEditText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                 ItemsSource="{Binding DataContext.BlueprintVM.DefinitionNames, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                                 IsVisible="{Binding IsEditingUsageName}"
                                                                                  FilterMode="Contains"
                                                                                  MaxDropDownHeight="160"
                                                                                  FontSize="10"
                                                                                  Width="110"
                                                                                  Padding="2,0"
                                                                                  VerticalAlignment="Center"
-                                                                                 ToolTip.Tip="选择或输入引用的变量/常量名" />
+                                                                                 GotFocus="OnUsageNameBoxGotFocus"
+                                                                                 KeyDown="OnUsageNameEditKeyDown"
+                                                                                 LostFocus="OnUsageNameEditLostFocus"
+                                                                                 ToolTip.Tip="选择或输入引用的变量/常量/dict 名" />
+                                                            </StackPanel>
+                                                            <!-- const/var kind switcher: const references are read-only
+                                                                 (no Value input pin), var references are read/write. -->
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Kind"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                <ComboBox ItemsSource="{Binding UsageKindOptions}"
+                                                                          SelectedItem="{Binding UsageKindText, Mode=TwoWay}"
+                                                                          FontSize="10"
+                                                                          Width="52"
+                                                                          Padding="2,0"
+                                                                          VerticalAlignment="Center"
+                                                                          ToolTip.Tip="const=只读引用；var=可读写引用" />
                                                             </StackPanel>
                                                         </StackPanel>
                                                         <!-- Usage ConstNode: literal value editor (2026-08-03) -->

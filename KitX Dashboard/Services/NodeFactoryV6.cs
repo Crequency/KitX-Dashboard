@@ -147,10 +147,11 @@ public static class NodeFactoryV6
     /// initialisation region and is NOT registered in BuiltinFunctionRegistry (IR
     /// primitive, per KScript-Blueprint-Correspondence.md). Key/value pairs are edited
     /// on the node card; each pair is a Key{i}/Value{i} input pin whose DefaultValue
-    /// carries the key/value literal text. Default DeclKind is "var" (const semantics
-    /// are a later enhancement); the initial node ships one empty pair (Key0/Value0).
+    /// carries the key/value literal text. DeclKind defaults to "var"; "const" creates
+    /// a const dict declaration (`const { dict d = {...} }`, legal KS — the backend
+    /// renders both kinds). The initial node ships one empty pair (Key0/Value0).
     /// </summary>
-    public static BuiltinFunctionNode CreateDictNewDefinitionNode()
+    public static BuiltinFunctionNode CreateDictNewDefinitionNode(string declKind = "var")
     {
         var n = new BuiltinFunctionNode
         {
@@ -159,7 +160,7 @@ public static class NodeFactoryV6
             FunctionName = "DictNew",
             NodeType = BlueprintNodeType.BuiltinFunction,
         };
-        n.Properties["DeclKind"] = "var";
+        n.Properties["DeclKind"] = declKind;
         n.Properties["DeclName"] = string.Empty;   // same default-name behaviour as CreateVariableDefinitionNode
         foreach (var (pinName, pinType) in VariadicPairHelper.DictNewSpec.EnumeratePair(0))
             n.InputPins.Add(MakePin(pinName, PinDirection.Input, pinType));
