@@ -545,7 +545,12 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 return (null, null,
                     $"KS 解析错误：\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。", null);
             var helpers = new List<HelperFunction>(HelperFunctions);
-            var (ksIr, lowering) = _ksTextLens.ParseLowering(KsSource, helpers);
+            // Re-attach BP-side privileged detached graphs (B1) from the pre-parse IR —
+            // the KS text does not express them, so a KS-mode edit/save after a BP
+            // round-trip would otherwise drop them (symmetric counterpart of the
+            // doc-comment ksPrivileged re-attachment in the BP branch above).
+            var (ksIr, lowering) = _ksTextLens.ParseLowering(KsSource, helpers, _lastIr);
+            _lastIr = ksIr;
             return (ksIr, lowering, null, null);
         }
         catch (Exception ex)
@@ -754,7 +759,11 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 return;
             }
             var helpers = new List<HelperFunction>(HelperFunctions);
-            var ir = _ksTextLens.Parse(KsSource, helpers);
+            // Re-attach BP-side privileged detached graphs (B1) from the pre-switch IR
+            // (symmetric counterpart of the doc-comment re-attachment in SwitchToBlockScript):
+            // the KS text does not express detached sub-graphs, so the re-parse here would
+            // otherwise drop them from the canvas on a KS→BP switch after a BP round-trip.
+            var ir = _ksTextLens.Parse(KsSource, helpers, _lastIr);
             _lastIr = ir;
 
             var bp = _bpGraphLens.Project(ir);
