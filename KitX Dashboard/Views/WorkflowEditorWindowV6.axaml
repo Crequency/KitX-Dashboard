@@ -922,17 +922,25 @@
                                                                                  KeyDown="OnUsageNameEditKeyDown"
                                                                                  ToolTip.Tip="选择或输入引用的变量/常量/dict 名" />
                                                                 <!-- The ONLY interaction entry: toggle start/commit. Fixed in
-                                                                     the right column — it never moves between states. -->
-                                                                <icon:MaterialIcon Grid.Column="2"
-                                                                                   Width="14"
-                                                                                   Height="14"
-                                                                                   Kind="Pencil"
-                                                                                   VerticalAlignment="Center"
-                                                                                   HorizontalAlignment="Center"
-                                                                                   Cursor="Hand"
-                                                                                   Opacity="0.8"
-                                                                                   ToolTip.Tip="编辑引用的名称（编辑中再次点击 = 确认）"
-                                                                                   PointerPressed="OnUsageNameEditButtonPressed" />
+                                                                     the right column — it never moves between states. A Border
+                                                                     wraps the icon so the whole 24px column is clickable
+                                                                     (the raw icon hit-test is only its painted glyphs). -->
+                                                                <Border Grid.Column="2"
+                                                                        Width="24"
+                                                                        Height="22"
+                                                                        VerticalAlignment="Center"
+                                                                        HorizontalAlignment="Stretch"
+                                                                        Cursor="Hand"
+                                                                        Background="Transparent"
+                                                                        ToolTip.Tip="编辑引用的名称（编辑中再次点击 = 确认）"
+                                                                        PointerPressed="OnUsageNameEditButtonPressed">
+                                                                    <icon:MaterialIcon Width="14"
+                                                                                       Height="14"
+                                                                                       Kind="Pencil"
+                                                                                       HorizontalAlignment="Center"
+                                                                                       VerticalAlignment="Center"
+                                                                                       Opacity="0.8" />
+                                                                </Border>
                                                             </Grid>
                                                             <!-- Usage-kind label: const references are read-only (no Value
                                                                  input pin), var references are read/write. The kind is FIXED
