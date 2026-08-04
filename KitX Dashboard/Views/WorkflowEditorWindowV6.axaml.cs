@@ -710,41 +710,42 @@ public partial class WorkflowEditorWindowV6 : Window
             node.CommitCommentCommand.Execute(null);
     }
 
-    // ── Inline usage-name editing (2026-08-03: explicit Edit-button entry) ──
+    // ── Inline usage-name editing (2026-08-03, REWRITTEN): pointer-driven only.
+    //
+    // No focus events drive any state. The Pencil button is the ONLY entry and the
+    // ONLY toggle: idle → Pencil = start editing (box focused for keyboard, dropdown
+    // opens when the box has focus and empty text — pure convenience, never a state
+    // driver); editing → Pencil / Enter = commit; Esc = cancel. The row is a fixed
+    // three-column Grid, so the button never moves between states.
 
     private void OnUsageNameEditButtonPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
         if (sender is not Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node }) return;
-        // The Edit icon button is the ONLY entry into editing — no click-on-text
-        // shortcut, so the editor never has to fight the canvas for focus.
         if (node.IsEditingUsageName)
+        {
             node.CommitUsageNameCommand.Execute(null);
+        }
         else
         {
             node.StartEditUsageNameCommand.Execute(null);
-            // Deferred focus: IsEditingUsageName flips IsVisible on the next layout
-            // pass, and an invisible control cannot take focus synchronously. Posting
-            // lets the AutoCompleteBox become visible; its GotFocus handler then opens
-            // the candidate dropdown.
+            // Focus is deferred (IsEditingUsageName flips IsVisible on the next layout
+            // pass; an invisible box cannot take focus synchronously). Posting focuses
+            // the now-visible box so the user can type immediately; its KeyDown then
+            // handles Enter/Esc. Focus is a convenience only — no logic depends on it.
             if (sender is Avalonia.Controls.Control c && c.Parent is Avalonia.Controls.Panel panel)
             {
                 var box = panel.GetVisualDescendants().OfType<AutoCompleteBox>().FirstOrDefault();
                 if (box is not null)
-                    Dispatcher.UIThread.Post(() => box.Focus());
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        box.Focus();
+                        if (string.IsNullOrEmpty(box.Text))
+                            box.IsDropDownOpen = true;
+                    });
             }
         }
-        // Keep the press on the button (never propagate to the canvas select/drag).
+        // Keep the press on the button — never propagate to the canvas select/drag.
         e.Handled = true;
-    }
-
-    private void OnUsageNameBoxGotFocus(object? sender, GotFocusEventArgs e)
-    {
-        if (sender is not AutoCompleteBox box) return;
-        // Open the candidate dropdown on focus: full list when the text is empty,
-        // filtered list otherwise. Post-dispatched so the dropdown opens after the
-        // focus-driven layout/render settles. The Popup does NOT steal focus from
-        // the box (Popup stays non-focusable), so no LostFocus storm here.
-        Dispatcher.UIThread.Post(() => box.IsDropDownOpen = true);
     }
 
     private void OnUsageNameEditKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
@@ -760,17 +761,6 @@ public partial class WorkflowEditorWindowV6 : Window
             node.CancelEditUsageNameCommand.Execute(null);
             e.Handled = true;
         }
-    }
-
-    private void OnUsageNameEditLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        // Commit on blur — but ONLY while editing is still active. Escape already
-        // ended the editing state; the LostFocus that fires as the editor hides must
-        // not resurrect the discarded text (CommitUsageName is guarded on
-        // IsEditingUsageName). Likewise the dropdown Popup never takes focus, so a
-        // click into it does not commit prematurely.
-        if (sender is Avalonia.Controls.Control { DataContext: BlueprintNodeVMV6 node })
-            node.CommitUsageNameCommand.Execute(null);
     }
 
     // ── GroupComment note: drag / collapse / edit / hover (2026-08-02) ──
