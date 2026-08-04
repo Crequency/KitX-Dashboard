@@ -531,8 +531,12 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 // Mirror BP definition-node user values into the panel BEFORE running so
                 // the override layer applies them at runtime.
                 SyncUserValuesFromBlueprint(bp);
-                var (ir, idMap) = _bpGraphLens.ReverseWithNodePaths(bp, HelperFunctions);
+                // Re-attach KS-side privileged doc comments (block doc / file-end) from
+                // the pre-reversal IR (T7 K5): the BP graph does not project them, so a
+                // full reversal would otherwise drop them from saved/runtime IRs.
+                var (ir, idMap) = _bpGraphLens.ReverseWithNodePaths(bp, HelperFunctions, _lastIr);
                 // ScriptCompiler fallback infers PubVarTypes from ir.GlobalVars.
+                _lastIr = ir;
                 return (ir, null, null, idMap);
             }
 
@@ -610,7 +614,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                     // reverse projection only carries the KS script defaults.
                     SyncUserValuesFromBlueprint(bp);
                     RestoreTriggerFromBlueprint(bp);
-                    var ir = _bpGraphLens.Reverse(bp, HelperFunctions);
+                    // Re-attach KS-side privileged doc comments (block doc / file-end) from
+                    // the pre-reversal IR — the BP graph does not project them (T7 K5), so
+                    // a full reversal would otherwise drop them on the BP round-trip.
+                    var ir = _bpGraphLens.Reverse(bp, HelperFunctions, _lastIr);
                     Log.Information("[WorkflowEditorVMV6] BP→KS: bp={BpNodes} nodes, ir={Consts} consts/{Vars} vars/{Stmts} stmts",
                         bp.Nodes.Count, ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length);
                     _lastIr = ir;
