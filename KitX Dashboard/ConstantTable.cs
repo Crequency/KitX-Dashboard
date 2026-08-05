@@ -31,18 +31,6 @@ internal static class ConstantTable
 
     internal static string ThirdPartyLicenseFilePath => KitX.Core.ConstantTable.ThirdPartyLicenseFilePath;
 
-    internal static bool IsExchangingDeviceKey
-    {
-        get => KitX.Core.ConstantTable.IsExchangingDeviceKey;
-        set => KitX.Core.ConstantTable.IsExchangingDeviceKey = value;
-    }
-
-    internal static string? ExchangeDeviceKeyCode
-    {
-        get => KitX.Core.ConstantTable.ExchangeDeviceKeyCode;
-        set => KitX.Core.ConstantTable.ExchangeDeviceKeyCode = value;
-    }
-
     internal static int DevicesServerPort
     {
         get => KitX.Core.ConstantTable.DevicesServerPort;

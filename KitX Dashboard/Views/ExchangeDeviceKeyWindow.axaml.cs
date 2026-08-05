@@ -72,8 +72,6 @@ public partial class ExchangeDeviceKeyWindow : Window
         {
             if (code.Equals(e.Key))
             {
-                ConstantTable.ExchangeDeviceKeyCode = null;
-
                 Dispatcher.UIThread.Post(Close);
             }
         });
@@ -82,8 +80,6 @@ public partial class ExchangeDeviceKeyWindow : Window
 
         waittingAcceptingDeviceKeyTimer.Elapsed += (_, _) =>
         {
-            ConstantTable.ExchangeDeviceKeyCode = null;
-
             Dispatcher.UIThread.Post(Close);
         };
 
