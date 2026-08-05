@@ -44,11 +44,19 @@ public static class UIStateService
             return;
 
         var eventService = App.GetService<IEventService>();
-        eventService.Subscribe(EventNames.OnExiting, (s, e) => window.Close());
+
+        // D5: the singleton EventService must not keep a reference to closed windows —
+        // unsubscribe from OnExiting when the window closes.
+        EventHandler<EventArgs> onExitingHandler = (s, e) => window.Close();
+        eventService.Subscribe(EventNames.OnExiting, onExitingHandler);
 
         Windows.Add(window);
 
-        window.Closed += (_, _) => Windows.Remove(window);
+        window.Closed += (_, _) =>
+        {
+            Windows.Remove(window);
+            eventService.Unsubscribe(EventNames.OnExiting, onExitingHandler);
+        };
 
         if (showDialog && owner is not null)
             window.ShowDialog(owner);

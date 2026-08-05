@@ -601,12 +601,33 @@ public partial class WorkflowEditorWindowV6 : Window
         }, token);
     }
 
+    /// <summary>
+    /// True while the close path is inside the save-then-close sequence; lets the
+    /// re-entrant Closing event (raised by the explicit Close() below) through
+    /// instead of cancelling and re-saving forever (D4).
+    /// </summary>
+    private bool _closingAfterSave;
+
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
+        if (_closingAfterSave)
+            return;
+
         _autoSaveCts?.Cancel();
         _debounceCts?.Cancel();
+
+        // D4: an async void handler cannot extend the close — the window is already
+        // gone when SaveAsync completes, so a quick reopen may read the stale file.
+        // Cancel the close, save synchronously from the user's perspective, then
+        // close again (guarded against re-entry). SaveAsync swallows its own errors,
+        // so no exception can escape and wedge the close path.
         if (_viewModel.IsDirty)
+        {
+            e.Cancel = true;
+            _closingAfterSave = true;
             await _viewModel.SaveAsync();
+            Close();
+        }
     }
 
     // ── Keyboard shortcuts ──

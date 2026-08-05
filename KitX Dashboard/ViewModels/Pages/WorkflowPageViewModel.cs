@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -19,13 +20,16 @@ using Serilog;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class WorkflowPageViewModel : ViewModelBase
+internal class WorkflowPageViewModel : ViewModelBase, IDisposable
 {
     private readonly IWorkflowStorageService _storageService;
     private readonly IWorkflowManagementService _workflowService;
     private readonly IEventService _eventService;
     private readonly IPluginServer _pluginServer;
     private readonly ITriggerManager _triggerManager;
+
+    /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe (D5).</summary>
+    private readonly NotifyCollectionChangedEventHandler _workflowCasesChangedHandler;
 
     /// <summary>
     /// Real-time activity log shown at the bottom of the Workflow page. Only populated
@@ -82,6 +86,14 @@ internal class WorkflowPageViewModel : ViewModelBase
         _eventService = eventService;
         _pluginServer = pluginServer;
         _triggerManager = triggerManager;
+
+        // D5: keep the handler as a named field so Dispose can unsubscribe it.
+        _workflowCasesChangedHandler = (_, _) =>
+        {
+            NoWorkflow_TipHeight = WorkflowCases.Count == 0 ? 300 : 0;
+            WorkflowCount = WorkflowCases.Count;
+            this.RaisePropertyChanged(nameof(WorkflowCountTip));
+        };
 
         InitCommands();
         InitEvents();
@@ -140,36 +152,15 @@ internal class WorkflowPageViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        WorkflowCases.CollectionChanged += (_, _) =>
-        {
-            NoWorkflow_TipHeight = WorkflowCases.Count == 0 ? 300 : 0;
-            WorkflowCount = WorkflowCases.Count;
-            this.RaisePropertyChanged(nameof(WorkflowCountTip));
-        };
+        WorkflowCases.CollectionChanged += _workflowCasesChangedHandler;
 
-        _eventService.Subscribe(EventNames.LanguageChanged, (s, e) =>
-        {
-            this.RaisePropertyChanged(nameof(WorkflowCountTip));
-        });
+        _eventService.Subscribe(EventNames.LanguageChanged, OnLanguageChanged);
 
         // Listen for rename events from editor windows
-        _eventService.Subscribe(EventNames.WorkflowRenamed, (s, e) =>
-        {
-            if (e is WorkflowRenamedEventArgs args)
-                SyncWorkflowMetadata(args.WorkflowId, args.NewName, null, null);
-        });
+        _eventService.Subscribe(EventNames.WorkflowRenamed, OnWorkflowRenamed);
 
         // Listen for save events to sync metadata changes
-        _eventService.Subscribe(EventNames.WorkflowDataSaved, (s, e) =>
-        {
-            if (e is WorkflowSavedEventArgs args)
-            {
-                SyncWorkflowMetadata(args.WorkflowId, args.WorkflowName, args.Description, args.Author);
-                // P3-δ: the editor persists TriggerConfig inside the .kcs envelope; refresh
-                // the card's trigger badge after save (WorkflowSavedEventArgs carries no trigger).
-                SyncWorkflowTriggerConfig(args.WorkflowId);
-            }
-        });
+        _eventService.Subscribe(EventNames.WorkflowDataSaved, OnWorkflowDataSaved);
 
         // Listen for workflow execution results
         _eventService.Subscribe(EventNames.WorkflowExecutionResult, OnWorkflowExecutionResult);
@@ -179,6 +170,47 @@ internal class WorkflowPageViewModel : ViewModelBase
 
         // Listen for plugin unregistration to set error state on dependent workflows
         _eventService.Subscribe(EventNames.PluginUnregistered, OnPluginUnregistered);
+    }
+
+    // ── Event handlers (named methods so Dispose can unsubscribe) ──
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        this.RaisePropertyChanged(nameof(WorkflowCountTip));
+    }
+
+    private void OnWorkflowRenamed(object? sender, EventArgs e)
+    {
+        if (e is WorkflowRenamedEventArgs args)
+            SyncWorkflowMetadata(args.WorkflowId, args.NewName, null, null);
+    }
+
+    private void OnWorkflowDataSaved(object? sender, EventArgs e)
+    {
+        if (e is WorkflowSavedEventArgs args)
+        {
+            SyncWorkflowMetadata(args.WorkflowId, args.WorkflowName, args.Description, args.Author);
+            // P3-δ: the editor persists TriggerConfig inside the .kcs envelope; refresh
+            // the card's trigger badge after save (WorkflowSavedEventArgs carries no trigger).
+            SyncWorkflowTriggerConfig(args.WorkflowId);
+        }
+    }
+
+    /// <summary>
+    /// Unsubscribes every subscription made in <see cref="InitEvents"/>. The page VM is
+    /// DI-transient and recreated on each navigation; without this the singleton
+    /// <see cref="IEventService"/> would accumulate subscriptions (and VM references)
+    /// for every disposed instance until process exit (D5).
+    /// </summary>
+    public void Dispose()
+    {
+        WorkflowCases.CollectionChanged -= _workflowCasesChangedHandler;
+        _eventService.Unsubscribe(EventNames.LanguageChanged, OnLanguageChanged);
+        _eventService.Unsubscribe(EventNames.WorkflowRenamed, OnWorkflowRenamed);
+        _eventService.Unsubscribe(EventNames.WorkflowDataSaved, OnWorkflowDataSaved);
+        _eventService.Unsubscribe(EventNames.WorkflowExecutionResult, OnWorkflowExecutionResult);
+        _eventService.Unsubscribe(EventNames.PluginRegistered, OnPluginRegistered);
+        _eventService.Unsubscribe(EventNames.PluginUnregistered, OnPluginUnregistered);
     }
 
     private async Task LoadWorkflowsAsync()

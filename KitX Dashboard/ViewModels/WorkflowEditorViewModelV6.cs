@@ -178,6 +178,14 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     public bool IsPaused { get => _isPaused; set => SetProperty(ref _isPaused, value); }
     public ObservableCollection<RuntimeVariableItem> RuntimeVariables { get; } = [];
 
+    /// <summary>
+    /// O(1) name → item index backing <see cref="RuntimeVariables"/>. The panel itself
+    /// stays an ObservableCollection for binding; updates mutate the indexed item in
+    /// place (its properties raise change notifications), so a hot loop writing the
+    /// same variable no longer pays O(n) FirstOrDefault scans per write (D2).
+    /// </summary>
+    private readonly Dictionary<string, RuntimeVariableItem> _runtimeVariableIndex = new();
+
     // ── KS Source ──
 
     public string KsSource
@@ -1112,20 +1120,29 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         // publish runtime updates via OnVarChanged, so declarations alone would leave
         // the panel blank for workflows without assignments.
         RuntimeVariables.Clear();
+        _runtimeVariableIndex.Clear();
         foreach (var (name, c) in overriddenIr.Constants)
-            RuntimeVariables.Add(new RuntimeVariableItem
+        {
+            var constItem = new RuntimeVariableItem
             {
                 Name = name,
                 Value = c.InitialValueExpression ?? (c.DictInitializer is not null ? "{...}" : "null"),
                 LastUpdated = DateTime.Now,
-            });
+            };
+            RuntimeVariables.Add(constItem);
+            _runtimeVariableIndex[name] = constItem;
+        }
         foreach (var (name, g) in overriddenIr.GlobalVars)
-            RuntimeVariables.Add(new RuntimeVariableItem
+        {
+            var varItem = new RuntimeVariableItem
             {
                 Name = name,
                 Value = g.InitialValueExpression ?? (g.DictInitializer is not null ? "{...}" : ""),
                 LastUpdated = DateTime.Now,
-            });
+            };
+            RuntimeVariables.Add(varItem);
+            _runtimeVariableIndex[name] = varItem;
+        }
 
         IsDebugging = true;
         IsPaused = false;
@@ -1165,26 +1182,82 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     // ── Debug event callbacks (P4-β) ──
 
+    // D2: free-run throttling. NodeExecuting/NodeExecuted fire once per executed
+    // statement — a Continue over a 10k-iteration loop would otherwise enqueue
+    // ~20k Dispatcher posts the UI can never keep up with. During free-run the
+    // pending statement ids are coalesced into a 16 ms time window (at most one
+    // batch flush per window); step mode stays immediate so single-stepping
+    // always highlights the exact statement.
+    private const double HighlightFlushIntervalMs = 16;
+
+    private readonly object _highlightSync = new();
+    private string? _pendingExecutingStatementId;
+    private string? _pendingExecutedStatementId;
+    private DateTime _lastHighlightFlush = DateTime.MinValue;
+    private volatile bool _freeRunning;
+
     private void OnDebugNodeExecuting(string statementId)
     {
-        Dispatcher.UIThread.Post(() =>
+        bool postNow;
+        lock (_highlightSync)
         {
-            BlueprintVM.FindNodeById(statementId)?.IsExecuting = true;
-            IsPaused = _debugController?.IsPaused ?? false;
-        });
+            _pendingExecutingStatementId = statementId;
+            postNow = ShouldFlushHighlight();
+        }
+        if (postNow)
+            Dispatcher.UIThread.Post(FlushPendingHighlights);
     }
 
     private void OnDebugNodeExecuted(string statementId)
     {
-        Dispatcher.UIThread.Post(() =>
+        bool postNow;
+        lock (_highlightSync)
         {
-            if (BlueprintVM.FindNodeById(statementId) is { } node)
+            _pendingExecutedStatementId = statementId;
+            postNow = ShouldFlushHighlight();
+        }
+        if (postNow)
+            Dispatcher.UIThread.Post(FlushPendingHighlights);
+    }
+
+    /// <summary>
+    /// Decides whether the pending highlight state should be flushed to the UI now.
+    /// In free-run mode updates are batched (at most one flush per 16 ms window); in
+    /// step mode every event flushes immediately. Callers hold <see cref="_highlightSync"/>.
+    /// </summary>
+    private bool ShouldFlushHighlight()
+    {
+        var now = DateTime.UtcNow;
+        if (!_freeRunning || (now - _lastHighlightFlush).TotalMilliseconds >= HighlightFlushIntervalMs)
+        {
+            _lastHighlightFlush = now;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>Applies the coalesced executing/executed statement ids to the blueprint UI.</summary>
+    private void FlushPendingHighlights()
+    {
+        string? executingId, executedId;
+        lock (_highlightSync)
+        {
+            executingId = _pendingExecutingStatementId;
+            executedId = _pendingExecutedStatementId;
+            _pendingExecutingStatementId = null;
+            _pendingExecutedStatementId = null;
+        }
+        if (executingId is not null)
+            BlueprintVM.FindNodeById(executingId)?.IsExecuting = true;
+        if (executedId is not null)
+        {
+            if (BlueprintVM.FindNodeById(executedId) is { } node)
             {
                 node.IsExecuting = false;
                 node.ExecutionCompleted = true;
             }
-            IsPaused = _debugController?.IsPaused ?? false;
-        });
+        }
+        IsPaused = _debugController?.IsPaused ?? false;
     }
 
     /// <summary>
@@ -1194,6 +1267,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// </summary>
     private void OnDebugExecutionPaused()
     {
+        // Any pause (start / step / breakpoint / manual) ends the free-run window:
+        // subsequent highlights must be immediate again.
+        _freeRunning = false;
         Dispatcher.UIThread.Post(() =>
         {
             IsPaused = true;
@@ -1257,20 +1333,21 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     private void UpdateRuntimeVariable(string name, string value)
     {
-        var existing = RuntimeVariables.FirstOrDefault(v => v.Name == name);
-        if (existing != null)
+        if (_runtimeVariableIndex.TryGetValue(name, out var existing))
         {
             existing.Value = value;
             existing.LastUpdated = DateTime.Now;
         }
         else
         {
-            RuntimeVariables.Add(new RuntimeVariableItem
+            var item = new RuntimeVariableItem
             {
                 Name = name,
                 Value = value,
                 LastUpdated = DateTime.Now,
-            });
+            };
+            _runtimeVariableIndex[name] = item;
+            RuntimeVariables.Add(item);
         }
     }
 
@@ -1280,10 +1357,20 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private void DebugPause() => _debugController?.Pause();
 
     [RelayCommand]
-    private void DebugStep() => _debugController?.StepNext();
+    private void DebugStep()
+    {
+        // Step mode: every step must highlight immediately — no throttling.
+        _freeRunning = false;
+        _debugController?.StepNext();
+    }
 
     [RelayCommand]
-    private void DebugContinue() => _debugController?.Continue();
+    private void DebugContinue()
+    {
+        // Free run: highlight updates are coalesced into 16 ms windows (D2).
+        _freeRunning = true;
+        _debugController?.Continue();
+    }
 
     [RelayCommand]
     private void ToggleBreakpoint(BlueprintNodeVMV6? node)
@@ -1320,6 +1407,14 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         BlueprintVM.ClearDebugHighlights();
         BlueprintVM.ClearRuntimeValues();
         RuntimeVariables.Clear();
+        _runtimeVariableIndex.Clear();
+        _freeRunning = false;
+        lock (_highlightSync)
+        {
+            _pendingExecutingStatementId = null;
+            _pendingExecutedStatementId = null;
+            _lastHighlightFlush = DateTime.MinValue;
+        }
         _liveDebugOutput = string.Empty;
         IsDebugging = false;
         IsPaused = false;

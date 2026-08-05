@@ -118,6 +118,10 @@ public class FileDialogService : IFileDialogService
 
         dialog.Content = panel;
 
+        // D3: the title-bar X close button bypasses both buttons — without this the
+        // caller would await tcs.Task forever. Resolve with null (same as Cancel).
+        dialog.Closed += (_, _) => tcs.TrySetResult(null);
+
         await dialog.ShowDialog(owner);
         return await tcs.Task;
     }
