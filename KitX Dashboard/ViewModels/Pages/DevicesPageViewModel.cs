@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
-using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Device;
 using KitX.Core.Device;
 using KitX.Dashboard.Services;
@@ -14,17 +13,14 @@ namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class DevicesPageViewModel : ViewModelBase
 {
-    private readonly IConfigService _configService;
     private readonly IDeviceDiscoveryService? _discoveryService;
-    private readonly IDeviceServer? _deviceServer;
+    private readonly INetworkService _networkService;
 
     public DevicesPageViewModel()
     {
-        _configService = ConfigService;
-
         // Get services from DI
         _discoveryService = App.GetService<IDeviceDiscoveryService>();
-        _deviceServer = App.GetService<IDeviceServer>();
+        _networkService = App.GetService<INetworkService>();
 
         InitCommands();
 
@@ -35,31 +31,18 @@ internal class DevicesPageViewModel : ViewModelBase
     {
         RestartDevicesServerCommand = ReactiveCommand.Create(async () =>
         {
-            if (_discoveryService is null && _deviceServer is null)
-                return;
-
-            // Stop servers
-            _deviceServer?.Stop();
-            _discoveryService?.Stop();
-
-            await Task.Delay(_configService.AppConfig.Web.UdpSendFrequency + 200);
+            // Server stop/restart orchestration (including the UDP settle delay)
+            // lives in Core's INetworkService; the UI only clears the device list.
+            await _networkService.RestartDevicesServersAsync();
 
             DeviceCases.Clear();
-
-            // Restart servers
-            _discoveryService?.Run();
-            _deviceServer?.Run();
         });
 
         StopDevicesServerCommand = ReactiveCommand.Create(async () =>
         {
-            if (_discoveryService is null && _deviceServer is null)
-                return;
-
-            _deviceServer?.Stop();
-            _discoveryService?.Stop();
-
-            await Task.Delay(_configService.AppConfig.Web.UdpSendFrequency + 200);
+            // Stops the discovery + devices servers only; the plugin server is
+            // intentionally left untouched (matches the previous behavior).
+            await _networkService.StopDevicesServersAsync();
 
             DeviceCases.Clear();
         });

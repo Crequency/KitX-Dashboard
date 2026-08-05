@@ -14,12 +14,12 @@ using KitX.Core.Contract.Workflow;
 using KitX.Core.Event;
 using KitX.Dashboard.Services;
 using KitX.WorkflowV6.Backend.Debugging;
-using KitX.WorkflowV6.Backend.RoslynBackend;
 using KitX.WorkflowV6.Builtin;
 using KitX.WorkflowV6.Ir;
 using KitX.WorkflowV6.Ir.Lowering;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
+using KitX.WorkflowV6.Services;
 using Serilog;
 using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
 
@@ -47,7 +47,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private readonly IPluginServer? _pluginServer;
     private readonly KsTextLens _ksTextLens;
     private readonly BpGraphLens _bpGraphLens;
-    private readonly StructuredRoslynBackend? _executionBackend;
+    private readonly WorkflowRunner? _runner;
     private CancellationTokenSource? _cancellationTokenSource;
     private RealBlueprintDebugger? _debugController;
     private bool _isDebugging;
@@ -120,8 +120,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         // dirty — otherwise closing the window silently drops every BP change.
         BlueprintVM.BlueprintEdited += () => IsDirty = true;
 
-        // Resolve the v6 execution backend (shared interface points elsewhere; use concrete type).
-        try { _executionBackend = App.GetService<StructuredRoslynBackend>(); } catch { /* host without DI */ }
+        // Resolve the shared workflow execution path (constant overrides + backend).
+        try { _runner = App.GetService<WorkflowRunner>(); } catch { /* host without DI */ }
 
         _ksSource = DefaultSource;
 
@@ -960,17 +960,17 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     // ── Toolbar commands ──
 
     /// <summary>
-    /// Parses the current workflow (KS or BP mode), applies constant overrides,
-    /// and executes via StructuredRoslynBackend on a background thread.
-    /// ExecuteAsync is synchronous internally (Roslyn compile + Invoke), so we
-    /// offload it via Task.Run to avoid blocking the UI thread.
+    /// Parses the current workflow (KS or BP mode) and executes it via the shared
+    /// WorkflowRunner (constant overrides + StructuredRoslynBackend) on a background
+    /// thread. ExecuteAsync is synchronous internally (Roslyn compile + Invoke), so
+    /// we offload it via Task.Run to avoid blocking the UI thread.
     /// </summary>
     [RelayCommand]
     private async Task RunAsync()
     {
-        if (_executionBackend is null)
+        if (_runner is null)
         {
-            ExecutionOutput = "[v6] StructuredRoslynBackend 未注入，无法执行。";
+            ExecutionOutput = "[v6] WorkflowRunner 未注入，无法执行。";
             return;
         }
 
@@ -990,7 +990,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             return;
         }
 
-        ir = WorkflowOverrides.ApplyConstantOverrides(ir, GetUserConstantOverridesV6());
+        var overrides = GetUserConstantOverridesV6();
 
         Log.Information("[WorkflowEditorVMV6] Run IR: {Consts} constants, {Vars} vars, {Stmts} statements, lowering={HasLowering}",
             ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length, lowering != null);
@@ -1005,7 +1005,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         try
         {
             var result = await Task.Run(
-                () => _executionBackend.ExecuteAsync(ir, lowering, tokenSource.Token),
+                () => _runner.ExecuteAsync(ir, lowering, overrides, tokenSource.Token),
                 tokenSource.Token).ConfigureAwait(true);
 
             ExecutionOutput = result.IsSuccess
@@ -1049,9 +1049,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             return;
         }
 
-        if (_executionBackend is null)
+        if (_runner is null)
         {
-            ExecutionOutput = "[v6] StructuredRoslynBackend 未注入，无法调试。";
+            ExecutionOutput = "[v6] WorkflowRunner 未注入，无法调试。";
             return;
         }
 
@@ -1064,7 +1064,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             return;
         }
 
-        ir = WorkflowOverrides.ApplyConstantOverrides(ir, GetUserConstantOverridesV6());
+        // The debug canvas + watch panel need the override-applied IR (same content the
+        // runner will execute); execution itself goes through the shared WorkflowRunner.
+        var overrides = GetUserConstantOverridesV6();
+        var overriddenIr = WorkflowOverrides.ApplyConstantOverrides(ir, overrides);
 
         // F1: palette-added BP nodes carry random (non-FNV) IDs that can never match
         // DebugCodegen's statement IDs — reload the canvas from the reversed IR so every
@@ -1086,7 +1089,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 .Select(id => idMap is not null && idMap.TryGetValue(id, out var canonical) ? canonical : id)
                 .ToHashSet();
 
-            ReloadCanvasFromIr(ir);
+            ReloadCanvasFromIr(overriddenIr);
 
             foreach (var n in BlueprintVM.Nodes.OfType<BlueprintNodeVMV6>())
             {
@@ -1113,14 +1116,14 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         // publish runtime updates via OnVarChanged, so declarations alone would leave
         // the panel blank for workflows without assignments.
         RuntimeVariables.Clear();
-        foreach (var (name, c) in ir.Constants)
+        foreach (var (name, c) in overriddenIr.Constants)
             RuntimeVariables.Add(new RuntimeVariableItem
             {
                 Name = name,
                 Value = c.InitialValueExpression ?? (c.DictInitializer is not null ? "{...}" : "null"),
                 LastUpdated = DateTime.Now,
             });
-        foreach (var (name, g) in ir.GlobalVars)
+        foreach (var (name, g) in overriddenIr.GlobalVars)
             RuntimeVariables.Add(new RuntimeVariableItem
             {
                 Name = name,
@@ -1139,7 +1142,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         try
         {
             var result = await Task.Run(
-                () => _executionBackend.ExecuteAsync(ir, lowering, tokenSource.Token, _debugController),
+                () => _runner.ExecuteAsync(ir, lowering, overrides, tokenSource.Token, _debugController),
                 tokenSource.Token).ConfigureAwait(true);
 
             ExecutionOutput = result.IsSuccess

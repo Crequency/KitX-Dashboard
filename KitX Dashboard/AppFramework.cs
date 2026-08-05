@@ -206,8 +206,9 @@ public static class AppFramework
 
         #region Initialize WebManager
 
-        // TODO: [Architecture] Network service startup should be managed through a Core-level
-        // INetworkService or similar unified service, rather than orchestrating individual servers here.
+        // Network startup is orchestrated by the Core-level INetworkService
+        // (startup ordering, DelayStartSeconds, SkipNetworkSystemOnStartup and
+        // port configuration all live in KitX.Core).
         var signalTasksManager = App.GetService<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
         signalTasksManager.SignalRun(
             nameof(SignalsNames.MainWindowInitSignal),
@@ -217,39 +218,7 @@ public static class AppFramework
                 {
                     try
                     {
-                        Thread.Sleep(Convert.ToInt32(config.Web.DelayStartSeconds * 1000));
-
-                        if (!ConstantTable.SkipNetworkSystemOnStartup)
-                        {
-                            // Use DI services instead of WebManager
-                            var discoveryServer = App.GetService<IDeviceDiscoveryService>() as KitX.Core.Device.DevicesDiscoveryServer;
-                            var devicesServer = App.GetService<IDeviceServer>() as KitX.Core.Device.DevicesServer;
-                            var pluginsServer = App.GetService<IPluginServer>() as KitX.Core.Device.PluginsServer;
-
-                            if (discoveryServer != null)
-                            {
-                                discoveryServer.ConfigurePort((int)(config.Web.UserSpecifiedDevicesServerPort ?? 0));
-                                discoveryServer.Run();
-
-                                // DevicesOrganizer is now a DI-registered singleton, auto-initialized via constructor
-                                // No need to call Run() - it starts observing on construction
-                                var organizer = App.GetService<KitX.Core.Device.DevicesOrganizer>();
-                            }
-
-                            if (devicesServer != null)
-                            {
-                                devicesServer.ConfigurePort((int)(config.Web.UserSpecifiedDevicesServerPort ?? 0));
-                                devicesServer.Run();
-                            }
-
-                            if (pluginsServer != null)
-                            {
-                                // ServiceHost ensures all resolution paths return the same singleton
-                                Log.Information("[AppFramework] About to call PluginsServer.Run(). PluginsServer HashCode: {HashCode}", pluginsServer.GetHashCode());
-                                pluginsServer.ConfigurePort((int)(config.Web.UserSpecifiedPluginsServerPort ?? 0));
-                                pluginsServer.Run();
-                            }
-                        }
+                        await App.GetService<INetworkService>().StartAsync();
                     }
                     catch (Exception ex)
                     {
@@ -374,14 +343,8 @@ public static class AppFramework
 
                 Log.CloseAndFlush();
 
-                // Use DI services instead of WebManager
-                var pluginsServer = App.GetService<IPluginServer>() as KitX.Core.Device.PluginsServer;
-                var devicesDiscoveryServer = App.GetService<IDeviceDiscoveryService>() as KitX.Core.Device.DevicesDiscoveryServer;
-                var devicesServer = App.GetService<IDeviceServer>() as KitX.Core.Device.DevicesServer;
-
-                pluginsServer?.Stop();
-                devicesServer?.Stop();
-                devicesDiscoveryServer?.Stop();
+                // Network shutdown is orchestrated by the Core-level INetworkService.
+                await App.GetService<INetworkService>().StopAsync();
 
                 ConstantTable.Running = false;
 
