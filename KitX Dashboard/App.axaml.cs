@@ -81,20 +81,9 @@ public partial class App : Application
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
 
-        // S2: WorkflowStorageService — file-based IWorkflowStorageService for KcsFileFormat v2 (IR as storage).
-        services.AddSingleton<KitX.Core.Contract.Workflow.IWorkflowStorageService,
-            KitX.Dashboard.Services.WorkflowStorageService>();
-
-        // S4: WorkflowSessionManager — IWorkflowManagementService orchestrator (run/stop by id
-        // via stored IR + IExecutionBackend). Dispatches v6 .kcs format (v5.1 archived).
-        services.AddSingleton<KitX.Core.Contract.Workflow.IWorkflowManagementService,
-            KitX.Dashboard.Services.WorkflowSessionManager>();
-
-        // S6: TriggerManager — ITriggerManager implementation (rebuilt from the archived
-        // ServiceLocator-based version with constructor injection). Routes plugin
-        // TriggerFired signals to subscribed workflows (P3-δ).
-        services.AddSingleton<KitX.Core.Contract.Workflow.ITriggerManager,
-            KitX.Dashboard.Services.TriggerManager>();
+        // S2/S4/S6 (WorkflowStorageService / WorkflowSessionManager / TriggerManager) are
+        // now registered inside AddKitXWorkflowV6() above (migrated from Dashboard to
+        // KitX.WorkflowV6.Services).
 
         // Register SignalTasksManager for signal-based coordination
         services.AddSingleton<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
