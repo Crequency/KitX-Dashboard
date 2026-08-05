@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
     <sys:String x:Key="Text_MainWindow_Title">KitX приборная доска</sys:String>
     <sys:String x:Key="Text_Public_Enable">включить</sys:String>
     <sys:String x:Key="Text_Public_Disable">инвалид</sys:String>
@@ -209,24 +209,24 @@
     <sys:String x:Key="Text_Settings_Personalise_Theme_Dark">полночь черный(темный)</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_HighContrast">высокий контраст</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_Follow">следовать системе</sys:String>
-    <sys:String x:Key="Text_Settings_Performence">производительность</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web">Настройки, связанные с сетью</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_StartDelay">지연된 시작</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Подключаемый коммуникационный порт</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Порт связи устройства</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Собственные правила IP-фильтрации</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">указанный сетевой адаптер</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">доступные сетевые адаптеры</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">Задержка обновления списка устройств</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Greeting_Interval">Обновление приветствия отложено</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Log">Настройки, связанные с файлом журнала</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSizeUsage">Файл журнала занял место</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSize">Ограничение размера файла журнала</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileMaxCount">лимит файла журнала</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileFlushInterval">Задержка кеша файла журнала</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileLevel">уровень журнала</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Update">Обновить связанные настройки</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">Обновление проверяет количество файлов, обрабатываемых за поток</sys:String>
+    <sys:String x:Key="Text_Settings_Performance">производительность</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web">Настройки, связанные с сетью</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_StartDelay">지연된 시작</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_PluginsServerPort">Подключаемый коммуникационный порт</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesServerPort">Порт связи устройства</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_MyIP_Filter">Собственные правила IP-фильтрации</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_SpecifiedNetworkAdapters">указанный сетевой адаптер</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_AvailableNetworkInterfaces">доступные сетевые адаптеры</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesRefreshDelay">Задержка обновления списка устройств</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Greeting_Interval">Обновление приветствия отложено</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Log">Настройки, связанные с файлом журнала</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSizeUsage">Файл журнала занял место</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSize">Ограничение размера файла журнала</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileMaxCount">лимит файла журнала</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileFlushInterval">Задержка кеша файла журнала</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileLevel">уровень журнала</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Update">Обновить связанные настройки</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">Обновление проверяет количество файлов, обрабатываемых за поток</sys:String>
     <sys:String x:Key="Text_Settings_Update">возобновить</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">Проверить наличие обновлений</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">имя компонента</sys:String>
@@ -275,3 +275,4 @@
     <sys:String x:Key="Text_Greeting_Night_3">Завтра будет хороший день!</sys:String>
     <sys:String x:Key="Text_Greeting_Night_4">все еще поздно ложиться</sys:String>
 </ResourceDictionary>
+

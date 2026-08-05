@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -6,7 +6,6 @@ using Avalonia.Controls;
 using KitX.Core.Contract.Device;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Workflow;
-using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Plugin;

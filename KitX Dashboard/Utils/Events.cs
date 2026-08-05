@@ -1,6 +1,5 @@
 using System;
 using KitX.Core.Contract.Event;
-using KitX.Core.Event;
 using KitX.Dashboard;
 
 namespace KitX.Dashboard.Utils;

@@ -1,12 +1,16 @@
 ﻿namespace KitX.Dashboard.Names;
 
-internal class SignalsNames
+/// <summary>
+/// Signal names for <c>SignalTasksManager</c> coordination. Only the member NAMES are
+/// consumed (via <c>nameof(...)</c>); the values are never read (D13.2).
+/// </summary>
+internal static class SignalsNames
 {
-    internal static string? MainWindowInitSignal { get; }
+    internal const string MainWindowInitSignal = nameof(MainWindowInitSignal);
 
-    internal static string? MainWindowOpenedSignal { get; }
+    internal const string MainWindowOpenedSignal = nameof(MainWindowOpenedSignal);
 
-    internal static string? FinishedFindingNetworkInterfacesSignal { get; }
+    internal const string FinishedFindingNetworkInterfacesSignal = nameof(FinishedFindingNetworkInterfacesSignal);
 
-    internal static string? FileWatcherManagerInitializedSignal { get; }
+    internal const string FileWatcherManagerInitializedSignal = nameof(FileWatcherManagerInitializedSignal);
 }

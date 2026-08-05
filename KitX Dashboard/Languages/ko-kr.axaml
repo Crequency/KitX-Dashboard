@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
     <sys:String x:Key="Text_MainWindow_Title">KitX 대시보드</sys:String>
     <sys:String x:Key="Text_Public_Enable">~할 수 있게 하다</sys:String>
     <sys:String x:Key="Text_Public_Disable">장애가 있는</sys:String>
@@ -209,24 +209,24 @@
     <sys:String x:Key="Text_Settings_Personalise_Theme_Dark">미드나잇 블랙(어두운)</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_HighContrast">고대비</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_Follow">시스템을 따르다</sys:String>
-    <sys:String x:Key="Text_Settings_Performence">성능</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web">네트워크 관련 설정</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_StartDelay">Text_Settings_Performence_Web_StartDelay</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">플러그인 통신 포트</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">장치 통신 포트</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">기본 IP 필터링 규칙</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">지정된 네트워크 어댑터</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">사용 가능한 네트워크 어댑터</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">기기 목록 지연 새로고침</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Greeting_Interval">인사말 업데이트가 지연되었습니다.</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Log">로그 파일 관련 설정</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSizeUsage">로그 파일이 공간을 차지했습니다.</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSize">로그 파일 크기 제한</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileMaxCount">로그 파일 제한</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileFlushInterval">로그 파일 캐시 지연</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileLevel">로그 수준</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Update">관련 설정 업데이트</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">업데이트는 스레드당 처리된 파일 수를 확인합니다.</sys:String>
+    <sys:String x:Key="Text_Settings_Performance">성능</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web">네트워크 관련 설정</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_StartDelay">Text_Settings_Performance_Web_StartDelay</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_PluginsServerPort">플러그인 통신 포트</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesServerPort">장치 통신 포트</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_MyIP_Filter">기본 IP 필터링 규칙</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_SpecifiedNetworkAdapters">지정된 네트워크 어댑터</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_AvailableNetworkInterfaces">사용 가능한 네트워크 어댑터</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesRefreshDelay">기기 목록 지연 새로고침</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Greeting_Interval">인사말 업데이트가 지연되었습니다.</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Log">로그 파일 관련 설정</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSizeUsage">로그 파일이 공간을 차지했습니다.</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSize">로그 파일 크기 제한</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileMaxCount">로그 파일 제한</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileFlushInterval">로그 파일 캐시 지연</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileLevel">로그 수준</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Update">관련 설정 업데이트</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">업데이트는 스레드당 처리된 파일 수를 확인합니다.</sys:String>
     <sys:String x:Key="Text_Settings_Update">고쳐 쓰다</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">업데이트 확인</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">구성 요소 이름</sys:String>
@@ -275,3 +275,4 @@
     <sys:String x:Key="Text_Greeting_Night_3">내일은 좋은 날이 될거야!</sys:String>
     <sys:String x:Key="Text_Greeting_Night_4">아직도 늦게까지 깨어있어</sys:String>
 </ResourceDictionary>
+

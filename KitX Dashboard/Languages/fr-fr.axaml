@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
     <sys:String x:Key="Text_MainWindow_Title">KitX tableau de bord</sys:String>
     <sys:String x:Key="Text_Public_Enable">activer</sys:String>
     <sys:String x:Key="Text_Public_Disable">désactivé</sys:String>
@@ -209,24 +209,24 @@
     <sys:String x:Key="Text_Settings_Personalise_Theme_Dark">Noir de minuit (foncé)</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_HighContrast">contraste élevé</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_Follow">suivre le système</sys:String>
-    <sys:String x:Key="Text_Settings_Performence">performance</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web">Paramètres liés au réseau</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_StartDelay">Démarrage retardé</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Port de communication enfichable</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Port de communication de l'appareil</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Règles de filtrage IP natives</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">adaptateur réseau spécifié</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">adaptateurs réseau disponibles</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">Délai d'actualisation de la liste des appareils</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Greeting_Interval">Mise à jour du message d'accueil retardée</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Log">Paramètres liés au fichier journal</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSizeUsage">Le fichier journal a pris de la place</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSize">Limite de taille du fichier journal</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileMaxCount">limite du fichier journal</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileFlushInterval">Délai du cache du fichier journal</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileLevel">niveau de journalisation</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Update">Mettre à jour les paramètres associés</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">La mise à jour vérifie le nombre de fichiers traités par thread</sys:String>
+    <sys:String x:Key="Text_Settings_Performance">performance</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web">Paramètres liés au réseau</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_StartDelay">Démarrage retardé</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_PluginsServerPort">Port de communication enfichable</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesServerPort">Port de communication de l'appareil</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_MyIP_Filter">Règles de filtrage IP natives</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_SpecifiedNetworkAdapters">adaptateur réseau spécifié</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_AvailableNetworkInterfaces">adaptateurs réseau disponibles</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesRefreshDelay">Délai d'actualisation de la liste des appareils</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Greeting_Interval">Mise à jour du message d'accueil retardée</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Log">Paramètres liés au fichier journal</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSizeUsage">Le fichier journal a pris de la place</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSize">Limite de taille du fichier journal</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileMaxCount">limite du fichier journal</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileFlushInterval">Délai du cache du fichier journal</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileLevel">niveau de journalisation</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Update">Mettre à jour les paramètres associés</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">La mise à jour vérifie le nombre de fichiers traités par thread</sys:String>
     <sys:String x:Key="Text_Settings_Update">renouveler</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">Vérifier les mises à jour</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">Nom du composant</sys:String>
@@ -275,3 +275,4 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Greeting_Night_3">Demain sera une bonne journée!</sys:String>
     <sys:String x:Key="Text_Greeting_Night_4">veille encore tard</sys:String>
 </ResourceDictionary>
+

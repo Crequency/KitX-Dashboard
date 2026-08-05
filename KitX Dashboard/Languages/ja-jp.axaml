@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
     <sys:String x:Key="Text_MainWindow_Title">KitX ダッシュボード</sys:String>
     <sys:String x:Key="Text_Public_Enable">有効</sys:String>
     <sys:String x:Key="Text_Public_Disable">無効</sys:String>
@@ -209,24 +209,24 @@
     <sys:String x:Key="Text_Settings_Personalise_Theme_Dark">ミッドナイトブラック（ダーク）</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_HighContrast">ハイコントラスト</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_Follow">システムに従ってください</sys:String>
-    <sys:String x:Key="Text_Settings_Performence">パフォーマンス</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web">ネットワーク関連の設定</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_StartDelay">遅れたスタート</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">プラグイン通信ポート</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">デバイス通信ポート</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">ネイティブ IP フィルタリング ルール</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">指定されたネットワーク アダプタ</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">利用可能なネットワーク アダプタ</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">デバイス リストの更新の遅延</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Greeting_Interval">あいさつ更新が遅れる</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Log">ログファイル関連の設定</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSizeUsage">ログファイルがスペースを占有しています</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSize">ログ ファイルのサイズ制限</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileMaxCount">ログ ファイルの制限</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileFlushInterval">ログ ファイル キャッシュの遅延</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileLevel">ログレベル</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Update">関連設定の更新</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">更新は、スレッドごとに処理されるファイルの数をチェックします</sys:String>
+    <sys:String x:Key="Text_Settings_Performance">パフォーマンス</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web">ネットワーク関連の設定</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_StartDelay">遅れたスタート</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_PluginsServerPort">プラグイン通信ポート</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesServerPort">デバイス通信ポート</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_MyIP_Filter">ネイティブ IP フィルタリング ルール</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_SpecifiedNetworkAdapters">指定されたネットワーク アダプタ</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_AvailableNetworkInterfaces">利用可能なネットワーク アダプタ</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesRefreshDelay">デバイス リストの更新の遅延</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Greeting_Interval">あいさつ更新が遅れる</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Log">ログファイル関連の設定</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSizeUsage">ログファイルがスペースを占有しています</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSize">ログ ファイルのサイズ制限</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileMaxCount">ログ ファイルの制限</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileFlushInterval">ログ ファイル キャッシュの遅延</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileLevel">ログレベル</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Update">関連設定の更新</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">更新は、スレッドごとに処理されるファイルの数をチェックします</sys:String>
     <sys:String x:Key="Text_Settings_Update">更新する</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">アップデートを確認</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">コンポーネント名</sys:String>
@@ -275,3 +275,4 @@
     <sys:String x:Key="Text_Greeting_Night_3">明日はいい日になる!</sys:String>
     <sys:String x:Key="Text_Greeting_Night_4">まだ夜更かし</sys:String>
 </ResourceDictionary>
+

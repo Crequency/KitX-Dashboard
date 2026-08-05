@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
     <sys:String x:Key="Text_MainWindow_Title">KitX 儀表盤</sys:String>
     <sys:String x:Key="Text_Public_Enable">啟用</sys:String>
     <sys:String x:Key="Text_Public_Disable">禁用</sys:String>
@@ -209,24 +209,24 @@
     <sys:String x:Key="Text_Settings_Personalise_Theme_Dark">午夜黑 (深色)</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_HighContrast">高對比度</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_Follow">跟隨系統</sys:String>
-    <sys:String x:Key="Text_Settings_Performence">性能</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web">網絡相關設置</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_StartDelay">延時啟動</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">插件通信端口</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">設備通信端口</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">本機IP過濾器</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">指定的網絡適配器</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">可用的網絡適配器</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">刷新設備列表延遲</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Greeting_Interval">招呼語更新延遲</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Log">日志文檔相關設定</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSizeUsage">日誌文件已佔用空間</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSize">日志文檔大小限制</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileMaxCount">日志文檔數量限制</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileFlushInterval">日志文檔緩衝延時</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileLevel">日志級別</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Update">更新相關設置</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">更新檢查每綫程處理文件數量</sys:String>
+    <sys:String x:Key="Text_Settings_Performance">性能</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web">網絡相關設置</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_StartDelay">延時啟動</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_PluginsServerPort">插件通信端口</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesServerPort">設備通信端口</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_MyIP_Filter">本機IP過濾器</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_SpecifiedNetworkAdapters">指定的網絡適配器</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_AvailableNetworkInterfaces">可用的網絡適配器</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesRefreshDelay">刷新設備列表延遲</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Greeting_Interval">招呼語更新延遲</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Log">日志文檔相關設定</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSizeUsage">日誌文件已佔用空間</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSize">日志文檔大小限制</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileMaxCount">日志文檔數量限制</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileFlushInterval">日志文檔緩衝延時</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileLevel">日志級別</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Update">更新相關設置</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">更新檢查每綫程處理文件數量</sys:String>
     <sys:String x:Key="Text_Settings_Update">更新</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">檢查更新</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">組件名稱</sys:String>
@@ -275,3 +275,4 @@
     <sys:String x:Key="Text_Greeting_Night_3">明天也是美好的一天!</sys:String>
     <sys:String x:Key="Text_Greeting_Night_4">還熬夜呢</sys:String>
 </ResourceDictionary>
+

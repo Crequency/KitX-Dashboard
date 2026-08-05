@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
     <sys:String x:Key="Text_MainWindow_Title">KitX Dashboard</sys:String>
     <sys:String x:Key="Text_Public_Enable">Enable</sys:String>
     <sys:String x:Key="Text_Public_Disable">Disable</sys:String>
@@ -209,24 +209,24 @@
     <sys:String x:Key="Text_Settings_Personalise_Theme_Dark">Dark</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_HighContrast">High Contrast</sys:String>
     <sys:String x:Key="Text_Settings_Personalise_Theme_Follow">Follow System</sys:String>
-    <sys:String x:Key="Text_Settings_Performence">Performence</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web">Network Related Settings</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_StartDelay">Delayed start</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_PluginsServerPort">Plugins Communication Port</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesServerPort">Devices Communication Port</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_MyIP_Filter">Native IP Filter</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_SpecifiedNetworkAdapters">Specified network adapter</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_AvailableNetworkInterfaces">Available network adapters</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Web_DevicesRefreshDelay">Refresh device list delay</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Greeting_Interval">Greeting Text Update Interval</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Log">Log File Related Settings</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSizeUsage">The log file has taken up space</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileSize">Log File Max Size</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileMaxCount">Log File Max Count</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileFlushInterval">Log File Flush Interval</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_LogFileLevel">Log Level</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_Update">Update Related Settings</sys:String>
-    <sys:String x:Key="Text_Settings_Performence_CheckerPerThreadFilesCountLimit">Checker Per Threads Handled Files Count Limit</sys:String>
+    <sys:String x:Key="Text_Settings_Performance">Performance</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web">Network Related Settings</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_StartDelay">Delayed start</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_PluginsServerPort">Plugins Communication Port</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesServerPort">Devices Communication Port</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_MyIP_Filter">Native IP Filter</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_SpecifiedNetworkAdapters">Specified network adapter</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_AvailableNetworkInterfaces">Available network adapters</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Web_DevicesRefreshDelay">Refresh device list delay</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Greeting_Interval">Greeting Text Update Interval</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Log">Log File Related Settings</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSizeUsage">The log file has taken up space</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileSize">Log File Max Size</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileMaxCount">Log File Max Count</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileFlushInterval">Log File Flush Interval</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_LogFileLevel">Log Level</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Update">Update Related Settings</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">Checker Per Threads Handled Files Count Limit</sys:String>
     <sys:String x:Key="Text_Settings_Update">Update</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">Check Update</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">Component Name</sys:String>
@@ -275,3 +275,4 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Greeting_Night_3">Tomorrow will be a good day!</sys:String>
     <sys:String x:Key="Text_Greeting_Night_4">still staying up late?</sys:String>
 </ResourceDictionary>
+
