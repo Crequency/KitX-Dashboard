@@ -9,7 +9,6 @@ using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Contract.Workflow;
-using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
@@ -39,6 +38,10 @@ internal class WorkflowPageViewModel : ViewModelBase, IDisposable
 #if DEBUG
     public ObservableCollection<string> ExecutionLog { get; } = new();
     public bool IsDebugLogVisible => true;
+#else
+    public ObservableCollection<string> ExecutionLog { get; } = new();
+    public bool IsDebugLogVisible => false;
+#endif
 
     // Log panel height cycles through these three sizes on each button click.
     private static readonly double[] _logHeights = { 160, 300, 80 };
@@ -49,11 +52,6 @@ internal class WorkflowPageViewModel : ViewModelBase, IDisposable
         get => _logPanelHeight;
         set => this.RaiseAndSetIfChanged(ref _logPanelHeight, value);
     }
-#else
-    public ObservableCollection<string> ExecutionLog { get; } = new();
-    public bool IsDebugLogVisible => false;
-    public double LogPanelHeight => 160;
-#endif
 
     private const int MaxLogEntries = 500;
 
@@ -90,8 +88,8 @@ internal class WorkflowPageViewModel : ViewModelBase, IDisposable
         // D5: keep the handler as a named field so Dispose can unsubscribe it.
         _workflowCasesChangedHandler = (_, _) =>
         {
-            NoWorkflow_TipHeight = WorkflowCases.Count == 0 ? 300 : 0;
             WorkflowCount = WorkflowCases.Count;
+            ApplyWorkflowFilter();
             this.RaisePropertyChanged(nameof(WorkflowCountTip));
         };
 
@@ -488,7 +486,43 @@ internal class WorkflowPageViewModel : ViewModelBase, IDisposable
         }
     }
 
-    internal string? SearchingText { get; set; }
+    private string? _searchingText;
+
+    internal string? SearchingText
+    {
+        get => _searchingText;
+        set
+        {
+            if (_searchingText == value) return;
+            _searchingText = value;
+            ApplyWorkflowFilter();
+        }
+    }
+
+    /// <summary>
+    /// Filtered view of <see cref="WorkflowCases"/> bound by the page's card grid.
+    /// Matches workflow name or ID, ignoring case; an empty keyword shows all.
+    /// </summary>
+    private readonly ObservableCollection<IWorkflowCase> _displayedWorkflowCases = [];
+
+    internal ObservableCollection<IWorkflowCase> DisplayedWorkflowCases => _displayedWorkflowCases;
+
+    private void ApplyWorkflowFilter()
+    {
+        var keyword = _searchingText?.Trim() ?? string.Empty;
+
+        _displayedWorkflowCases.Clear();
+
+        foreach (var workflow in WorkflowCases)
+        {
+            if (keyword.Length == 0
+                || workflow.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || workflow.Id.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                _displayedWorkflowCases.Add(workflow);
+        }
+
+        NoWorkflow_TipHeight = _displayedWorkflowCases.Count == 0 ? 300 : 0;
+    }
 
     /// <summary>
     /// Handles workflow execution result events — updates error state on the workflow card.

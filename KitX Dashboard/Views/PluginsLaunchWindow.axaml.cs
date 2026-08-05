@@ -4,7 +4,6 @@ using Avalonia.Input;
 using Avalonia.Threading;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Hotkey;
-using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.ViewModels;
 
@@ -20,6 +19,12 @@ public partial class PluginsLaunchWindow : Window
     private bool pluginsLaunchWindowDisplayed = false;
 
     private int? previousSelectedPluginIndex = null;
+
+    /// <summary>Grid cell height (px) of the plugin launch grid (D13.11).</summary>
+    private const double PluginCardHeight = 80;
+
+    /// <summary>Horizontal padding budget (px) subtracted when computing per-line card count.</summary>
+    private const double PluginCardWidthPadding = 40;
 
     public PluginsLaunchWindow()
     {
@@ -75,7 +80,7 @@ public partial class PluginsLaunchWindow : Window
                 return;
         }
 
-        var perLineCount = (int)Math.Floor((Width - 40) / 80);
+        var perLineCount = (int)Math.Floor((Width - PluginCardWidthPadding) / PluginCardHeight);
 
         var viewerHeight = viewer.DesiredSize.Height;
 
@@ -106,8 +111,15 @@ public partial class PluginsLaunchWindow : Window
 
     private void RegisterGlobalHotKey()
     {
+        // D10 note: the contract IKeyHookService only exposes the no-params handler
+        // overload; this window needs the key-codes variant (Action<string[]>) to
+        // validate the pressed chord, which only the concrete KeyHookManager provides.
+        // If the contract gains a codes-based overload, replace this cast.
         if (_keyHookService is KitX.Core.Hotkey.KeyHookManager keyHookManager)
         {
+            // D13 note: hardcoded Ctrl+Win+C chord, no occupancy check. The registration
+            // key must match KeyHookManager's joined-KeyCode format for the hook to fire;
+            // the handler re-validates the pressed codes defensively.
             keyHookManager.RegisterHotKeyHandler(
                 nameof(PluginsLaunchWindow),
                 codes =>
@@ -210,19 +222,9 @@ public partial class PluginsLaunchWindow : Window
 
     protected override void OnResized(WindowResizedEventArgs e)
     {
-        if (ExperimentalFlags.EnablePluginLaunchWindowWidthSnap)
-        {
-            var basicWidth = 80;
-            var addonWidth = 40;
-            var windowWidth = (int)e.ClientSize.Width;
-            var oneLineCount = (windowWidth - addonWidth) / basicWidth;
-            var left = (windowWidth - addonWidth) % basicWidth;
-
-            if (left < basicWidth / 2)
-                Width = oneLineCount * basicWidth + addonWidth;
-            else
-                Width = (oneLineCount + 1) * basicWidth + addonWidth;
-        }
+        // D13.3: the width-snap experiment (ExperimentalFlags.EnablePluginLaunchWindowWidthSnap)
+        // was a permanently-false dead switch — removed. Keep OnResized only for the
+        // base behavior; re-add snapping here if the experiment is revived.
 
         base.OnResized(e);
     }

@@ -43,7 +43,7 @@
                            Text="{DynamicResource Text_Lib_Tip_NoPlugin}"/>
             </Border>
             <ScrollViewer>
-                <ItemsControl ItemsSource="{Binding PluginInfos}">
+                <ItemsControl ItemsSource="{Binding DisplayedPluginInfos}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal"/>

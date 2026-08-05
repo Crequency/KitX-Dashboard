@@ -46,6 +46,10 @@ public static class TriggerEntrySwapper
             PluginName = pluginName,
             TriggerName = triggerName,
         };
+        // Seed the entry-shape Exec output pin (the descriptor mechanism that used to
+        // do this was removed from the contract), then preserve the old pin's Id so
+        // existing connections stay valid.
+        trigger.OutputPins.Add(MakePin("Exec", PinDirection.Output, PinType.Execution));
         if (entry.OutputPins.Count > 0 && trigger.OutputPins.Count > 0)
             trigger.OutputPins[0].Id = entry.OutputPins[0].Id;
 
@@ -66,6 +70,7 @@ public static class TriggerEntrySwapper
         if (trigger is null) return null;
 
         var entry = new EntryNode { Id = trigger.Id, Name = "Entry", X = trigger.X, Y = trigger.Y };
+        entry.OutputPins.Add(MakePin("Exec", PinDirection.Output, PinType.Execution));
         if (trigger.OutputPins.Count > 0 && entry.OutputPins.Count > 0)
             entry.OutputPins[0].Id = trigger.OutputPins[0].Id;
 
@@ -73,4 +78,7 @@ public static class TriggerEntrySwapper
         bp.Nodes[idx] = entry;
         return trigger;
     }
+
+    private static BlueprintPin MakePin(string name, PinDirection dir, PinType type)
+        => new() { Id = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant(), Name = name, Direction = dir, Type = type };
 }

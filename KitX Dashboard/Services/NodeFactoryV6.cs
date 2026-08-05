@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using KitX.Core.Contract.Workflow;
+using KitX.Dashboard.Names;
 using KitX.WorkflowV6.Builtin;
 
 namespace KitX.Dashboard.Services;
@@ -30,7 +31,7 @@ public static class NodeFactoryV6
     public static BuiltinFunctionNode CreateBuiltinFunctionNode(
         string functionName, BuiltinFunctionRegistry? registry)
     {
-        if (functionName == "DictNew")
+        if (functionName == BpFunctionNames.DictNew)
             return CreateDictNewDefinitionNode();
 
         var builtin = registry?.Get(functionName)
@@ -62,16 +63,22 @@ public static class NodeFactoryV6
     /// Creates a PluginTriggerNode — an alternative entry point with 0 input pins and
     /// 1 Exec output pin (same shape as EntryNode). Carries PluginName/TriggerName
     /// metadata; the frontend swaps it with the EntryNode when TriggerType=PluginEvent.
+    /// Pins are seeded manually (the descriptor mechanism was removed from the contract).
     /// </summary>
-    public static PluginTriggerNode CreatePluginTriggerNode(string pluginName, string triggerName) => new()
+    public static PluginTriggerNode CreatePluginTriggerNode(string pluginName, string triggerName)
     {
-        Id = NewId(),
-        Name = "PluginTrigger",
-        X = 0,
-        Y = 0,
-        PluginName = pluginName,
-        TriggerName = triggerName,
-    };
+        var n = new PluginTriggerNode
+        {
+            Id = NewId(),
+            Name = "PluginTrigger",
+            X = 0,
+            Y = 0,
+            PluginName = pluginName,
+            TriggerName = triggerName,
+        };
+        n.OutputPins.Add(MakePin("Exec", PinDirection.Output, PinType.Execution));
+        return n;
+    }
 
     // ── Definition / usage nodes for const & var (palette, 2026-08-03) ──
 
@@ -106,7 +113,9 @@ public static class NodeFactoryV6
     /// <summary>
     /// Creates a const USAGE node (a pipeline literal source). Exec in/out pins are
     /// prepended (matching BpRenderer.AddUsageNode's ordering) so the node can join the
-    /// exec chain; the literal value is edited on the node (ConstValue).
+    /// exec chain; the literal value is edited on the node (ConstValue). The Value
+    /// output pin is seeded first, mirroring BpRenderer.SeedNodePins (the descriptor
+    /// mechanism that used to seed it was removed from the contract).
     /// </summary>
     public static ConstNode CreateConstUsageNode()
     {
@@ -117,14 +126,17 @@ public static class NodeFactoryV6
             ConstName = string.Empty,
             IsDefinition = false,
         };
+        n.OutputPins.Add(MakePin("Value", PinDirection.Output, PinType.Any));
         n.InputPins.Insert(0, MakePin("Exec", PinDirection.Input, PinType.Execution));
         n.OutputPins.Insert(0, MakePin("Exec", PinDirection.Output, PinType.Execution));
         return n;
     }
 
     /// <summary>
-    /// Creates a var USAGE node (a variable read/write/tap reference). Exec in/out
-    /// pins prepended; the referenced VarName is picked on the node (ComboBox).
+    /// Creates a var USAGE node (a variable read/write/tap reference). Value in/out
+    /// pins are seeded (BpRenderer.SeedNodePins shape — the descriptor mechanism that
+    /// used to seed them was removed from the contract), then Exec in/out pins are
+    /// prepended; the referenced VarName is picked on the node (ComboBox).
     /// </summary>
     public static VariableNode CreateVariableUsageNode()
     {
@@ -136,6 +148,8 @@ public static class NodeFactoryV6
             VarKind = VariableKind.PubVar,
             IsDefinition = false,
         };
+        n.InputPins.Add(MakePin("Value", PinDirection.Input, PinType.Any));
+        n.OutputPins.Add(MakePin("Value", PinDirection.Output, PinType.Any));
         n.InputPins.Insert(0, MakePin("Exec", PinDirection.Input, PinType.Execution));
         n.OutputPins.Insert(0, MakePin("Exec", PinDirection.Output, PinType.Execution));
         return n;
@@ -159,9 +173,12 @@ public static class NodeFactoryV6
             VarKind = VariableKind.Const,
             IsDefinition = false,
         };
-        // Drop the descriptor-seeded Value INPUT pin (read-only reference): the
-        // constructor seeds Value in + Value out; remove the input before the Exec
-        // pins are prepended.
+        // Seed the Value in + Value out pins (BpRenderer.SeedNodePins shape — the
+        // constructor descriptor that used to seed them was removed from the contract),
+        // then drop the Value INPUT pin (read-only reference) before the Exec pins are
+        // prepended.
+        n.InputPins.Add(MakePin("Value", PinDirection.Input, PinType.Any));
+        n.OutputPins.Add(MakePin("Value", PinDirection.Output, PinType.Any));
         var valueIn = n.InputPins.Find(p => p.Name == "Value" && p.Direction == PinDirection.Input);
         if (valueIn is not null) n.InputPins.Remove(valueIn);
         n.InputPins.Insert(0, MakePin("Exec", PinDirection.Input, PinType.Execution));
@@ -184,8 +201,8 @@ public static class NodeFactoryV6
         var n = new BuiltinFunctionNode
         {
             Id = NewId(),
-            Name = "DictNew",
-            FunctionName = "DictNew",
+            Name = BpFunctionNames.DictNew,
+            FunctionName = BpFunctionNames.DictNew,
             NodeType = BlueprintNodeType.BuiltinFunction,
         };
         n.Properties["DeclKind"] = declKind;
@@ -198,10 +215,10 @@ public static class NodeFactoryV6
 
     /// <summary>Creates a control-flow node with the pin layout defined in the correspondence doc.</summary>
     public static BuiltinFunctionNode CreateControlFlowNode(string functionName) => functionName switch    {
-        "Branch" => CreateBranch(),
-        "Each" => CreateEach(),
-        "While" => CreateWhile(),
-        "Switch" => CreateSwitch(),
+        BpFunctionNames.Branch => CreateBranch(),
+        BpFunctionNames.Each => CreateEach(),
+        BpFunctionNames.While => CreateWhile(),
+        BpFunctionNames.Switch => CreateSwitch(),
         "break" => CreateTerminator("break"),
         "continue" => CreateTerminator("continue"),
         _ => throw new ArgumentException(
@@ -212,7 +229,7 @@ public static class NodeFactoryV6
 
     private static BuiltinFunctionNode CreateBranch()
     {
-        var n = MakeFunctionNode("Branch");
+        var n = MakeFunctionNode(BpFunctionNames.Branch);
         n.InputPins.Add(MakePin("Exec", PinDirection.Input, PinType.Execution));
         n.InputPins.Add(MakePin("Condition", PinDirection.Input, PinType.Boolean));
         n.OutputPins.Add(MakePin("True", PinDirection.Output, PinType.Execution));
@@ -223,7 +240,7 @@ public static class NodeFactoryV6
 
     private static BuiltinFunctionNode CreateEach()
     {
-        var n = MakeFunctionNode("Each");
+        var n = MakeFunctionNode(BpFunctionNames.Each);
         n.InputPins.Add(MakePin("Exec", PinDirection.Input, PinType.Execution));
         n.InputPins.Add(MakePin("List", PinDirection.Input, PinType.Any));
         n.OutputPins.Add(MakePin("Body", PinDirection.Output, PinType.Execution));
@@ -234,7 +251,7 @@ public static class NodeFactoryV6
 
     private static BuiltinFunctionNode CreateWhile()
     {
-        var n = MakeFunctionNode("While");
+        var n = MakeFunctionNode(BpFunctionNames.While);
         n.InputPins.Add(MakePin("Exec", PinDirection.Input, PinType.Execution));
         n.InputPins.Add(MakePin("Condition", PinDirection.Input, PinType.Boolean));
         n.OutputPins.Add(MakePin("Body", PinDirection.Output, PinType.Execution));
@@ -246,7 +263,7 @@ public static class NodeFactoryV6
     {
         // Arm pins (label-keyed exec outputs) are added by the user after creation;
         // the initial node has Default + End.
-        var n = MakeFunctionNode("Switch");
+        var n = MakeFunctionNode(BpFunctionNames.Switch);
         n.InputPins.Add(MakePin("Exec", PinDirection.Input, PinType.Execution));
         n.InputPins.Add(MakePin("Selector", PinDirection.Input, PinType.Integer));
         n.OutputPins.Add(MakePin("Default", PinDirection.Output, PinType.Execution));

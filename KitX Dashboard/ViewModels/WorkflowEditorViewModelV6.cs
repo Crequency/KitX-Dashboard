@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Immutable;
@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Avalonia.Threading;
+using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Workflow;
-using KitX.Core.Event;
 using KitX.Dashboard.Services;
 using KitX.WorkflowV6.Backend.Debugging;
 using KitX.WorkflowV6.Builtin;
@@ -45,6 +45,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private readonly IWorkflowStorageService _storageService;
     private readonly IEventService _eventService;
     private readonly IPluginServer _pluginServer;
+    private readonly IConfigService _configService;
     private readonly KsTextLens _ksTextLens;
     private readonly BpGraphLens _bpGraphLens;
     private readonly WorkflowRunner _runner;
@@ -112,7 +113,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         IPluginServer pluginServer,
         WorkflowRunner runner,
         IWorkflowStorageService storageService,
-        IEventService eventService)
+        IEventService eventService,
+        IConfigService configService)
     {
         _ksTextLens = ksTextLens ?? throw new ArgumentNullException(nameof(ksTextLens));
         _bpGraphLens = bpGraphLens ?? throw new ArgumentNullException(nameof(bpGraphLens));
@@ -120,6 +122,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         _runner = runner;
         _storageService = storageService;
         _eventService = eventService;
+        _configService = configService;
 
         BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens, registry, pluginServer);
 
@@ -558,6 +561,18 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             _lastIr = ksIr;
             return (ksIr, lowering, null, null);
         }
+        catch (KsParseException kex)
+        {
+            // W-9: ParseLowering now throws when the source carries parse errors —
+            // surface the diagnostics (code + line + message) instead of a bare message.
+            var detail = string.Join("\n", kex.Diagnostics
+                .Where(d => d.Severity == KsDiagnosticSeverity.Error)
+                .Select(d => $"  [{d.Code}] L{d.Line}: {d.Message}"));
+            Log.Warning(kex, "[WorkflowEditorVMV6] KS parse threw ({Count} error(s))",
+                kex.Diagnostics.Count(d => d.Severity == KsDiagnosticSeverity.Error));
+            return (null, null,
+                $"KS 解析错误：\n{detail}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。", null);
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "[WorkflowEditorVMV6] BuildIrForCurrentMode failed");
@@ -682,14 +697,13 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// While enabled, failed KS↔BP conversions are allowed to switch modes anyway —
     /// useful for inspecting half-parsed graphs during development.
     /// </summary>
-    private static bool IsDeveloperOptionEnabled
+    private bool IsDeveloperOptionEnabled
     {
         get
         {
             try
             {
-                var cfg = App.GetService<KitX.Core.Contract.Configuration.IConfigService>();
-                return cfg?.AppConfig?.App?.DeveloperSetting == true;
+                return _configService?.AppConfig?.App?.DeveloperSetting == true;
             }
             catch { return false; }
         }
@@ -982,8 +996,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         if (_mode != EditorMode.Blueprint)
             SyncFromEditorText();
         Log.Information("[WorkflowEditorVMV6] Run invoked: Mode={Mode}, KsSource={Length} chars", _mode, KsSource.Length);
-        Log.Information("[WorkflowEditorVMV6] Run KsSource content (first 500 chars):\n{Content}",
-            KsSource.Length > 500 ? KsSource[..500] : KsSource);
+        Log.Debug("[WorkflowEditorVMV6] Run KsSource content (first 200 chars):\n{Content}",
+            KsSource.Length > 200 ? KsSource[..200] : KsSource);
 
         // Obtain IR + lowering (shared pipeline: KS ParseLowering / BP Reverse).
         var (ir, lowering, error, _) = BuildIrForCurrentMode();
@@ -1030,9 +1044,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
         finally
         {
-            tokenSource.Dispose();
-            _cancellationTokenSource = null;
-            IsExecuting = false;
+            CleanupExecution(tokenSource);
         }
     }
 
@@ -1177,7 +1189,19 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         finally
         {
             CleanupDebugController();
+
+            CleanupExecution(tokenSource);
         }
+    }
+
+    /// <summary>
+    /// Shared execution cleanup for <see cref="RunAsync"/> and <see cref="DebugRunAsync"/> (D3).
+    /// </summary>
+    private void CleanupExecution(CancellationTokenSource tokenSource)
+    {
+        tokenSource.Dispose();
+        _cancellationTokenSource = null;
+        IsExecuting = false;
     }
 
     // ── Debug event callbacks (P4-β) ──
@@ -1313,12 +1337,13 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             {
                 // Live output streaming: each Print line during the debug session is
                 // appended to the Output panel in real time (the completion summary
-                // replaces this text when the run finishes).
+                // replaces this text when the run finishes). StringBuilder avoids O(n²)
+                // reallocations for long outputs (D13.8).
                 var line = name["print:".Length..];
-                _liveDebugOutput = _liveDebugOutput.Length == 0
-                    ? line
-                    : _liveDebugOutput + "\n" + line;
-                ExecutionOutput = _liveDebugOutput;
+                if (_liveDebugOutput.Length > 0)
+                    _liveDebugOutput.Append('\n');
+                _liveDebugOutput.Append(line);
+                ExecutionOutput = _liveDebugOutput.ToString();
             }
             else
             {
@@ -1329,7 +1354,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     }
 
     /// <summary>Accumulates live Print output during a debug session (streamed to the Output panel).</summary>
-    private string _liveDebugOutput = string.Empty;
+    private readonly System.Text.StringBuilder _liveDebugOutput = new();
 
     private void UpdateRuntimeVariable(string name, string value)
     {
@@ -1415,7 +1440,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             _pendingExecutedStatementId = null;
             _lastHighlightFlush = DateTime.MinValue;
         }
-        _liveDebugOutput = string.Empty;
+        _liveDebugOutput.Clear();
         IsDebugging = false;
         IsPaused = false;
     }

@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Workflow;
+using KitX.Dashboard.Names;
 using KitX.Dashboard.Services;
 using KitX.WorkflowV6.Builtin;
 using KitX.WorkflowV6.Lens.BpGraphLens;
@@ -68,6 +69,23 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
     /// <summary>Debounced scope-frame refresh after node moves (R6).</summary>
     private CancellationTokenSource? _scopeRefreshCts;
+
+    /// <summary>Debounced StructuralReducer hover simulation during drags (D5).</summary>
+    private CancellationTokenSource? _hoverPreviewCts;
+
+    /// <summary>
+    /// Monotonic structural-graph version — bumped on every node/connection mutation so
+    /// the reachability cache can be reused across hover pre-checks while the graph is
+    /// unchanged (D5).
+    /// </summary>
+    private long _graphVersion;
+
+    private long _reachableCacheVersion = -1;
+
+    private HashSet<string> _reachableCache = [];
+
+    /// <summary>Marks the working graph as structurally changed (nodes/connections).</summary>
+    private void MarkGraphEdited() => ++_graphVersion;
 
     /// <summary>Live group-comment notes, tracked for bounds following (R-fix).</summary>
     private readonly List<GroupCommentVM> _groupCommentVms = new();
@@ -137,12 +155,12 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                 case VariableNode vn when vn.IsDefinition && !string.IsNullOrEmpty(vn.VarName):
                     DefinitionNames.Add(vn.VarName);
                     break;
-                case BuiltinFunctionNode fn when fn.FunctionName == "Each"
+                case BuiltinFunctionNode fn when fn.FunctionName == BpFunctionNames.Each
                                                  && fn.Properties.TryGetValue("ItemName", out var item)
                                                  && !string.IsNullOrEmpty(item):
                     DefinitionNames.Add(item);
                     break;
-                case BuiltinFunctionNode fn when fn.FunctionName == "DictNew"
+                case BuiltinFunctionNode fn when fn.FunctionName == BpFunctionNames.DictNew
                                                  && fn.Properties.TryGetValue("DeclName", out var decl)
                                                  && !string.IsNullOrEmpty(decl):
                     // DictNew DeclNames are declared names too (any DeclKind, matching
@@ -209,8 +227,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>Debounces scope-frame recalculation during drags (R6).</summary>
     private void ScheduleScopeRefresh()
     {
-        _scopeRefreshCts?.Cancel();
+        var previous = _scopeRefreshCts;
         _scopeRefreshCts = new CancellationTokenSource();
+        previous?.Cancel();
+        previous?.Dispose();
         var token = _scopeRefreshCts.Token;
         _ = Task.Delay(200, token).ContinueWith(t =>
         {
@@ -448,6 +468,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// </summary>
     public void LoadBlueprint(Blueprint blueprint, IReadOnlyList<ScopeRegion> scopes)
     {
+        DetachAllConnectionVms();
         Nodes.Clear();
         Connections.Clear();
         _contractToConnector.Clear();
@@ -455,6 +476,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _workingBlueprint = blueprint;
         ErrorInfo = null;
         HoverErrorText = null;
+        MarkGraphEdited();
 
         // Phase 1: background frames (added first → bottom ZOrder in ItemsControl).
         foreach (var scope in scopes)
@@ -513,6 +535,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// <summary>Clears the canvas and discards the working blueprint.</summary>
     public void Clear()
     {
+        DetachAllConnectionVms();
         Nodes.Clear();
         Connections.Clear();
         _contractToConnector.Clear();
@@ -524,6 +547,19 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _highlightVm = null;
         _hoveredGroupComment = null;
         HasContent = false;
+        MarkGraphEdited();
+    }
+
+    /// <summary>
+    /// Detaches every connection VM's source-connector subscription before the
+    /// connection list is cleared (D11). Connection VMs are dropped wholesale on
+    /// LoadBlueprint/Clear — without this their PropertyChanged handlers would
+    /// keep the whole canvas graph alive after the reload.
+    /// </summary>
+    private void DetachAllConnectionVms()
+    {
+        foreach (var cvm in Connections.OfType<BlueprintConnectionVMV6>())
+            cvm.Detach();
     }
 
     // ── Node palette (P3-β) ──
@@ -577,10 +613,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     private void PopulatePalette()
     {
         PaletteItems.Clear();
-        PaletteItems.Add(new PaletteItemV6("if (Branch)", "ControlFlow", "Branch"));
-        PaletteItems.Add(new PaletteItemV6("forEach (Each)", "ControlFlow", "Each"));
-        PaletteItems.Add(new PaletteItemV6("while (While)", "ControlFlow", "While"));
-        PaletteItems.Add(new PaletteItemV6("switch (Switch)", "ControlFlow", "Switch"));
+        PaletteItems.Add(new PaletteItemV6("if (Branch)", "ControlFlow", BpFunctionNames.Branch));
+        PaletteItems.Add(new PaletteItemV6("forEach (Each)", "ControlFlow", BpFunctionNames.Each));
+        PaletteItems.Add(new PaletteItemV6("while (While)", "ControlFlow", BpFunctionNames.While));
+        PaletteItems.Add(new PaletteItemV6("switch (Switch)", "ControlFlow", BpFunctionNames.Switch));
         PaletteItems.Add(new PaletteItemV6("break", "ControlFlow", "break"));
         PaletteItems.Add(new PaletteItemV6("continue", "ControlFlow", "continue"));
         // Const/var nodes (2026-08-03): definition declarations + usage references.
@@ -591,8 +627,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         // NodeFactoryV6.CreateDictNewDefinitionNode), so registry.AllNames can't feed it.
         // const dict declarations (`const { dict d = {...} }`) are legal KS — the
         // second entry creates one with DeclKind="const" (2026-08-03).
-        PaletteItems.Add(new PaletteItemV6("DictNew（新建 dict 定义）", "Definition", "DictNew"));
-        PaletteItems.Add(new PaletteItemV6("DictNew（新建 const dict 定义）", "Definition", "DictNew", "const"));
+        PaletteItems.Add(new PaletteItemV6("DictNew（新建 dict 定义）", "Definition", BpFunctionNames.DictNew));
+        PaletteItems.Add(new PaletteItemV6("DictNew（新建 const dict 定义）", "Definition", BpFunctionNames.DictNew, "const"));
         // Usage references (2026-08-03): TWO distinct usage node types mirroring the
         // definition nodes — a const reference (VarKind=Const, read-only, no Value
         // input pin) and a var reference (VarKind=PubVar, read/write). The literal
@@ -618,7 +654,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             {
                 "const" => NodeFactoryV6.CreateConstDefinitionNode(),
                 "var" => NodeFactoryV6.CreateVariableDefinitionNode(),
-                "DictNew" => NodeFactoryV6.CreateDictNewDefinitionNode(item.Tag == "const" ? "const" : "var"),
+                BpFunctionNames.DictNew => NodeFactoryV6.CreateDictNewDefinitionNode(item.Tag == "const" ? "const" : "var"),
                 _ => null!,
             },
             "Usage" => item.FunctionName switch
@@ -654,6 +690,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         node.X = x;
         node.Y = y;
         _workingBlueprint.Nodes.Add(node);
+        MarkGraphEdited();
         Nodes.Add(ConvertNodeToViewModel(node));
         HasContent = true;
         RefreshScopes();
@@ -996,6 +1033,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         outVm.IsConnected = true;
         inVm.IsConnected = true;
         ErrorInfo = null;
+        MarkGraphEdited();
 
         // 6. Exec-reroute warning: the old chain tail is now a preserved detached graph
         //    (unless it is still data-proxy reachable from the main chain).
@@ -1038,13 +1076,31 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     private bool IsReachable(string nodeId) => ComputeReachableIds().Contains(nodeId);
 
     /// <summary>Computes the set of nodes reachable from the exec root (exec + data-proxy BFS).</summary>
+    /// <remarks>
+    /// D5: results are cached per <see cref="_graphVersion"/> — hover pre-checks and
+    /// reroute warnings re-run this on every candidate while dragging, and the graph
+    /// does not change between them.
+    /// </remarks>
     private HashSet<string> ComputeReachableIds()
     {
+        if (_reachableCacheVersion == _graphVersion)
+            return _reachableCache;
+
         var reachable = new HashSet<string>();
-        if (_workingBlueprint == null) return reachable;
+        if (_workingBlueprint == null)
+        {
+            _reachableCache = reachable;
+            _reachableCacheVersion = _graphVersion;
+            return reachable;
+        }
         var nodes = _workingBlueprint.Nodes;
         var entry = nodes.FirstOrDefault(n => n is EntryNode or PluginTriggerNode);
-        if (entry == null) return reachable;
+        if (entry == null)
+        {
+            _reachableCache = reachable;
+            _reachableCacheVersion = _graphVersion;
+            return reachable;
+        }
 
         var queue = new Queue<string>();
         queue.Enqueue(entry.Id);
@@ -1093,6 +1149,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             }
         }
         reachable.UnionWith(data);
+        _reachableCache = reachable;
+        _reachableCacheVersion = _graphVersion;
         return reachable;
     }
 
@@ -1115,6 +1173,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
         foreach (var cvm in related)
         {
+            cvm.Detach();
             Connections.Remove(cvm);
             RemoveConnectionFromWorkingBlueprint(cvm);
         }
@@ -1133,6 +1192,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     private void RemoveConnection(BlueprintConnectionVMV6? connection)
     {
         if (connection == null || _workingBlueprint == null) return;
+        connection.Detach();
         Connections.Remove(connection);
         RemoveConnectionFromWorkingBlueprint(connection);
         RefreshIsConnected();
@@ -1170,6 +1230,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             .ToList();
         foreach (var cvm in relatedConns)
         {
+            cvm.Detach();
             Connections.Remove(cvm);
             RemoveConnectionFromWorkingBlueprint(cvm);
         }
@@ -1180,7 +1241,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             Nodes.Remove(nodeVm);
             var contractNode = _workingBlueprint.Nodes.FirstOrDefault(n => n.Id == nodeVm.BlueprintNodeId);
             if (contractNode != null)
+            {
                 _workingBlueprint.Nodes.Remove(contractNode);
+                MarkGraphEdited();
+            }
 
             var stale = _connectorToContract
                 .Where(kvp => kvp.Value.NodeId == nodeVm.BlueprintNodeId).ToList();
@@ -1274,9 +1338,9 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (inputHasIncoming)
         {
             return input.IsExecution
-                ? new ConstraintViolation("KS102", "E3",
+                ? new ConstraintViolation(KsConstraintErrorCodes.KS102, "E3",
                     "Exec input 已有前驱，不允许多入边。", highlight)
-                : new ConstraintViolation("KS111", "D2",
+                : new ConstraintViolation(KsConstraintErrorCodes.KS111, "D2",
                     "Data input 已有入边，不允许多入边。", highlight);
         }
 
@@ -1367,7 +1431,36 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                 HoverErrorText = "该输出已有连接：释放后将断开旧连接（重路由）。";
         }
 
-        // StructuralReducer simulation: tentatively add the edge, validate, then revert.
+        // D5: the StructuralReducer simulation is a full-graph validation — debounce it
+        // while dragging (same 200ms pattern as ScheduleScopeRefresh) so fast hover
+        // sweeps don't trigger a validation per target. The deferred run re-verifies
+        // the pending state, so a stale run after drop is a no-op.
+        var previous = _hoverPreviewCts;
+        _hoverPreviewCts = new CancellationTokenSource();
+        previous?.Cancel();
+        previous?.Dispose();
+        var token = _hoverPreviewCts.Token;
+        _ = Task.Delay(200, token).ContinueWith(t =>
+        {
+            if (t.IsCanceled) return;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (token.IsCancellationRequested) return;
+                if (PendingConnection.Source is not BlueprintConnectorVMV6 nowSrc) return;
+                if (PendingConnection.PreviewTarget is not BlueprintConnectorVMV6 nowTgt) return;
+                if (!ReferenceEquals(nowSrc, src) || !ReferenceEquals(nowTgt, tgt)) return;
+                RunStructuralHoverSimulation(src, tgt);
+            });
+        }, token);
+    }
+
+    /// <summary>
+    /// Tentatively adds the hovered edge to the working blueprint and runs the backend
+    /// StructuralReducer; flags the target pin red when the candidate is
+    /// structural-violating. Runs inside the <see cref="UpdateHoverPreview"/> debounce.
+    /// </summary>
+    private void RunStructuralHoverSimulation(BlueprintConnectorVMV6 src, BlueprintConnectorVMV6 tgt)
+    {
         if (_workingBlueprint == null || _bpGraphLens == null) return;
         if (!_connectorToContract.TryGetValue(src, out var srcCoord) ||
             !_connectorToContract.TryGetValue(tgt, out var tgtCoord))
@@ -1448,10 +1541,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         {
             string? pinLabel = node.FunctionName switch
             {
-                "Branch" => "condition",
-                "While" => "condition",
-                "Each" => "list",
-                "Switch" => "selector",
+                BpFunctionNames.Branch => "condition",
+                BpFunctionNames.While => "condition",
+                BpFunctionNames.Each => "list",
+                BpFunctionNames.Switch => "selector",
                 _ => null,
             };
             if (pinLabel == null) continue;
@@ -1531,7 +1624,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         foreach (var s in scopes)
         {
             if (s.ScopeKind != "Body") continue;
-            if (s.OwnerFunctionName is not ("While" or "Each")) continue;
+            if (s.OwnerFunctionName is not (BpFunctionNames.While or BpFunctionNames.Each)) continue;
             foreach (var id in s.NodeIds) loopBody.Add(id);
         }
         _loopBodyNodeIds = loopBody;
@@ -1642,7 +1735,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             x.SourceNodeId == s.NodeId && x.SourcePinId == s.PinId &&
             x.TargetNodeId == t.NodeId && x.TargetPinId == t.PinId);
         if (bc != null)
+        {
             _workingBlueprint.Connections.Remove(bc);
+            MarkGraphEdited();
+        }
     }
 
     // ── Variadic pin expansion (P5-C1) ──
@@ -1670,7 +1766,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         // Spec source: the builtin's registered InputVariadic; DictNew (an IR primitive
         // definition node, absent from the registry) falls back to a hardcoded paired spec.
         var spec = _registry?.Get(fn.FunctionName)?.InputVariadic;
-        if (spec == null && fn.FunctionName == "DictNew")
+        if (spec == null && fn.FunctionName == BpFunctionNames.DictNew)
             spec = VariadicPairHelper.DictNewSpec;
         if (spec == null) return;
 
@@ -1789,7 +1885,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         {
             ConstNode cn => cn.IsDefinition,
             VariableNode vn => vn.IsDefinition,
-            BuiltinFunctionNode fn when fn.FunctionName == "DictNew" => true,
+            BuiltinFunctionNode fn when fn.FunctionName == BpFunctionNames.DictNew => true,
             _ => false,
         };
 
@@ -1829,7 +1925,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
                     Log.Information("[BPEditVM] ConvertNode definition var: id={Id} name={Name} default={Def} user={User}",
                         node.Id, vn.VarName, vn.DefaultValue, vn.VarInitialValue);
                     break;
-                case BuiltinFunctionNode fn when fn.FunctionName == "DictNew":
+                case BuiltinFunctionNode fn when fn.FunctionName == BpFunctionNames.DictNew:
                     // DictNew definition node (T8): header shows `{DeclKind} {DeclName}`;
                     // the key/value rows are rebuilt from the Key{i}/Value{i} pins below.
                     fn.Properties.TryGetValue("DeclName", out var declName);
@@ -1922,7 +2018,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (_workingBlueprint == null) return;
         var fn = _workingBlueprint.Nodes
             .FirstOrDefault(n => n.Id == nodeVm.BlueprintNodeId) as BuiltinFunctionNode;
-        if (fn == null || fn.FunctionName != "DictNew") return;
+        if (fn == null || fn.FunctionName != BpFunctionNames.DictNew) return;
 
         AppendVariadicGroup(fn, nodeVm, VariadicPairHelper.DictNewSpec);
         RebuildDictPairs(nodeVm, fn);
@@ -1938,7 +2034,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (_workingBlueprint == null) return;
         var fn = _workingBlueprint.Nodes
             .FirstOrDefault(n => n.Id == nodeVm.BlueprintNodeId) as BuiltinFunctionNode;
-        if (fn == null || fn.FunctionName != "DictNew") return;
+        if (fn == null || fn.FunctionName != BpFunctionNames.DictNew) return;
 
         RemoveDictPin(fn, nodeVm, row.KeyPinId);
         RemoveDictPin(fn, nodeVm, row.ValuePinId);

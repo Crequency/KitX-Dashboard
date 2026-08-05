@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.SettingsPage"
+<UserControl x:Class="KitX.Dashboard.Views.Pages.SettingsPage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
@@ -64,8 +64,8 @@
                     </StackPanel>
                 </ui:NavigationViewItem.Content>
             </ui:NavigationViewItem>
-            <ui:NavigationViewItem x:Name="View_Performence"
-                                   Tag="View_Performence"
+            <ui:NavigationViewItem x:Name="View_Performance"
+                                   Tag="View_Performance"
                                    ToolTip.Tip="{DynamicResource Text_Settings_Performence}">
                 <ui:NavigationViewItem.Content>
                     <StackPanel Margin="-3,0,0,0"

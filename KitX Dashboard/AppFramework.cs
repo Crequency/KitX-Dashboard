@@ -78,10 +78,6 @@ public static class AppFramework
             var cfgPath = Path.GetFullPath(Path.Combine("./Config/", "AppConfig.json"));
             if (File.Exists(cfgPath))
             {
-                var finfo = new FileInfo(cfgPath);
-                var trailPath = Path.Combine(finfo.DirectoryName!, "ConfigLoadTrail.log");
-                File.AppendAllText(trailPath, $"[{DateTime.Now:O}] RunFramework START: file size={finfo.Length}, lastWrite={finfo.LastWriteTime:O}\n");
-
                 using var doc = JsonDocument.Parse(File.ReadAllText(cfgPath));
                 if (doc.RootElement.TryGetProperty("Log", out var log) &&
                     log.TryGetProperty("LogLevel", out var level))
@@ -113,29 +109,11 @@ public static class AppFramework
         Log.Information($"[AppFramework] About to call configService.Load(), temp LogLevel={logLevel}");
         var configService = App.GetService<IConfigService>();
         configService.Load();
-        var config = (AppConfig)configService.AppConfig;
+        var config = configService.AppConfig;
         Log.Information($"[AppFramework] Load complete, LogLevel={config.Log.LogLevel}");
 
         // Step 5: Reconfigure logger with full settings from loaded config
-        var configuredLogDir = config.Log.LogFilePath.GetFullPath();
-        if (!Directory.Exists(configuredLogDir))
-            Directory.CreateDirectory(configuredLogDir);
-
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Is(config.Log.LogLevel)
-            .WriteTo.Console(outputTemplate: config.Log.LogTemplate, restrictedToMinimumLevel: config.Log.LogLevel)
-            .WriteTo.File(
-                $"{configuredLogDir}Log_.log",
-                outputTemplate: config.Log.LogTemplate,
-                rollingInterval: RollingInterval.Hour,
-                fileSizeLimitBytes: config.Log.LogFileSingleMaxSize,
-                buffered: true,
-                flushToDiskInterval: new(0, 0, config.Log.LogFileFlushInterval),
-                restrictedToMinimumLevel: config.Log.LogLevel,
-                rollOnFileSizeLimit: true,
-                retainedFileCountLimit: config.Log.LogFileMaxCount
-            )
-            .CreateLogger();
+        LoggerConfigurator.Configure(config.Log, writeToConsole: true);
 
         Log.Information("KitX Dashboard Started.");
 
@@ -160,7 +138,7 @@ public static class AppFramework
             File.Delete("restart.lock");
         }
 
-        ((AppConfig)configService.AppConfig).App.RanTime++;
+        configService.AppConfig.App.RanTime++;
 
         ProcessStartupArguments();
 
@@ -296,7 +274,7 @@ public static class AppFramework
         }
     }
 
-    public static void AfterInitailization(Action action) => actionsInInitialization.Enqueue(action);
+    public static void AfterInitialization(Action action) => actionsInInitialization.Enqueue(action);
 
     private static async void ImportPlugin(string kxpPath)
     {

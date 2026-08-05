@@ -490,6 +490,9 @@ public partial class WorkflowEditorWindowV6 : Window
         }
         else
         {
+            // D13.6: placeholder entry for the blank-canvas context menu (under
+            // development — no actions yet). Kept visible so the menu doesn't
+            // feel broken; remove once canvas-level actions land.
             panel.Children.Add(CreateMenuButton("画布菜单（开发中）", null, null));
         }
         ShowContextPopup(panel);

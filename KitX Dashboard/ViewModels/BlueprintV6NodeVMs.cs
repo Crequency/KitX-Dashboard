@@ -6,6 +6,7 @@ using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Workflow;
+using KitX.Dashboard.Names;
 using NodifyM.Avalonia.ViewModelBase;
 using Serilog;
 
@@ -57,8 +58,13 @@ public partial class DictPairRowVM : ObservableObject
     {
         KeyPinId = keyPinId;
         ValuePinId = valuePinId;
+        // Direct field writes are INTENTIONAL: using the generated properties would fire
+        // OnKeyTextChanged/OnValueTextChanged and write the loaded values back into the
+        // contract (a load must never trigger edit callbacks).
+#pragma warning disable MVVMTK0034
         _keyText = keyText;
         _valueText = valueText;
+#pragma warning restore MVVMTK0034
         OnPropertyChanged(nameof(KeyText));
         OnPropertyChanged(nameof(ValueText));
     }
@@ -245,6 +251,17 @@ public partial class BlueprintConnectionVMV6 : ConnectionViewModelBase
         if (_sourceConnector != null)
             StrokeColorHex = _sourceConnector.PinTypeColorHex;
     }
+
+    /// <summary>
+    /// Releases the subscription on the source connector (D11). Must be called on every
+    /// deletion path (DisconnectConnector / DeleteNodes / RemoveConnection); the editor
+    /// owns the lifecycle of its connection VMs.
+    /// </summary>
+    public void Detach()
+    {
+        if (_sourceConnector != null)
+            _sourceConnector.PropertyChanged -= OnSourceConnectorPropertyChanged;
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -277,7 +294,7 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     [ObservableProperty]
     private BlueprintNodeType _nodeType;
 
-    /// <summary>BuiltinFunctionNode.FunctionName (e.g. "Branch", "Print", "break").</summary>
+    /// <summary>BuiltinFunctionNode.FunctionName (e.g. BpFunctionNames.Branch, "Print", "break").</summary>
     [ObservableProperty]
     private string? _functionName;
 
@@ -453,7 +470,7 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     // ── DictNew definition nodes (T8) ──
 
     /// <summary>True for DictNew definition nodes (renders the key/value pair editor).</summary>
-    public bool IsDictNewNode => FunctionName == "DictNew";
+    public bool IsDictNewNode => FunctionName == BpFunctionNames.DictNew;
 
     /// <summary>True for const/var definition nodes — shows the Type/Name/Value declaration editor.</summary>
     public bool ShowDefinitionEditor => IsDefinition && !IsDictNewNode;
@@ -516,7 +533,7 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             OnPropertyChanged();
             OnPropertyChanged(nameof(DefinitionValue));
             OnPropertyChanged(nameof(DefinitionTitle));
-            Log.Information("[BPNodeVM] DefaultValue set: id={Id} value={Value}", _blueprintNodeId, value);
+            Log.Debug("[BPNodeVM] DefaultValue set: id={Id} value={Value}", BlueprintNodeId, value);
         }
     }
 
@@ -530,7 +547,11 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         string? userValue, string? dictDeclKind = null)
     {
         _definitionName = name;
+        // Direct field write is INTENTIONAL: using the generated property would raise
+        // PropertyChanged before the VM is attached to the canvas (load path).
+#pragma warning disable MVVMTK0034
         _definitionType = type;
+#pragma warning restore MVVMTK0034
         _defaultValue = defaultValue;
         _definitionValue = userValue;
         _dictDeclKind = dictDeclKind;
@@ -561,8 +582,8 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
             if (_definitionValue == userValue) return;
             _definitionValue = userValue;
             OnPropertyChanged();
-            Log.Information("[BPNodeVM] DefinitionValue set: id={Id} user={User} default={Def}",
-                _blueprintNodeId, userValue, _defaultValue);
+            Log.Debug("[BPNodeVM] DefinitionValue set: id={Id} user={User} default={Def}",
+                BlueprintNodeId, userValue, _defaultValue);
             // oldName == newName == current name: value edits must NOT trigger the
             // rename path in UpdateDefinitionNode.
             _onDefinitionEdited?.Invoke(this, DefinitionName, DefinitionName, userValue);
@@ -705,7 +726,7 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
     /// <summary>True if this is a control-flow node (Branch/Each/While/Switch).</summary>
     public bool IsControlFlow
         => NodeType == BlueprintNodeType.BuiltinFunction
-           && FunctionName is "Branch" or "Each" or "While" or "Switch";
+           && FunctionName is BpFunctionNames.Branch or BpFunctionNames.Each or BpFunctionNames.While or BpFunctionNames.Switch;
 
     /// <summary>True if this is a terminator node (break/continue).</summary>
     public bool IsTerminator
@@ -748,7 +769,7 @@ public partial class BlueprintNodeVMV6 : NodeViewModelBase
         BlueprintNodeType.CallHelper => "#9C27B0",
         BlueprintNodeType.BuiltinFunction => functionName switch
         {
-            "Branch" or "Each" or "While" or "Switch" => "#FF9800",  // Orange (control flow)
+            BpFunctionNames.Branch or BpFunctionNames.Each or BpFunctionNames.While or BpFunctionNames.Switch => "#FF9800",  // Orange (control flow)
             "break" or "continue" => "#F44336",                        // Red (terminator)
             _ => "#8BC34A",                                             // Light green (ordinary builtin)
         },

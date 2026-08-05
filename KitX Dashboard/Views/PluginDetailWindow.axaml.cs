@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Common.BasicHelper.Graphics.Screen;
 using KitX.Core.Contract.Event;
-using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.ViewModels;
 using KitX.Shared.CSharp.Plugin;
@@ -13,7 +12,7 @@ namespace KitX.Dashboard.Views;
 
 public partial class PluginDetailWindow : Window
 {
-    private readonly PluginDetailWindowViewModel viewModel = new();
+    private readonly PluginDetailWindowViewModel viewModel = App.GetService<PluginDetailWindowViewModel>();
 
     public PluginDetailWindow()
     {
@@ -61,6 +60,9 @@ public partial class PluginDetailWindow : Window
         };
 
         Opened += (_, _) => viewModel.InitFunctionsAndTags();
+
+        // D11: dispose the VM's event subscriptions when the window closes.
+        Closed += (_, _) => viewModel.Dispose();
 
         var eventService = App.GetService<IEventService>();
         eventService.Subscribe(EventNames.OnExiting, (s, e) => Close());

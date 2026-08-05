@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text.Json;
 using Avalonia;
@@ -14,13 +15,27 @@ using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 
-internal class PluginsLaunchWindowViewModel : ViewModelBase
+internal class PluginsLaunchWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly IPluginServer _pluginServer;
+
+    /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
+    private readonly NotifyCollectionChangedEventHandler _pluginInfosChangedHandler;
 
     public PluginsLaunchWindowViewModel(IPluginServer pluginServer)
     {
         _pluginServer = pluginServer;
+
+        _pluginInfosChangedHandler = (_, _) =>
+        {
+            PluginsCount = $"{PluginInfos.Count}";
+
+            CheckPluginIndex();
+
+            this.RaisePropertyChanged(nameof(SearchItems));
+            this.RaisePropertyChanged(nameof(SelectedPluginInfo));
+            this.RaisePropertyChanged(nameof(SelectedFunction));
+        };
 
         InitCommands();
 
@@ -31,16 +46,16 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        PluginInfos.CollectionChanged += (_, _) =>
-        {
-            PluginsCount = $"{PluginInfos.Count}";
+        PluginInfos.CollectionChanged += _pluginInfosChangedHandler;
+    }
 
-            CheckPluginIndex();
-
-            this.RaisePropertyChanged(nameof(SearchItems));
-            this.RaisePropertyChanged(nameof(SelectedPluginInfo));
-            this.RaisePropertyChanged(nameof(SelectedFunction));
-        };
+    /// <summary>
+    /// Unsubscribes every subscription made in <see cref="InitEvents"/>. The window is a
+    /// persistent singleton, but Dispose keeps the pattern uniform (D11).
+    /// </summary>
+    public void Dispose()
+    {
+        PluginInfos.CollectionChanged -= _pluginInfosChangedHandler;
     }
 
     public string pluginsCount = "0";
@@ -207,11 +222,11 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
         var lineIndex = SelectedPluginIndex / perLineButtonsCount;
 
-        var up = lineIndex * 80;
+        var up = lineIndex * PluginCardHeight;
 
-        var down = up + 80;
+        var down = up + PluginCardHeight;
 
-        var targetY = lineIndex * 80;
+        var targetY = lineIndex * PluginCardHeight;
 
         var condition = (up >= viewerOffsetY && down <= viewerOffsetY + viewerHeight);
 
@@ -220,6 +235,9 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
             ScrollViewerOffset = new(0, targetY);
         }
     }
+
+    /// <summary>Grid cell height (px) of the plugin launch grid (D13.11).</summary>
+    private const double PluginCardHeight = 80;
 
     private static bool PluginIndexInRange(int index) => index >= 0 && index < PluginInfos.Count;
 

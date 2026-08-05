@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.Reactive;
 using System.Threading.Tasks;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Tasks;
-using KitX.Core.Event;
 using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
@@ -43,6 +42,10 @@ internal class Settings_GeneralViewModel : ViewModelBase
 
         OpenDebugToolCommand = ReactiveCommand.Create(() =>
         {
+            // D13.4: developer gate — the debug tool only opens when Developer Setting is on.
+            if (!_configService.AppConfig.App.DeveloperSetting)
+                return;
+
             UIStateService.ShowWindow(new DebugWindow(), UIStateService.MainWindow);
         });
     }

@@ -1,4 +1,4 @@
-﻿<Window x:Class="KitX.Dashboard.Views.ExchangeDeviceKeyWindow"
+<Window x:Class="KitX.Dashboard.Views.ExchangeDeviceKeyWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="using:KitX.Dashboard.Converters"
@@ -24,7 +24,7 @@
         <converters:StringEqualConverter x:Key="StringEqualConverter"/>
     </Window.Resources>
     <Grid>
-        <DockPanel Margin="20" Classes.blured="{Binding IsVerifing}">
+        <DockPanel Margin="20" Classes.blured="{Binding IsVerifying}">
             <DockPanel.Styles>
                 <Style Selector="DockPanel.blured">
                     <Setter Property="IsEnabled" Value="False"/>
@@ -116,7 +116,7 @@
                 </StackPanel>
             </StackPanel>
         </DockPanel>
-        <Grid IsVisible="{Binding IsVerifing}">
+        <Grid IsVisible="{Binding IsVerifying}">
             <Border Background="{DynamicResource ThemePrimaryAccent}" Opacity="0.1"/>
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -124,7 +124,7 @@
                 <progRing:ProgressRing Width="100"
                                        Height="100"
                                        HorizontalAlignment="Center"
-                                       IsActive="{Binding IsVerifing}"/>
+                                       IsActive="{Binding IsVerifying}"/>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock FontSize="16" Text="{DynamicResource Text_ExchangeDeviceKeyWindow_YourInput}"/>
                     <TextBlock FontSize="16" Text="{Binding VerificationCodeString}"/>

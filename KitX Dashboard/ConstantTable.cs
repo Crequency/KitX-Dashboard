@@ -97,10 +97,6 @@ internal static class ConstantTable
         set => KitX.Core.ConstantTable.ServerBuildTime = value;
     }
 
-    internal const string ApiGetAnnouncements = KitX.Core.ConstantTable.ApiGetAnnouncements;
-
-    internal const string ApiGetAnnouncement = KitX.Core.ConstantTable.ApiGetAnnouncement;
-
     internal static string KitXIconBase64
     {
         get => KitX.Core.ConstantTable.KitXIconBase64;

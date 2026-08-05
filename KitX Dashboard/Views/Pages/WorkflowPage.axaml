@@ -118,7 +118,7 @@
 
             <!-- Workflow Card Grid -->
             <ScrollViewer>
-                <ItemsControl ItemsSource="{Binding WorkflowCases}">
+                <ItemsControl ItemsSource="{Binding DisplayedWorkflowCases}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal" />

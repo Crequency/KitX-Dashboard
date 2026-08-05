@@ -59,7 +59,7 @@
                            Text="{DynamicResource Text_Device_No}"/>
             </Border>
             <ScrollViewer>
-                <ItemsControl ItemsSource="{Binding DeviceCases}">
+                <ItemsControl ItemsSource="{Binding DisplayedDeviceCases}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal"/>

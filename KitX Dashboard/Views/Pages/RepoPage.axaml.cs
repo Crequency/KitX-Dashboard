@@ -13,7 +13,7 @@ namespace KitX.Dashboard.Views.Pages;
 
 public partial class RepoPage : UserControl
 {
-    private readonly RepoPageViewModel viewModel = new();
+    private readonly RepoPageViewModel viewModel = App.GetService<RepoPageViewModel>();
 
     public RepoPage()
     {
