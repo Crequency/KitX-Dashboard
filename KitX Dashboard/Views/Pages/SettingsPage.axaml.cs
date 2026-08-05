@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Avalonia.Controls;
 using FluentAvalonia.UI.Controls;
 using KitX.Core.Contract.Configuration;
@@ -10,7 +10,7 @@ namespace KitX.Dashboard.Views.Pages;
 
 public partial class SettingsPage : UserControl, IView
 {
-    private readonly SettingsPageViewModel viewModel = new();
+    private readonly SettingsPageViewModel viewModel = App.GetService<SettingsPageViewModel>();
 
     public SettingsPage()
     {
@@ -64,7 +64,8 @@ public partial class SettingsPage : UserControl, IView
         {
             "View_General" => typeof(Settings_General),
             "View_Personalise" => typeof(Settings_Personalise),
-            "View_Performence" => typeof(Settings_Performence),
+            // D15: "View_Performence" kept for JSON-compat with saved configs.
+            "View_Performence" or "View_Performance" => typeof(Settings_Performance),
             "View_Update" => typeof(Settings_Update),
             "View_About" => typeof(Settings_About),
             _ => typeof(Settings_General),

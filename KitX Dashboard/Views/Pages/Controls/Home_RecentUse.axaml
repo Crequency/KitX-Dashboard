@@ -13,7 +13,7 @@
                        Text="{DynamicResource Text_MainWindow_Recent_No}"/>
         </Border>
         <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding RecentPluginCards}">
+            <ItemsControl ItemsSource="{Binding RecentPlugins}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel Orientation="Horizontal"/>

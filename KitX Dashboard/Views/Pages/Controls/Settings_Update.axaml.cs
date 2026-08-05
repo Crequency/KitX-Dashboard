@@ -5,7 +5,7 @@ namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class Settings_Update : UserControl
 {
-    private readonly Settings_UpdateViewModel viewModel = new();
+    private readonly Settings_UpdateViewModel viewModel = App.GetService<Settings_UpdateViewModel>();
 
     public Settings_Update()
     {

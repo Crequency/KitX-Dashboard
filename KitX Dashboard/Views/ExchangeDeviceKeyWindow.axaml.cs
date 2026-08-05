@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
@@ -7,7 +7,6 @@ using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Threading;
 using KitX.Core.Contract.Event;
-using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.ViewModels;
 using MsBox.Avalonia;
@@ -16,11 +15,22 @@ namespace KitX.Dashboard.Views;
 
 public partial class ExchangeDeviceKeyWindow : Window
 {
-    private readonly ExchangeDeviceKeyWindowViewModel viewModel = new();
+    private readonly ExchangeDeviceKeyWindowViewModel viewModel = App.GetService<ExchangeDeviceKeyWindowViewModel>();
 
     private Action<string>? OnVerificationCodeEnteredAction;
 
-    private Timer? waittingAcceptingDeviceKeyTimer;
+    private Timer? waitingAcceptingDeviceKeyTimer;
+
+    /// <summary>
+    /// Named handler for the accept-device-key event so it can be unsubscribed on close
+    /// (D11: DisplayVerificationCode used to subscribe a fresh lambda per display).
+    /// </summary>
+    private EventHandler<DeviceKeyEventArgs>? _onAcceptingDeviceKeyHandler;
+
+    private string? _displayedCode;
+
+    /// <summary>Named OnExiting handler so the window can unsubscribe it on close (D11).</summary>
+    private readonly EventHandler<EventArgs> _onExitingHandler;
 
     public ExchangeDeviceKeyWindow()
     {
@@ -28,8 +38,10 @@ public partial class ExchangeDeviceKeyWindow : Window
 
         DataContext = viewModel;
 
+        _onExitingHandler = (s, e) => Close();
+
         var eventService = App.GetService<IEventService>();
-        eventService.Subscribe(EventNames.OnExiting, (s, e) => Close());
+        eventService.Subscribe(EventNames.OnExiting, _onExitingHandler);
     }
 
     public ExchangeDeviceKeyWindow OnVerificationCodeEntered(Action<string> action)
@@ -67,23 +79,30 @@ public partial class ExchangeDeviceKeyWindow : Window
 
         viewModel.VerificationCodeString = code;
 
+        // D11: unsubscribe any previous handler before (re-)subscribing, so repeated
+        // displays never accumulate subscriptions on the singleton event bus.
         var eventService = App.GetService<IEventService>();
-        eventService.Subscribe<DeviceKeyEventArgs>(EventNames.OnAcceptingDeviceKey, (s, e) =>
+        if (_onAcceptingDeviceKeyHandler is not null)
+            eventService.Unsubscribe(EventNames.OnAcceptingDeviceKey, _onAcceptingDeviceKeyHandler);
+
+        _displayedCode = code;
+        _onAcceptingDeviceKeyHandler = (s, e) =>
         {
             if (code.Equals(e.Key))
             {
                 Dispatcher.UIThread.Post(Close);
             }
-        });
+        };
+        eventService.Subscribe(EventNames.OnAcceptingDeviceKey, _onAcceptingDeviceKeyHandler);
 
-        waittingAcceptingDeviceKeyTimer = new() { Interval = 60 * 1000, AutoReset = false };
+        waitingAcceptingDeviceKeyTimer = new() { Interval = 60 * 1000, AutoReset = false };
 
-        waittingAcceptingDeviceKeyTimer.Elapsed += (_, _) =>
+        waitingAcceptingDeviceKeyTimer.Elapsed += (_, _) =>
         {
             Dispatcher.UIThread.Post(Close);
         };
 
-        waittingAcceptingDeviceKeyTimer.Start();
+        waitingAcceptingDeviceKeyTimer.Start();
 
         return this;
     }
@@ -156,7 +175,7 @@ public partial class ExchangeDeviceKeyWindow : Window
             return;
         }
 
-        if (viewModel.IsVerifing || (viewModel.IsEditable == false))
+        if (viewModel.IsVerifying || (viewModel.IsEditable == false))
             return;
 
         if (e.Key == Key.V && e.KeyModifiers == KeyModifiers.Control)
@@ -222,8 +241,17 @@ public partial class ExchangeDeviceKeyWindow : Window
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
-        waittingAcceptingDeviceKeyTimer?.Stop();
-        waittingAcceptingDeviceKeyTimer?.Dispose();
+        waitingAcceptingDeviceKeyTimer?.Stop();
+        waitingAcceptingDeviceKeyTimer?.Dispose();
+
+        // D11: unsubscribe the event-bus handlers when the window closes.
+        var eventService = App.GetService<IEventService>();
+        if (_onAcceptingDeviceKeyHandler is not null)
+        {
+            eventService.Unsubscribe(EventNames.OnAcceptingDeviceKey, _onAcceptingDeviceKeyHandler);
+            _onAcceptingDeviceKeyHandler = null;
+        }
+        eventService.Unsubscribe(EventNames.OnExiting, _onExitingHandler);
 
         base.OnClosing(e);
     }

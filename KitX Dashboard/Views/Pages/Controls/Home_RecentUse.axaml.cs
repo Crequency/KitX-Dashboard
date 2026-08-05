@@ -5,7 +5,7 @@ namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class Home_RecentUse : UserControl
 {
-    private readonly Home_RecentUseViewModel viewModel = new();
+    private readonly Home_RecentUseViewModel viewModel = App.GetService<Home_RecentUseViewModel>();
 
     public Home_RecentUse()
     {

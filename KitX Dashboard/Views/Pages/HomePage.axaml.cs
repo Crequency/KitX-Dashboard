@@ -10,7 +10,7 @@ namespace KitX.Dashboard.Views.Pages;
 
 public partial class HomePage : UserControl, IView
 {
-    private readonly HomePageViewModel viewModel = new();
+    private readonly HomePageViewModel viewModel = App.GetService<HomePageViewModel>();
 
     public HomePage()
     {

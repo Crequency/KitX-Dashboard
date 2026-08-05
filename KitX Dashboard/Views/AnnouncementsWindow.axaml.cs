@@ -10,7 +10,7 @@ namespace KitX.Dashboard.Views;
 
 public partial class AnnouncementsWindow : Window, IView
 {
-    private readonly AnnouncementsWindowViewModel _viewModel = new();
+    private readonly AnnouncementsWindowViewModel _viewModel = App.GetService<AnnouncementsWindowViewModel>();
 
     private static IAppConfig AppConfig => App.GetService<IConfigService>().AppConfig;
 

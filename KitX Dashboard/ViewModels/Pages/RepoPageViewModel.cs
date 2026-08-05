@@ -1,16 +1,17 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Text.Json;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Plugin.Events;
-using KitX.Core.Event;
 using KitX.Core.Plugin;
 using KitX.Dashboard;
 using KitX.Dashboard.Views.Pages;
@@ -25,11 +26,15 @@ namespace KitX.Dashboard.ViewModels.Pages;
 internal class RepoPageViewModel : ViewModelBase
 {
     private readonly IConfigService _configService;
+    private readonly IEventService _eventService;
+    private readonly IPluginService _pluginService;
     private RepoPage? CurrentPage { get; set; }
 
-    public RepoPageViewModel()
+    public RepoPageViewModel(IConfigService configService, IEventService eventService, IPluginService pluginService)
     {
-        _configService = ConfigService;
+        _configService = configService;
+        _eventService = eventService;
+        _pluginService = pluginService;
 
         InitCommands();
 
@@ -80,10 +85,9 @@ internal class RepoPageViewModel : ViewModelBase
             {
                 try
                 {
-                    var pluginService = App.GetService<IPluginService>();
                     foreach (var file in files!)
                     {
-                        await pluginService.ImportPluginAsync(file);
+                        await _pluginService.ImportPluginAsync(file);
                     }
                     // Import completed, refresh the list
                     RefreshPluginsCommand?.Execute(new());
@@ -106,18 +110,15 @@ internal class RepoPageViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        var eventService = App.GetService<IEventService>();
-        eventService.Subscribe(EventNames.AppConfigChanged, (s, e) => ImportButtonVisibility = _configService.AppConfig.App.DeveloperSetting);
+        _eventService.Subscribe(EventNames.AppConfigChanged, (s, e) => ImportButtonVisibility = _configService.AppConfig.App.DeveloperSetting);
 
         // Subscribe to plugin status changes for runtime auto-refresh
-        var pluginService = App.GetService<IPluginService>();
-        if (pluginService != null)
-            pluginService.PluginStatusChanged += OnPluginStatusChanged;
+        _pluginService.PluginStatusChanged += OnPluginStatusChanged;
 
         PluginBars.CollectionChanged += (_, _) =>
         {
             PluginsCount = PluginBars.Count.ToString();
-            NoPlugins_TipHeight = PluginBars.Count == 0 ? 300 : 0;
+            ApplyFilter();
         };
     }
 
@@ -141,48 +142,94 @@ internal class RepoPageViewModel : ViewModelBase
     /// </summary>
     internal void Cleanup()
     {
-        var pluginService = App.GetService<IPluginService>();
-        if (pluginService != null)
-            pluginService.PluginStatusChanged -= OnPluginStatusChanged;
+        _pluginService.PluginStatusChanged -= OnPluginStatusChanged;
     }
 
     /// <summary>
-    /// Synchronously refreshes the plugin list from the plugin service.
-    /// Called directly from Loaded (bypasses ReactiveCommand scheduling)
-    /// and also from RefreshPluginsCommand.
+    /// Refreshes the plugin list from the plugin service.
+    /// File IO + JSON deserialization runs on the thread pool (D12); the <see cref="PluginBar"/>
+    /// controls themselves are constructed back on the UI thread (Avalonia controls are
+    /// not thread-affine-safe to build off the UI thread).
+    /// Called from Loaded (bypasses ReactiveCommand scheduling) and from RefreshPluginsCommand.
     /// </summary>
-    internal void PerformRefresh()
+    internal async void PerformRefresh()
     {
         PluginBars.Clear();
 
-        var pluginService = App.GetService<IPluginService>();
-        foreach (var item in pluginService.GetInstalledPlugins())
+        var installations = await Task.Run(() =>
         {
-            try
-            {
-                var plugin = new PluginInstallation()
-                {
-                    Id = item.Id,
-                    InstallPath = item.InstallPath,
-                    PluginInfo = JsonSerializer.Deserialize<PluginInfo>(
-                        File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/PluginInfo.json"))
-                    ),
-                    LoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
-                        File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json"))
-                    ),
-                    InstalledDevices = [],
-                };
+            var list = new List<PluginInstallation>();
 
-                PluginBars.Add(new(plugin, ref pluginBars));
-            }
-            catch (Exception ex)
+            foreach (var item in _pluginService.GetInstalledPlugins())
             {
-                Log.Error(ex, "In RefreshPlugins()");
+                try
+                {
+                    list.Add(new PluginInstallation()
+                    {
+                        Id = item.Id,
+                        InstallPath = item.InstallPath,
+                        PluginInfo = JsonSerializer.Deserialize<PluginInfo>(
+                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/PluginInfo.json"))
+                        ),
+                        LoaderInfo = JsonSerializer.Deserialize<LoaderInfo>(
+                            File.ReadAllText(Path.GetFullPath($"{item.InstallPath}/LoaderInfo.json"))
+                        ),
+                        InstalledDevices = [],
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "In RefreshPlugins()");
+                }
             }
+
+            return list;
+        });
+
+        foreach (var plugin in installations)
+            PluginBars.Add(new(plugin, ref pluginBars));
+    }
+
+    private string _searchingText = "";
+
+    internal string SearchingText
+    {
+        get => _searchingText;
+        set
+        {
+            if (_searchingText == value) return;
+            _searchingText = value ?? "";
+            ApplyFilter();
         }
     }
 
-    internal string SearchingText { get; set; }
+    /// <summary>
+    /// Filtered view of <see cref="PluginBars"/> bound by the page's plugin list.
+    /// Matches plugin name or ID, ignoring case; an empty keyword shows all.
+    /// </summary>
+    private readonly ObservableCollection<PluginBar> _displayedPluginBars = [];
+
+    internal ObservableCollection<PluginBar> DisplayedPluginBars => _displayedPluginBars;
+
+    private void ApplyFilter()
+    {
+        var keyword = _searchingText?.Trim() ?? string.Empty;
+
+        _displayedPluginBars.Clear();
+
+        foreach (var bar in pluginBars)
+        {
+            var plugin = bar.Plugin;
+            var info = plugin?.PluginInfo;
+
+            if (keyword.Length == 0
+                || info?.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true
+                || plugin?.Id.ToString().Contains(keyword, StringComparison.OrdinalIgnoreCase) == true)
+                _displayedPluginBars.Add(bar);
+        }
+
+        NoPlugins_TipHeight = _displayedPluginBars.Count == 0 ? 300 : 0;
+    }
 
     private string pluginsCount = "0";
 

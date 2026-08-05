@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Text;
@@ -8,20 +8,26 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
-using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 
-internal class PluginDetailWindowViewModel : ViewModelBase
+internal class PluginDetailWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly IConfigService _configService;
+    private readonly IEventService _eventService;
 
-    public PluginDetailWindowViewModel()
+    /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
+    private readonly EventHandler<EventArgs> _themeConfigChangedHandler;
+
+    public PluginDetailWindowViewModel(IConfigService configService, IEventService eventService)
     {
-        _configService = ConfigService;
+        _configService = configService;
+        _eventService = eventService;
+
+        _themeConfigChangedHandler = (s, e) => this.RaisePropertyChanged(nameof(TintColor));
 
         InitCommands();
 
@@ -35,8 +41,16 @@ internal class PluginDetailWindowViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        var eventService = App.GetService<IEventService>();
-        eventService.Subscribe(EventNames.ThemeConfigChanged, (s, e) => this.RaisePropertyChanged(nameof(TintColor)));
+        _eventService.Subscribe(EventNames.ThemeConfigChanged, _themeConfigChangedHandler);
+    }
+
+    /// <summary>
+    /// Unsubscribes every subscription made in <see cref="InitEvents"/>. The window is
+    /// created per plugin-detail view (D11).
+    /// </summary>
+    public void Dispose()
+    {
+        _eventService.Unsubscribe(EventNames.ThemeConfigChanged, _themeConfigChangedHandler);
     }
 
     private PluginInfo? pluginDetail;

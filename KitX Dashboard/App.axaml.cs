@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -14,12 +14,12 @@ using KitX.Core.Announcement;
 using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
-using KitX.Core.Contract.Workflow;
 using KitX.Core.DI;
-using KitX.Core.Event;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Utils;
 using KitX.WorkflowV6.Hosting;
 using KitX.Dashboard.ViewModels;
+using KitX.Dashboard.ViewModels.Maintain;
 using KitX.Dashboard.ViewModels.Pages;
 using KitX.Dashboard.ViewModels.Pages.Controls;
 using KitX.Dashboard.Views;
@@ -72,7 +72,7 @@ public partial class App : Application
         // S5: WorkflowScriptEditorWindowViewModel retired — functionality merged into WorkflowEditorViewModel.
         services.AddTransient<DebugWindowViewModel>();
         services.AddTransient<Settings_GeneralViewModel>();
-        services.AddTransient<Settings_PerformenceViewModel>();
+        services.AddTransient<Settings_PerformanceViewModel>();
 
         // S0: page/window ViewModels resolved via App.GetService at their View creation points
         // (Avalonia constructs Views directly — no container injection into View constructors).
@@ -80,6 +80,29 @@ public partial class App : Application
         services.AddTransient<PluginsLaunchWindowViewModel>();
         services.AddTransient<WorkflowPageViewModel>();
         services.AddTransient<DevicesPageViewModel>();
+
+        // C3 convergence: all remaining ViewModels — constructor-injected services,
+        // resolved via App.GetService at their View creation points.
+        services.AddTransient<AppViewModel>();
+        services.AddTransient<MainWindowViewModel>();
+        services.AddTransient<DebugOptionsWindowViewModel>();
+        services.AddTransient<AnnouncementsWindowViewModel>();
+        services.AddTransient<ExchangeDeviceKeyWindowViewModel>();
+        services.AddTransient<PluginDetailWindowViewModel>();
+        services.AddTransient<HomePageViewModel>();
+        services.AddTransient<LibPageViewModel>();
+        services.AddTransient<RepoPageViewModel>();
+        services.AddTransient<MarketPageViewModel>();
+        services.AddTransient<AccountPageViewModel>();
+        services.AddTransient<DevelopingViewModel>();
+        services.AddTransient<Home_ActivityLogViewModel>();
+        services.AddTransient<Home_CountViewModel>();
+        services.AddTransient<Home_RecentUseViewModel>();
+        services.AddTransient<PluginBarViewModel>();
+        services.AddTransient<Settings_AboutViewModel>();
+        services.AddTransient<Settings_PersonaliseViewModel>();
+        services.AddTransient<Settings_UpdateViewModel>();
+        services.AddTransient<SettingsPageViewModel>();
 
         // Build the SINGLE IServiceProvider — no duplicate BuildServiceProvider calls
         var provider = services.BuildServiceProvider();
@@ -136,6 +159,14 @@ public partial class App : Application
         );
     }
 
+    /// <summary>
+    /// Cached default icon (D4). Previously re-decoded from disk on every access.
+    /// Owned by this static cache for process lifetime — one small bitmap, bounded.
+    /// </summary>
+    private static Bitmap? _defaultIconCache;
+
+    private static string? _defaultIconCacheKey;
+
     public static Bitmap? DefaultIcon
     {
         get
@@ -146,7 +177,13 @@ public partial class App : Application
             if (Design.IsDesignMode)
                 return null;
 
-            return new(path);
+            if (_defaultIconCacheKey == path && _defaultIconCache is not null)
+                return _defaultIconCache;
+
+            _defaultIconCache = new(path);
+            _defaultIconCacheKey = path;
+
+            return _defaultIconCache;
         }
     }
 
@@ -165,7 +202,7 @@ public partial class App : Application
         InitializeLiveCharts();
 
         // Must construct after `LoadLanguage()` function.
-        viewModel = new();
+        viewModel = GetService<AppViewModel>();
 
         DataContext = viewModel;
     }
@@ -182,55 +219,7 @@ public partial class App : Application
         };
     }
 
-    private void LoadLanguage()
-    {
-        var configService = GetService<IConfigService>();
-        var config = configService.AppConfig;
-        var lang = config.App.AppLanguage;
-        var backup_lang = config.App.SurpportLanguages.Keys.First();
-        var path = $"{ConstantTable.LanguageFilePath}/{lang}.axaml".GetFullPath();
-        var backup_langPath = $"{ConstantTable.LanguageFilePath}/{backup_lang}.axaml".GetFullPath();
-
-        try
-        {
-            Resources.MergedDictionaries.Clear();
-
-            Resources.MergedDictionaries.Add(AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(path)) as ResourceDictionary ?? []);
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, $"Language File {lang}.axaml not found.");
-
-            Resources.MergedDictionaries.Clear();
-
-            try
-            {
-                Resources.MergedDictionaries.Add(
-                    AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(backup_langPath)) as ResourceDictionary ?? []
-                );
-
-                config.App.AppLanguage = backup_lang;
-            }
-            catch (Exception e)
-            {
-                Log.Warning(e, $"Suspected absence of language files on record.");
-            }
-            finally
-            {
-                Log.Warning($"No surpport language file loaded.");
-            }
-        }
-
-        try
-        {
-            var eventService = GetService<IEventService>();
-            eventService.Publish(EventNames.LanguageChanged, EventArgs.Empty);
-        }
-        catch (Exception e)
-        {
-            Log.Warning(e, $"Failed to invoke language changed event.");
-        }
-    }
+    private static void LoadLanguage() => LanguageLoader.LoadLanguage();
 
     private static void CalculateThemeColor()
     {
@@ -238,22 +227,7 @@ public partial class App : Application
         Color c = Color.Parse(configService.AppConfig.App.ThemeColor);
 
         if (Current is not null)
-        {
-            Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
-
-            for (char i = 'A'; i <= 'E'; ++i)
-            {
-                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
-                    new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
-                );
-            }
-            for (int i = 1; i <= 9; ++i)
-            {
-                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
-                    new Color((byte)(i * 10 + i), c.R, c.G, c.B)
-                );
-            }
-        }
+            ThemeColorPalette.ApplyTo(Current, c);
     }
 
     private static void InitializeLiveCharts()
@@ -284,7 +258,7 @@ public partial class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel() };
+            desktop.MainWindow = new MainWindow { DataContext = GetService<MainWindowViewModel>() };
         }
 
         var configService = GetService<IConfigService>();

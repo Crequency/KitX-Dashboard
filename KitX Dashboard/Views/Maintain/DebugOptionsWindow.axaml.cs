@@ -5,7 +5,7 @@ namespace KitX.Dashboard;
 
 public partial class DebugOptionsWindow : Window
 {
-    private readonly DebugOptionsWindowViewModel viewModel = new();
+    private readonly DebugOptionsWindowViewModel viewModel = App.GetService<DebugOptionsWindowViewModel>();
 
     public DebugOptionsWindow()
     {

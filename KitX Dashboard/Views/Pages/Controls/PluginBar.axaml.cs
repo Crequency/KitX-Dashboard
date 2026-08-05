@@ -7,7 +7,7 @@ namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class PluginBar : UserControl
 {
-    private readonly PluginBarViewModel viewModel = new();
+    private readonly PluginBarViewModel viewModel = App.GetService<PluginBarViewModel>();
 
     public PluginBar()
     {
@@ -26,4 +26,11 @@ public partial class PluginBar : UserControl
 
         DataContext = viewModel;
     }
+
+    /// <summary>
+    /// The plugin installation backing this bar. Exposed so page-level filtering
+    /// (RepoPage search box) can match on plugin name / ID without reaching into
+    /// the bar's private view model.
+    /// </summary>
+    internal PluginInstallation? Plugin => viewModel.Plugin;
 }

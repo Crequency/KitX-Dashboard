@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -9,11 +9,10 @@ using System.Threading;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Core.Contract.Device;
+using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Device;
-using KitX.Core.Event;
 using KitX.Core.Plugin;
 using KitX.Dashboard;
 using KitX.Dashboard.Services;
@@ -26,8 +25,22 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class PluginBarViewModel : ViewModelBase
 {
-    public PluginBarViewModel()
+    private readonly IConfigService _configService;
+    private readonly IEventService _eventService;
+    private readonly IPluginService _pluginService;
+    private readonly IPluginServer _pluginServer;
+
+    public PluginBarViewModel(
+        IConfigService configService,
+        IEventService eventService,
+        IPluginService pluginService,
+        IPluginServer pluginServer)
     {
+        _configService = configService;
+        _eventService = eventService;
+        _pluginService = pluginService;
+        _pluginServer = pluginServer;
+
         InitCommands();
         InitEvents();
     }
@@ -42,30 +55,12 @@ internal class PluginBarViewModel : ViewModelBase
                     .Show(UIStateService.MainWindow);
         });
 
-        RemoveCommand = ReactiveCommand.Create(() =>
-        {
-            if (Plugin is not null && PluginBar is not null)
-            {
-                PluginBars?.Remove(PluginBar);
+        // D6: Remove/Delete differ only in the order of UI removal vs. file deletion.
+        // removeFirst = true keeps the card until deletion succeeds (Delete), false
+        // removes it immediately (Remove).
+        RemoveCommand = ReactiveCommand.Create(() => UninstallPlugin(removeFirst: false));
 
-                // Also remove from PluginsManager - use Id directly from installation
-                var pluginService = App.GetService<KitX.Core.Contract.Plugin.IPluginService>();
-                _ = pluginService.RemovePluginAsync(Plugin.Id);
-            }
-        });
-
-        DeleteCommand = ReactiveCommand.Create(() =>
-        {
-            if (Plugin is not null && PluginBar is not null)
-            {
-                // First remove from PluginsManager (which also deletes files) - use Id directly
-                var pluginService = App.GetService<KitX.Core.Contract.Plugin.IPluginService>();
-                _ = pluginService.RemovePluginAsync(Plugin.Id);
-
-                // Then remove from UI
-                PluginBars?.Remove(PluginBar);
-            }
-        });
+        DeleteCommand = ReactiveCommand.Create(() => UninstallPlugin(removeFirst: true));
 
         LaunchCommand = ReactiveCommand.Create(() =>
         {
@@ -85,11 +80,8 @@ internal class PluginBarViewModel : ViewModelBase
                     // InstallPath is already an absolute path from PluginsManager
                     var pluginPath = $"{Plugin?.InstallPath}/{pd?.RootStartupFileName}";
 
-                    var deviceService = App.GetService<IDeviceDiscoveryService>();
-
-                    // Get actual port from PluginsServer instead of using ConstantTable
-                    var pluginsServer = App.GetService<IPluginServer>() as KitX.Core.Device.PluginsServer;
-                    var actualPort = pluginsServer?.Port;
+                    // Get actual port from the contract (no cast to the concrete type)
+                    var actualPort = _pluginServer.Port;
                     if (actualPort is null or 0)
                     {
                         Log.Error("Cannot launch plugin: PluginsServer is not running");
@@ -117,7 +109,7 @@ internal class PluginBarViewModel : ViewModelBase
                     {
                         // Loader path - relative to app directory
                         var appDir = AppDomain.CurrentDomain.BaseDirectory;
-                        var loaderPath = ConfigService.AppConfig.Loaders.InstallPath.TrimStart(new[] { '.', '/', '\\' });
+                        var loaderPath = _configService.AppConfig.Loaders.InstallPath.TrimStart(new[] { '.', '/', '\\' });
                         var loaderFile = Path.Combine(appDir, loaderPath, loaderName ?? "", loaderVersion ?? "", loaderName ?? "");
 
                         if (OperatingSystem.IsWindows())
@@ -168,13 +160,31 @@ internal class PluginBarViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        var eventService = App.GetService<IEventService>();
-        eventService.Subscribe(EventNames.LanguageChanged, (s, e) => this.RaisePropertyChanged(nameof(DisplayName)));
+        _eventService.Subscribe(EventNames.LanguageChanged, (s, e) => this.RaisePropertyChanged(nameof(DisplayName)));
     }
 
     internal PluginBar? PluginBar { get; set; }
 
     internal PluginInstallation? Plugin { get; set; }
+
+    /// <summary>
+    /// Shared uninstall path for the Remove / Delete commands (D6).
+    /// <paramref name="removeFirst"/> controls whether the card is removed from the UI
+    /// before the plugin is deleted from disk (Remove) or afterwards (Delete).
+    /// </summary>
+    private void UninstallPlugin(bool removeFirst)
+    {
+        if (Plugin is null || PluginBar is null)
+            return;
+
+        if (removeFirst)
+            PluginBars?.Remove(PluginBar);
+
+        _ = _pluginService.RemovePluginAsync(Plugin.Id);
+
+        if (!removeFirst)
+            PluginBars?.Remove(PluginBar);
+    }
 
     internal string? DisplayName
     {
@@ -183,7 +193,7 @@ internal class PluginBarViewModel : ViewModelBase
             if (Plugin is null)
                 return null;
 
-            return Plugin.PluginInfo!.DisplayName.TryGetValue(ConfigService.AppConfig.App.AppLanguage, out var lang)
+            return Plugin.PluginInfo!.DisplayName.TryGetValue(_configService.AppConfig.App.AppLanguage, out var lang)
                 ? lang
                 : Plugin.PluginInfo.DisplayName.Values.GetEnumerator().Current;
         }
@@ -194,6 +204,18 @@ internal class PluginBarViewModel : ViewModelBase
     internal string? Version => Plugin?.PluginInfo?.Version;
 
     internal ObservableCollection<PluginBar>? PluginBars { get; set; }
+
+    /// <summary>
+    /// Cached decoded icons, keyed by base64 (D4). Bitmaps are owned by this cache;
+    /// they are replaced and disposed when the icon source changes, so a plugin card
+    /// never decodes its icon more than once. A small cache (one entry per rendered
+    /// plugin card) is bounded by the plugin count.
+    /// </summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Bitmap> _iconCache = new();
+
+    private string? _iconSourceKey;
+
+    private Bitmap? _cachedIcon;
 
     internal Bitmap IconDisplay
     {
@@ -206,11 +228,30 @@ internal class PluginBarViewModel : ViewModelBase
                 if (Plugin is null)
                     return App.DefaultIcon!;
 
-                var src = Convert.FromBase64String(Plugin.PluginInfo!.IconInBase64);
+                var src = Plugin.PluginInfo!.IconInBase64;
 
-                using var ms = new MemoryStream(src);
+                // Same base64 → reuse the cached bitmap (only one decode per icon).
+                if (_iconSourceKey == src && _cachedIcon is not null)
+                    return _cachedIcon;
 
-                return new(ms);
+                if (_iconCache.TryGetValue(src, out var cached))
+                {
+                    _cachedIcon = cached;
+                    _iconSourceKey = src;
+                    return cached;
+                }
+
+                var bytes = Convert.FromBase64String(src);
+
+                using var ms = new MemoryStream(bytes);
+
+                var bitmap = new Bitmap(ms);
+
+                _iconCache[src] = bitmap;
+                _cachedIcon = bitmap;
+                _iconSourceKey = src;
+
+                return bitmap;
             }
             catch (Exception e)
             {

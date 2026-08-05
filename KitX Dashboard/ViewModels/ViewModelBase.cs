@@ -1,17 +1,20 @@
-﻿using System;
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Event;
 using ReactiveUI;
-using KitX.Core.Event;
 using KitX.Core.Configuration;
 
 namespace KitX.Dashboard.ViewModels;
 
 public abstract class ViewModelBase : ReactiveObject
 {
+    // NOTE (ServiceLocator convergence): these static accessors are RETAINED only for
+    // Settings_UpdateViewModel, whose body (Update() / busy-wait / Components logic) is
+    // frozen during the server-side refactor and may not be touched. Every other VM has
+    // been migrated to constructor injection and no longer uses them.
     /// <summary>
     /// Gets the config service from DI container
     /// </summary>

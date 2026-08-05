@@ -1,35 +1,51 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using FluentAvalonia.Styling;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
-using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.Models;
-using MsBox.Avalonia;
+using KitX.Dashboard.Utils;
 using ReactiveUI;
-using Serilog;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class Settings_PersonaliseViewModel : ViewModelBase
+internal class Settings_PersonaliseViewModel : ViewModelBase, IDisposable
 {
     private readonly IConfigService _configService;
+    private readonly IEventService _eventService;
 
-    internal Settings_PersonaliseViewModel()
+    /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
+    private readonly EventHandler<EventArgs> _languageChangedHandler;
+
+    internal Settings_PersonaliseViewModel(IConfigService configService, IEventService eventService)
     {
-        _configService = ConfigService;
+        _configService = configService;
+        _eventService = eventService;
+
+        _languageChangedHandler = (s, e) =>
+        {
+            // Update theme display names
+            foreach (var item in SupportedThemes)
+                item.ThemeDisplayName = GetThemeDisplayText(item.ThemeName);
+
+            _currentAppTheme = SupportedThemes.FirstOrDefault(x => x.ThemeName.Equals(_configService.AppConfig.App.Theme));
+
+            // Update language display names
+            foreach (var item in SupportedLanguages)
+                item.LanguageName = GetLanguageDisplayText(item.LanguageCode);
+
+            this.RaisePropertyChanged(nameof(CurrentAppTheme));
+        };
 
         InitCommands();
 
@@ -49,17 +65,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
                 if (Application.Current is null)
                     return;
 
-                Application.Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
-
-                for (char i = 'A'; i <= 'E'; ++i)
-                    Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
-                        new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
-                    );
-
-                for (int i = 1; i <= 9; ++i)
-                    Application.Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
-                        new Color((byte)(i * 10 + i), c.R, c.G, c.B)
-                    );
+                ThemeColorPalette.ApplyTo(Application.Current, c);
             });
 
             _configService.AppConfig.App.ThemeColor = themeColor.ToString();
@@ -70,21 +76,16 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        var eventService = App.GetService<IEventService>();
-        eventService.Subscribe(EventNames.LanguageChanged, (s, e) =>
-        {
-            // Update theme display names
-            foreach (var item in SupportedThemes)
-                item.ThemeDisplayName = GetThemeDisplayText(item.ThemeName);
+        _eventService.Subscribe(EventNames.LanguageChanged, _languageChangedHandler);
+    }
 
-            _currentAppTheme = SupportedThemes.FirstOrDefault(x => x.ThemeName.Equals(_configService.AppConfig.App.Theme));
-
-            // Update language display names
-            foreach (var item in SupportedLanguages)
-                item.LanguageName = GetLanguageDisplayText(item.LanguageCode);
-
-            this.RaisePropertyChanged(nameof(CurrentAppTheme));
-        });
+    /// <summary>
+    /// Unsubscribes every subscription made in <see cref="InitEvents"/>. The VM is
+    /// recreated on each Settings navigation (D11).
+    /// </summary>
+    public void Dispose()
+    {
+        _eventService.Unsubscribe(EventNames.LanguageChanged, _languageChangedHandler);
     }
 
     private void InitData()
@@ -165,7 +166,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
                 _ => ThemeVariant.Default,
             };
 
-            var eventService = App.GetService<IEventService>();
+            var eventService = _eventService;
             eventService.Publish(EventNames.ThemeConfigChanged, EventArgs.Empty);
 
             _configService.SaveAll();
@@ -174,37 +175,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase
 
     internal ObservableCollection<SupportedLanguage> SupportedLanguages { get; } = [];
 
-    internal static void LoadLanguage()
-    {
-        const string location = $"{nameof(Settings_PersonaliseViewModel)}.{nameof(LoadLanguage)}";
-
-        var configService = App.GetService<IConfigService>();
-        var lang = configService.AppConfig.App.AppLanguage;
-
-        if (Application.Current is null)
-            return;
-
-        try
-        {
-            Application.Current.Resources.MergedDictionaries.Clear();
-
-            Application.Current.Resources.MergedDictionaries.Add(
-                AvaloniaRuntimeXamlLoader.Load(File.ReadAllText($"{ConstantTable.LanguageFilePath}/{lang}.axaml")) as ResourceDictionary
-                    ?? []
-            );
-        }
-        catch (Exception ex)
-        {
-            MessageBoxManager
-                .GetMessageBoxStandard("Error", "No this language file.", icon: MsBox.Avalonia.Enums.Icon.Error)
-                .ShowWindowAsync();
-
-            Log.Warning(ex, $"In {location}: Language File {lang}.axaml not found.");
-        }
-
-        var eventService = App.GetService<IEventService>();
-        eventService.Publish(EventNames.LanguageChanged, EventArgs.Empty);
-    }
+    internal static void LoadLanguage() => LanguageLoader.LoadLanguage();
 
     internal int languageSelected = -1;
 

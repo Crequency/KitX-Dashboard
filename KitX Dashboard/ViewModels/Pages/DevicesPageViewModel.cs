@@ -1,4 +1,6 @@
+using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -12,7 +14,7 @@ using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class DevicesPageViewModel : ViewModelBase
+internal class DevicesPageViewModel : ViewModelBase, IDisposable
 {
     private readonly IDeviceDiscoveryService _discoveryService;
     private readonly INetworkService _networkService;
@@ -61,38 +63,94 @@ internal class DevicesPageViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        // Subscribe to device discovery events
+        // Subscribe to device discovery events (D11: named handler, unsubscribed in Dispose)
         if (_discoveryService is not null)
-            _discoveryService.DeviceDiscovered += (_, e) =>
-            {
-                if (e.DeviceInfo is null) return;
+            _discoveryService.DeviceDiscovered += OnDeviceDiscovered;
 
-                // Check if device already exists using IsSameDevice
-                var existingDevice = DeviceCases
-                    .OfType<DeviceCase>()
-                    .FirstOrDefault(x => x.DeviceInfo.Device.IsSameDevice(e.DeviceInfo.Device));
-                if (existingDevice is null)
-                {
-                    // Create the device case with constructor-injected services
-                    // (DeviceCase requires the runtime DeviceInfo plus DI services).
-                    var deviceCase = new DeviceCase(e.DeviceInfo, _configService, _securityService, _devicesServer, _discoveryService);
-                    DeviceCases.Add(deviceCase);
-                }
-                else
-                {
-                    // Update existing device info
-                    existingDevice.DeviceInfo = e.DeviceInfo;
-                }
-            };
-
-        DeviceCases.CollectionChanged += (_, _) =>
-        {
-            NoDevice_TipHeight = DeviceCases.Count == 0 ? 300 : 0;
-            DevicesCount = DeviceCases.Count.ToString();
-        };
+        DeviceCases.CollectionChanged += OnDeviceCasesChanged;
     }
 
-    internal string? SearchingText { get; set; }
+    private void OnDeviceDiscovered(object? sender, DeviceDiscoveredEventArgs e)
+    {
+        if (e.DeviceInfo is null) return;
+
+        // Check if device already exists using IsSameDevice
+        var existingDevice = DeviceCases
+            .OfType<DeviceCase>()
+            .FirstOrDefault(x => x.DeviceInfo.Device.IsSameDevice(e.DeviceInfo.Device));
+        if (existingDevice is null)
+        {
+            // Create the device case with constructor-injected services
+            // (DeviceCase requires the runtime DeviceInfo plus DI services).
+            var deviceCase = new DeviceCase(e.DeviceInfo, _configService, _securityService, _devicesServer, _discoveryService);
+            DeviceCases.Add(deviceCase);
+        }
+        else
+        {
+            // Update existing device info
+            existingDevice.DeviceInfo = e.DeviceInfo;
+        }
+    }
+
+    private void OnDeviceCasesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        ApplyFilter();
+        DevicesCount = DeviceCases.Count.ToString();
+    }
+
+    /// <summary>
+    /// Unsubscribes every subscription made in <see cref="InitEvents"/>. The VM is
+    /// DI-transient and recreated on each navigation; without this the singleton
+    /// services would accumulate subscriptions for every disposed instance (D11).
+    /// </summary>
+    public void Dispose()
+    {
+        if (_discoveryService is not null)
+            _discoveryService.DeviceDiscovered -= OnDeviceDiscovered;
+
+        DeviceCases.CollectionChanged -= OnDeviceCasesChanged;
+    }
+
+    private string? _searchingText;
+
+    internal string? SearchingText
+    {
+        get => _searchingText;
+        set
+        {
+            if (_searchingText == value) return;
+            _searchingText = value;
+            ApplyFilter();
+        }
+    }
+
+    /// <summary>
+    /// Filtered view of <see cref="DeviceCases"/> bound by the page's device grid.
+    /// Matches device name / IPv4 / MAC address, ignoring case; empty keyword shows all.
+    /// </summary>
+    private readonly ObservableCollection<IDeviceCase> _displayedDeviceCases = [];
+
+    internal ObservableCollection<IDeviceCase> DisplayedDeviceCases => _displayedDeviceCases;
+
+    private void ApplyFilter()
+    {
+        var keyword = _searchingText?.Trim() ?? string.Empty;
+
+        _displayedDeviceCases.Clear();
+
+        foreach (var device in DeviceCases)
+        {
+            var locator = device.DeviceInfo.Device;
+
+            if (keyword.Length == 0
+                || locator.DeviceName.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || locator.IPv4.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || locator.MacAddress.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                _displayedDeviceCases.Add(device);
+        }
+
+        NoDevice_TipHeight = _displayedDeviceCases.Count == 0 ? 300 : 0;
+    }
 
     internal string devicesCount = DeviceCases.Count.ToString();
 

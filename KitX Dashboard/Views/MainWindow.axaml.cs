@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Timers;
 using Avalonia;
 using Avalonia.Controls;
@@ -7,7 +8,6 @@ using Common.BasicHelper.Core.TaskSystem;
 using FluentAvalonia.UI.Controls;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
-using KitX.Core.Event;
 using KitX.Dashboard.Converters;
 using KitX.Dashboard.Generators;
 using KitX.Dashboard.Names;
@@ -20,8 +20,14 @@ namespace KitX.Dashboard.Views;
 
 public partial class MainWindow : Window, IView
 {
-    private readonly MainWindowViewModel viewModel = new();
+    private readonly MainWindowViewModel viewModel = App.GetService<MainWindowViewModel>();
     private readonly SignalTasksManager _signalTasksManager;
+
+    /// <summary>Greeting-text refresh timer — stopped/disposed on window close (D13).</summary>
+    private readonly Timer _greetingTimer = new() { AutoReset = true };
+
+    /// <summary>Debounces window geometry writes to the config (D13).</summary>
+    private readonly System.Threading.CancellationTokenSource _geometrySaveCts = new();
 
     private static IAppConfig AppConfig => App.GetService<IConfigService>().AppConfig;
 
@@ -71,6 +77,8 @@ public partial class MainWindow : Window, IView
 
                     config.Size.Width = ClientSize.Width;
                     config.Size.Height = ClientSize.Height;
+
+                    ScheduleGeometrySave();
                 };
 
                 PositionChanged += (_, _) =>
@@ -80,6 +88,8 @@ public partial class MainWindow : Window, IView
 
                     config.Location.Left = Position.X;
                     config.Location.Top = Position.Y;
+
+                    ScheduleGeometrySave();
                 };
 
                 if (WindowState != Avalonia.Controls.WindowState.Normal)
@@ -105,13 +115,32 @@ public partial class MainWindow : Window, IView
 
         eventService.Subscribe(EventNames.GreetingTextIntervalUpdated, (s, e) => UpdateGreetingText());
 
-        var timer = new Timer() { AutoReset = true, Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval };
+        _greetingTimer.Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval;
 
-        timer.Elapsed += (_, _) => UpdateGreetingText();
+        _greetingTimer.Elapsed += (_, _) => UpdateGreetingText();
 
-        timer.Start();
+        _greetingTimer.Start();
 
         _signalTasksManager.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
+    }
+
+    /// <summary>
+    /// Debounced geometry persistence (D13): resize/move events fire continuously
+    /// during a drag — wait 500ms of quiescence before writing the config file.
+    /// </summary>
+    private void ScheduleGeometrySave()
+    {
+        _geometrySaveCts.Cancel();
+        var token = _geometrySaveCts.Token;
+        _ = Task.Delay(500, token).ContinueWith(t =>
+        {
+            if (t.IsCanceled) return;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (token.IsCancellationRequested) return;
+                IView.SaveAppConfigChanges();
+            });
+        }, token);
     }
 
     internal void UpdateGreetingText()
@@ -204,7 +233,17 @@ public partial class MainWindow : Window, IView
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         if (ConstantTable.Exiting)
+        {
+            // D13: the main window never fully closes during normal operation (hide),
+            // but when the app IS exiting, release the per-minute timer + debounce token.
+            _greetingTimer.Stop();
+            _greetingTimer.Dispose();
+            _geometrySaveCts.Cancel();
+            _geometrySaveCts.Dispose();
+
+            base.OnClosing(e);
             return;
+        }
 
         e.Cancel = true;
 

@@ -26,6 +26,11 @@ using Timer = System.Timers.Timer;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
+// NOTE (ServiceLocator convergence): this ViewModel's body (Update() / busy-wait loops /
+// Components logic) is frozen during the server-side refactor and must not be modified,
+// so its remaining App.GetService/ViewModelBase.ConfigService accessors are intentionally
+// retained (documented exception to the constructor-injection convergence). The instance
+// itself is resolved via DI at the View creation point.
 internal class Settings_UpdateViewModel : ViewModelBase
 {
     private bool _canUpdateDataGridView = true;

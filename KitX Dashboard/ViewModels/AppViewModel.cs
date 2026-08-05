@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
@@ -10,7 +10,6 @@ using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Plugin.Events;
-using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
@@ -24,12 +23,16 @@ internal class AppViewModel : ViewModelBase
 {
     private readonly IConfigService _configService;
     private readonly IAnnouncementService _announcementService;
+    private readonly IEventService _eventService;
 
-    public AppViewModel()
+    public AppViewModel(
+        IConfigService configService,
+        IAnnouncementService announcementService,
+        IEventService eventService)
     {
-        // Get services from DI container
-        _configService = ConfigService;
-        _announcementService = AnnouncementService;
+        _configService = configService;
+        _announcementService = announcementService;
+        _eventService = eventService;
 
         InitCommands();
 
@@ -63,6 +66,10 @@ internal class AppViewModel : ViewModelBase
 
         OpenDebugToolCommand = ReactiveCommand.Create(() =>
         {
+            // D13.4: developer gate — the debug tool only opens when Developer Setting is on.
+            if (!_configService.AppConfig.App.DeveloperSetting)
+                return;
+
             UIStateService.ShowWindow(new DebugWindow());
         });
 
@@ -100,15 +107,13 @@ internal class AppViewModel : ViewModelBase
 
         UIStateService.PluginInfos.CollectionChanged += (_, _) => UpdateTrayIconText();
 
-        var eventService = App.GetService<IEventService>();
-
         // Subscribe to port changes via EventService to update tray icon
-        eventService.Subscribe<PortChangedEventArgs>(EventNames.DevicesServerPortChanged, (s, e) => UpdateTrayIconText());
+        _eventService.Subscribe<PortChangedEventArgs>(EventNames.DevicesServerPortChanged, (s, e) => UpdateTrayIconText());
 
-        eventService.Subscribe<PortChangedEventArgs>(EventNames.PluginsServerPortChanged, (s, e) => UpdateTrayIconText());
+        _eventService.Subscribe<PortChangedEventArgs>(EventNames.PluginsServerPortChanged, (s, e) => UpdateTrayIconText());
 
         // Subscribe to plugin events via EventService to update UIStateService.PluginInfos
-        eventService.Subscribe<PluginRegisteredEventArgs>(EventNames.PluginRegistered, (s, e) =>
+        _eventService.Subscribe<PluginRegisteredEventArgs>(EventNames.PluginRegistered, (s, e) =>
         {
             Log.Information($"[AppViewModel] Received PluginRegistered event for: {e.PluginInfo?.Name}");
             if (e.PluginInfo is not null && !UIStateService.PluginInfos.Any(x => x.Name == e.PluginInfo.Name))
@@ -118,7 +123,7 @@ internal class AppViewModel : ViewModelBase
             }
         });
 
-        eventService.Subscribe<PluginUnregisteredEventArgs>(EventNames.PluginUnregistered, (s, e) =>
+        _eventService.Subscribe<PluginUnregisteredEventArgs>(EventNames.PluginUnregistered, (s, e) =>
         {
             Log.Information($"[AppViewModel] Received PluginUnregistered event for: {e.PluginInfo?.Name}");
             if (e.PluginInfo is not null)
@@ -137,7 +142,7 @@ internal class AppViewModel : ViewModelBase
         });
 
         // Subscribe to plugin disconnected events to update UIStateService.PluginInfos
-        eventService.Subscribe<PluginConnectionEventArgs>(EventNames.PluginDisconnected, (s, e) =>
+        _eventService.Subscribe<PluginConnectionEventArgs>(EventNames.PluginDisconnected, (s, e) =>
         {
             Log.Information($"[AppViewModel] Received PluginDisconnected event for: {e.PluginInfo?.Name}, connection: {e.ConnectionId}");
             if (e.PluginInfo is not null)
@@ -194,7 +199,7 @@ internal class AppViewModel : ViewModelBase
         TrayIconText = sb.ToString();
     }
 
-    public static void Exit()
+    public void Exit()
     {
         UIStateService.DeviceCases.Clear();
 
@@ -202,8 +207,7 @@ internal class AppViewModel : ViewModelBase
 
         ConstantTable.Exiting = true;
 
-        var eventService = App.GetService<IEventService>();
-        eventService.Publish(EventNames.OnExiting, EventArgs.Empty);
+        _eventService.Publish(EventNames.OnExiting, EventArgs.Empty);
 
         var win = UIStateService.MainWindow;
 
