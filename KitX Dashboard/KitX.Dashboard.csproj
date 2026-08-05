@@ -123,8 +123,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\KitX Standard\KitX Core Contracts\KitX.Core.Contract\KitX.Core.Contract.csproj" />
-        <ProjectReference Include="..\..\..\KitX Standard\KitX Script\Kscript.CSharp.Parser\Kscript.CSharp.Parser.csproj" />
-        <ProjectReference Include="..\..\..\KitX Standard\KitX Script\Kscript.CSharp\Kscript.CSharp.csproj" />
         <ProjectReference Include="..\..\KitX Core\KitX.Core\KitX.Core.csproj" />
         <ProjectReference Include="..\..\KitX Workflow\KitX.WorkflowV6\KitX.WorkflowV6.csproj" />
         <ProjectReference Include="..\KitX Dashboard Assets\KitX.Dashboard.Assets.csproj" />
