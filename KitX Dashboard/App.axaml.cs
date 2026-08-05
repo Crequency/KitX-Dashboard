@@ -57,27 +57,6 @@ public partial class App : Application
         // Shared interface registrations (ILens<>, IExecutionBackend) now resolve to V6.
         services.AddKitXWorkflowV6();
 
-        // §2.3 fix: bridge the Dashboard's plugin services to Kscript's IPluginServiceProvider,
-        // then register RealPluginManager as the live IPluginManager. This replaces the
-        // NoOpPluginManager fallback so workflow PluginCall(...) builtins reach live plugins.
-        services.AddSingleton<Kscript.CSharp.Parser.Core.IPluginServiceProvider>(sp =>
-            new KitX.Dashboard.Services.DashboardPluginServiceProvider(
-                sp.GetRequiredService<KitX.Core.Contract.Plugin.IPluginServer>(),
-                sp.GetRequiredService<KitX.Core.Contract.Event.IEventService>()));
-        services.AddSingleton<Kscript.CSharp.Parser.Core.IPluginManager>(sp =>
-            new Kscript.CSharp.Parser.Core.RealPluginManager(
-                sp.GetRequiredService<Kscript.CSharp.Parser.Core.IPluginServiceProvider>()));
-
-        // IPluginHost adapter: wraps RealPluginManager for v6 workflow PluginCall execution.
-        // Resolves the live IPluginManager (registered above); NoOpPluginManager remains as a
-        // defensive fallback if the registration is ever removed.
-        services.AddSingleton<KitX.WorkflowV6.Backend.Runtime.IPluginHost>(sp =>
-        {
-            return new KitX.Dashboard.Services.PluginHostAdapter(
-                sp.GetService<Kscript.CSharp.Parser.Core.IPluginManager>()
-                    ?? new NoOpPluginManager());
-        });
-
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
 
