@@ -6,7 +6,7 @@ namespace KitX.Dashboard.Views.Pages;
 
 public partial class WorkflowPage : UserControl
 {
-    private readonly WorkflowPageViewModel workflowViewModel = new();
+    private readonly WorkflowPageViewModel workflowViewModel = App.GetService<WorkflowPageViewModel>();
 
     public WorkflowPage()
     {

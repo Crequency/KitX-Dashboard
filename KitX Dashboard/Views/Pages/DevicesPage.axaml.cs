@@ -5,7 +5,7 @@ namespace KitX.Dashboard.Views.Pages;
 
 public partial class DevicesPage : UserControl
 {
-    private readonly DevicesPageViewModel viewModel = new();
+    private readonly DevicesPageViewModel viewModel = App.GetService<DevicesPageViewModel>();
 
     public DevicesPage()
     {

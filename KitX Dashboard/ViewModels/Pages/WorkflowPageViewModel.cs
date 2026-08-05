@@ -5,9 +5,9 @@ using System.Reactive;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using KitX.Core.Contract.Event;
+using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Plugin.Events;
 using KitX.Core.Contract.Workflow;
-using KitX.Core.DI;
 using KitX.Core.Event;
 using KitX.Dashboard;
 using KitX.Dashboard.Services;
@@ -24,6 +24,8 @@ internal class WorkflowPageViewModel : ViewModelBase
     private readonly IWorkflowStorageService _storageService;
     private readonly IWorkflowManagementService _workflowService;
     private readonly IEventService _eventService;
+    private readonly IPluginServer _pluginServer;
+    private readonly ITriggerManager _triggerManager;
 
     /// <summary>
     /// Real-time activity log shown at the bottom of the Workflow page. Only populated
@@ -68,11 +70,18 @@ internal class WorkflowPageViewModel : ViewModelBase
 #endif
     }
 
-    public WorkflowPageViewModel()
+    public WorkflowPageViewModel(
+        IWorkflowStorageService storageService,
+        IWorkflowManagementService workflowService,
+        IEventService eventService,
+        IPluginServer pluginServer,
+        ITriggerManager triggerManager)
     {
-        _storageService = App.GetService<IWorkflowStorageService>();
-        _workflowService = App.GetService<IWorkflowManagementService>();
-        _eventService = App.GetService<IEventService>();
+        _storageService = storageService;
+        _workflowService = workflowService;
+        _eventService = eventService;
+        _pluginServer = pluginServer;
+        _triggerManager = triggerManager;
 
         InitCommands();
         InitEvents();
@@ -351,9 +360,8 @@ internal class WorkflowPageViewModel : ViewModelBase
                 && !string.IsNullOrEmpty(workflow.TriggerConfig.PluginName))
             {
                 // Pre-check: is the required plugin connected?
-                var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Plugin.IPluginServer>();
-                bool pluginConnected = pluginServer?.Connections
-                    .Any(c => c.PluginInfo?.Name == workflow.TriggerConfig.PluginName) ?? false;
+                bool pluginConnected = _pluginServer.Connections
+                    .Any(c => c.PluginInfo?.Name == workflow.TriggerConfig.PluginName);
 
                 if (!pluginConnected)
                 {
@@ -372,8 +380,7 @@ internal class WorkflowPageViewModel : ViewModelBase
 
                 try
                 {
-                    var triggerManager = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Workflow.ITriggerManager>();
-                    triggerManager?.RegisterWorkflowTrigger(workflow.Id, workflow.TriggerConfig);
+                    _triggerManager.RegisterWorkflowTrigger(workflow.Id, workflow.TriggerConfig);
                     AppendLog($"[Trigger] '{workflow.Name}' armed — fires on " +
                         $"'{workflow.TriggerConfig.PluginName}/{workflow.TriggerConfig.TriggerName}'");
                 }
@@ -424,8 +431,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                 // PluginEvent: unregister trigger and mark as stopped
                 try
                 {
-                    var triggerManager = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Workflow.ITriggerManager>();
-                    triggerManager?.UnregisterWorkflowTrigger(workflow.Id);
+                    _triggerManager.UnregisterWorkflowTrigger(workflow.Id);
                 }
                 catch { /* non-critical */ }
             }
@@ -521,8 +527,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                     // Plugin came online → re-register trigger → clear error (green light)
                     try
                     {
-                        var tm = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Workflow.ITriggerManager>();
-                        tm?.RegisterWorkflowTrigger(workflow.Id, workflow.TriggerConfig);
+                        _triggerManager.RegisterWorkflowTrigger(workflow.Id, workflow.TriggerConfig);
                     }
                     catch { /* non-critical */ }
 
@@ -556,8 +561,7 @@ internal class WorkflowPageViewModel : ViewModelBase
                     // Plugin went offline → unregister trigger → mark error (yellow light)
                     try
                     {
-                        var tm = KitX.Core.DI.ServiceHost.GetRequiredService<KitX.Core.Contract.Workflow.ITriggerManager>();
-                        tm?.UnregisterWorkflowTrigger(workflow.Id);
+                        _triggerManager.UnregisterWorkflowTrigger(workflow.Id);
                     }
                     catch { /* non-critical */ }
 

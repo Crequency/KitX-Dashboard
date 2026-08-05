@@ -56,10 +56,7 @@ public partial class WorkflowEditorWindowV6 : Window
     {
         InitializeComponent();
 
-        var ksTextLens = App.GetService<KsTextLens>();
-        var bpGraphLens = App.GetService<BpGraphLens>();
-
-        _viewModel = new WorkflowEditorViewModelV6(ksTextLens, bpGraphLens);
+        _viewModel = App.GetService<WorkflowEditorViewModelV6>();
         DataContext = _viewModel;
 
         // R1: the view exposes the live editor text to the VM for explicit snapshots

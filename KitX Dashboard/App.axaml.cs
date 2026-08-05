@@ -20,6 +20,7 @@ using KitX.Core.Event;
 using KitX.Dashboard.Services;
 using KitX.WorkflowV6.Hosting;
 using KitX.Dashboard.ViewModels;
+using KitX.Dashboard.ViewModels.Pages;
 using KitX.Dashboard.ViewModels.Pages.Controls;
 using KitX.Dashboard.Views;
 using LiveChartsCore;
@@ -72,6 +73,13 @@ public partial class App : Application
         services.AddTransient<DebugWindowViewModel>();
         services.AddTransient<Settings_GeneralViewModel>();
         services.AddTransient<Settings_PerformenceViewModel>();
+
+        // S0: page/window ViewModels resolved via App.GetService at their View creation points
+        // (Avalonia constructs Views directly — no container injection into View constructors).
+        services.AddTransient<WorkflowEditorViewModelV6>();
+        services.AddTransient<PluginsLaunchWindowViewModel>();
+        services.AddTransient<WorkflowPageViewModel>();
+        services.AddTransient<DevicesPageViewModel>();
 
         // Build the SINGLE IServiceProvider — no duplicate BuildServiceProvider calls
         var provider = services.BuildServiceProvider();

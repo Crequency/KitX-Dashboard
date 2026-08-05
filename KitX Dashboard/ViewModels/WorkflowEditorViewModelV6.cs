@@ -42,12 +42,12 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 {
     public enum EditorMode { BlockScript, Blueprint }
 
-    private readonly IWorkflowStorageService? _storageService;
-    private readonly IEventService? _eventService;
-    private readonly IPluginServer? _pluginServer;
+    private readonly IWorkflowStorageService _storageService;
+    private readonly IEventService _eventService;
+    private readonly IPluginServer _pluginServer;
     private readonly KsTextLens _ksTextLens;
     private readonly BpGraphLens _bpGraphLens;
-    private readonly WorkflowRunner? _runner;
+    private readonly WorkflowRunner _runner;
     private CancellationTokenSource? _cancellationTokenSource;
     private RealBlueprintDebugger? _debugController;
     private bool _isDebugging;
@@ -105,33 +105,29 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         "    counter > Add(_, 1) > counter" + Environment.NewLine +
         "    counter > sum";
 
-    public WorkflowEditorViewModelV6(KsTextLens ksTextLens, BpGraphLens bpGraphLens)
+    public WorkflowEditorViewModelV6(
+        KsTextLens ksTextLens,
+        BpGraphLens bpGraphLens,
+        BuiltinFunctionRegistry registry,
+        IPluginServer pluginServer,
+        WorkflowRunner runner,
+        IWorkflowStorageService storageService,
+        IEventService eventService)
     {
         _ksTextLens = ksTextLens ?? throw new ArgumentNullException(nameof(ksTextLens));
         _bpGraphLens = bpGraphLens ?? throw new ArgumentNullException(nameof(bpGraphLens));
+        _pluginServer = pluginServer;
+        _runner = runner;
+        _storageService = storageService;
+        _eventService = eventService;
 
-        BuiltinFunctionRegistry? registry = null;
-        try { registry = App.GetService<BuiltinFunctionRegistry>(); } catch { /* host without DI */ }
-        IPluginServer? pluginServer = null;
-        try { pluginServer = App.GetService<IPluginServer>(); } catch { /* host without DI */ }
         BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens, registry, pluginServer);
 
         // W11: BP-side edits (wiring/comments/definition values) must mark the workflow
         // dirty — otherwise closing the window silently drops every BP change.
         BlueprintVM.BlueprintEdited += () => IsDirty = true;
 
-        // Resolve the shared workflow execution path (constant overrides + backend).
-        try { _runner = App.GetService<WorkflowRunner>(); } catch { /* host without DI */ }
-
         _ksSource = DefaultSource;
-
-        try
-        {
-            _storageService = App.GetService<IWorkflowStorageService>();
-            _eventService = App.GetService<IEventService>();
-            _pluginServer = App.GetService<IPluginServer>();
-        }
-        catch { /* test/host without DI — OK */ }
 
         // Seed default helper functions (same as v5.1)
         if (HelperFunctions.Count == 0)

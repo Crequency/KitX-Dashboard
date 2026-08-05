@@ -12,7 +12,7 @@ namespace KitX.Dashboard.Views;
 
 public partial class PluginsLaunchWindow : Window
 {
-    private readonly PluginsLaunchWindowViewModel viewModel = new();
+    private readonly PluginsLaunchWindowViewModel viewModel = App.GetService<PluginsLaunchWindowViewModel>();
     private readonly IKeyHookService _keyHookService;
 
     private readonly Action? OnHideAction;

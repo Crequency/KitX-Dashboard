@@ -16,8 +16,12 @@ namespace KitX.Dashboard.ViewModels;
 
 internal class PluginsLaunchWindowViewModel : ViewModelBase
 {
-    public PluginsLaunchWindowViewModel()
+    private readonly IPluginServer _pluginServer;
+
+    public PluginsLaunchWindowViewModel(IPluginServer pluginServer)
     {
+        _pluginServer = pluginServer;
+
         InitCommands();
 
         InitEvents();
@@ -342,8 +346,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
             if (SelectedPluginInfo is not null && SelectedFunction is not null && (HavingParameters == false))
             {
-                var pluginServer = KitX.Core.DI.ServiceHost.GetRequiredService<IPluginServer>();
-                var plugConnector = pluginServer.FindConnector(SelectedPluginInfo);
+                var plugConnector = _pluginServer.FindConnector(SelectedPluginInfo);
 
                 if (plugConnector is not null)
                 {

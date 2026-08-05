@@ -2,25 +2,36 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
+using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Device;
+using KitX.Core.Contract.Security;
 using KitX.Core.Device;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Device;
-using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class DevicesPageViewModel : ViewModelBase
 {
-    private readonly IDeviceDiscoveryService? _discoveryService;
+    private readonly IDeviceDiscoveryService _discoveryService;
     private readonly INetworkService _networkService;
+    private readonly IConfigService _configService;
+    private readonly IDeviceKeyService _securityService;
+    private readonly IDeviceServer _devicesServer;
 
-    public DevicesPageViewModel()
+    public DevicesPageViewModel(
+        IDeviceDiscoveryService discoveryService,
+        INetworkService networkService,
+        IConfigService configService,
+        IDeviceKeyService securityService,
+        IDeviceServer devicesServer)
     {
-        // Get services from DI
-        _discoveryService = App.GetService<IDeviceDiscoveryService>();
-        _networkService = App.GetService<INetworkService>();
+        _discoveryService = discoveryService;
+        _networkService = networkService;
+        _configService = configService;
+        _securityService = securityService;
+        _devicesServer = devicesServer;
 
         InitCommands();
 
@@ -62,9 +73,9 @@ internal class DevicesPageViewModel : ViewModelBase
                     .FirstOrDefault(x => x.DeviceInfo.Device.IsSameDevice(e.DeviceInfo.Device));
                 if (existingDevice is null)
                 {
-                    // Add new device case via DI - ActivatorUtilities injects IConfigService, IDeviceKeyService, etc.
-                    var serviceProvider = KitX.Core.DI.ServiceHost.ServiceProvider;
-                    var deviceCase = ActivatorUtilities.CreateInstance<DeviceCase>(serviceProvider, e.DeviceInfo);
+                    // Create the device case with constructor-injected services
+                    // (DeviceCase requires the runtime DeviceInfo plus DI services).
+                    var deviceCase = new DeviceCase(e.DeviceInfo, _configService, _securityService, _devicesServer, _discoveryService);
                     DeviceCases.Add(deviceCase);
                 }
                 else
