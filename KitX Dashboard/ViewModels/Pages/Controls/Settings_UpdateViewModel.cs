@@ -35,7 +35,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
 {
     private bool _canUpdateDataGridView = true;
 
-    internal Settings_UpdateViewModel()
+    public Settings_UpdateViewModel()
     {
         InitCommands();
 

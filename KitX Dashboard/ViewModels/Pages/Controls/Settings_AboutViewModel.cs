@@ -15,7 +15,7 @@ internal class Settings_AboutViewModel : ViewModelBase
 
     internal AppLogo? AppLogo { get; set; }
 
-    internal Settings_AboutViewModel(IConfigService configService)
+    public Settings_AboutViewModel(IConfigService configService)
     {
         _configService = configService;
 

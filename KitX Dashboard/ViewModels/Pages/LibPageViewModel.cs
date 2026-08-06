@@ -20,13 +20,24 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
     {
         _pluginInfosChangedHandler = (_, _) =>
         {
-            ApplyFilter();
-            PluginsCount = $"{PluginInfos.Count}";
+            // D-REG: plugin events may arrive on the server thread — the filter
+            // mutates a UI-bound collection, so marshal it to the UI thread.
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                ApplyFilter();
+                PluginsCount = $"{PluginInfos.Count}";
+            });
         };
 
         InitCommands();
 
         InitEvents();
+
+        // D-REG: plugins may already be connected before this page is navigated to —
+        // the filtered view must be populated from the current source (CollectionChanged
+        // alone only fires on future changes, leaving the page empty on first open).
+        ApplyFilter();
+        PluginsCount = $"{PluginInfos.Count}";
     }
 
     public sealed override void InitCommands()

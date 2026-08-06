@@ -27,7 +27,7 @@ internal class Settings_PersonaliseViewModel : ViewModelBase, IDisposable
     /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
     private readonly EventHandler<EventArgs> _languageChangedHandler;
 
-    internal Settings_PersonaliseViewModel(IConfigService configService, IEventService eventService)
+    public Settings_PersonaliseViewModel(IConfigService configService, IEventService eventService)
     {
         _configService = configService;
         _eventService = eventService;

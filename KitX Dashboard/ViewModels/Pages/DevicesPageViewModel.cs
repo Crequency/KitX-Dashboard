@@ -38,6 +38,10 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
         InitCommands();
 
         InitEvents();
+
+        // D-REG: populate the filtered view from the current source immediately —
+        // CollectionChanged alone only fires on future changes.
+        ApplyFilter();
     }
 
     public sealed override void InitCommands()
@@ -74,21 +78,29 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
     {
         if (e.DeviceInfo is null) return;
 
-        // Check if device already exists using IsSameDevice
+        // D-REG: UDP discovery arrives on the receive thread — all ObservableCollection
+        // mutations (dedupe + add/update) must run on the UI thread, otherwise the
+        // ItemsControl-bound collections get cross-thread writes (duplicated/racy cards).
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => ApplyDeviceDiscovered(e.DeviceInfo));
+    }
+
+    private void ApplyDeviceDiscovered(KitX.Shared.CSharp.Device.DeviceInfo deviceInfo)
+    {
+        // Check if device already exists using IsSameDevice (MAC format-insensitive)
         var existingDevice = DeviceCases
             .OfType<DeviceCase>()
-            .FirstOrDefault(x => x.DeviceInfo.Device.IsSameDevice(e.DeviceInfo.Device));
+            .FirstOrDefault(x => x.DeviceInfo.Device.IsSameDevice(deviceInfo.Device));
         if (existingDevice is null)
         {
             // Create the device case with constructor-injected services
             // (DeviceCase requires the runtime DeviceInfo plus DI services).
-            var deviceCase = new DeviceCase(e.DeviceInfo, _configService, _securityService, _devicesServer, _discoveryService);
+            var deviceCase = new DeviceCase(deviceInfo, _configService, _securityService, _devicesServer, _discoveryService);
             DeviceCases.Add(deviceCase);
         }
         else
         {
             // Update existing device info
-            existingDevice.DeviceInfo = e.DeviceInfo;
+            existingDevice.DeviceInfo = deviceInfo;
         }
     }
 

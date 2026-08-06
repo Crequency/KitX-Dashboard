@@ -118,8 +118,15 @@ internal class AppViewModel : ViewModelBase
             Log.Information($"[AppViewModel] Received PluginRegistered event for: {e.PluginInfo?.Name}");
             if (e.PluginInfo is not null && !UIStateService.PluginInfos.Any(x => x.Name == e.PluginInfo.Name))
             {
-                UIStateService.PluginInfos.Add(e.PluginInfo);
-                Log.Information($"[AppViewModel] Added plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+                // D-REG: plugin events arrive on the server thread — mutate the
+                // UI-bound collection on the UI thread.
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    if (UIStateService.PluginInfos.Any(x => x.Name == e.PluginInfo!.Name))
+                        return;
+                    UIStateService.PluginInfos.Add(e.PluginInfo);
+                    Log.Information($"[AppViewModel] Added plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+                });
             }
         });
 
@@ -128,16 +135,19 @@ internal class AppViewModel : ViewModelBase
             Log.Information($"[AppViewModel] Received PluginUnregistered event for: {e.PluginInfo?.Name}");
             if (e.PluginInfo is not null)
             {
-                var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo.Name);
-                if (existing is not null)
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    UIStateService.PluginInfos.Remove(existing);
-                    Log.Information($"[AppViewModel] Removed plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
-                }
-                else
-                {
-                    Log.Warning($"[AppViewModel] Plugin not found in list: {e.PluginInfo.Name}");
-                }
+                    var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo!.Name);
+                    if (existing is not null)
+                    {
+                        UIStateService.PluginInfos.Remove(existing);
+                        Log.Information($"[AppViewModel] Removed plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+                    }
+                    else
+                    {
+                        Log.Warning($"[AppViewModel] Plugin not found in list: {e.PluginInfo.Name}");
+                    }
+                });
             }
         });
 
@@ -147,16 +157,19 @@ internal class AppViewModel : ViewModelBase
             Log.Information($"[AppViewModel] Received PluginDisconnected event for: {e.PluginInfo?.Name}, connection: {e.ConnectionId}");
             if (e.PluginInfo is not null)
             {
-                var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo.Name);
-                if (existing is not null)
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    UIStateService.PluginInfos.Remove(existing);
-                    Log.Information($"[AppViewModel] Removed disconnected plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
-                }
-                else
-                {
-                    Log.Warning($"[AppViewModel] Disconnected plugin not found in list: {e.PluginInfo.Name}");
-                }
+                    var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo!.Name);
+                    if (existing is not null)
+                    {
+                        UIStateService.PluginInfos.Remove(existing);
+                        Log.Information($"[AppViewModel] Removed disconnected plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+                    }
+                    else
+                    {
+                        Log.Warning($"[AppViewModel] Disconnected plugin not found in list: {e.PluginInfo.Name}");
+                    }
+                });
             }
         });
 
@@ -184,9 +197,9 @@ internal class AppViewModel : ViewModelBase
             .AppendLine(Translate("Text_MainWindow_Title") ?? "KitX")
             .AppendLine($"v{Assembly.GetEntryAssembly()?.GetName().Version}")
             .AppendLine()
-            .Append(Translate("Text_Settings_Performence_Web_DevicesServerPort"))
+            .Append(Translate("Text_Settings_Performance_Web_DevicesServerPort"))
             .AppendLine(": " + ConstantTable.DevicesServerPort)
-            .Append(Translate("Text_Settings_Performence_Web_PluginsServerPort"))
+            .Append(Translate("Text_Settings_Performance_Web_PluginsServerPort"))
             .AppendLine(": " + ConstantTable.PluginsServerPort)
             .AppendLine()
             .Append(UIStateService.DeviceCases.Count + " ")
