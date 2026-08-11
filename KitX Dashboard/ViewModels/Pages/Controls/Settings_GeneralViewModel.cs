@@ -6,6 +6,7 @@ using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Tasks;
 using KitX.Core.Tasks;
+using KitX.Dashboard;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
 using KitX.Dashboard.Views;
@@ -47,6 +48,19 @@ internal class Settings_GeneralViewModel : ViewModelBase
                 return;
 
             UIStateService.ShowWindow(new DebugWindow(), UIStateService.MainWindow);
+        });
+
+        ExitKitXCommand = ReactiveCommand.Create(() =>
+        {
+            // Graceful exit (mirrors AppViewModel.Exit): publish OnExiting and close the
+            // main window so the app lifetime ends. Program.Main then calls
+            // AppFramework.EnsureExit(), which flushes buffered Serilog logs
+            // (Log.CloseAndFlush) before the process exits — unlike a hard kill.
+            ConstantTable.Exiting = true;
+
+            Events.Publish(EventNames.OnExiting, EventArgs.Empty);
+
+            UIStateService.MainWindow?.Close();
         });
     }
 
@@ -122,4 +136,9 @@ internal class Settings_GeneralViewModel : ViewModelBase
     internal ReactiveCommand<Unit, Unit>? ShowAnnouncementsInstantlyCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? OpenDebugToolCommand { get; set; }
+
+    /// <summary>
+    /// Gracefully exits KitX (flush logs and cleanly stop servers).
+    /// </summary>
+    internal ReactiveCommand<Unit, Unit>? ExitKitXCommand { get; set; }
 }

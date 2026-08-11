@@ -115,6 +115,12 @@
                             DockPanel.Dock="Right"
                             IsVisible="{Binding DeveloperSettingEnabled}"/>
 
+                    <Button Margin="0,0,10,0"
+                            Command="{Binding ExitKitXCommand}"
+                            Content="{DynamicResource Text_Public_Exit}"
+                            DockPanel.Dock="Right"
+                            IsVisible="{Binding DeveloperSettingEnabled}"/>
+
                     <Border/>
                 </DockPanel>
             </ui:InfoBar>
