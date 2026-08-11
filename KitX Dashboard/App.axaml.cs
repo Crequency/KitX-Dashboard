@@ -13,6 +13,7 @@ using Common.BasicHelper.Utils.Extensions;
 using KitX.Core.Announcement;
 using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Device;
 using KitX.Core.Contract.Event;
 using KitX.Core.DI;
 using KitX.Dashboard.Services;
@@ -60,6 +61,11 @@ public partial class App : Application
 
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
+
+        // Device key-exchange UI + receive-side coordinator. Subscribes to the receive
+        // exchange event in its constructor, so it must be eagerly resolved after the
+        // provider is built (below).
+        services.AddSingleton<IDeviceKeyExchangeUi, DeviceKeyExchangeUiService>();
 
         // S2/S4/S6 (WorkflowStorageService / WorkflowSessionManager / TriggerManager) are
         // now registered inside AddKitXWorkflowV6() above (migrated from Dashboard to
@@ -109,6 +115,10 @@ public partial class App : Application
 
         // Initialize ServiceHost with the single provider (centralized service access)
         ServiceHost.Initialize(provider);
+
+        // Eagerly resolve the key-exchange UI service so its receive-side event
+        // subscription is active even before the Devices page is opened.
+        _ = provider.GetRequiredService<IDeviceKeyExchangeUi>();
 
         // Initialize the workflow library's own service locator with the same provider,
         // so workflow code created outside DI (builtin functions, lazy singletons) can

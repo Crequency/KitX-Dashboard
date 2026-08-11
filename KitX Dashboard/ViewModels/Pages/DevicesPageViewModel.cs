@@ -21,19 +21,25 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
     private readonly IConfigService _configService;
     private readonly IDeviceKeyService _securityService;
     private readonly IDeviceServer _devicesServer;
+    private readonly IDeviceConnectionClient _connectionClient;
+    private readonly IDeviceKeyExchangeUi _keyExchangeUi;
 
     public DevicesPageViewModel(
         IDeviceDiscoveryService discoveryService,
         INetworkService networkService,
         IConfigService configService,
         IDeviceKeyService securityService,
-        IDeviceServer devicesServer)
+        IDeviceServer devicesServer,
+        IDeviceConnectionClient connectionClient,
+        IDeviceKeyExchangeUi keyExchangeUi)
     {
         _discoveryService = discoveryService;
         _networkService = networkService;
         _configService = configService;
         _securityService = securityService;
         _devicesServer = devicesServer;
+        _connectionClient = connectionClient;
+        _keyExchangeUi = keyExchangeUi;
 
         InitCommands();
 
@@ -94,7 +100,7 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
         {
             // Create the device case with constructor-injected services
             // (DeviceCase requires the runtime DeviceInfo plus DI services).
-            var deviceCase = new DeviceCase(deviceInfo, _configService, _securityService, _devicesServer, _discoveryService);
+            var deviceCase = new DeviceCase(deviceInfo, _configService, _securityService, _devicesServer, _discoveryService, _connectionClient, _keyExchangeUi);
             DeviceCases.Add(deviceCase);
         }
         else
