@@ -9,6 +9,7 @@ using KitX.Core.Contract.Workflow;
 using KitX.Dashboard;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Plugin;
+using KitX.ToolKit.Models;
 
 namespace KitX.Dashboard.Services;
 
@@ -22,6 +23,12 @@ public static class UIStateService
     public static ObservableCollection<IWorkflowCase> WorkflowCases { get; set; } = [];
 
     public static ObservableCollection<PluginInfo> PluginInfos { get; set; } = [];
+
+    /// <summary>
+    /// ToolKits loaded for the ToolKit management page (future replacement for the
+    /// workflow management page). Populated by <see cref="Pages.ToolkitPageViewModel"/>.
+    /// </summary>
+    public static ObservableCollection<Toolkit> Toolkits { get; set; } = [];
 
     public static MainWindow? MainWindow { get; set; }
 

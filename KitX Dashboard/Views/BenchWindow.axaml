@@ -1,0 +1,149 @@
+﻿<Window x:Class="KitX.Dashboard.Views.BenchWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Title="KitX Bench — 工作台（预览）"
+        Width="1100"
+        Height="700"
+        d:DesignHeight="700"
+        d:DesignWidth="1100"
+        Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
+        TransparencyLevelHint="Mica"
+        WindowStartupLocation="CenterOwner"
+        mc:Ignorable="d">
+    <Grid RowDefinitions="60, *" Margin="16">
+        <!-- Header -->
+        <DockPanel Grid.Row="0">
+            <StackPanel HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="10">
+                <icon:MaterialIcon Width="26" Height="26" Kind="Toolbox"/>
+                <StackPanel Spacing="2">
+                    <TextBlock FontSize="20"
+                               FontWeight="SemiBold"
+                               Text="{Binding ActiveToolkit.Meta.Name}"/>
+                    <TextBlock FontSize="12" Opacity="0.6" Text="{Binding TriggerSummary}"/>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Margin="0,0,0,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="10">
+                <Button Command="{Binding FireFirstManualCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Play"/>
+                        <TextBlock Text="手动触发测试"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Body: left config panel + center canvas placeholder -->
+        <Grid Grid.Row="1" ColumnDefinitions="300, *, 4">
+            <Grid Grid.Column="0" RowDefinitions="*, 12, 3*">
+                <!-- Triggers -->
+                <StackPanel Grid.Row="0" Margin="0,0,8,0">
+                    <TextBlock Margin="0,0,0,8" FontSize="14" FontWeight="SemiBold" Text="Triggers"/>
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding Triggers}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,2" Padding="8" CornerRadius="4"
+                                            BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
+                                            BorderThickness="1">
+                                        <StackPanel Spacing="2">
+                                            <DockPanel>
+                                                <TextBlock FontSize="13" FontWeight="Medium" Text="{Binding Id}"/>
+                                                <TextBlock Margin="8,0,0,0"
+                                                           HorizontalAlignment="Right"
+                                                           FontSize="11"
+                                                           Opacity="0.6"
+                                                           Text="{Binding Type}"/>
+                                            </DockPanel>
+                                            <TextBlock FontSize="11"
+                                                       Opacity="0.6"
+                                                       Text="{Binding Bindings.Count, StringFormat='{}{0} 绑定'}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+
+                <!-- Workflows -->
+                <GridSplitter Grid.Row="1" ResizeDirection="Rows"/>
+                <StackPanel Grid.Row="2" Margin="0,8,8,0">
+                    <TextBlock Margin="0,0,0,8" FontSize="14" FontWeight="SemiBold" Text="工作流"/>
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding Workflows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,2" Padding="8" CornerRadius="4"
+                                            BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
+                                            BorderThickness="1">
+                                        <DockPanel>
+                                            <TextBlock FontSize="13" Text="{Binding Name}"/>
+                                            <TextBlock Margin="8,0,0,0"
+                                                       HorizontalAlignment="Right"
+                                                       FontSize="11"
+                                                       Opacity="0.6"
+                                                       Text="{Binding File}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Grid>
+
+            <!-- Center: future NodifyM canvas placeholder -->
+            <Grid Grid.Column="1" Margin="8,0,8,0">
+                <Border BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                            <icon:MaterialIcon Width="48"
+                                               Height="48"
+                                               HorizontalAlignment="Center"
+                                               Kind="Network"/>
+                            <TextBlock HorizontalAlignment="Center"
+                                       FontSize="16"
+                                       Text="Bench 画布（NodifyM）开发中…"/>
+                            <TextBlock HorizontalAlignment="Center"
+                                       FontSize="12"
+                                       Opacity="0.6"
+                                       Text="此处未来为编排画布：Trigger 节点 + 线束边 + DataStore 数据面板"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1"
+                                    Margin="0,0,0,16"
+                                    HorizontalAlignment="Center"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                            <TextBlock FontSize="12" Opacity="0.8"
+                                       Text="{Binding ValidationIssues.Count, StringFormat='{}{0} 项配置校验'}"/>
+                            <TextBlock FontSize="12" Opacity="0.6"
+                                       Text="· config 为唯一真相，画布为投影"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <GridSplitter Grid.Column="2" ResizeDirection="Columns"/>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,98 @@
+﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.ToolkitPage"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:icon="using:Material.Icons.Avalonia"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             d:DesignHeight="600"
+             d:DesignWidth="900"
+             mc:Ignorable="d">
+    <DockPanel>
+        <!-- Top toolbar -->
+        <Grid Height="80" DockPanel.Dock="Top">
+            <StackPanel Margin="25,0,0,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                <TextBlock FontSize="22" FontWeight="SemiBold" Text="ToolKit 管理"/>
+                <TextBlock Margin="12,0,0,0"
+                           VerticalAlignment="Bottom"
+                           FontSize="13"
+                           Opacity="0.6"
+                           Text="预览 — 未来将替代工作流管理界面"/>
+            </StackPanel>
+
+            <StackPanel Margin="0,0,20,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="10">
+                <Button Command="{Binding CreateToolkitCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Plus"/>
+                        <TextBlock Text="新建 ToolKit"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding OpenBenchCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Toolbox"/>
+                        <TextBlock Text="打开 Bench"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Toolkit cards -->
+        <DockPanel Margin="10">
+            <ListBox ItemsSource="{Binding Toolkits}"
+                     SelectedItem="{Binding SelectedToolkit}"
+                     Background="Transparent"
+                     BorderThickness="0">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Width="320"
+                                Margin="10"
+                                Padding="16"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}">
+                            <StackPanel Spacing="6">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left"
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding Meta.Name}"/>
+                                    <TextBlock Margin="10,0,0,0"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Opacity="0.6"
+                                               Text="{Binding Meta.Version}"/>
+                                </DockPanel>
+                                <TextBlock FontSize="12"
+                                           Opacity="0.7"
+                                           Text="{Binding Meta.Description}"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="Wrap"/>
+                                <StackPanel Margin="0,8,0,0" Orientation="Horizontal" Spacing="16">
+                                    <TextBlock FontSize="12" Text="{Binding Workflows.Count, StringFormat='{}{0} 工作流'}"/>
+                                    <TextBlock FontSize="12" Text="{Binding Triggers.Count, StringFormat='{}{0} Trigger'}"/>
+                                    <TextBlock FontSize="12" Text="{Binding Plugins.Count, StringFormat='{}{0} 插件需求'}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+                <ListBox.EmptyView>
+                    <controls:Developing/>
+                </ListBox.EmptyView>
+            </ListBox>
+        </DockPanel>
+    </DockPanel>
+</UserControl>

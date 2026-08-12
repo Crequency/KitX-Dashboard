@@ -18,6 +18,7 @@ using KitX.Core.DI;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
 using KitX.WorkflowV6.Hosting;
+using KitX.ToolKit.Hosting;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.ViewModels.Maintain;
 using KitX.Dashboard.ViewModels.Pages;
@@ -58,6 +59,11 @@ public partial class App : Application
         // Shared interface registrations (ILens<>, IExecutionBackend) now resolve to V6.
         services.AddKitXWorkflowV6();
 
+        // ToolKit / Bench orchestration layer — unified Trigger system + DataStore +
+        // workflow meta-orchestration. Registers the DataStore built-in plugin (routed by
+        // PluginHostAdapter for the reserved "KitX.DataStore" name) and the BenchTriggerManager.
+        services.AddKitXToolKit();
+
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
 
@@ -80,6 +86,10 @@ public partial class App : Application
         services.AddTransient<PluginsLaunchWindowViewModel>();
         services.AddTransient<WorkflowPageViewModel>();
         services.AddTransient<DevicesPageViewModel>();
+        // ToolKit / Bench scaffold — ToolKit management page (future replacement for the
+        // workflow page) + the Bench orchestration window.
+        services.AddTransient<ToolkitPageViewModel>();
+        services.AddTransient<BenchViewModel>();
 
         // C3 convergence: all remaining ViewModels — constructor-injected services,
         // resolved via App.GetService at their View creation points.
