@@ -26,7 +26,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     private InstanceSnapshot? _selectedInstance;
     private bool _hasPanel;
 
-    internal PanelHostViewModel(IToolkitService toolkitService, IBenchService benchService)
+    public PanelHostViewModel(IToolkitService toolkitService, IBenchService benchService)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;

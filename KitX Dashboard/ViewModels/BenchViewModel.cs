@@ -22,7 +22,7 @@ internal class BenchViewModel : ViewModelBase
 
     private bool _isDirty;
 
-    internal BenchViewModel(IToolkitService toolkitService, IBenchService benchService)
+    public BenchViewModel(IToolkitService toolkitService, IBenchService benchService)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;

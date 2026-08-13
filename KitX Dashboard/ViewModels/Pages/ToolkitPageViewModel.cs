@@ -26,7 +26,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     private Toolkit? _selectedToolkit;
     private IReadOnlyList<InstanceSnapshot> _instances = [];
 
-    internal ToolkitPageViewModel(IToolkitService toolkitService, IBenchService benchService)
+    public ToolkitPageViewModel(IToolkitService toolkitService, IBenchService benchService)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;
