@@ -28,10 +28,16 @@
                         VerticalAlignment="Center"
                         Orientation="Horizontal"
                         Spacing="10">
-                <Button Command="{Binding CreateToolkitCommand}">
+                <Button Command="{Binding ToggleMountCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                        <icon:MaterialIcon Width="18" Height="18" Kind="Plus"/>
-                        <TextBlock Text="新建 ToolKit"/>
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Link"/>
+                        <TextBlock Text="{Binding MountButtonText}"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding OpenPanelHostCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="ViewList"/>
+                        <TextBlock Text="面板宿主"/>
                     </StackPanel>
                 </Button>
                 <Button Command="{Binding OpenBenchCommand}">
@@ -40,59 +46,104 @@
                         <TextBlock Text="打开 Bench"/>
                     </StackPanel>
                 </Button>
+                <Button Command="{Binding CreateToolkitCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Plus"/>
+                        <TextBlock Text="新建 ToolKit"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding DeleteToolkitCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Delete"/>
+                        <TextBlock Text="删除"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
 
-        <!-- Toolkit cards -->
-        <DockPanel Margin="10">
-            <ListBox ItemsSource="{Binding Toolkits}"
-                     SelectedItem="{Binding SelectedToolkit}"
-                     Background="Transparent"
-                     BorderThickness="0">
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Border Width="320"
-                                Margin="10"
-                                Padding="16"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}">
-                            <StackPanel Spacing="6">
-                                <DockPanel>
-                                    <TextBlock DockPanel.Dock="Left"
-                                               FontSize="18"
-                                               FontWeight="SemiBold"
-                                               Text="{Binding Meta.Name}"/>
-                                    <TextBlock Margin="10,0,0,0"
-                                               HorizontalAlignment="Right"
-                                               VerticalAlignment="Center"
-                                               FontSize="12"
-                                               Opacity="0.6"
-                                               Text="{Binding Meta.Version}"/>
-                                </DockPanel>
-                                <TextBlock FontSize="12"
-                                           Opacity="0.7"
-                                           Text="{Binding Meta.Description}"
-                                           TextTrimming="CharacterEllipsis"
-                                           TextWrapping="Wrap"/>
-                                <StackPanel Margin="0,8,0,0" Orientation="Horizontal" Spacing="16">
-                                    <TextBlock FontSize="12" Text="{Binding Workflows.Count, StringFormat='{}{0} 工作流'}"/>
-                                    <TextBlock FontSize="12" Text="{Binding Triggers.Count, StringFormat='{}{0} Trigger'}"/>
-                                    <TextBlock FontSize="12" Text="{Binding Plugins.Count, StringFormat='{}{0} 插件需求'}"/>
+        <!-- Toolkit cards + instances -->
+        <Grid Margin="10" RowDefinitions="*, 12, Auto">
+            <DockPanel Grid.Row="0">
+                <ListBox ItemsSource="{Binding Toolkits}"
+                         SelectedItem="{Binding SelectedToolkit}"
+                         Background="Transparent"
+                         BorderThickness="0">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="320"
+                                    Margin="10"
+                                    Padding="16"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}">
+                                <StackPanel Spacing="6">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Left"
+                                                   FontSize="18"
+                                                   FontWeight="SemiBold"
+                                                   Text="{Binding Meta.Name}"/>
+                                        <TextBlock Margin="10,0,0,0"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="12"
+                                                   Opacity="0.6"
+                                                   Text="{Binding Meta.Version}"/>
+                                    </DockPanel>
+                                    <TextBlock FontSize="12"
+                                               Opacity="0.7"
+                                               Text="{Binding Meta.Description}"
+                                               TextTrimming="CharacterEllipsis"
+                                               TextWrapping="Wrap"/>
+                                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal" Spacing="16">
+                                        <TextBlock FontSize="12" Text="{Binding Workflows.Count, StringFormat='{}{0} 工作流'}"/>
+                                        <TextBlock FontSize="12" Text="{Binding Triggers.Count, StringFormat='{}{0} Trigger'}"/>
+                                        <TextBlock FontSize="12" Text="{Binding Plugins.Count, StringFormat='{}{0} 插件需求'}"/>
+                                    </StackPanel>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-                <ListBox.EmptyView>
-                    <controls:Developing/>
-                </ListBox.EmptyView>
-            </ListBox>
-        </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <GridSplitter Grid.Row="1" ResizeDirection="Rows"/>
+            <Border Grid.Row="2" Margin="0,8,0,0" Padding="12" CornerRadius="8"
+                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                <StackPanel Spacing="8">
+                    <DockPanel>
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Text="运行实例"/>
+                        <TextBlock Margin="10,0,0,0"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   FontSize="12"
+                                   Opacity="0.6"
+                                   Text="{Binding InstancesSummary}"/>
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Instances}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,2" Padding="8" CornerRadius="4"
+                                        BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
+                                        BorderThickness="1">
+                                    <DockPanel>
+                                        <TextBlock FontSize="12" Text="{Binding InstanceId, StringFormat='{}{0}'}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Margin="8,0,0,0"
+                                                   HorizontalAlignment="Right"
+                                                   FontSize="11"
+                                                   Opacity="0.6"
+                                                   Text="{Binding Status}"/>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </Grid>
     </DockPanel>
 </UserControl>

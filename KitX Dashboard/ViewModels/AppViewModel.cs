@@ -91,6 +91,24 @@ internal class AppViewModel : ViewModelBase
             win.Activate();
         });
 
+        OpenPanelHostCommand = ReactiveCommand.Create(() =>
+        {
+            UIStateService.PanelHostWindow ??= new();
+
+            var win = UIStateService.PanelHostWindow;
+
+            if (win.IsVisible)
+            {
+                win.Hide();
+
+                return;
+            }
+
+            win.Show();
+
+            win.Activate();
+        });
+
         RestartCommand = ReactiveCommand.Create(() =>
         {
             ConstantTable.Restarting = true;
@@ -246,4 +264,6 @@ internal class AppViewModel : ViewModelBase
     internal ReactiveCommand<Unit, Unit>? ExitCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? PluginLauncherCommand { get; set; }
+
+    internal ReactiveCommand<Unit, Unit>? OpenPanelHostCommand { get; set; }
 }

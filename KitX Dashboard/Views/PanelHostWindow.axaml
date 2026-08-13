@@ -1,0 +1,118 @@
+﻿<Window x:Class="KitX.Dashboard.Views.PanelHostWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Title="KitX 面板宿主"
+        Width="960"
+        Height="640"
+        d:DesignHeight="640"
+        d:DesignWidth="960"
+        Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
+        TransparencyLevelHint="Mica"
+        WindowStartupLocation="CenterOwner"
+        mc:Ignorable="d">
+    <Grid RowDefinitions="60, *" Margin="16">
+        <!-- Header -->
+        <DockPanel Grid.Row="0">
+            <StackPanel HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="10">
+                <icon:MaterialIcon Width="26" Height="26" Kind="ViewList"/>
+                <StackPanel Spacing="2">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="面板宿主"/>
+                    <TextBlock FontSize="12" Opacity="0.6" Text="{Binding Summary}"/>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Margin="0,0,0,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="10">
+                <Button Command="{Binding OpenBenchCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Toolbox"/>
+                        <TextBlock Text="Bench 设计面"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding EndAllCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="StopCircle"/>
+                        <TextBlock Text="结束全部"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Body: instance list (left) + selected detail / panel placeholder (right) -->
+        <Grid Grid.Row="1" ColumnDefinitions="320, 12, *">
+            <!-- Instances -->
+            <ScrollViewer Grid.Column="0">
+                <StackPanel Spacing="6">
+                    <TextBlock Margin="0,0,0,4" FontSize="14" FontWeight="SemiBold" Text="实例"/>
+                    <ItemsControl ItemsSource="{Binding Instances}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,2" Padding="8" CornerRadius="6"
+                                        BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
+                                        BorderThickness="1">
+                                    <StackPanel Spacing="4">
+                                        <DockPanel>
+                                            <TextBlock FontSize="13"
+                                                       FontWeight="Medium"
+                                                       Text="{Binding ToolkitId}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Margin="8,0,0,0"
+                                                       HorizontalAlignment="Right"
+                                                       FontSize="11"
+                                                       Opacity="0.7"
+                                                       Text="{Binding Status}"/>
+                                        </DockPanel>
+                                        <TextBlock FontSize="11" Opacity="0.6"
+                                                   Text="{Binding Initiator.DeviceName, StringFormat='发起者: {0}'}"/>
+                                        <TextBlock FontSize="11" Opacity="0.6"
+                                                   Text="{Binding InstanceId}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock FontSize="11" Opacity="0.6"
+                                                   Text="{Binding RunSummary}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+                        <Button Command="{Binding EndInstanceCommand}" HorizontalAlignment="Left">
+                            <TextBlock Text="结束选中实例"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
+
+            <!-- Selected detail / panel area -->
+            <Border Grid.Column="2" Margin="0,0,0,0" CornerRadius="8"
+                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
+                    BorderThickness="1">
+                <Grid>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                                IsVisible="{Binding IsEmpty}">
+                        <icon:MaterialIcon Width="40" Height="40" HorizontalAlignment="Center" Kind="ViewList"/>
+                        <TextBlock HorizontalAlignment="Center" FontSize="14" Opacity="0.6"
+                                   Text="选择一个实例以查看其面板"/>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                                IsVisible="{Binding HasSelection}">
+                        <TextBlock HorizontalAlignment="Center" FontSize="15"
+                                   Text="面板控件渲染（十控件 DataTemplate）开发中…"/>
+                        <TextBlock HorizontalAlignment="Center" FontSize="12" Opacity="0.6"
+                                   Text="此处未来渲染选中实例的 UiPanel：文本/输入/按钮/日志/进度/弹窗"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

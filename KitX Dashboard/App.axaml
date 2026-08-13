@@ -60,6 +60,7 @@
                     <NativeMenu>
                         <NativeMenuItem Command="{Binding TrayIconClickedCommand}" Header="{DynamicResource Text_Public_ShowMainWindow}"/>
                         <NativeMenuItem Command="{Binding PluginLauncherCommand}" Header="{DynamicResource Text_Public_ShowLauncherWindow}"/>
+                        <NativeMenuItem Command="{Binding OpenPanelHostCommand}" Header="面板宿主"/>
                         <NativeMenuItemSeparator/>
                         <NativeMenuItem Command="{Binding ViewLatestAnnouncementsCommand}" Header="{DynamicResource Text_Public_ShowAnnouncements}"/>
                         <NativeMenuItem Header="{DynamicResource Text_Public_More}">

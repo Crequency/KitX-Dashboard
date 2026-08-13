@@ -34,6 +34,15 @@ public static class UIStateService
 
     public static PluginsLaunchWindow? PluginsLaunchWindow { get; set; }
 
+    /// <summary>
+    /// The Panel host window (ToolKit instance use surface), opened from the Tray / hotkey.
+    /// Singleton so toggling shows/hides the same window.
+    /// </summary>
+    public static PanelHostWindow? PanelHostWindow { get; set; }
+
+    /// <summary>The ToolKit the Bench design window is currently showing (set before opening).</summary>
+    public static Toolkit? BenchToolkit { get; set; }
+
     public static List<Window> Windows { get; set; } = [];
 
     /// <summary>

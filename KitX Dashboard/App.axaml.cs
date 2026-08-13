@@ -87,9 +87,10 @@ public partial class App : Application
         services.AddTransient<WorkflowPageViewModel>();
         services.AddTransient<DevicesPageViewModel>();
         // ToolKit / Bench scaffold — ToolKit management page (future replacement for the
-        // workflow page) + the Bench orchestration window.
+        // workflow page) + the Bench orchestration window + the panel host (use surface).
         services.AddTransient<ToolkitPageViewModel>();
         services.AddTransient<BenchViewModel>();
+        services.AddTransient<PanelHostViewModel>();
 
         // C3 convergence: all remaining ViewModels — constructor-injected services,
         // resolved via App.GetService at their View creation points.
