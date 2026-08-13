@@ -288,6 +288,8 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_ToolKit_TriggerCount">{0} déclencheurs</sys:String>
     <sys:String x:Key="Text_ToolKit_PluginCount">{0} exigences de plugin</sys:String>
     <sys:String x:Key="Text_ToolKit_InstanceCount">{0} instances</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyTitle">Aucun ToolKit</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyHint">Cliquez sur « Nouveau ToolKit » pour créer le premier</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — Établi</sys:String>
     <sys:String x:Key="Text_Bench_Triggers">Déclencheurs</sys:String>
     <sys:String x:Key="Text_Bench_Workflows">Workflows</sys:String>

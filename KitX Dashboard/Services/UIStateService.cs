@@ -52,6 +52,32 @@ public static class UIStateService
     /// </summary>
     public static Dictionary<string, Window> WorkflowEditorWindows { get; set; } = [];
 
+    /// <summary>
+    /// Tracks open Bench (workbench) windows by ToolKit id — one workbench per ToolKit,
+    /// so opening an already-open ToolKit focuses its existing window instead of duplicating.
+    /// </summary>
+    public static Dictionary<string, Window> BenchWindows { get; set; } = [];
+
+    /// <summary>
+    /// Opens (or focuses) the Bench workbench window for a ToolKit. One window per ToolKit:
+    /// re-opening an already-open ToolKit activates the existing window.
+    /// </summary>
+    public static void OpenBenchWindow(Toolkit toolkit)
+    {
+        var id = toolkit.GetId();
+        if (BenchWindows.TryGetValue(id, out var existing) && existing is { IsVisible: true })
+        {
+            existing.Activate();
+            return;
+        }
+
+        BenchToolkit = toolkit;
+        var window = new Views.BenchWindow();
+        BenchWindows[id] = window;
+        window.Closed += (_, _) => BenchWindows.Remove(id);
+        ShowWindow(window, MainWindow);
+    }
+
     public static void ShowWindow<T>(T window, Window? owner = null, bool showDialog = false, bool onlyOneInSameTime = false)
         where T : Window
     {

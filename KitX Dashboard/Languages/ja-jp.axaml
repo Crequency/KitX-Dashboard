@@ -288,6 +288,8 @@
     <sys:String x:Key="Text_ToolKit_TriggerCount">{0} トリガー</sys:String>
     <sys:String x:Key="Text_ToolKit_PluginCount">{0} プラグイン要件</sys:String>
     <sys:String x:Key="Text_ToolKit_InstanceCount">{0} インスタンス</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyTitle">ToolKit がまだありません</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyHint">「新しい ToolKit」をクリックして最初のツールキットを作成</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — ワークベンチ</sys:String>
     <sys:String x:Key="Text_Bench_Triggers">トリガー</sys:String>
     <sys:String x:Key="Text_Bench_Workflows">ワークフロー</sys:String>

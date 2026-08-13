@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
@@ -13,32 +12,28 @@ using ReactiveUI;
 namespace KitX.Dashboard.ViewModels.Pages;
 
 /// <summary>
-/// ViewModel for the ToolKit management page (the future replacement for the workflow
-/// management page). Backed by <see cref="IToolkitService"/> — CRUD against the real
-/// <c>ToolkitStore</c>, mount/unmount (instance-model), and a per-ToolKit instance list.
-/// The frontend depends only on the contract, never on implementation classes.
+/// ViewModel for the ToolKit management page — the <b>repository</b> surface: list / create /
+/// delete / mount ToolKits, and open a ToolKit's workbench (one window per ToolKit). Backed by
+/// <see cref="IToolkitService"/> (CRUD against the real <c>ToolkitStore</c>). Instance monitoring
+/// lives on the Panel host (use surface), not here.
 /// </summary>
 internal class ToolkitPageViewModel : ViewModelBase, IDisposable
 {
     private readonly IToolkitService _toolkitService;
-    private readonly IBenchService _benchService;
     private readonly IEventService _eventService;
 
-    private readonly ObservableCollection<Toolkit> _toolkits = [];
-    private Toolkit? _selectedToolkit;
-    private IReadOnlyList<InstanceSnapshot> _instances = [];
+    private readonly ObservableCollection<ToolkitCardVM> _cards = [];
 
     public ToolkitPageViewModel(IToolkitService toolkitService, IBenchService benchService, IEventService eventService)
     {
         _toolkitService = toolkitService;
-        _benchService = benchService;
         _eventService = eventService;
 
         InitCommands();
         InitEvents();
 
         EnsureSeedToolkit();
-        RefreshToolkits();
+        RefreshCards();
     }
 
     /// <summary>Seeds a sample ToolKit on first run (empty store), so the management page
@@ -50,143 +45,65 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
         _toolkitService.CreateToolkit(ToolkitSampleFactory.Create());
     }
 
-    /// <summary>All stored ToolKits (metadata).</summary>
-    internal ObservableCollection<Toolkit> Toolkits => _toolkits;
+    /// <summary>All stored ToolKits as cards.</summary>
+    internal ObservableCollection<ToolkitCardVM> Cards => _cards;
 
-    /// <summary>The ToolKit selected in the page's list.</summary>
-    internal Toolkit? SelectedToolkit
-    {
-        get => _selectedToolkit;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _selectedToolkit, value);
-            this.RaisePropertyChanged(nameof(IsMounted));
-            this.RaisePropertyChanged(nameof(MountButtonText));
-            RefreshInstances();
-        }
-    }
+    /// <summary>True when the store is empty (empty-state banner).</summary>
+    internal bool IsEmpty => _cards.Count == 0;
 
-    /// <summary>Instances of the selected ToolKit (snapshot).</summary>
-    internal IReadOnlyList<InstanceSnapshot> Instances
-    {
-        get => _instances;
-        private set => this.RaiseAndSetIfChanged(ref _instances, value);
-    }
-
-    /// <summary>True when the selected ToolKit is mounted.</summary>
-    internal bool IsMounted => SelectedToolkit is not null && _toolkitService.IsMounted(SelectedToolkit.GetId());
-
-    /// <summary>Mount/unmount button label.</summary>
-    internal string MountButtonText => IsMounted
-        ? TranslateTextWithSuffix("ToolKit", "Unmount") ?? "卸载"
-        : TranslateTextWithSuffix("ToolKit", "Mount") ?? "挂载";
-
-    /// <summary>Instance summary for the selected ToolKit.</summary>
-    internal string InstancesSummary => SelectedToolkit is null
-        ? TranslateTextWithSuffix("ToolKit", "NoSelection") ?? "未选择 ToolKit"
-        : string.Format(TranslateTextWithSuffix("ToolKit", "InstanceCount") ?? "{0} 个实例", Instances.Count);
-
-    /// <summary>Opens the Bench window for the selected ToolKit (design surface).</summary>
-    internal ReactiveCommand<Unit, Unit>? OpenBenchCommand { get; set; }
+    /// <summary>Inverse of <see cref="IsEmpty"/> (card grid visibility).</summary>
+    internal bool HasCards => !IsEmpty;
 
     /// <summary>Creates a new ToolKit from a sample and persists it.</summary>
     internal ReactiveCommand<Unit, Unit>? CreateToolkitCommand { get; set; }
 
-    /// <summary>Deletes the selected ToolKit (rejected while mounted).</summary>
-    internal ReactiveCommand<Unit, Unit>? DeleteToolkitCommand { get; set; }
-
-    /// <summary>Mounts/unmounts the selected ToolKit.</summary>
-    internal ReactiveCommand<Unit, Unit>? ToggleMountCommand { get; set; }
-
-    /// <summary>Opens the Panel host window (the instance use surface).</summary>
-    internal ReactiveCommand<Unit, Unit>? OpenPanelHostCommand { get; set; }
+    /// <summary>Deletes a ToolKit (rejected while mounted).</summary>
+    internal ReactiveCommand<ToolkitCardVM, Unit>? DeleteToolkitCommand { get; set; }
 
     public override void InitCommands()
     {
-        OpenBenchCommand = ReactiveCommand.Create(() =>
-        {
-            if (SelectedToolkit is null)
-                return;
-            // Tell the Bench design window which ToolKit it is showing, then open it.
-            UIStateService.BenchToolkit = SelectedToolkit;
-            UIStateService.ShowWindow(new Views.BenchWindow(), UIStateService.MainWindow);
-        });
-
         CreateToolkitCommand = ReactiveCommand.Create(() =>
         {
-            var toolkit = ToolkitSampleFactory.Create($"New ToolKit {Toolkits.Count + 1}");
+            var toolkit = ToolkitSampleFactory.Create($"New ToolKit {_cards.Count + 1}");
             _toolkitService.CreateToolkit(toolkit);
-            RefreshToolkits();
+            RefreshCards();
         });
 
-        DeleteToolkitCommand = ReactiveCommand.Create(() =>
+        DeleteToolkitCommand = ReactiveCommand.Create<ToolkitCardVM>(card =>
         {
-            if (SelectedToolkit is null)
+            if (card is null)
                 return;
-            _toolkitService.DeleteToolkit(SelectedToolkit.GetId());
-            SelectedToolkit = null;
-            RefreshToolkits();
-        });
-
-        ToggleMountCommand = ReactiveCommand.Create(() =>
-        {
-            if (SelectedToolkit is null)
-                return;
-            if (IsMounted)
-                _toolkitService.Unmount(SelectedToolkit.GetId());
-            else
-                _toolkitService.Mount(SelectedToolkit.GetId());
-            this.RaisePropertyChanged(nameof(IsMounted));
-            this.RaisePropertyChanged(nameof(MountButtonText));
-            RefreshInstances();
-        });
-
-        OpenPanelHostCommand = ReactiveCommand.Create(() =>
-        {
-            UIStateService.ShowWindow(new Views.PanelHostWindow(), UIStateService.MainWindow);
+            _toolkitService.DeleteToolkit(card.Model.GetId());
+            RefreshCards();
         });
     }
 
     public override void InitEvents()
     {
         _toolkitService.ToolkitListChanged += OnToolkitListChanged;
-        _toolkitService.BenchEvent += OnBenchEvent;
         _eventService.Subscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
-        this.RaisePropertyChanged(nameof(MountButtonText));
-        this.RaisePropertyChanged(nameof(InstancesSummary));
+        // Card display strings are model-driven; nothing to refresh here.
     }
 
-    private void OnToolkitListChanged(object? sender, EventArgs e) => RefreshToolkits();
+    private void OnToolkitListChanged(object? sender, EventArgs e) => RefreshCards();
 
-    private void OnBenchEvent(object? sender, BenchEvent e) => RefreshInstances();
-
-    private void RefreshToolkits()
+    private void RefreshCards()
     {
-        Toolkits.Clear();
+        _cards.Clear();
         foreach (var toolkit in _toolkitService.ListToolkits())
-            Toolkits.Add(toolkit);
-        this.RaisePropertyChanged(nameof(IsMounted));
-        this.RaisePropertyChanged(nameof(MountButtonText));
-        RefreshInstances();
-    }
-
-    private void RefreshInstances()
-    {
-        Instances = SelectedToolkit is null
-            ? []
-            : _toolkitService.Instances.Where(i => i.ToolkitId == SelectedToolkit.GetId()).ToList();
-        this.RaisePropertyChanged(nameof(InstancesSummary));
+            _cards.Add(new ToolkitCardVM(toolkit, _toolkitService));
+        this.RaisePropertyChanged(nameof(IsEmpty));
+        this.RaisePropertyChanged(nameof(HasCards));
     }
 
     /// <summary>Unsubscribes event handlers (D11 page Unloaded-dispose pattern).</summary>
     public void Dispose()
     {
         _toolkitService.ToolkitListChanged -= OnToolkitListChanged;
-        _toolkitService.BenchEvent -= OnBenchEvent;
         _eventService.Unsubscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 }

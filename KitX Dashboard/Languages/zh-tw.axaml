@@ -288,6 +288,8 @@
     <sys:String x:Key="Text_ToolKit_TriggerCount">{0} Trigger</sys:String>
     <sys:String x:Key="Text_ToolKit_PluginCount">{0} 外掛需求</sys:String>
     <sys:String x:Key="Text_ToolKit_InstanceCount">{0} 個實例</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyTitle">還沒有 ToolKit</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyHint">點擊「新建 ToolKit」建立第一個工具箱</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — 工作台</sys:String>
     <sys:String x:Key="Text_Bench_Triggers">Triggers</sys:String>
     <sys:String x:Key="Text_Bench_Workflows">工作流</sys:String>

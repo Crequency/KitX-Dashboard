@@ -1,17 +1,13 @@
 ﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.ToolkitPage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
-             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pageVMs="using:KitX.Dashboard.ViewModels.Pages"
              d:DesignHeight="600"
              d:DesignWidth="900"
              mc:Ignorable="d">
-    <UserControl.Resources>
-        <converters:LocalizedCountConverter x:Key="LocalizedCountConverter" />
-    </UserControl.Resources>
     <DockPanel>
         <!-- Top toolbar -->
         <Grid Height="80" DockPanel.Dock="Top">
@@ -32,138 +28,97 @@
                         VerticalAlignment="Center"
                         Orientation="Horizontal"
                         Spacing="10">
-                <Button Command="{Binding ToggleMountCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <icon:MaterialIcon Width="18" Height="18" Kind="Link"/>
-                        <TextBlock Text="{Binding MountButtonText}"/>
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding OpenPanelHostCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <icon:MaterialIcon Width="18" Height="18" Kind="ViewList"/>
-                        <TextBlock Text="{DynamicResource Text_ToolKit_OpenPanelHost}"/>
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding OpenBenchCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <icon:MaterialIcon Width="18" Height="18" Kind="Toolbox"/>
-                        <TextBlock Text="{DynamicResource Text_ToolKit_OpenBench}"/>
-                    </StackPanel>
-                </Button>
                 <Button Command="{Binding CreateToolkitCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="Plus"/>
                         <TextBlock Text="{DynamicResource Text_ToolKit_Create}"/>
                     </StackPanel>
                 </Button>
-                <Button Command="{Binding DeleteToolkitCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <icon:MaterialIcon Width="18" Height="18" Kind="Delete"/>
-                        <TextBlock Text="{DynamicResource Text_ToolKit_Delete}"/>
-                    </StackPanel>
-                </Button>
             </StackPanel>
         </Grid>
 
-        <!-- Toolkit cards + instances -->
-        <Grid Margin="10" RowDefinitions="*, 12, Auto">
-            <DockPanel Grid.Row="0">
-                <ListBox ItemsSource="{Binding Toolkits}"
-                         SelectedItem="{Binding SelectedToolkit}"
-                         Background="Transparent"
-                         BorderThickness="0">
-                    <ListBox.Styles>
-                        <Style Selector="ListBoxItem">
-                            <Setter Property="Padding" Value="0"/>
-                            <Setter Property="Margin" Value="0"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                        </Style>
-                        <Style Selector="ListBoxItem:selected /template/ Border#ToolkitCard">
-                            <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
-                            <Setter Property="BorderThickness" Value="2"/>
-                        </Style>
-                    </ListBox.Styles>
-                    <ListBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border x:Name="ToolkitCard"
-                                    Width="320"
-                                    Margin="10"
-                                    Padding="16"
-                                    BorderThickness="1"
-                                    CornerRadius="8"
-                                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}">
-                                <StackPanel Spacing="6">
-                                    <DockPanel>
-                                        <TextBlock DockPanel.Dock="Left"
-                                                   FontSize="18"
-                                                   FontWeight="SemiBold"
-                                                   Text="{Binding Meta.Name}"/>
-                                        <TextBlock Margin="10,0,0,0"
-                                                   HorizontalAlignment="Right"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="12"
-                                                   Opacity="0.6"
-                                                   Text="{Binding Meta.Version}"/>
-                                    </DockPanel>
-                                    <TextBlock FontSize="12"
-                                               Opacity="0.7"
-                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                               Text="{Binding Meta.Description}"
-                                               TextTrimming="CharacterEllipsis"
-                                               TextWrapping="Wrap"/>
-                                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal" Spacing="16">
-                                        <TextBlock FontSize="12"
-                                                   Text="{Binding Workflows.Count, Converter={StaticResource LocalizedCountConverter}, ConverterParameter=WorkflowCount}"/>
-                                        <TextBlock FontSize="12"
-                                                   Text="{Binding Triggers.Count, Converter={StaticResource LocalizedCountConverter}, ConverterParameter=TriggerCount}"/>
-                                        <TextBlock FontSize="12"
-                                                   Text="{Binding Plugins.Count, Converter={StaticResource LocalizedCountConverter}, ConverterParameter=PluginCount}"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </DockPanel>
-
-            <GridSplitter Grid.Row="1" ResizeDirection="Rows"/>
-            <Border Grid.Row="2" Margin="0,8,0,0" Padding="12" CornerRadius="8"
-                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
-                <StackPanel Spacing="8">
-                    <DockPanel>
-                        <TextBlock FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_ToolKit_Instances}"/>
-                        <TextBlock Margin="10,0,0,0"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"
-                                   FontSize="12"
-                                   Opacity="0.6"
-                                   Text="{Binding InstancesSummary}"/>
-                    </DockPanel>
-                    <ItemsControl ItemsSource="{Binding Instances}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="0,2" Padding="8" CornerRadius="4"
-                                        BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
-                                        BorderThickness="1">
-                                    <DockPanel>
-                                        <TextBlock FontSize="12" Text="{Binding InstanceId, StringFormat='{}{0}'}" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Margin="8,0,0,0"
-                                                   HorizontalAlignment="Right"
-                                                   FontSize="11"
-                                                   Opacity="0.6"
-                                                   Text="{Binding Status}"/>
-                                    </DockPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+        <!-- Empty state -->
+        <StackPanel HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="10"
+                    IsVisible="{Binding IsEmpty}">
+            <icon:MaterialIcon Width="56" Height="56" HorizontalAlignment="Center" Kind="Toolbox"/>
+            <TextBlock HorizontalAlignment="Center" FontSize="16" Text="{DynamicResource Text_ToolKit_EmptyTitle}"/>
+            <TextBlock HorizontalAlignment="Center" FontSize="12" Opacity="0.6" Text="{DynamicResource Text_ToolKit_EmptyHint}"/>
+            <Button HorizontalAlignment="Center" Margin="0,8,0,0" Command="{Binding CreateToolkitCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <icon:MaterialIcon Width="18" Height="18" Kind="Plus"/>
+                    <TextBlock Text="{DynamicResource Text_ToolKit_Create}"/>
                 </StackPanel>
-            </Border>
-        </Grid>
+            </Button>
+        </StackPanel>
+
+        <!-- Card grid -->
+        <ScrollViewer IsVisible="{Binding HasCards}">
+            <ItemsControl ItemsSource="{Binding Cards}" Margin="10">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type pageVMs:ToolkitCardVM}">
+                        <Border Width="320"
+                                Margin="10"
+                                Padding="16"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}">
+                            <StackPanel Spacing="8">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left"
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding Name}"/>
+                                    <TextBlock Margin="10,0,0,0"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Opacity="0.6"
+                                               Text="{Binding Version}"/>
+                                </DockPanel>
+                                <TextBlock FontSize="12"
+                                           Opacity="0.7"
+                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                           Text="{Binding Description}"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="Wrap"/>
+                                <StackPanel Margin="0,4,0,0" Orientation="Horizontal" Spacing="16">
+                                    <TextBlock FontSize="12" Text="{Binding WorkflowCount, StringFormat='{}{0} 工作流'}"/>
+                                    <TextBlock FontSize="12" Text="{Binding TriggerCount, StringFormat='{}{0} 触发'}"/>
+                                    <TextBlock FontSize="12" Text="{Binding PluginCount, StringFormat='{}{0} 插件'}"/>
+                                </StackPanel>
+                                <DockPanel Margin="0,6,0,0">
+                                    <ToggleSwitch DockPanel.Dock="Left"
+                                                  IsChecked="{Binding IsMounted}"
+                                                  Command="{Binding ToggleMountCommand}"
+                                                  VerticalAlignment="Center"/>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                                        <Button Command="{Binding OpenBenchCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:MaterialIcon Width="16" Height="16" Kind="Toolbox"/>
+                                                <TextBlock Text="{DynamicResource Text_ToolKit_OpenBench}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding $parent[UserControl].DataContext.DeleteToolkitCommand}"
+                                                CommandParameter="{Binding}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:MaterialIcon Width="16" Height="16" Kind="Delete"/>
+                                                <TextBlock Text="{DynamicResource Text_ToolKit_Delete}"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
     </DockPanel>
 </UserControl>

@@ -288,6 +288,8 @@
     <sys:String x:Key="Text_ToolKit_TriggerCount">{0} триггеров</sys:String>
     <sys:String x:Key="Text_ToolKit_PluginCount">{0} требований к плагинам</sys:String>
     <sys:String x:Key="Text_ToolKit_InstanceCount">{0} экземпляров</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyTitle">Пока нет ToolKit</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyHint">Нажмите «Новый ToolKit», чтобы создать первый</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — Верстак</sys:String>
     <sys:String x:Key="Text_Bench_Triggers">Триггеры</sys:String>
     <sys:String x:Key="Text_Bench_Workflows">Рабочие процессы</sys:String>

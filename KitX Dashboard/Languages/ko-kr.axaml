@@ -288,6 +288,8 @@
     <sys:String x:Key="Text_ToolKit_TriggerCount">{0} 트리거</sys:String>
     <sys:String x:Key="Text_ToolKit_PluginCount">{0} 플러그인 요구사항</sys:String>
     <sys:String x:Key="Text_ToolKit_InstanceCount">{0} 인스턴스</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyTitle">아직 ToolKit이 없습니다</sys:String>
+    <sys:String x:Key="Text_ToolKit_EmptyHint">'새 ToolKit'을 클릭하여 첫 번째 도구 키트를 만드세요</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — 작업대</sys:String>
     <sys:String x:Key="Text_Bench_Triggers">트리거</sys:String>
     <sys:String x:Key="Text_Bench_Workflows">워크플로</sys:String>
