@@ -34,7 +34,17 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
         InitCommands();
         InitEvents();
 
+        EnsureSeedToolkit();
         RefreshToolkits();
+    }
+
+    /// <summary>Seeds a sample ToolKit on first run (empty store), so the management page
+    /// is immediately usable. Persists via <see cref="IToolkitService.CreateToolkit"/>.</summary>
+    private void EnsureSeedToolkit()
+    {
+        if (_toolkitService.ListToolkits().Count > 0)
+            return;
+        _toolkitService.CreateToolkit(ToolkitSampleFactory.Create());
     }
 
     /// <summary>All stored ToolKits (metadata).</summary>
