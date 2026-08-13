@@ -105,12 +105,49 @@
                                    Text="选择一个实例以查看其面板"/>
                     </StackPanel>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
-                                IsVisible="{Binding HasSelection}">
-                        <TextBlock HorizontalAlignment="Center" FontSize="15"
-                                   Text="面板控件渲染（十控件 DataTemplate）开发中…"/>
-                        <TextBlock HorizontalAlignment="Center" FontSize="12" Opacity="0.6"
-                                   Text="此处未来渲染选中实例的 UiPanel：文本/输入/按钮/日志/进度/弹窗"/>
+                                IsVisible="{Binding NoPanel, FallbackValue=False}">
+                        <icon:MaterialIcon Width="40" Height="40" HorizontalAlignment="Center" Kind="ViewList"/>
+                        <TextBlock HorizontalAlignment="Center" FontSize="14" Opacity="0.6"
+                                   Text="该 ToolKit 未声明面板"/>
                     </StackPanel>
+
+                    <!-- Panel control projection (live-bound to the instance's DataStore) -->
+                    <ScrollViewer IsVisible="{Binding HasPanel, FallbackValue=False}">
+                        <StackPanel Margin="16" Spacing="10">
+                            <TextBlock FontSize="14" FontWeight="SemiBold" Text="面板"/>
+                            <ItemsControl ItemsSource="{Binding PanelControls}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,3" Padding="10" CornerRadius="6"
+                                                BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
+                                                BorderThickness="1">
+                                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                                <TextBlock Grid.Column="0"
+                                                           FontSize="12"
+                                                           FontWeight="Medium"
+                                                           VerticalAlignment="Center"
+                                                           Text="{Binding Id}"/>
+                                                <TextBlock Grid.Column="1"
+                                                           Margin="12,0,0,0"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="13"
+                                                           Opacity="0.85"
+                                                           Text="{Binding Text}"
+                                                           TextWrapping="Wrap"/>
+                                                <Border Grid.Column="2"
+                                                        Margin="10,0,0,0"
+                                                        Padding="6,1"
+                                                        CornerRadius="4"
+                                                        Background="#3873D9">
+                                                    <TextBlock FontSize="10" Foreground="White" Text="{Binding Type}"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Border>
         </Grid>
