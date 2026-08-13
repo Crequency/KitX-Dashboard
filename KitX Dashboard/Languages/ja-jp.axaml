@@ -278,7 +278,7 @@
     <sys:String x:Key="Text_ToolKit_Subtitle">プレビュー — 将来はワークフロー管理画面を置き換えます</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">マウント</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">アンマウント</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">パネルホスト</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenPanelHost">パネル台</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Bench を開く</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">新規 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">削除</sys:String>
@@ -300,7 +300,7 @@
     <sys:String x:Key="Text_Bench_ConfigTruth">config が唯一の真実、キャンバスは投影</sys:String>
     <sys:String x:Key="Text_Bench_TriggerSummary">{0} トリガー / {1} ワークフロー</sys:String>
     <sys:String x:Key="Text_Bench_BindingCount">{0} バインド</sys:String>
-    <sys:String x:Key="Text_PanelHost_Title">パネルホスト</sys:String>
+    <sys:String x:Key="Text_PanelHost_Title">パネル台</sys:String>
     <sys:String x:Key="Text_PanelHost_Instances">インスタンス</sys:String>
     <sys:String x:Key="Text_PanelHost_EndInstance">選択したインスタンスを終了</sys:String>
     <sys:String x:Key="Text_PanelHost_EndAll">すべて終了</sys:String>
@@ -310,6 +310,12 @@
     <sys:String x:Key="Text_PanelHost_Panel">パネル</sys:String>
     <sys:String x:Key="Text_PanelHost_Initiator">開始者: {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_InstanceCount">{0} インスタンス</sys:String>
+    <sys:String x:Key="Text_PanelHost_NewInstance">新しいインスタンス</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerToolkit">ToolKit</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerTrigger">手動トリガー</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayload">ペイロード</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayloadHint">オプションの JSON（インスタンスの初期コンテキスト）</sys:String>
+    <sys:String x:Key="Text_PanelHost_StartInstance">インスタンスを起動</sys:String>
     <sys:String x:Key="Text_Panel_Submit">送信</sys:String>
     <sys:String x:Key="Text_Panel_Confirm">確認</sys:String>
 </ResourceDictionary>

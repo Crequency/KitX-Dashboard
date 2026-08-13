@@ -278,7 +278,7 @@
     <sys:String x:Key="Text_ToolKit_Subtitle">Предпросмотр — заменит страницу управления рабочими процессами</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">Монтировать</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">Размонтировать</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">Хост панели</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenPanelHost">Панель</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Открыть Bench</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">Новый ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Удалить</sys:String>
@@ -300,7 +300,7 @@
     <sys:String x:Key="Text_Bench_ConfigTruth">config — единственный источник истины, холст — проекция</sys:String>
     <sys:String x:Key="Text_Bench_TriggerSummary">{0} триггеров / {1} рабочих процессов</sys:String>
     <sys:String x:Key="Text_Bench_BindingCount">{0} привязок</sys:String>
-    <sys:String x:Key="Text_PanelHost_Title">Хост панели</sys:String>
+    <sys:String x:Key="Text_PanelHost_Title">Панель</sys:String>
     <sys:String x:Key="Text_PanelHost_Instances">Экземпляры</sys:String>
     <sys:String x:Key="Text_PanelHost_EndInstance">Завершить выбранный экземпляр</sys:String>
     <sys:String x:Key="Text_PanelHost_EndAll">Завершить все</sys:String>
@@ -310,6 +310,12 @@
     <sys:String x:Key="Text_PanelHost_Panel">Панель</sys:String>
     <sys:String x:Key="Text_PanelHost_Initiator">Инициатор: {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_InstanceCount">{0} экземпляров</sys:String>
+    <sys:String x:Key="Text_PanelHost_NewInstance">Новый экземпляр</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerToolkit">ToolKit</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerTrigger">Ручной триггер</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayload">Полезная нагрузка</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayloadHint">Необязательный JSON, начальный контекст экземпляра</sys:String>
+    <sys:String x:Key="Text_PanelHost_StartInstance">Запустить экземпляр</sys:String>
     <sys:String x:Key="Text_Panel_Submit">Отправить</sys:String>
     <sys:String x:Key="Text_Panel_Confirm">Подтвердить</sys:String>
 </ResourceDictionary>

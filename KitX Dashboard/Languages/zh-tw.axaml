@@ -278,7 +278,7 @@
     <sys:String x:Key="Text_ToolKit_Subtitle">預覽 — 未來將取代工作流管理介面</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">掛載</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">卸載</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">面板宿主</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenPanelHost">面板台</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">開啟 Bench</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">新增 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">刪除</sys:String>
@@ -300,7 +300,7 @@
     <sys:String x:Key="Text_Bench_ConfigTruth">config 為唯一真相，畫布為投影</sys:String>
     <sys:String x:Key="Text_Bench_TriggerSummary">{0} 個 Trigger / {1} 個工作流</sys:String>
     <sys:String x:Key="Text_Bench_BindingCount">{0} 綁定</sys:String>
-    <sys:String x:Key="Text_PanelHost_Title">面板宿主</sys:String>
+    <sys:String x:Key="Text_PanelHost_Title">面板台</sys:String>
     <sys:String x:Key="Text_PanelHost_Instances">實例</sys:String>
     <sys:String x:Key="Text_PanelHost_EndInstance">結束選中實例</sys:String>
     <sys:String x:Key="Text_PanelHost_EndAll">結束全部</sys:String>
@@ -310,6 +310,12 @@
     <sys:String x:Key="Text_PanelHost_Panel">面板</sys:String>
     <sys:String x:Key="Text_PanelHost_Initiator">發起者: {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_InstanceCount">{0} 個實例</sys:String>
+    <sys:String x:Key="Text_PanelHost_NewInstance">新建實例</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerToolkit">工具箱</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerTrigger">手動觸發器</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayload">附加資訊 (payload)</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayloadHint">可選 JSON，作為實例初始上下文</sys:String>
+    <sys:String x:Key="Text_PanelHost_StartInstance">啟動實例</sys:String>
     <sys:String x:Key="Text_Panel_Submit">提交</sys:String>
     <sys:String x:Key="Text_Panel_Confirm">確認</sys:String>
 </ResourceDictionary>

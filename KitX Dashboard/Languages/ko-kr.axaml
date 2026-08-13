@@ -278,7 +278,7 @@
     <sys:String x:Key="Text_ToolKit_Subtitle">미리보기 — 향후 워크플로 관리 화면을 대체합니다</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">마운트</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">언마운트</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">패널 호스트</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenPanelHost">패널 대</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Bench 열기</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">새 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">삭제</sys:String>
@@ -300,7 +300,7 @@
     <sys:String x:Key="Text_Bench_ConfigTruth">config가 유일한 진실, 캔버스는 투영</sys:String>
     <sys:String x:Key="Text_Bench_TriggerSummary">{0} 트리거 / {1} 워크플로</sys:String>
     <sys:String x:Key="Text_Bench_BindingCount">{0} 바인딩</sys:String>
-    <sys:String x:Key="Text_PanelHost_Title">패널 호스트</sys:String>
+    <sys:String x:Key="Text_PanelHost_Title">패널 대</sys:String>
     <sys:String x:Key="Text_PanelHost_Instances">인스턴스</sys:String>
     <sys:String x:Key="Text_PanelHost_EndInstance">선택한 인스턴스 종료</sys:String>
     <sys:String x:Key="Text_PanelHost_EndAll">모두 종료</sys:String>
@@ -310,6 +310,12 @@
     <sys:String x:Key="Text_PanelHost_Panel">패널</sys:String>
     <sys:String x:Key="Text_PanelHost_Initiator">시작자: {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_InstanceCount">{0} 인스턴스</sys:String>
+    <sys:String x:Key="Text_PanelHost_NewInstance">새 인스턴스</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerToolkit">ToolKit</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerTrigger">수동 트리거</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayload">페이로드</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayloadHint">선택적 JSON, 인스턴스 초기 컨텍스트</sys:String>
+    <sys:String x:Key="Text_PanelHost_StartInstance">인스턴스 시작</sys:String>
     <sys:String x:Key="Text_Panel_Submit">제출</sys:String>
     <sys:String x:Key="Text_Panel_Confirm">확인</sys:String>
 </ResourceDictionary>

@@ -278,7 +278,7 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_ToolKit_Subtitle">Preview — will replace the workflow management page</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">Mount</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">Unmount</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">Panel Host</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenPanelHost">Panel Board</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Open Bench</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">New ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Delete</sys:String>
@@ -300,7 +300,7 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_ConfigTruth">config is the single source of truth, canvas is a projection</sys:String>
     <sys:String x:Key="Text_Bench_TriggerSummary">{0} triggers / {1} workflows</sys:String>
     <sys:String x:Key="Text_Bench_BindingCount">{0} bindings</sys:String>
-    <sys:String x:Key="Text_PanelHost_Title">Panel Host</sys:String>
+    <sys:String x:Key="Text_PanelHost_Title">Panel Board</sys:String>
     <sys:String x:Key="Text_PanelHost_Instances">Instances</sys:String>
     <sys:String x:Key="Text_PanelHost_EndInstance">End selected instance</sys:String>
     <sys:String x:Key="Text_PanelHost_EndAll">End all</sys:String>
@@ -310,6 +310,12 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_PanelHost_Panel">Panel</sys:String>
     <sys:String x:Key="Text_PanelHost_Initiator">Initiator: {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_InstanceCount">{0} instances</sys:String>
+    <sys:String x:Key="Text_PanelHost_NewInstance">New Instance</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerToolkit">ToolKit</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerTrigger">Manual trigger</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayload">Payload</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayloadHint">Optional JSON, the instance's initial context</sys:String>
+    <sys:String x:Key="Text_PanelHost_StartInstance">Start Instance</sys:String>
     <sys:String x:Key="Text_Panel_Submit">Submit</sys:String>
     <sys:String x:Key="Text_Panel_Confirm">Confirm</sys:String>
 </ResourceDictionary>

@@ -6,17 +6,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
         xmlns:views="using:KitX.Dashboard.Views"
+        xmlns:converters="using:KitX.Dashboard.Converters"
         Title="{DynamicResource Text_PanelHost_Title}"
-        Width="960"
-        Height="640"
-        d:DesignHeight="640"
-        d:DesignWidth="960"
+        Width="1000"
+        Height="680"
+        d:DesignHeight="680"
+        d:DesignWidth="1000"
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
         TransparencyLevelHint="Mica"
         WindowStartupLocation="CenterOwner"
         mc:Ignorable="d">
     <Window.Resources>
-        <!-- ── Panel control render templates (fixed ten-control set) ── -->
+        <converters:InstanceStatusToBrushConverter x:Key="InstanceStatusToBrushConverter"/>
+        <!-- ── Panel control render templates (fixed ten-control set, card-styled) ── -->
         <DataTemplate x:Key="PanelTextTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
             <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13"/>
         </DataTemplate>
@@ -26,7 +28,8 @@
         </DataTemplate>
 
         <DataTemplate x:Key="PanelButtonTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
-            <Button Command="{Binding ClickCommand}" Content="{Binding Text}" IsEnabled="{Binding IsEnabled}"/>
+            <Button Command="{Binding ClickCommand}" Content="{Binding Text}" IsEnabled="{Binding IsEnabled}"
+                    HorizontalAlignment="Stretch"/>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelInputTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
@@ -53,12 +56,12 @@
         </DataTemplate>
 
         <DataTemplate x:Key="PanelLogTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
-            <Border Padding="8" CornerRadius="4"
+            <Border Padding="8" CornerRadius="4" Background="{DynamicResource LayerFillColorDefaultBrush}"
                     BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
                 <ItemsControl ItemsSource="{Binding LogEntries}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock FontSize="12" Text="{Binding}" TextWrapping="Wrap"/>
+                            <TextBlock FontSize="12" FontFamily="Consolas, monospace" Text="{Binding}" TextWrapping="Wrap"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -66,7 +69,10 @@
         </DataTemplate>
 
         <DataTemplate x:Key="PanelProgressTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
-            <ProgressBar Value="{Binding Value}" Minimum="0" Maximum="100" Height="8"/>
+            <StackPanel Spacing="4">
+                <ProgressBar Value="{Binding Value}" Minimum="0" Maximum="100" Height="8"/>
+                <TextBlock FontSize="11" Opacity="0.7" Text="{Binding Value, StringFormat='{}{0:0}%'}" HorizontalAlignment="Right"/>
+            </StackPanel>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelDialogTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
@@ -92,13 +98,11 @@
                                             ProgressTemplate="{StaticResource PanelProgressTemplate}"
                                             DialogTemplate="{StaticResource PanelDialogTemplate}"/>
     </Window.Resources>
-    <Grid RowDefinitions="60, *" Margin="16">
+
+    <Grid RowDefinitions="60, Auto, *" Margin="16">
         <!-- Header -->
         <DockPanel Grid.Row="0">
-            <StackPanel HorizontalAlignment="Left"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                        Spacing="10">
+            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center" Orientation="Horizontal" Spacing="10">
                 <icon:MaterialIcon Width="26" Height="26" Kind="ViewList"/>
                 <StackPanel Spacing="2">
                     <TextBlock FontSize="20" FontWeight="SemiBold" Text="{DynamicResource Text_PanelHost_Title}"/>
@@ -106,11 +110,13 @@
                 </StackPanel>
             </StackPanel>
 
-            <StackPanel Margin="0,0,0,0"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                        Spacing="10">
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal" Spacing="10">
+                <Button Command="{Binding TogglePickerCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Plus"/>
+                        <TextBlock Text="{DynamicResource Text_PanelHost_NewInstance}"/>
+                    </StackPanel>
+                </Button>
                 <Button Command="{Binding OpenBenchCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="Toolbox"/>
@@ -126,57 +132,88 @@
             </StackPanel>
         </DockPanel>
 
-        <!-- Body: instance list (left) + selected detail / panel (right) -->
-        <Grid Grid.Row="1" ColumnDefinitions="320, 12, *">
-            <!-- Instances -->
-            <ScrollViewer Grid.Column="0">
-                <StackPanel Spacing="6">
-                    <TextBlock Margin="0,0,0,4" FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_PanelHost_Instances}"/>
-                    <ItemsControl ItemsSource="{Binding Instances}">
+        <!-- Trigger selector (collapsible) -->
+        <Border Grid.Row="1" Margin="0,0,0,8" Padding="12" CornerRadius="8"
+                BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1"
+                IsVisible="{Binding IsPickerVisible}">
+            <StackPanel Spacing="8">
+                <TextBlock FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_PanelHost_NewInstance}"/>
+                <Grid ColumnDefinitions="*, 12, *, 12, 2*, Auto">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                        <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_PanelHost_PickerToolkit}"/>
+                        <ComboBox ItemsSource="{Binding MountedToolkits}"
+                                  SelectedItem="{Binding SelectedToolkit}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Meta.Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                        <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_PanelHost_PickerTrigger}"/>
+                        <ComboBox ItemsSource="{Binding ManualTriggers}"
+                                  SelectedItem="{Binding SelectedTrigger}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Id}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" Spacing="4">
+                        <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_PanelHost_PickerPayload}"/>
+                        <TextBox Text="{Binding PayloadText}" Watermark="{DynamicResource Text_PanelHost_PickerPayloadHint}"
+                                 TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40"/>
+                    </StackPanel>
+                    <Button Grid.Column="5" VerticalAlignment="Bottom" Margin="8,0,0,0"
+                            Command="{Binding NewInstanceCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="Play"/>
+                            <TextBlock Text="{DynamicResource Text_PanelHost_StartInstance}"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <TextBlock FontSize="12" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                           Text="{Binding PickerMessage}" IsVisible="{Binding HasPickerMessage}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Body: grouped instance tree (left) + selected panel (right) -->
+        <Grid Grid.Row="2" ColumnDefinitions="320, 12, *">
+            <!-- Instance tree -->
+            <Border Grid.Column="0" CornerRadius="8"
+                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding InstanceGroups}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="0,2" Padding="8" CornerRadius="6"
-                                        BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
-                                        BorderThickness="1">
-                                    <StackPanel Spacing="4">
-                                        <DockPanel>
-                                            <TextBlock FontSize="13"
-                                                       FontWeight="Medium"
-                                                       Text="{Binding ToolkitId}"
-                                                       TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Margin="8,0,0,0"
-                                                       HorizontalAlignment="Right"
-                                                       FontSize="11"
-                                                       Opacity="0.7"
-                                                       Text="{Binding Status}"/>
-                                        </DockPanel>
-                                        <TextBlock FontSize="11" Opacity="0.6"
-                                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                   Text="{Binding Initiator.DeviceName, StringFormat='{}{0}'}"/>
-                                        <TextBlock FontSize="11" Opacity="0.6"
-                                                   Text="{Binding InstanceId}"
-                                                   TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock FontSize="11" Opacity="0.6"
-                                                   Text="{Binding RunSummary}"/>
-                                    </StackPanel>
-                                </Border>
+                                <Expander Header="{Binding Name}" IsExpanded="True">
+                                    <ListBox ItemsSource="{Binding Instances}"
+                                             SelectedItem="{Binding $parent[Window].DataContext.SelectedInstance}"
+                                             Background="Transparent">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock FontSize="12" Text="{Binding InstanceId}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="{Binding Status}"
+                                                               Foreground="{Binding Status, Converter={StaticResource InstanceStatusToBrushConverter}}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Expander>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
-                        <Button Command="{Binding EndInstanceCommand}" HorizontalAlignment="Left">
-                            <TextBlock Text="{DynamicResource Text_PanelHost_EndInstance}"/>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
+                </ScrollViewer>
+            </Border>
 
             <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
 
             <!-- Selected detail / panel area -->
-            <Border Grid.Column="2" Margin="0,0,0,0" CornerRadius="8"
-                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
-                    BorderThickness="1">
+            <Border Grid.Column="2" CornerRadius="8"
+                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
                 <Grid>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
                                 IsVisible="{Binding IsEmpty}">

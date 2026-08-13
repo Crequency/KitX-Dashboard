@@ -278,7 +278,7 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_ToolKit_Subtitle">Aperçu — remplacera la page de gestion des workflows</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">Monter</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">Démonter</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">Hôte de panneau</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenPanelHost">Tableau de panneaux</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Ouvrir Bench</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">Nouveau ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Supprimer</sys:String>
@@ -300,7 +300,7 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_ConfigTruth">config est la seule source de vérité, le canevas est une projection</sys:String>
     <sys:String x:Key="Text_Bench_TriggerSummary">{0} déclencheurs / {1} workflows</sys:String>
     <sys:String x:Key="Text_Bench_BindingCount">{0} liaisons</sys:String>
-    <sys:String x:Key="Text_PanelHost_Title">Hôte de panneau</sys:String>
+    <sys:String x:Key="Text_PanelHost_Title">Tableau de panneaux</sys:String>
     <sys:String x:Key="Text_PanelHost_Instances">Instances</sys:String>
     <sys:String x:Key="Text_PanelHost_EndInstance">Terminer l'instance sélectionnée</sys:String>
     <sys:String x:Key="Text_PanelHost_EndAll">Tout terminer</sys:String>
@@ -310,6 +310,12 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_PanelHost_Panel">Panneau</sys:String>
     <sys:String x:Key="Text_PanelHost_Initiator">Initiateur : {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_InstanceCount">{0} instances</sys:String>
+    <sys:String x:Key="Text_PanelHost_NewInstance">Nouvelle instance</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerToolkit">ToolKit</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerTrigger">Déclencheur manuel</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayload">Payload</sys:String>
+    <sys:String x:Key="Text_PanelHost_PickerPayloadHint">JSON optionnel, contexte initial de l'instance</sys:String>
+    <sys:String x:Key="Text_PanelHost_StartInstance">Démarrer l'instance</sys:String>
     <sys:String x:Key="Text_Panel_Submit">Soumettre</sys:String>
     <sys:String x:Key="Text_Panel_Confirm">Confirmer</sys:String>
 </ResourceDictionary>
