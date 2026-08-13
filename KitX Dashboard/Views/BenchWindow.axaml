@@ -7,7 +7,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:nd="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
-        Title="KitX Bench — 工作台（预览）"
+        Title="{DynamicResource Text_Bench_Title}"
         Width="1100"
         Height="700"
         d:DesignHeight="700"
@@ -56,23 +56,23 @@
                 <Button Command="{Binding FireFirstManualCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="Play"/>
-                        <TextBlock Text="手动触发测试"/>
+                        <TextBlock Text="{DynamicResource Text_Bench_ManualTrigger}"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
         </DockPanel>
 
-        <!-- Body: left config panel + center canvas placeholder -->
+        <!-- Body: left config panel + center canvas -->
         <Grid Grid.Row="1" ColumnDefinitions="300, *, 4">
             <Grid Grid.Column="0" RowDefinitions="*, 12, 3*">
                 <!-- Triggers -->
                 <StackPanel Grid.Row="0" Margin="0,0,8,0">
-                    <TextBlock Margin="0,0,0,8" FontSize="14" FontWeight="SemiBold" Text="Triggers"/>
+                    <TextBlock Margin="0,0,0,8" FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_Triggers}"/>
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding Triggers}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,2" Padding="8" CornerRadius="4"
+                                    <Border Margin="0,2" Padding="8" CornerRadius="6"
                                             BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
                                             BorderThickness="1">
                                         <StackPanel Spacing="2">
@@ -86,6 +86,7 @@
                                             </DockPanel>
                                             <TextBlock FontSize="11"
                                                        Opacity="0.6"
+                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                        Text="{Binding Bindings.Count, StringFormat='{}{0} 绑定'}"
                                                        TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
@@ -99,12 +100,12 @@
                 <!-- Workflows -->
                 <GridSplitter Grid.Row="1" ResizeDirection="Rows"/>
                 <StackPanel Grid.Row="2" Margin="0,8,8,0">
-                    <TextBlock Margin="0,0,0,8" FontSize="14" FontWeight="SemiBold" Text="工作流"/>
+                    <TextBlock Margin="0,0,0,8" FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_Workflows}"/>
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding Workflows}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,2" Padding="8" CornerRadius="4"
+                                    <Border Margin="0,2" Padding="8" CornerRadius="6"
                                             BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
                                             BorderThickness="1">
                                         <DockPanel>
@@ -147,11 +148,11 @@
                                                Kind="Network"/>
                             <TextBlock HorizontalAlignment="Center"
                                        FontSize="16"
-                                       Text="未选择 ToolKit"/>
+                                       Text="{DynamicResource Text_Bench_NoToolkit}"/>
                             <TextBlock HorizontalAlignment="Center"
                                        FontSize="12"
                                        Opacity="0.6"
-                                       Text="从管理页选择一个 ToolKit 打开 Bench"/>
+                                       Text="{DynamicResource Text_Bench_NoToolkitHint}"/>
                         </StackPanel>
 
                         <!-- NodifyM editor -->
@@ -178,7 +179,7 @@
                                                  OutputConnectorTemplate="{StaticResource BenchOutputTemplate}"
                                                  IsResize="False">
                                             <nd:Node.Header>
-                                                <Border Padding="10,4" Background="#3873D9">
+                                                <Border Padding="10,4" Background="{DynamicResource ThemePrimaryAccent}">
                                                     <StackPanel Spacing="1">
                                                         <TextBlock Text="{Binding Title}"
                                                                    Foreground="White"
@@ -205,7 +206,7 @@
                             <TextBlock FontSize="12" Opacity="0.8"
                                        Text="{Binding ValidationIssues.Count, StringFormat='{}{0} 项配置校验'}"/>
                             <TextBlock FontSize="12" Opacity="0.6"
-                                       Text="· config 为唯一真相，画布为投影"/>
+                                       Text="{DynamicResource Text_Bench_ConfigTruth}"/>
                         </StackPanel>
                     </Grid>
                 </Border>

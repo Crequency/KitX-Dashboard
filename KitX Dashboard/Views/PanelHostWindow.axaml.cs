@@ -20,4 +20,18 @@ public partial class PanelHostWindow : Window
         DataContext = viewModel;
         Closed += (_, _) => viewModel.Dispose();
     }
+
+    /// <summary>Number control value change → write-back via the control's command.</summary>
+    private void OnNumberValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (sender is NumericUpDown nud && nud.DataContext is PanelControlViewModel vm && nud.Value is decimal d)
+            vm.NumberCommand?.Execute((double)d);
+    }
+
+    /// <summary>Select control selection change → write-back via the control's command.</summary>
+    private void OnSelectSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox cb && cb.DataContext is PanelControlViewModel vm && cb.SelectedItem is string s)
+            vm.SelectCommand?.Execute(s);
+    }
 }

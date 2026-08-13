@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
+using KitX.Core.Contract.Event;
 using KitX.Dashboard.Services;
 using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Models;
@@ -19,13 +20,15 @@ internal class BenchViewModel : ViewModelBase
 {
     private readonly IToolkitService _toolkitService;
     private readonly IBenchService _benchService;
+    private readonly IEventService _eventService;
 
     private bool _isDirty;
 
-    public BenchViewModel(IToolkitService toolkitService, IBenchService benchService)
+    public BenchViewModel(IToolkitService toolkitService, IBenchService benchService, IEventService eventService)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;
+        _eventService = eventService;
 
         ActiveToolkit = UIStateService.BenchToolkit;
         Workflows = ActiveToolkit?.Workflows ?? [];
@@ -62,8 +65,10 @@ internal class BenchViewModel : ViewModelBase
 
     /// <summary>Human-readable summary of the shown ToolKit.</summary>
     internal string TriggerSummary => ActiveToolkit is null
-        ? "未选择 ToolKit"
-        : $"{Triggers.Count} 个 Trigger / {Workflows.Count} 个工作流";
+        ? TranslateTextWithSuffix("Bench", "NoToolkit") ?? "未选择 ToolKit"
+        : string.Format(
+            TranslateTextWithSuffix("Bench", "TriggerSummary") ?? "{0} 个 Trigger / {1} 个工作流",
+            Triggers.Count, Workflows.Count);
 
     public override void InitCommands()
     {
@@ -80,7 +85,11 @@ internal class BenchViewModel : ViewModelBase
 
     public override void InitEvents()
     {
+        _eventService.Subscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
+
+    private void OnLanguageChanged(object? sender, System.EventArgs e)
+        => this.RaisePropertyChanged(nameof(TriggerSummary));
 
     /// <summary>Indicates the user has triggered a run (so the UI can reflect it).</summary>
     internal bool IsDirty

@@ -1,27 +1,51 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Reactive;
 using System.Text.Json;
+using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Models;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 
 /// <summary>
-/// A single panel control's display state (ToolKit 前后端分离 GUI 稿 §5). The panel is a
-/// projection of the instance's DataStore keys; this VM holds the rendered value and is
-/// updated from the backend's <see cref="KitX.ToolKit.Contracts.Events.UiControlStateChangedEvent"/>
+/// A single panel control's live state + interaction surface (ToolKit 前后端分离 GUI 稿 §5).
+/// The panel is a projection of the instance's DataStore keys; this VM holds the rendered
+/// value and is updated from the backend's <see cref="KitX.ToolKit.Contracts.Events.UiControlStateChangedEvent"/>
 /// (and DataStore changes) pushed through the Bench event channel.
+///
+/// <para>Interactive controls write back through <see cref="IPanelRuntime"/>: value controls
+/// (Input/Number/Select/Switch) call <see cref="IPanelRuntime.SetControlValue"/>; command
+/// controls (Button/Dialog) raise <see cref="IPanelRuntime.RaiseControlEvent"/>.</para>
 /// </summary>
 internal sealed class PanelControlViewModel : ReactiveObject
 {
-    private string _text;
-    private bool _enabled = true;
+    private readonly string _instanceId;
+    private readonly IPanelRuntime _panelRuntime;
 
-    public PanelControlViewModel(UiControl control)
+    private string _text;
+    private object? _value;
+    private bool _enabled = true;
+    private readonly ObservableCollection<string> _logEntries = [];
+
+    public PanelControlViewModel(UiControl control, string instanceId, IPanelRuntime panelRuntime)
     {
         Type = control.Type;
         Id = control.Id;
         StaticText = control.Text ?? string.Empty;
         _text = StaticText;
+        _instanceId = instanceId;
+        _panelRuntime = panelRuntime;
+        Options = control.Options;
+
+        ClickCommand = ReactiveCommand.Create(() => _panelRuntime.RaiseControlEvent(_instanceId, Id, "Click", null));
+        SubmitCommand = ReactiveCommand.Create(() => _panelRuntime.RaiseControlEvent(_instanceId, Id, "Submit", Value));
+        SelectCommand = ReactiveCommand.Create<string>(v => _panelRuntime.SetControlValue(_instanceId, Id, v));
+        ToggleCommand = ReactiveCommand.Create<bool>(v => _panelRuntime.SetControlValue(_instanceId, Id, v));
+        NumberCommand = ReactiveCommand.Create<double>(v => _panelRuntime.SetControlValue(_instanceId, Id, v));
+        DialogConfirmCommand = ReactiveCommand.Create<string>(result => _panelRuntime.RaiseControlEvent(_instanceId, Id, "Confirm", result));
     }
 
     /// <summary>The fixed control type discriminant (Text/Input/Button/...).</summary>
@@ -33,11 +57,21 @@ internal sealed class PanelControlViewModel : ReactiveObject
     /// <summary>Static/initial text from the config (not live-bound).</summary>
     internal string StaticText { get; }
 
+    /// <summary>Type-specific props (e.g. <c>{"Items":[...]}</c> for Select).</summary>
+    internal Dictionary<string, object?>? Options { get; }
+
     /// <summary>The live-displayed text/value.</summary>
     internal string Text
     {
         get => _text;
         private set => this.RaiseAndSetIfChanged(ref _text, value);
+    }
+
+    /// <summary>The live value for value controls (Input/Number/Select/Switch/Progress).</summary>
+    internal object? Value
+    {
+        get => _value;
+        private set => this.RaiseAndSetIfChanged(ref _value, value);
     }
 
     /// <summary>Live enabled state.</summary>
@@ -47,13 +81,77 @@ internal sealed class PanelControlViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _enabled, value);
     }
 
+    /// <summary>Appended log entries (Log control).</summary>
+    internal ObservableCollection<string> LogEntries => _logEntries;
+
+    /// <summary>Select options extracted from <see cref="Options"/>["Items"].</summary>
+    internal IReadOnlyList<string> SelectItems
+    {
+        get
+        {
+            if (Options is null || !Options.TryGetValue("Items", out var items) || items is null)
+                return [];
+            return items switch
+            {
+                System.Text.Json.Nodes.JsonArray arr => arr.Select(n => n?.ToString() ?? string.Empty).ToList(),
+                IEnumerable<string> strs => strs.ToList(),
+                _ => [],
+            };
+        }
+    }
+
+    /// <summary>Button click → UIEvent "Click".</summary>
+    internal ReactiveCommand<Unit, Unit>? ClickCommand { get; }
+
+    /// <summary>Input submit → UIEvent "Submit" (carries the current value).</summary>
+    internal ReactiveCommand<Unit, Unit>? SubmitCommand { get; }
+
+    /// <summary>Select change → write-back.</summary>
+    internal ReactiveCommand<string, Unit>? SelectCommand { get; }
+
+    /// <summary>Switch toggle → write-back.</summary>
+    internal ReactiveCommand<bool, Unit>? ToggleCommand { get; }
+
+    /// <summary>Number change → write-back.</summary>
+    internal ReactiveCommand<double, Unit>? NumberCommand { get; }
+
+    /// <summary>Dialog confirm → UIEvent "Confirm" (carries the chosen result).</summary>
+    internal ReactiveCommand<string, Unit>? DialogConfirmCommand { get; }
+
     /// <summary>Applies a value change from the backend for the given property.</summary>
     internal void Apply(string prop, JsonElement? value)
     {
         if (prop == "enabled")
+        {
             IsEnabled = NormalizeBool(value);
-        else if (prop is "text" or "value")
+            return;
+        }
+
+        if (prop == "text")
+        {
             Text = value is { ValueKind: JsonValueKind.String } s ? s.GetString()! : value?.GetRawText() ?? StaticText;
+            return;
+        }
+
+        if (prop == "value")
+        {
+            Value = Type switch
+            {
+                "Switch" => value is { ValueKind: JsonValueKind.True } or { ValueKind: JsonValueKind.False }
+                    ? value.Value.GetBoolean()
+                    : NormalizeBool(value),
+                "Number" or "Progress" => value is { ValueKind: JsonValueKind.Number } n ? n.GetDouble() : 0d,
+                _ => value is { ValueKind: JsonValueKind.String } sv ? sv.GetString() : value?.GetRawText(),
+            };
+            return;
+        }
+
+        if (prop == "log")
+        {
+            var entry = value is { ValueKind: JsonValueKind.String } l ? l.GetString() : value?.GetRawText();
+            if (entry is not null)
+                LogEntries.Add(entry);
+        }
     }
 
     private static bool NormalizeBool(JsonElement? value) => value switch

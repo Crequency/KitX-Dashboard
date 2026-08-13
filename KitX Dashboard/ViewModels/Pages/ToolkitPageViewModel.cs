@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
+using KitX.Core.Contract.Event;
 using KitX.Dashboard.Services;
 using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Contracts.Events;
@@ -21,15 +22,17 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
 {
     private readonly IToolkitService _toolkitService;
     private readonly IBenchService _benchService;
+    private readonly IEventService _eventService;
 
     private readonly ObservableCollection<Toolkit> _toolkits = [];
     private Toolkit? _selectedToolkit;
     private IReadOnlyList<InstanceSnapshot> _instances = [];
 
-    public ToolkitPageViewModel(IToolkitService toolkitService, IBenchService benchService)
+    public ToolkitPageViewModel(IToolkitService toolkitService, IBenchService benchService, IEventService eventService)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;
+        _eventService = eventService;
 
         InitCommands();
         InitEvents();
@@ -74,12 +77,14 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     internal bool IsMounted => SelectedToolkit is not null && _toolkitService.IsMounted(SelectedToolkit.GetId());
 
     /// <summary>Mount/unmount button label.</summary>
-    internal string MountButtonText => IsMounted ? "卸载" : "挂载";
+    internal string MountButtonText => IsMounted
+        ? TranslateTextWithSuffix("ToolKit", "Unmount") ?? "卸载"
+        : TranslateTextWithSuffix("ToolKit", "Mount") ?? "挂载";
 
     /// <summary>Instance summary for the selected ToolKit.</summary>
     internal string InstancesSummary => SelectedToolkit is null
-        ? "未选择 ToolKit"
-        : $"{Instances.Count} 个实例";
+        ? TranslateTextWithSuffix("ToolKit", "NoSelection") ?? "未选择 ToolKit"
+        : string.Format(TranslateTextWithSuffix("ToolKit", "InstanceCount") ?? "{0} 个实例", Instances.Count);
 
     /// <summary>Opens the Bench window for the selected ToolKit (design surface).</summary>
     internal ReactiveCommand<Unit, Unit>? OpenBenchCommand { get; set; }
@@ -146,6 +151,13 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     {
         _toolkitService.ToolkitListChanged += OnToolkitListChanged;
         _toolkitService.BenchEvent += OnBenchEvent;
+        _eventService.Subscribe(EventNames.LanguageChanged, OnLanguageChanged);
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        this.RaisePropertyChanged(nameof(MountButtonText));
+        this.RaisePropertyChanged(nameof(InstancesSummary));
     }
 
     private void OnToolkitListChanged(object? sender, EventArgs e) => RefreshToolkits();
@@ -175,5 +187,6 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     {
         _toolkitService.ToolkitListChanged -= OnToolkitListChanged;
         _toolkitService.BenchEvent -= OnBenchEvent;
+        _eventService.Unsubscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 }

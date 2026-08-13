@@ -2,12 +2,16 @@
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
+             xmlns:converters="using:KitX.Dashboard.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:icon="using:Material.Icons.Avalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              d:DesignHeight="600"
              d:DesignWidth="900"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:LocalizedCountConverter x:Key="LocalizedCountConverter" />
+    </UserControl.Resources>
     <DockPanel>
         <!-- Top toolbar -->
         <Grid Height="80" DockPanel.Dock="Top">
@@ -15,12 +19,12 @@
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
-                <TextBlock FontSize="22" FontWeight="SemiBold" Text="ToolKit 管理"/>
+                <TextBlock FontSize="22" FontWeight="SemiBold" Text="{DynamicResource Text_ToolKit_Title}"/>
                 <TextBlock Margin="12,0,0,0"
                            VerticalAlignment="Bottom"
                            FontSize="13"
                            Opacity="0.6"
-                           Text="预览 — 未来将替代工作流管理界面"/>
+                           Text="{DynamicResource Text_ToolKit_Subtitle}"/>
             </StackPanel>
 
             <StackPanel Margin="0,0,20,0"
@@ -37,25 +41,25 @@
                 <Button Command="{Binding OpenPanelHostCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="ViewList"/>
-                        <TextBlock Text="面板宿主"/>
+                        <TextBlock Text="{DynamicResource Text_ToolKit_OpenPanelHost}"/>
                     </StackPanel>
                 </Button>
                 <Button Command="{Binding OpenBenchCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="Toolbox"/>
-                        <TextBlock Text="打开 Bench"/>
+                        <TextBlock Text="{DynamicResource Text_ToolKit_OpenBench}"/>
                     </StackPanel>
                 </Button>
                 <Button Command="{Binding CreateToolkitCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="Plus"/>
-                        <TextBlock Text="新建 ToolKit"/>
+                        <TextBlock Text="{DynamicResource Text_ToolKit_Create}"/>
                     </StackPanel>
                 </Button>
                 <Button Command="{Binding DeleteToolkitCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="Delete"/>
-                        <TextBlock Text="删除"/>
+                        <TextBlock Text="{DynamicResource Text_ToolKit_Delete}"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -68,6 +72,17 @@
                          SelectedItem="{Binding SelectedToolkit}"
                          Background="Transparent"
                          BorderThickness="0">
+                    <ListBox.Styles>
+                        <Style Selector="ListBoxItem">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                        </Style>
+                        <Style Selector="ListBoxItem:selected /template/ Border#ToolkitCard">
+                            <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+                            <Setter Property="BorderThickness" Value="2"/>
+                        </Style>
+                    </ListBox.Styles>
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal"/>
@@ -75,7 +90,8 @@
                     </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border Width="320"
+                            <Border x:Name="ToolkitCard"
+                                    Width="320"
                                     Margin="10"
                                     Padding="16"
                                     BorderThickness="1"
@@ -96,13 +112,17 @@
                                     </DockPanel>
                                     <TextBlock FontSize="12"
                                                Opacity="0.7"
+                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                Text="{Binding Meta.Description}"
                                                TextTrimming="CharacterEllipsis"
                                                TextWrapping="Wrap"/>
                                     <StackPanel Margin="0,8,0,0" Orientation="Horizontal" Spacing="16">
-                                        <TextBlock FontSize="12" Text="{Binding Workflows.Count, StringFormat='{}{0} 工作流'}"/>
-                                        <TextBlock FontSize="12" Text="{Binding Triggers.Count, StringFormat='{}{0} Trigger'}"/>
-                                        <TextBlock FontSize="12" Text="{Binding Plugins.Count, StringFormat='{}{0} 插件需求'}"/>
+                                        <TextBlock FontSize="12"
+                                                   Text="{Binding Workflows.Count, Converter={StaticResource LocalizedCountConverter}, ConverterParameter=WorkflowCount}"/>
+                                        <TextBlock FontSize="12"
+                                                   Text="{Binding Triggers.Count, Converter={StaticResource LocalizedCountConverter}, ConverterParameter=TriggerCount}"/>
+                                        <TextBlock FontSize="12"
+                                                   Text="{Binding Plugins.Count, Converter={StaticResource LocalizedCountConverter}, ConverterParameter=PluginCount}"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
@@ -116,7 +136,7 @@
                     BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
                 <StackPanel Spacing="8">
                     <DockPanel>
-                        <TextBlock FontSize="14" FontWeight="SemiBold" Text="运行实例"/>
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_ToolKit_Instances}"/>
                         <TextBlock Margin="10,0,0,0"
                                    HorizontalAlignment="Right"
                                    VerticalAlignment="Center"

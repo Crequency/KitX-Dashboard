@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Text.Json;
+using KitX.Core.Contract.Event;
 using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Contracts.Events;
 using KitX.ToolKit.Models;
@@ -20,16 +21,20 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
 {
     private readonly IToolkitService _toolkitService;
     private readonly IBenchService _benchService;
+    private readonly IPanelRuntime _panelRuntime;
+    private readonly IEventService _eventService;
 
     private readonly ObservableCollection<InstanceSnapshot> _instances = [];
     private readonly ObservableCollection<PanelControlViewModel> _panelControls = [];
     private InstanceSnapshot? _selectedInstance;
     private bool _hasPanel;
 
-    public PanelHostViewModel(IToolkitService toolkitService, IBenchService benchService)
+    public PanelHostViewModel(IToolkitService toolkitService, IBenchService benchService, IPanelRuntime panelRuntime, IEventService eventService)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;
+        _panelRuntime = panelRuntime;
+        _eventService = eventService;
 
         InitCommands();
         InitEvents();
@@ -74,7 +79,8 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>Summary line for the header.</summary>
-    internal string Summary => $"{Instances.Count} 个实例";
+    internal string Summary => string.Format(
+        TranslateTextWithSuffix("PanelHost", "InstanceCount") ?? "{0} 个实例", Instances.Count);
 
     /// <summary>Ends the selected instance.</summary>
     internal ReactiveCommand<Unit, Unit>? EndInstanceCommand { get; set; }
@@ -105,7 +111,11 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     public override void InitEvents()
     {
         _toolkitService.BenchEvent += OnBenchEvent;
+        _eventService.Subscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+        => this.RaisePropertyChanged(nameof(Summary));
 
     private void OnBenchEvent(object? sender, BenchEvent e)
     {
@@ -119,10 +129,10 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         var toolkit = SelectedInstance is null ? null : _toolkitService.GetToolkit(SelectedInstance.ToolkitId);
         var panel = toolkit?.UiPanel;
         HasPanel = panel is not null;
-        if (panel is null)
+        if (panel is null || SelectedInstance is null)
             return;
         foreach (var control in panel.Controls)
-            _panelControls.Add(new PanelControlViewModel(control));
+            _panelControls.Add(new PanelControlViewModel(control, SelectedInstance.InstanceId, _panelRuntime));
     }
 
     private void UpdatePanel(BenchEvent e)
@@ -178,5 +188,6 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         _toolkitService.BenchEvent -= OnBenchEvent;
+        _eventService.Unsubscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 }
