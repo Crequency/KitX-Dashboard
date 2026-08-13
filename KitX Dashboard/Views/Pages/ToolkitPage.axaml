@@ -67,7 +67,7 @@
                                 Margin="10"
                                 Padding="16"
                                 BorderThickness="1"
-                                CornerRadius="8"
+                                CornerRadius="{DynamicResource KitXRadiusCard}"
                                 BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}">
                             <StackPanel Spacing="8">
                                 <DockPanel>

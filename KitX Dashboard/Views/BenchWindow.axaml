@@ -155,7 +155,7 @@
 
             <!-- Canvas -->
             <Grid Grid.Column="2">
-                <Border BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1" CornerRadius="8">
+                <Border BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1" CornerRadius="{DynamicResource KitXRadiusCard}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition/>

@@ -182,7 +182,7 @@
         <!-- Body: grouped instance tree (left) + selected panel (right) -->
         <Grid Grid.Row="2" ColumnDefinitions="320, 12, *">
             <!-- Instance tree -->
-            <Border Grid.Column="0" CornerRadius="8"
+            <Border Grid.Column="0" CornerRadius="{DynamicResource KitXRadiusCard}"
                     BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
                 <ScrollViewer>
                     <ItemsControl ItemsSource="{Binding InstanceGroups}">
@@ -212,7 +212,7 @@
             <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
 
             <!-- Selected detail / panel area -->
-            <Border Grid.Column="2" CornerRadius="8"
+            <Border Grid.Column="2" CornerRadius="{DynamicResource KitXRadiusCard}"
                     BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
                 <Grid>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
