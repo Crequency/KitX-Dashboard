@@ -181,7 +181,6 @@ public partial class MainWindow : Window, IView
             "Page_Settings" => typeof(Pages.SettingsPage),
             "Page_Market" => typeof(Pages.MarketPage),
             "Page_Device" => typeof(Pages.DevicesPage),
-            "Page_Workflow" => typeof(Pages.WorkflowPage),
             "Page_ToolKit" => typeof(Pages.ToolkitPage),
             _ => typeof(Pages.HomePage),
         };
