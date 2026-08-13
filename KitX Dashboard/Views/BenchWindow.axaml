@@ -1,17 +1,16 @@
 ﻿<Window x:Class="KitX.Dashboard.Views.BenchWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:icon="using:Material.Icons.Avalonia"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:nd="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
         Title="{DynamicResource Text_Bench_Title}"
-        Width="1100"
-        Height="700"
-        d:DesignHeight="700"
-        d:DesignWidth="1100"
+        Width="1280"
+        Height="760"
+        d:DesignHeight="760"
+        d:DesignWidth="1280"
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
         TransparencyLevelHint="Mica"
         WindowStartupLocation="CenterOwner"
@@ -32,143 +31,191 @@
             </nd:NodeOutput>
         </DataTemplate>
     </Window.Resources>
-    <Grid RowDefinitions="60, *" Margin="16">
-        <!-- Header -->
+
+    <Window.Styles>
+        <Style Selector="Button.palette">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="60, *, Auto" Margin="16">
+        <!-- ── Header ── -->
         <DockPanel Grid.Row="0">
-            <StackPanel HorizontalAlignment="Left"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                        Spacing="10">
+            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center" Orientation="Horizontal" Spacing="10">
                 <icon:MaterialIcon Width="26" Height="26" Kind="Toolbox"/>
                 <StackPanel Spacing="2">
-                    <TextBlock FontSize="20"
-                               FontWeight="SemiBold"
-                               Text="{Binding ActiveToolkit.Meta.Name}"/>
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding ActiveToolkit.Meta.Name}"/>
                     <TextBlock FontSize="12" Opacity="0.6" Text="{Binding TriggerSummary}"/>
                 </StackPanel>
             </StackPanel>
 
-            <StackPanel Margin="0,0,0,0"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                        Spacing="10">
-                <Button Command="{Binding FireFirstManualCommand}">
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal" Spacing="10">
+                <ComboBox ItemsSource="{Binding ManualTriggers}"
+                          SelectedItem="{Binding SelectedManualTrigger}"
+                          MinWidth="160"
+                          IsVisible="{Binding Canvas.HasContent}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:MaterialIcon Width="14" Height="14" Kind="Hand"/>
+                                <TextBlock Text="{Binding Id}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Command="{Binding FireManualCommand}" IsVisible="{Binding Canvas.HasContent}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="Play"/>
-                        <TextBlock Text="{DynamicResource Text_Bench_ManualTrigger}"/>
+                        <TextBlock Text="试运行"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding SaveCommand}" IsVisible="{Binding Canvas.HasContent}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="ContentSave"/>
+                        <TextBlock Text="保存"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
         </DockPanel>
 
-        <!-- Body: left config panel + center canvas -->
-        <Grid Grid.Row="1" ColumnDefinitions="300, *, 4">
-            <Grid Grid.Column="0" RowDefinitions="*, 12, 3*">
-                <!-- Triggers -->
-                <StackPanel Grid.Row="0" Margin="0,0,8,0">
-                    <TextBlock Margin="0,0,0,8" FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_Triggers}"/>
-                    <ScrollViewer>
-                        <ItemsControl ItemsSource="{Binding Triggers}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="0,2" Padding="8" CornerRadius="6"
-                                            BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
-                                            BorderThickness="1">
-                                        <StackPanel Spacing="2">
-                                            <DockPanel>
-                                                <TextBlock FontSize="13" FontWeight="Medium" Text="{Binding Id}"/>
-                                                <TextBlock Margin="8,0,0,0"
-                                                           HorizontalAlignment="Right"
-                                                           FontSize="11"
-                                                           Opacity="0.6"
-                                                           Text="{Binding Type}"/>
-                                            </DockPanel>
-                                            <TextBlock FontSize="11"
-                                                       Opacity="0.6"
-                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                       Text="{Binding Bindings.Count, StringFormat='{}{0} 绑定'}"
-                                                       TextTrimming="CharacterEllipsis"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </StackPanel>
+        <!-- ── Body: palette | canvas | inspector ── -->
+        <Grid Grid.Row="1" ColumnDefinitions="230, 4, *, 4, 320">
+            <!-- Palette -->
+            <Grid Grid.Column="0" RowDefinitions="Auto, Auto, *">
+                <ScrollViewer Grid.Row="0" Grid.RowSpan="3">
+                    <StackPanel Spacing="14">
+                        <StackPanel>
+                            <TextBlock Classes="section" Text="触发器"/>
+                            <Button Classes="palette" Command="{Binding Canvas.AddTriggerCommand}" CommandParameter="Manual">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icon:MaterialIcon Width="16" Height="16" Kind="Hand"/>
+                                    <TextBlock Text="手动触发"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="palette" Command="{Binding Canvas.AddTriggerCommand}" CommandParameter="Timer">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icon:MaterialIcon Width="16" Height="16" Kind="Clock"/>
+                                    <TextBlock Text="定时"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="palette" Command="{Binding Canvas.AddTriggerCommand}" CommandParameter="PluginEvent">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icon:MaterialIcon Width="16" Height="16" Kind="Puzzle"/>
+                                    <TextBlock Text="插件事件"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="palette" Command="{Binding Canvas.AddTriggerCommand}" CommandParameter="UIEvent">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icon:MaterialIcon Width="16" Height="16" Kind="ViewList"/>
+                                    <TextBlock Text="UI 控件事件"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
 
-                <!-- Workflows -->
-                <GridSplitter Grid.Row="1" ResizeDirection="Rows"/>
-                <StackPanel Grid.Row="2" Margin="0,8,8,0">
-                    <TextBlock Margin="0,0,0,8" FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_Workflows}"/>
-                    <ScrollViewer>
-                        <ItemsControl ItemsSource="{Binding Workflows}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="0,2" Padding="8" CornerRadius="6"
-                                            BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
-                                            BorderThickness="1">
-                                        <DockPanel>
-                                            <TextBlock FontSize="13" Text="{Binding Name}"/>
-                                            <TextBlock Margin="8,0,0,0"
-                                                       HorizontalAlignment="Right"
-                                                       FontSize="11"
-                                                       Opacity="0.6"
-                                                       Text="{Binding File}"
-                                                       TextTrimming="CharacterEllipsis"/>
-                                        </DockPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </StackPanel>
+                        <StackPanel>
+                            <TextBlock Classes="section" Text="GUI 面板"/>
+                            <Button Classes="palette" Command="{Binding Canvas.AddPanelCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icon:MaterialIcon Width="16" Height="16" Kind="ViewDashboard"/>
+                                    <TextBlock Text="添加面板"/>
+                                </StackPanel>
+                            </Button>
+                            <StackPanel Spacing="4" IsVisible="{Binding Canvas.IsPanelSelected}">
+                                <TextBlock FontSize="12" Opacity="0.6" Text="面板控件（在检查器选中面板节点后可用）" TextWrapping="Wrap"/>
+                                <ItemsControl ItemsSource="{Binding PanelControlTypes}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Classes="palette" Command="{Binding $parent[Window].DataContext.Canvas.AddControlCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <TextBlock Text="{Binding}"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Classes="section" Text="校验"/>
+                            <TextBlock FontSize="12" Text="{Binding Canvas.ValidationErrors.Count, StringFormat='{}{0} 项校验错误'}"
+                                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                            <TextBlock FontSize="11" Opacity="0.6" Text="config 是唯一真相；画布为可视化编辑器，保存时硬校验" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
 
-            <!-- Center: NodifyM Bench canvas (config → node/edge projection) -->
-            <Grid Grid.Column="1" Margin="8,0,8,0">
-                <Border BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
-                        BorderThickness="1"
-                        CornerRadius="8">
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
+
+            <!-- Canvas -->
+            <Grid Grid.Column="2">
+                <Border BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1" CornerRadius="8">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Empty state: no ToolKit shown -->
-                        <StackPanel Grid.Row="0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Spacing="8"
+                        <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
                                     IsVisible="{Binding IsEmpty}">
-                            <icon:MaterialIcon Width="48"
-                                               Height="48"
-                                               HorizontalAlignment="Center"
-                                               Kind="Network"/>
-                            <TextBlock HorizontalAlignment="Center"
-                                       FontSize="16"
-                                       Text="{DynamicResource Text_Bench_NoToolkit}"/>
-                            <TextBlock HorizontalAlignment="Center"
-                                       FontSize="12"
-                                       Opacity="0.6"
-                                       Text="{DynamicResource Text_Bench_NoToolkitHint}"/>
+                            <icon:MaterialIcon Width="48" Height="48" HorizontalAlignment="Center" Kind="Network"/>
+                            <TextBlock HorizontalAlignment="Center" FontSize="16" Text="{DynamicResource Text_Bench_NoToolkit}"/>
+                            <TextBlock HorizontalAlignment="Center" FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_NoToolkitHint}"/>
                         </StackPanel>
 
-                        <!-- NodifyM editor -->
                         <nd:NodifyEditor Grid.Row="0"
                                          DataContext="{Binding Canvas}"
                                          ItemsSource="{Binding Canvas.Nodes}"
                                          Connections="{Binding Canvas.Connections}"
+                                         PendingConnection="{Binding Canvas.PendingConnection}"
+                                         SelectedItems="{Binding Canvas.SelectedNodes}"
+                                         DisconnectConnectorCommand="{Binding Canvas.DisconnectConnectorCommand}"
+                                         RemoveConnectionCommand="{Binding Canvas.RemoveConnectionCommand}"
                                          Background="Transparent">
+                            <nd:NodifyEditor.GridLineTemplate>
+                                <DataTemplate>
+                                    <nd:LargeGridLine Width="{Binding $parent[nd:NodifyEditor].Bounds.Width}"
+                                                      Height="{Binding $parent[nd:NodifyEditor].Bounds.Height}"
+                                                      OffsetX="{Binding $parent[nd:NodifyEditor].OffsetX}"
+                                                      OffsetY="{Binding $parent[nd:NodifyEditor].OffsetY}"
+                                                      Zoom="{Binding $parent[nd:NodifyEditor].Zoom}"
+                                                      Spacing="15"
+                                                      Thickness="0.5"
+                                                      Brush="{DynamicResource ControlStrokeColorSecondaryBrush}"/>
+                                </DataTemplate>
+                            </nd:NodifyEditor.GridLineTemplate>
+
                             <nd:NodifyEditor.ConnectionTemplate>
                                 <DataTemplate>
                                     <nd:Connection Source="{Binding Source.Anchor}"
                                                    Target="{Binding Target.Anchor}"
-                                                   StrokeThickness="2"
-                                                   Direction="Forward"/>
+                                                   StrokeThickness="2.5"
+                                                   Spacing="20"
+                                                   Direction="Forward"
+                                                   DisconnectCommand="{Binding $parent[nd:NodifyEditor].RemoveConnectionCommand}">
+                                        <ToolTip.Tip>Alt+点击连接或端点可断开连线；右键可断开</ToolTip.Tip>
+                                    </nd:Connection>
                                 </DataTemplate>
                             </nd:NodifyEditor.ConnectionTemplate>
+
+                            <nd:NodifyEditor.PendingConnectionTemplate>
+                                <DataTemplate>
+                                    <nd:PendingConnection StartedCommand="{Binding StartCommand}"
+                                                          CompletedCommand="{Binding FinishCommand}"
+                                                          Direction="Forward">
+                                        <nd:PendingConnection.Stroke>
+                                            <SolidColorBrush Color="White" Opacity="0.5"/>
+                                        </nd:PendingConnection.Stroke>
+                                    </nd:PendingConnection>
+                                </DataTemplate>
+                            </nd:NodifyEditor.PendingConnectionTemplate>
+
                             <nd:NodifyEditor.ItemTemplate>
                                 <nd:NodeTemplateSelector>
                                     <DataTemplate DataType="{x:Type viewModels:BenchNodeVM}">
@@ -178,17 +225,18 @@
                                                  InputConnectorTemplate="{StaticResource BenchInputTemplate}"
                                                  OutputConnectorTemplate="{StaticResource BenchOutputTemplate}"
                                                  IsResize="False">
+                                            <nd:Node.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="删除节点"
+                                                              Command="{Binding $parent[Window].DataContext.Canvas.DeleteNodeCommand}"
+                                                              CommandParameter="{Binding}"/>
+                                                </ContextMenu>
+                                            </nd:Node.ContextMenu>
                                             <nd:Node.Header>
                                                 <Border Padding="10,4" Background="{DynamicResource ThemePrimaryAccent}">
                                                     <StackPanel Spacing="1">
-                                                        <TextBlock Text="{Binding Title}"
-                                                                   Foreground="White"
-                                                                   FontWeight="SemiBold"
-                                                                   FontSize="13"/>
-                                                        <TextBlock Text="{Binding KindLabel}"
-                                                                   Foreground="White"
-                                                                   Opacity="0.8"
-                                                                   FontSize="10"/>
+                                                        <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                                        <TextBlock Text="{Binding KindLabel}" Foreground="White" Opacity="0.8" FontSize="10"/>
                                                     </StackPanel>
                                                 </Border>
                                             </nd:Node.Header>
@@ -197,22 +245,167 @@
                                 </nd:NodeTemplateSelector>
                             </nd:NodifyEditor.ItemTemplate>
                         </nd:NodifyEditor>
-
-                        <StackPanel Grid.Row="1"
-                                    Margin="0,0,0,16"
-                                    HorizontalAlignment="Center"
-                                    Orientation="Horizontal"
-                                    Spacing="8">
-                            <TextBlock FontSize="12" Opacity="0.8"
-                                       Text="{Binding ValidationIssues.Count, StringFormat='{}{0} 项配置校验'}"/>
-                            <TextBlock FontSize="12" Opacity="0.6"
-                                       Text="{DynamicResource Text_Bench_ConfigTruth}"/>
-                        </StackPanel>
                     </Grid>
                 </Border>
             </Grid>
 
-            <GridSplitter Grid.Column="2" ResizeDirection="Columns"/>
+            <GridSplitter Grid.Column="3" ResizeDirection="Columns"/>
+
+            <!-- Inspector -->
+            <ScrollViewer Grid.Column="4" IsVisible="{Binding Canvas.HasContent}">
+                <StackPanel Margin="8" Spacing="12">
+                    <TextBlock Classes="section" Text="属性"/>
+                    <TextBlock FontSize="12" Opacity="0.6"
+                               Text="选择一个节点以编辑其配置" TextWrapping="Wrap"
+                               IsVisible="{Binding Canvas.IsNothingSelected}"/>
+
+                    <!-- Source (trigger) inspector -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsSourceSelected}">
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="Id"/>
+                            <TextBox Text="{Binding Canvas.SelectedTrigger.Id}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="类型"/>
+                            <TextBlock FontSize="13" FontWeight="Medium" Text="{Binding Canvas.SelectedTrigger.Type}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="呈现（Surface）"/>
+                            <ComboBox ItemsSource="{Binding Canvas.SurfaceOptions}"
+                                      SelectedItem="{Binding Canvas.SelectedTrigger.Config.Surface}"/>
+                        </StackPanel>
+
+                        <!-- Timer specifics -->
+                        <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsTimerSelected}">
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="Cron（5 字段）"/>
+                                <TextBox Text="{Binding Canvas.SelectedTrigger.Config.Cron}" Watermark="如 0 * * * *"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="周期（毫秒）"/>
+                                <TextBox Text="{Binding Canvas.SelectedTrigger.Config.IntervalMs}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <ToggleSwitch Content="单次" IsChecked="{Binding Canvas.SelectedTrigger.Config.OneShot}"/>
+                                <ToggleSwitch Content="KitX 启动自运行" IsChecked="{Binding Canvas.SelectedTrigger.Config.OneShot}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- PluginEvent specifics -->
+                        <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsPluginEventSelected}">
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="插件"/>
+                                <TextBox Text="{Binding Canvas.SelectedTrigger.Config.PluginName}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="触发名（可空=任意）"/>
+                                <TextBox Text="{Binding Canvas.SelectedTrigger.Config.TriggerName}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- UIEvent specifics -->
+                        <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsUIEventSelected}">
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="面板控件 id"/>
+                                <TextBox Text="{Binding Canvas.SelectedTrigger.Config.Control}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="事件"/>
+                                <ComboBox ItemsSource="{Binding Canvas.EventOptions}"
+                                          SelectedItem="{Binding Canvas.SelectedTrigger.Config.Event}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Bindings -->
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="12" FontWeight="SemiBold" Text="绑定"/>
+                            <ItemsControl ItemsSource="{Binding Canvas.SelectedBindings}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,2" Padding="8" CornerRadius="6"
+                                                BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                                            <StackPanel Spacing="4">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <ComboBox ItemsSource="{Binding WorkflowOptions}"
+                                                              SelectedItem="{Binding SelectedWorkflow}"
+                                                              MinWidth="120"/>
+                                                    <Button Content="×" Command="{Binding $parent[Window].DataContext.Canvas.RemoveBindingCommand}"
+                                                            CommandParameter="{Binding}"/>
+                                                </StackPanel>
+                                                <TextBox Text="{Binding ParamsText}" Watermark="参数注入 name=source 每行"
+                                                         TextWrapping="Wrap" AcceptsReturn="True" MinHeight="48"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <ComboBox ItemsSource="{Binding Canvas.InspectorWorkflowOptions}"
+                                          SelectedItem="{Binding Canvas.AddWorkflowId}" MinWidth="120"/>
+                                <Button Content="添加绑定" Command="{Binding Canvas.AddBindingCommand}" CommandParameter="{Binding Canvas.AddWorkflowId}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Workflow inspector -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsWorkflowSelected}">
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="Id"/>
+                            <TextBox Text="{Binding Canvas.SelectedWorkflow.Id}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="名称"/>
+                            <TextBox Text="{Binding Canvas.SelectedWorkflow.Name}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="文件"/>
+                            <TextBox Text="{Binding Canvas.SelectedWorkflow.File}"/>
+                        </StackPanel>
+                        <TextBlock FontSize="11" Opacity="0.6" TextWrapping="Wrap"
+                                   Text="工作流内容在 Workflow 编辑器中编辑；这里只编排其触发与连接。"/>
+                    </StackPanel>
+
+                    <!-- Panel inspector -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsPanelSelected}">
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="布局"/>
+                            <ComboBox ItemsSource="{Binding Canvas.LayoutOptions}"
+                                      SelectedItem="{Binding Canvas.SelectedPanel.Layout}"/>
+                        </StackPanel>
+                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="控件清单（呈现者决定排版）"/>
+                        <ItemsControl ItemsSource="{Binding Canvas.SelectedControls}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,2" Padding="8" CornerRadius="6"
+                                            BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                                        <DockPanel>
+                                            <TextBlock FontSize="13" Text="{Binding Type}"/>
+                                            <TextBlock Margin="8,0,0,0" HorizontalAlignment="Right" FontSize="12" Opacity="0.7" Text="{Binding Id}"/>
+                                            <Button DockPanel.Dock="Right" Content="×" Margin="8,0,0,0"
+                                                    Command="{Binding $parent[Window].DataContext.Canvas.RemoveControlCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
+
+        <!-- ── Diagnostic bar ── -->
+        <Border Grid.Row="2" Margin="0,8,0,0" Padding="10,6" CornerRadius="8"
+                BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding SaveMessage}"
+                           Foreground="{DynamicResource ThemePrimaryAccent}"/>
+                <TextBlock FontSize="12" Text="{Binding Canvas.LastError}"
+                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                <TextBlock FontSize="12" Opacity="0.7"
+                           Text="{Binding Canvas.ValidationErrors.Count, StringFormat='{}{0} 项校验错误'}"/>
+                <TextBlock FontSize="12" Opacity="0.5" Text="config 是唯一真相" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>
