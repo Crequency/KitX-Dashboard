@@ -5,6 +5,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:icon="using:Material.Icons.Avalonia"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:nd="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
+        xmlns:viewModels="using:KitX.Dashboard.ViewModels"
         Title="KitX Bench — 工作台（预览）"
         Width="1100"
         Height="700"
@@ -14,6 +16,22 @@
         TransparencyLevelHint="Mica"
         WindowStartupLocation="CenterOwner"
         mc:Ignorable="d">
+    <Window.Resources>
+        <DataTemplate x:Key="BenchInputTemplate" DataType="{x:Type viewModels:BenchConnectorVM}">
+            <nd:NodeInput IsConnected="{Binding IsConnected}" Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <nd:NodeInput.Header>
+                    <TextBlock Text="{Binding Title}" FontSize="11"/>
+                </nd:NodeInput.Header>
+            </nd:NodeInput>
+        </DataTemplate>
+        <DataTemplate x:Key="BenchOutputTemplate" DataType="{x:Type viewModels:BenchConnectorVM}">
+            <nd:NodeOutput IsConnected="{Binding IsConnected}" Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <nd:NodeOutput.Header>
+                    <TextBlock Text="{Binding Title}" FontSize="11"/>
+                </nd:NodeOutput.Header>
+            </nd:NodeOutput>
+        </DataTemplate>
+    </Window.Resources>
     <Grid RowDefinitions="60, *" Margin="16">
         <!-- Header -->
         <DockPanel Grid.Row="0">
@@ -106,7 +124,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Center: future NodifyM canvas placeholder -->
+            <!-- Center: NodifyM Bench canvas (config → node/edge projection) -->
             <Grid Grid.Column="1" Margin="8,0,8,0">
                 <Border BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}"
                         BorderThickness="1"
@@ -116,19 +134,69 @@
                             <RowDefinition/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+
+                        <!-- Empty state: no ToolKit shown -->
+                        <StackPanel Grid.Row="0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="8"
+                                    IsVisible="{Binding IsEmpty}">
                             <icon:MaterialIcon Width="48"
                                                Height="48"
                                                HorizontalAlignment="Center"
                                                Kind="Network"/>
                             <TextBlock HorizontalAlignment="Center"
                                        FontSize="16"
-                                       Text="Bench 画布（NodifyM）开发中…"/>
+                                       Text="未选择 ToolKit"/>
                             <TextBlock HorizontalAlignment="Center"
                                        FontSize="12"
                                        Opacity="0.6"
-                                       Text="此处未来为编排画布：Trigger 节点 + 线束边 + DataStore 数据面板"/>
+                                       Text="从管理页选择一个 ToolKit 打开 Bench"/>
                         </StackPanel>
+
+                        <!-- NodifyM editor -->
+                        <nd:NodifyEditor Grid.Row="0"
+                                         DataContext="{Binding Canvas}"
+                                         ItemsSource="{Binding Canvas.Nodes}"
+                                         Connections="{Binding Canvas.Connections}"
+                                         Background="Transparent">
+                            <nd:NodifyEditor.ConnectionTemplate>
+                                <DataTemplate>
+                                    <nd:Connection Source="{Binding Source.Anchor}"
+                                                   Target="{Binding Target.Anchor}"
+                                                   StrokeThickness="2"
+                                                   Direction="Forward"/>
+                                </DataTemplate>
+                            </nd:NodifyEditor.ConnectionTemplate>
+                            <nd:NodifyEditor.ItemTemplate>
+                                <nd:NodeTemplateSelector>
+                                    <DataTemplate DataType="{x:Type viewModels:BenchNodeVM}">
+                                        <nd:Node Location="{Binding Location}"
+                                                 Input="{Binding Input}"
+                                                 Output="{Binding Output}"
+                                                 InputConnectorTemplate="{StaticResource BenchInputTemplate}"
+                                                 OutputConnectorTemplate="{StaticResource BenchOutputTemplate}"
+                                                 IsResize="False">
+                                            <nd:Node.Header>
+                                                <Border Padding="10,4" Background="#3873D9">
+                                                    <StackPanel Spacing="1">
+                                                        <TextBlock Text="{Binding Title}"
+                                                                   Foreground="White"
+                                                                   FontWeight="SemiBold"
+                                                                   FontSize="13"/>
+                                                        <TextBlock Text="{Binding KindLabel}"
+                                                                   Foreground="White"
+                                                                   Opacity="0.8"
+                                                                   FontSize="10"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </nd:Node.Header>
+                                        </nd:Node>
+                                    </DataTemplate>
+                                </nd:NodeTemplateSelector>
+                            </nd:NodifyEditor.ItemTemplate>
+                        </nd:NodifyEditor>
+
                         <StackPanel Grid.Row="1"
                                     Margin="0,0,0,16"
                                     HorizontalAlignment="Center"

@@ -33,6 +33,7 @@ internal class BenchViewModel : ViewModelBase
         ValidationIssues = ActiveToolkit is null
             ? []
             : [.. new ConfigValidator().Validate(ActiveToolkit).Errors];
+        Canvas = ActiveToolkit is null ? null : new BenchCanvasViewModel(ActiveToolkit);
 
         InitCommands();
         InitEvents();
@@ -40,6 +41,9 @@ internal class BenchViewModel : ViewModelBase
 
     /// <summary>The ToolKit this Bench window is showing.</summary>
     internal Toolkit? ActiveToolkit { get; }
+
+    /// <summary>The read-only NodifyM projection of the config (null when no ToolKit).</summary>
+    internal BenchCanvasViewModel? Canvas { get; }
 
     /// <summary>The ToolKit's workflows.</summary>
     internal IReadOnlyList<ToolkitWorkflow> Workflows { get; }
