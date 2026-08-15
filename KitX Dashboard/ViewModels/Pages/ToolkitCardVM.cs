@@ -1,3 +1,4 @@
+using System;
 using System.Reactive;
 using KitX.Dashboard.Services;
 using KitX.ToolKit.Contracts;
@@ -15,6 +16,7 @@ public sealed class ToolkitCardVM : ReactiveObject
 {
     private readonly IToolkitService _toolkitService;
     private bool _isMounted;
+    private string? _errorMessage;
 
     public ToolkitCardVM(Toolkit model, IToolkitService toolkitService)
     {
@@ -42,16 +44,34 @@ public sealed class ToolkitCardVM : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isMounted, value);
     }
 
+    /// <summary>Last mount/unmount error (shown on the card).</summary>
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        set => this.RaiseAndSetIfChanged(ref _errorMessage, value);
+    }
+
     public ReactiveCommand<Unit, Unit> ToggleMountCommand { get; }
     public ReactiveCommand<Unit, Unit> OpenBenchCommand { get; }
 
     private void ToggleMount()
     {
-        if (IsMounted)
-            _toolkitService.Unmount(Model.GetId());
-        else
-            _toolkitService.Mount(Model.GetId());
-        IsMounted = _toolkitService.IsMounted(Model.GetId());
+        try
+        {
+            // Decide direction from the SERVICE's real state, not the VM's IsMounted field:
+            // the toggle's two-way IsChecked binding flips IsMounted before the command runs.
+            var mounted = _toolkitService.IsMounted(Model.GetId());
+            if (mounted)
+                _toolkitService.Unmount(Model.GetId());
+            else
+                _toolkitService.Mount(Model.GetId());
+            IsMounted = _toolkitService.IsMounted(Model.GetId());
+            ErrorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
     }
 
     private void OpenBench() => UIStateService.OpenBenchWindow(Model);

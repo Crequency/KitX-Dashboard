@@ -32,17 +32,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
         InitCommands();
         InitEvents();
 
-        EnsureSeedToolkit();
         RefreshCards();
-    }
-
-    /// <summary>Seeds a sample ToolKit on first run (empty store), so the management page
-    /// is immediately usable. Persists via <see cref="IToolkitService.CreateToolkit"/>.</summary>
-    private void EnsureSeedToolkit()
-    {
-        if (_toolkitService.ListToolkits().Count > 0)
-            return;
-        _toolkitService.CreateToolkit(ToolkitSampleFactory.Create());
     }
 
     /// <summary>All stored ToolKits as cards.</summary>
@@ -64,7 +54,20 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     {
         CreateToolkitCommand = ReactiveCommand.Create(() =>
         {
-            var toolkit = ToolkitSampleFactory.Create($"New ToolKit {_cards.Count + 1}");
+            // Create a blank ToolKit the user fills in on the workbench (no auto-seed;
+            // tutorial toolkits come later with the tutorial module).
+            var toolkit = new Toolkit
+            {
+                Meta = new ToolkitMeta
+                {
+                    Name = $"New ToolKit {_cards.Count + 1}",
+                    Version = "1.0.0",
+                    Author = "KitX",
+                },
+                Workflows = [],
+                Plugins = [],
+                Triggers = [],
+            };
             _toolkitService.CreateToolkit(toolkit);
             RefreshCards();
         });

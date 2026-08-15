@@ -160,7 +160,10 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     private void AddPanelNode(UiPanel panel)
     {
         var node = new BenchNodeVM("GUI 面板", BenchNodeKind.Panel, $"控件 {panel.Controls.Count}", "panel",
-            new Point(460, 40 + _workflowCount * 100 + 60));
+            new Point(460, 40 + _workflowCount * 100 + 60))
+        {
+            Controls = panel.Controls,
+        };
         _nodeConfig[node] = panel;
         Nodes.Add(node);
     }

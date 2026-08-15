@@ -38,6 +38,12 @@ public sealed class BenchNodeVM : NodeViewModelBase
 
     /// <summary>Key of the underlying config object (trigger id / workflow id / "panel").</summary>
     public string ConfigId { get; }
+
+    /// <summary>Panel controls (only set for Panel nodes) — previewed on the node body.</summary>
+    public IReadOnlyList<UiControl>? Controls { get; set; }
+
+    /// <summary>True for the GUI panel node (renders the control-list body).</summary>
+    public bool IsPanel => Kind == BenchCanvasViewModel.BenchNodeKind.Panel;
 }
 
 /// <summary>A connector (pin) on a Bench node. <see cref="Key"/> identifies the pin
