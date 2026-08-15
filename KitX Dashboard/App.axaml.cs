@@ -84,7 +84,6 @@ public partial class App : Application
         // (Avalonia constructs Views directly — no container injection into View constructors).
         services.AddTransient<WorkflowEditorViewModelV6>();
         services.AddTransient<PluginsLaunchWindowViewModel>();
-        services.AddTransient<WorkflowPageViewModel>();
         services.AddTransient<DevicesPageViewModel>();
         // ToolKit / Bench scaffold — ToolKit management page (future replacement for the
         // workflow page) + the Bench orchestration window + the panel host (use surface).

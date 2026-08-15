@@ -88,6 +88,17 @@
                                            Text="{Binding Description}"
                                            TextTrimming="CharacterEllipsis"
                                            TextWrapping="Wrap"/>
+                                <Border Padding="8,4" CornerRadius="6"
+                                        Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                    <TextBlock FontSize="11" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                               Text="{Binding ErrorMessage}" TextWrapping="Wrap"/>
+                                </Border>
+                                <Border Padding="8,2" CornerRadius="10" HorizontalAlignment="Left"
+                                        Background="{DynamicResource SystemFillColorSuccessBackgroundBrush}"
+                                        IsVisible="{Binding HasRunningInstances}">
+                                    <TextBlock FontSize="11" Text="{Binding RunningBadge}"/>
+                                </Border>
                                 <StackPanel Margin="0,4,0,0" Orientation="Horizontal" Spacing="16">
                                     <TextBlock FontSize="12" Text="{Binding WorkflowCount, StringFormat='{}{0} 工作流'}"/>
                                     <TextBlock FontSize="12" Text="{Binding TriggerCount, StringFormat='{}{0} 触发'}"/>

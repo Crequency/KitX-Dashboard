@@ -1,4 +1,8 @@
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using KitX.Dashboard.ViewModels;
 
 namespace KitX.Dashboard.Views;
@@ -18,20 +22,43 @@ public partial class PanelHostWindow : Window
         InitializeComponent();
 
         DataContext = viewModel;
-        Closed += (_, _) => viewModel.Dispose();
+        viewModel.PanelOpenRequested += OnPanelOpenRequested;
+        Closed += (_, _) =>
+        {
+            viewModel.PanelOpenRequested -= OnPanelOpenRequested;
+            viewModel.Dispose();
+        };
     }
 
-    /// <summary>Number control value change → write-back via the control's command.</summary>
-    private void OnNumberValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    private readonly Dictionary<ScrollViewer, NotifyCollectionChangedEventHandler> _logScrollHandlers = [];
+
+    /// <summary>Auto-scroll each Log control unless the global pause switch is on.</summary>
+    private void OnLogScrollAttached(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        if (sender is NumericUpDown nud && nud.DataContext is PanelControlViewModel vm && nud.Value is decimal d)
-            vm.NumberCommand?.Execute((double)d);
+        if (sender is not ScrollViewer scroll || scroll.DataContext is not PanelControlViewModel control)
+            return;
+        NotifyCollectionChangedEventHandler handler = (_, _) =>
+        {
+            if (!viewModel.IsLogPaused)
+                Dispatcher.UIThread.Post(() => scroll.ScrollToEnd());
+        };
+        _logScrollHandlers[scroll] = handler;
+        control.LogEntries.CollectionChanged += handler;
     }
 
-    /// <summary>Select control selection change → write-back via the control's command.</summary>
-    private void OnSelectSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void OnLogScrollDetached(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        if (sender is ComboBox cb && cb.DataContext is PanelControlViewModel vm && cb.SelectedItem is string s)
-            vm.SelectCommand?.Execute(s);
+        if (sender is not ScrollViewer scroll || !_logScrollHandlers.Remove(scroll, out var handler))
+            return;
+        if (scroll.DataContext is PanelControlViewModel control)
+            control.LogEntries.CollectionChanged -= handler;
+    }
+
+    /// <summary>Present the window without stealing foreground focus more than necessary.</summary>
+    private void OnPanelOpenRequested()
+    {
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+        Activate();
     }
 }

@@ -137,6 +137,40 @@ public partial class WorkflowEditorWindowV6 : Window
         }
     }
 
+    /// <summary>Loads a ToolKit-bundled workflow by explicit file path (Bench UX v2 C5).</summary>
+    public async Task LoadWorkflowFileAsync(string filePath)
+    {
+        var kcs = await Services.ToolkitWorkflowFileService.LoadAsync(filePath);
+        if (kcs == null)
+        {
+            _viewModel.StatusText = $"Workflow not found: {filePath}";
+            return;
+        }
+        if (kcs.IrVersion != "v6")
+        {
+            _viewModel.StatusText = $"Not a v6 workflow (IrVersion={kcs.IrVersion ?? "null"})";
+            return;
+        }
+
+        try
+        {
+            var ir = WorkflowSerializer.Deserialize(kcs.IrData);
+            _viewModel.SetWorkflowId(kcs.Id);
+            _viewModel.SetWorkflowFilePath(filePath);
+            _viewModel.LoadFromIr(ir, kcs.Name, kcs);
+
+            SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
+
+            var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
+            if (constantsItemsControl != null)
+                constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
+        }
+        catch (Exception ex)
+        {
+            _viewModel.StatusText = $"Failed to load v6 IR: {ex.Message}";
+        }
+    }
+
     public void LoadSource(string ksSource)
     {
         _viewModel.KsSource = ksSource;

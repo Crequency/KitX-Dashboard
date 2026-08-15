@@ -1,4 +1,4 @@
-﻿<Window x:Class="KitX.Dashboard.Views.PanelHostWindow"
+<Window x:Class="KitX.Dashboard.Views.PanelHostWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,23 +8,22 @@
         xmlns:views="using:KitX.Dashboard.Views"
         xmlns:converters="using:KitX.Dashboard.Converters"
         Title="{DynamicResource Text_PanelHost_Title}"
-        Width="1000"
-        Height="680"
-        d:DesignHeight="680"
-        d:DesignWidth="1000"
+        Width="1080"
+        Height="720"
+        d:DesignHeight="720"
+        d:DesignWidth="1080"
         Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
         TransparencyLevelHint="Mica"
         WindowStartupLocation="CenterOwner"
         mc:Ignorable="d">
     <Window.Resources>
         <converters:InstanceStatusToBrushConverter x:Key="InstanceStatusToBrushConverter"/>
-        <!-- ── Panel control render templates (fixed ten-control set, card-styled) ── -->
         <DataTemplate x:Key="PanelTextTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
             <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13"/>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelIconTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
-            <icon:MaterialIcon Width="24" Height="24" Kind="InformationOutline"/>
+            <icon:MaterialIcon Width="24" Height="24" Kind="{Binding IconKind}"/>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelButtonTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
@@ -41,13 +40,12 @@
         </DataTemplate>
 
         <DataTemplate x:Key="PanelNumberTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
-            <NumericUpDown Value="{Binding Value, Mode=TwoWay}" IsEnabled="{Binding IsEnabled}"
-                           ValueChanged="OnNumberValueChanged"/>
+            <NumericUpDown Value="{Binding NumberValue, Mode=TwoWay}" IsEnabled="{Binding IsEnabled}"/>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelSelectTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
-            <ComboBox ItemsSource="{Binding SelectItems}" SelectedItem="{Binding Value, Mode=TwoWay}"
-                      IsEnabled="{Binding IsEnabled}" SelectionChanged="OnSelectSelectionChanged"/>
+            <ComboBox ItemsSource="{Binding SelectItems}" SelectedItem="{Binding SelectedValue, Mode=TwoWay}"
+                      IsEnabled="{Binding IsEnabled}"/>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelSwitchTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
@@ -58,13 +56,15 @@
         <DataTemplate x:Key="PanelLogTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
             <Border Padding="8" CornerRadius="4" Background="{DynamicResource LayerFillColorDefaultBrush}"
                     BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
-                <ItemsControl ItemsSource="{Binding LogEntries}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock FontSize="12" FontFamily="Consolas, monospace" Text="{Binding}" TextWrapping="Wrap"/>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto" AttachedToVisualTree="OnLogScrollAttached" DetachedFromVisualTree="OnLogScrollDetached">
+                    <ItemsControl ItemsSource="{Binding LogEntries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock FontSize="12" FontFamily="Consolas, monospace" Text="{Binding}" TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Border>
         </DataTemplate>
 
@@ -76,8 +76,7 @@
         </DataTemplate>
 
         <DataTemplate x:Key="PanelDialogTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
-            <Border Padding="12" CornerRadius="6"
-                    BorderBrush="{DynamicResource ThemePrimaryAccent}" BorderThickness="1">
+            <Border Padding="12" CornerRadius="6" BorderBrush="{DynamicResource ThemePrimaryAccent}" BorderThickness="1">
                 <StackPanel Spacing="8">
                     <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13"/>
                     <Button Command="{Binding DialogConfirmCommand}" CommandParameter="确定"
@@ -100,7 +99,6 @@
     </Window.Resources>
 
     <Grid RowDefinitions="60, Auto, *" Margin="16">
-        <!-- Header -->
         <DockPanel Grid.Row="0">
             <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center" Orientation="Horizontal" Spacing="10">
                 <icon:MaterialIcon Width="26" Height="26" Kind="ViewList"/>
@@ -132,7 +130,6 @@
             </StackPanel>
         </DockPanel>
 
-        <!-- Trigger selector (collapsible) -->
         <Border Grid.Row="1" Margin="0,0,0,8" Padding="12" CornerRadius="8"
                 BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1"
                 IsVisible="{Binding IsPickerVisible}">
@@ -141,23 +138,17 @@
                 <Grid ColumnDefinitions="*, 12, *, 12, 2*, Auto">
                     <StackPanel Grid.Column="0" Spacing="4">
                         <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_PanelHost_PickerToolkit}"/>
-                        <ComboBox ItemsSource="{Binding MountedToolkits}"
-                                  SelectedItem="{Binding SelectedToolkit}">
+                        <ComboBox ItemsSource="{Binding MountedToolkits}" SelectedItem="{Binding SelectedToolkit}">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Meta.Name}"/>
-                                </DataTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Meta.Name}"/></DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Spacing="4">
                         <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_PanelHost_PickerTrigger}"/>
-                        <ComboBox ItemsSource="{Binding ManualTriggers}"
-                                  SelectedItem="{Binding SelectedTrigger}">
+                        <ComboBox ItemsSource="{Binding ManualTriggers}" SelectedItem="{Binding SelectedTrigger}">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Id}"/>
-                                </DataTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Id}"/></DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                     </StackPanel>
@@ -166,8 +157,7 @@
                         <TextBox Text="{Binding PayloadText}" Watermark="{DynamicResource Text_PanelHost_PickerPayloadHint}"
                                  TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40"/>
                     </StackPanel>
-                    <Button Grid.Column="5" VerticalAlignment="Bottom" Margin="8,0,0,0"
-                            Command="{Binding NewInstanceCommand}">
+                    <Button Grid.Column="5" VerticalAlignment="Bottom" Margin="8,0,0,0" Command="{Binding NewInstanceCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <icon:MaterialIcon Width="18" Height="18" Kind="Play"/>
                             <TextBlock Text="{DynamicResource Text_PanelHost_StartInstance}"/>
@@ -179,63 +169,167 @@
             </StackPanel>
         </Border>
 
-        <!-- Body: grouped instance tree (left) + selected panel (right) -->
-        <Grid Grid.Row="2" ColumnDefinitions="320, 12, *">
-            <!-- Instance tree -->
-            <Border Grid.Column="0" CornerRadius="{DynamicResource KitXRadiusCard}"
-                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
-                <ScrollViewer>
-                    <ItemsControl ItemsSource="{Binding InstanceGroups}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Expander Header="{Binding Name}" IsExpanded="True">
-                                    <ListBox ItemsSource="{Binding Instances}"
-                                             SelectedItem="{Binding $parent[Window].DataContext.SelectedInstance}"
-                                             Background="Transparent">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <TextBlock FontSize="12" Text="{Binding InstanceId}" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="{Binding Status}"
-                                                               Foreground="{Binding Status, Converter={StaticResource InstanceStatusToBrushConverter}}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                </Expander>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </Border>
+        <Grid Grid.Row="2" ColumnDefinitions="330, 12, *">
+            <StackPanel Grid.Column="0">
+                <Border Margin="0,0,0,8" Padding="8" CornerRadius="6"
+                        Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                        BorderBrush="{DynamicResource SystemFillColorCautionBrush}" BorderThickness="1"
+                        IsVisible="{Binding HasSpawnRejectedMessage}">
+                    <TextBlock Text="{Binding SpawnRejectedMessage}" TextWrapping="Wrap" FontSize="12"/>
+                </Border>
+                <Border CornerRadius="{DynamicResource KitXRadiusCard}"
+                        BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding InstanceGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Expander Header="{Binding Name}" IsExpanded="True" Margin="8,0">
+                                        <ListBox ItemsSource="{Binding Instances}"
+                                                 SelectedItem="{Binding $parent[Window].DataContext.SelectedInstance}"
+                                                 Background="Transparent">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Spacing="2">
+                                                        <DockPanel>
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <Ellipse Width="9" Height="9" VerticalAlignment="Center"
+                                                                         Fill="{Binding Status, Converter={StaticResource InstanceStatusToBrushConverter}}"/>
+                                                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding InstanceId}" TextTrimming="CharacterEllipsis"/>
+                                                            </StackPanel>
+                                                            <TextBlock DockPanel.Dock="Right" FontSize="10" Text="{Binding Status}"
+                                                                       Foreground="{Binding Status, Converter={StaticResource InstanceStatusToBrushConverter}}"/>
+                                                        </DockPanel>
+                                                        <TextBlock FontSize="11" Opacity="0.7" Text="{Binding RunSummary}"/>
+                                                        <TextBlock FontSize="11" Opacity="0.7"
+                                                                   Text="{Binding Initiator.DeviceName, StringFormat='来自: {0}'}"
+                                                                   IsVisible="{Binding Initiator.DeviceName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                                   ToolTip.Tip="{Binding Initiator.DeviceId}"/>
+                                                        <Button HorizontalAlignment="Left" Padding="8,2" FontSize="11"
+                                                                Command="{Binding $parent[Window].DataContext.EndInstanceCommand}"
+                                                                CommandParameter="{Binding}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <icon:MaterialIcon Width="12" Height="12" Kind="Stop"/>
+                                                                <TextBlock Text="{DynamicResource Text_PanelHost_EndInstanceShort}"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Expander>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
 
             <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
 
-            <!-- Selected detail / panel area -->
             <Border Grid.Column="2" CornerRadius="{DynamicResource KitXRadiusCard}"
                     BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
-                <Grid>
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
-                                IsVisible="{Binding IsEmpty}">
-                        <icon:MaterialIcon Width="40" Height="40" HorizontalAlignment="Center" Kind="ViewList"/>
-                        <TextBlock HorizontalAlignment="Center" FontSize="14" Opacity="0.6"
-                                   Text="{DynamicResource Text_PanelHost_NoSelection}"/>
-                    </StackPanel>
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
-                                IsVisible="{Binding NoPanel, FallbackValue=False}">
-                        <icon:MaterialIcon Width="40" Height="40" HorizontalAlignment="Center" Kind="ViewList"/>
-                        <TextBlock HorizontalAlignment="Center" FontSize="14" Opacity="0.6"
-                                   Text="{DynamicResource Text_PanelHost_NoPanel}"/>
-                    </StackPanel>
-
-                    <!-- Interactive panel control projection -->
-                    <ScrollViewer IsVisible="{Binding HasPanel, FallbackValue=False}">
-                        <StackPanel Margin="16" Spacing="10">
-                            <TextBlock FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_PanelHost_Panel}"/>
-                            <ItemsControl ItemsSource="{Binding PanelControls}"
-                                          ItemTemplate="{StaticResource PanelControlTemplateSelector}"/>
+                <Grid RowDefinitions="Auto, *">
+                    <DockPanel Grid.Row="0" Margin="12,8">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="{DynamicResource Text_PanelHost_PanelTab}" Command="{Binding SelectTabCommand}" CommandParameter="0"
+                                    FontWeight="{Binding IsPanelTabSelected, Converter={x:Static BoolConverters.Not}}" IsEnabled="True"/>
+                            <Button Content="{DynamicResource Text_PanelHost_RunTab}" Command="{Binding SelectTabCommand}" CommandParameter="1"/>
+                            <ToggleSwitch Content="{DynamicResource Text_PanelHost_PauseLogScroll}" IsChecked="{Binding IsLogPaused}"/>
                         </StackPanel>
-                    </ScrollViewer>
+                    </DockPanel>
+
+                    <Grid Grid.Row="1">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                                    IsVisible="{Binding IsEmpty}">
+                            <icon:MaterialIcon Width="40" Height="40" HorizontalAlignment="Center" Kind="ViewList"/>
+                            <TextBlock HorizontalAlignment="Center" FontSize="14" Opacity="0.6"
+                                       Text="{DynamicResource Text_PanelHost_NoSelection}"/>
+                        </StackPanel>
+
+                        <!-- Panel tab -->
+                        <Grid IsVisible="{Binding IsPanelTabSelected}">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                                        IsVisible="{Binding NoPanel}">
+                                <icon:MaterialIcon Width="40" Height="40" HorizontalAlignment="Center" Kind="ViewList"/>
+                                <TextBlock HorizontalAlignment="Center" FontSize="14" Opacity="0.6"
+                                           Text="{DynamicResource Text_PanelHost_NoPanel}"/>
+                            </StackPanel>
+                            <ScrollViewer IsVisible="{Binding HasPanel}">
+                                <StackPanel Margin="16" Spacing="10">
+                                    <TextBlock FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_PanelHost_Panel}"/>
+                                    <ItemsControl ItemsSource="{Binding PanelControls}"
+                                                  ItemTemplate="{StaticResource PanelControlTemplateSelector}"/>
+                                    <Border Padding="12" CornerRadius="6"
+                                            Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                                            BorderBrush="{DynamicResource SystemFillColorCautionBrush}" BorderThickness="1"
+                                            IsVisible="{Binding HasPendingDialog}">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock FontSize="13" FontWeight="SemiBold"
+                                                       Text="{Binding PendingDialog.Message}" TextWrapping="Wrap"/>
+                                            <ItemsControl ItemsSource="{Binding PendingDialog.Buttons}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Margin="0,0,8,0" Content="{Binding}"
+                                                                Command="{Binding $parent[Window].DataContext.ConfirmDialogCommand}"
+                                                                CommandParameter="{Binding}"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+
+                        <!-- Run tab -->
+                        <Grid IsVisible="{Binding IsRunTabSelected}">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                                        IsVisible="{Binding IsEmpty}">
+                                <TextBlock FontSize="14" Opacity="0.6" Text="{DynamicResource Text_PanelHost_SelectInstanceForRuns}"/>
+                            </StackPanel>
+                            <ScrollViewer IsVisible="{Binding HasSelection}">
+                                <StackPanel Margin="16" Spacing="12">
+                                    <TextBlock FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_PanelHost_ActiveRuns}"/>
+                                    <ItemsControl ItemsSource="{Binding ActiveRuns}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,2" Padding="8" CornerRadius="6"
+                                                        Background="{DynamicResource LayerFillColorDefaultBrush}">
+                                                    <DockPanel>
+                                                        <TextBlock FontSize="12" Text="{Binding WorkflowId}"/>
+                                                        <TextBlock DockPanel.Dock="Right" FontSize="11" Text="{Binding Status}"/>
+                                                    </DockPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_PanelHost_CompletedRuns}"/>
+                                    <ItemsControl ItemsSource="{Binding CompletedRuns}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,2" Padding="8" CornerRadius="6"
+                                                        BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                                                    <StackPanel Spacing="2">
+                                                        <DockPanel>
+                                                            <TextBlock FontSize="12" Text="{Binding WorkflowId}"/>
+                                                            <TextBlock DockPanel.Dock="Right" FontSize="11" Text="{Binding Status}"/>
+                                                        </DockPanel>
+                                                        <TextBlock FontSize="11" Foreground="Red" Text="{Binding Error}"
+                                                                   TextWrapping="Wrap" IsVisible="{Binding IsFailed}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

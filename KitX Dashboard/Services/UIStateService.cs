@@ -67,15 +67,35 @@ public static class UIStateService
         var id = toolkit.GetId();
         if (BenchWindows.TryGetValue(id, out var existing) && existing is { IsVisible: true })
         {
+            Serilog.Log.Information($"[UIStateService] OpenBenchWindow: reusing open window for '{toolkit.Meta?.Name}' ({id})");
             existing.Activate();
             return;
         }
 
+        Serilog.Log.Information(
+            $"[UIStateService] OpenBenchWindow: new window for '{toolkit.Meta?.Name}' ({id}) — " +
+            $"triggers:{toolkit.Triggers.Count} workflows:{toolkit.Workflows.Count} panel:{toolkit.UiPanel is not null}");
         BenchToolkit = toolkit;
         var window = new Views.BenchWindow();
         BenchWindows[id] = window;
         window.Closed += (_, _) => BenchWindows.Remove(id);
         ShowWindow(window, MainWindow);
+    }
+
+    /// <summary>Shows (and activates) the singleton Panel host window, creating it lazily.</summary>
+    public static void ShowPanelHostWindow()
+    {
+        PanelHostWindow ??= new PanelHostWindow();
+        var win = PanelHostWindow;
+        if (win.IsVisible)
+        {
+            if (win.WindowState == WindowState.Minimized)
+                win.WindowState = WindowState.Normal;
+            win.Activate();
+            return;
+        }
+
+        ShowWindow(win, MainWindow);
     }
 
     public static void ShowWindow<T>(T window, Window? owner = null, bool showDialog = false, bool onlyOneInSameTime = false)

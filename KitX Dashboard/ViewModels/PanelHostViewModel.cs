@@ -8,6 +8,8 @@ using KitX.Core.Contract.Event;
 using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Contracts.Events;
 using KitX.ToolKit.Models;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
@@ -15,6 +17,8 @@ namespace KitX.Dashboard.ViewModels;
 /// <summary>A group of instances belonging to one ToolKit (the panel host's left tree).</summary>
 public sealed class InstanceGroupVM : ReactiveObject
 {
+    private int _runningCount;
+
     public InstanceGroupVM(string toolkitId, string name)
     {
         ToolkitId = toolkitId;
@@ -23,14 +27,22 @@ public sealed class InstanceGroupVM : ReactiveObject
 
     public string ToolkitId { get; }
     public string Name { get; }
+
     public ObservableCollection<InstanceSnapshot> Instances { get; } = [];
+
+    public int RunningCount
+    {
+        get => _runningCount;
+        set => this.RaiseAndSetIfChanged(ref _runningCount, value);
+    }
+
+    public bool HasRunning => RunningCount > 0;
 }
 
 /// <summary>
 /// ViewModel for the Panel host window — the ToolKit <b>use surface</b> (as opposed to the
 /// Bench design surface). Shows a grouped instance tree (by ToolKit), renders the selected
-/// instance's panel controls (a projection of its DataStore keys), and starts new instances
-/// via a trigger selector (mounted ToolKit → Manual trigger → optional payload).
+/// instance's panel controls, monitors run chains, and owns the single-slot Dialog queue.
 /// </summary>
 internal class PanelHostViewModel : ViewModelBase, IDisposable
 {
@@ -42,13 +54,20 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     private readonly ObservableCollection<InstanceSnapshot> _instances = [];
     private readonly ObservableCollection<InstanceGroupVM> _instanceGroups = [];
     private readonly ObservableCollection<PanelControlViewModel> _panelControls = [];
+    private readonly Dictionary<string, InstanceRunTimelineVM> _timelines = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PendingDialogVM> _pendingDialogs = new(StringComparer.Ordinal);
+
     private InstanceSnapshot? _selectedInstance;
+    private PendingDialogVM? _pendingDialog;
     private bool _hasPanel;
     private bool _isPickerVisible;
     private Toolkit? _selectedToolkit;
     private Trigger? _selectedTrigger;
     private string _payloadText = string.Empty;
     private string? _pickerMessage;
+    private string? _spawnRejectedMessage;
+    private int _selectedTab;
+    private bool _isLogPaused;
 
     public PanelHostViewModel(IToolkitService toolkitService, IBenchService benchService, IPanelRuntime panelRuntime, IEventService eventService)
     {
@@ -63,13 +82,15 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         RefreshInstances();
     }
 
+    /// <summary>Raised when the host window should present itself (without stealing focus).</summary>
+    internal event Action? PanelOpenRequested;
+
     /// <summary>All instances across mounted ToolKits (flat, for selection logic).</summary>
     internal ObservableCollection<InstanceSnapshot> Instances => _instances;
 
     /// <summary>Instances grouped by ToolKit (the left tree).</summary>
     internal ObservableCollection<InstanceGroupVM> InstanceGroups => _instanceGroups;
 
-    /// <summary>The instance selected for the panel view.</summary>
     internal InstanceSnapshot? SelectedInstance
     {
         get => _selectedInstance;
@@ -79,38 +100,54 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             this.RaisePropertyChanged(nameof(HasSelection));
             this.RaisePropertyChanged(nameof(IsEmpty));
             this.RaisePropertyChanged(nameof(NoPanel));
+            this.RaisePropertyChanged(nameof(ActiveRuns));
+            this.RaisePropertyChanged(nameof(CompletedRuns));
+            PendingDialog = value is null ? null : _pendingDialogs.GetValueOrDefault(value.InstanceId);
             BuildPanel();
         }
     }
 
-    /// <summary>True when an instance is selected (panel area visible).</summary>
     internal bool HasSelection => SelectedInstance is not null;
 
-    /// <summary>True when no instance is selected (empty-state placeholder).</summary>
     internal bool IsEmpty => SelectedInstance is null;
 
-    /// <summary>True when an instance is selected but its ToolKit declares no panel.</summary>
     internal bool NoPanel => SelectedInstance is not null && !HasPanel;
 
-    /// <summary>Panel controls of the selected instance (built from its toolkit's UiPanel).</summary>
     internal ObservableCollection<PanelControlViewModel> PanelControls => _panelControls;
 
-    /// <summary>True when the selected instance's ToolKit declares a panel.</summary>
     internal bool HasPanel
     {
         get => _hasPanel;
         private set => this.RaiseAndSetIfChanged(ref _hasPanel, value);
     }
 
+    /// <summary>Selected detail tab: 0 = panel, 1 = runs (Bench UX v2 §5.3).</summary>
+    internal int SelectedTab
+    {
+        get => _selectedTab;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedTab, value);
+            this.RaisePropertyChanged(nameof(IsPanelTabSelected));
+            this.RaisePropertyChanged(nameof(IsRunTabSelected));
+        }
+    }
+
+    internal bool IsPanelTabSelected => SelectedTab == 0;
+    internal bool IsRunTabSelected => SelectedTab == 1;
+
+    internal bool IsLogPaused
+    {
+        get => _isLogPaused;
+        set => this.RaiseAndSetIfChanged(ref _isLogPaused, value);
+    }
+
     // ── Trigger selector (new instance) ──
 
-    /// <summary>Mounted ToolKits available to spawn from.</summary>
     internal IReadOnlyList<Toolkit> MountedToolkits { get; private set; } = [];
 
-    /// <summary>Manual triggers of the selected mounted ToolKit.</summary>
     internal IReadOnlyList<Trigger> ManualTriggers { get; private set; } = [];
 
-    /// <summary>True when the trigger selector is expanded.</summary>
     internal bool IsPickerVisible
     {
         get => _isPickerVisible;
@@ -149,42 +186,89 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         }
     }
 
-    /// <summary>True when the picker has a message to show.</summary>
     internal bool HasPickerMessage => !string.IsNullOrWhiteSpace(PickerMessage);
 
-    /// <summary>Summary line for the header.</summary>
+    /// <summary>Tree-top spawn rejection notice (MaxInstances / unmounted).</summary>
+    internal string? SpawnRejectedMessage
+    {
+        get => _spawnRejectedMessage;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _spawnRejectedMessage, value);
+            this.RaisePropertyChanged(nameof(HasSpawnRejectedMessage));
+        }
+    }
+
+    internal bool HasSpawnRejectedMessage => !string.IsNullOrWhiteSpace(SpawnRejectedMessage);
+
+    internal PendingDialogVM? PendingDialog
+    {
+        get => _pendingDialog;
+        private set => this.RaiseAndSetIfChanged(ref _pendingDialog, value);
+    }
+
+    internal bool HasPendingDialog => PendingDialog is not null;
+
+    internal ObservableCollection<RunChainVM> ActiveRuns =>
+        SelectedInstance is null ? [] : (_timelines.TryGetValue(SelectedInstance.InstanceId, out var t) ? t.ActiveRuns : []);
+
+    internal ObservableCollection<RunChainVM> CompletedRuns =>
+        SelectedInstance is null ? [] : (_timelines.TryGetValue(SelectedInstance.InstanceId, out var t) ? t.CompletedRuns : []);
+
     internal string Summary => string.Format(
-        TranslateTextWithSuffix("PanelHost", "InstanceCount") ?? "{0} 个实例", Instances.Count);
+        TranslateTextWithSuffix("PanelHost", "RunSummary") ?? "{0} 个实例 · {1} 运行中",
+        Instances.Count, Instances.Count(i => i.Status == KitX.ToolKit.Instances.InstanceStatus.Running));
 
-    /// <summary>Ends the selected instance.</summary>
-    internal ReactiveCommand<Unit, Unit>? EndInstanceCommand { get; set; }
-
-    /// <summary>Ends every instance.</summary>
+    internal ReactiveCommand<InstanceSnapshot, Unit>? EndInstanceCommand { get; set; }
     internal ReactiveCommand<Unit, Unit>? EndAllCommand { get; set; }
-
-    /// <summary>Opens the Bench design surface (context switch).</summary>
     internal ReactiveCommand<Unit, Unit>? OpenBenchCommand { get; set; }
-
-    /// <summary>Toggles the trigger selector and refreshes mounted ToolKits.</summary>
     internal ReactiveCommand<Unit, Unit>? TogglePickerCommand { get; set; }
-
-    /// <summary>Spawns a new instance from the selected trigger (+ optional payload).</summary>
     internal ReactiveCommand<Unit, Unit>? NewInstanceCommand { get; set; }
+    internal ReactiveCommand<string, Unit>? ConfirmDialogCommand { get; set; }
+    internal ReactiveCommand<int, Unit>? SelectTabCommand { get; set; }
 
     public override void InitCommands()
     {
-        EndInstanceCommand = ReactiveCommand.Create(() =>
+        EndInstanceCommand = ReactiveCommand.CreateFromTask<InstanceSnapshot, Unit>(async snapshot =>
         {
-            if (SelectedInstance is null)
-                return;
-            _benchService.EndInstance(SelectedInstance.InstanceId);
+            if (snapshot is null)
+                return Unit.Default;
+            if (snapshot.Status == KitX.ToolKit.Instances.InstanceStatus.Running)
+            {
+                var result = await MessageBoxManager.GetMessageBoxStandard(
+                    "结束实例", $"确定要结束实例 {snapshot.InstanceId[..Math.Min(12, snapshot.InstanceId.Length)]} 吗？",
+                    ButtonEnum.YesNo, Icon.Warning).ShowWindowAsync();
+                if (result != ButtonResult.Yes)
+                    return Unit.Default;
+            }
+
+            _benchService.EndInstance(snapshot.InstanceId);
+            SpawnRejectedMessage = null;
+            return Unit.Default;
         });
 
-        EndAllCommand = ReactiveCommand.Create(() => _benchService.EndAll());
+        EndAllCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            if (Instances.Count == 0)
+                return;
+            var result = await MessageBoxManager.GetMessageBoxStandard(
+                "结束全部", $"确定要结束全部 {Instances.Count} 个实例吗？",
+                ButtonEnum.YesNo, Icon.Warning).ShowWindowAsync();
+            if (result != ButtonResult.Yes)
+                return;
+            _benchService.EndAll();
+            SpawnRejectedMessage = null;
+        });
 
         OpenBenchCommand = ReactiveCommand.Create(() =>
         {
-            Services.UIStateService.ShowWindow(new Views.BenchWindow(), Services.UIStateService.MainWindow);
+            var toolkit = SelectedInstance is null
+                ? null
+                : _toolkitService.GetToolkit(SelectedInstance.ToolkitId);
+            if (toolkit is not null)
+                Services.UIStateService.OpenBenchWindow(toolkit);
+            else
+                Services.UIStateService.ShowWindow(new Views.BenchWindow(), Services.UIStateService.MainWindow);
         });
 
         TogglePickerCommand = ReactiveCommand.Create(() =>
@@ -222,15 +306,28 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             var instanceId = _benchService.Spawn(SelectedToolkit.GetId(), SelectedTrigger.Id, payload);
             if (instanceId is null)
             {
-                PickerMessage = TranslateTextWithSuffix("PanelHost", "PickerSpawnRejected") ?? "启动失败：可能已达最大实例数或工具箱未挂载";
+                var message = TranslateTextWithSuffix("PanelHost", "PickerSpawnRejected") ?? "启动失败：可能已达最大实例数或工具箱未挂载";
+                PickerMessage = message;
+                SpawnRejectedMessage = message;
                 return;
             }
 
             PickerMessage = null;
+            SpawnRejectedMessage = null;
             IsPickerVisible = false;
-            RefreshInstances();
-            SelectedInstance = Instances.FirstOrDefault(i => i.InstanceId == instanceId);
+            FocusInstance(instanceId, openPanel: true);
         });
+
+        ConfirmDialogCommand = ReactiveCommand.Create<string>(button =>
+        {
+            if (PendingDialog is null)
+                return;
+            _panelRuntime.RaiseControlEvent(PendingDialog.InstanceId, PendingDialog.ControlId, "Confirm", button);
+            _pendingDialogs.Remove(PendingDialog.InstanceId);
+            PendingDialog = null;
+        });
+
+        SelectTabCommand = ReactiveCommand.Create<int>(tab => SelectedTab = tab);
     }
 
     public override void InitEvents()
@@ -244,8 +341,60 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
 
     private void OnBenchEvent(object? sender, BenchEvent e)
     {
-        RefreshInstances();
+        switch (e)
+        {
+            case InstanceSpawnedEvent spawned:
+                RefreshInstances();
+                var toolkit = _toolkitService.GetToolkit(spawned.ToolkitId);
+                var trigger = toolkit?.Triggers.FirstOrDefault(t => t.Id == spawned.TriggerId);
+                var openPanel = trigger?.Config?.Surface is null or "auto";
+                FocusInstance(spawned.InstanceId, openPanel);
+                if (openPanel)
+                    PanelOpenRequested?.Invoke();
+                break;
+            case PanelOpenRequestedEvent open:
+                FocusInstance(open.InstanceId, openPanel: true);
+                PanelOpenRequested?.Invoke();
+                break;
+            case DialogRequestedEvent dialog:
+                _pendingDialogs[dialog.InstanceId] = new PendingDialogVM(
+                    dialog.InstanceId, dialog.ToolkitId, dialog.ControlId, dialog.Message, dialog.Buttons);
+                if (SelectedInstance?.InstanceId == dialog.InstanceId)
+                    PendingDialog = _pendingDialogs[dialog.InstanceId];
+                break;
+            case RunStartedEvent runStarted:
+                Timeline(runStarted.InstanceId).Apply(runStarted);
+                if (SelectedInstance?.InstanceId == runStarted.InstanceId)
+                {
+                    this.RaisePropertyChanged(nameof(ActiveRuns));
+                    this.RaisePropertyChanged(nameof(CompletedRuns));
+                }
+                break;
+            case RunCompletedEvent runCompleted:
+                Timeline(runCompleted.InstanceId).Apply(runCompleted);
+                if (SelectedInstance?.InstanceId == runCompleted.InstanceId)
+                {
+                    this.RaisePropertyChanged(nameof(ActiveRuns));
+                    this.RaisePropertyChanged(nameof(CompletedRuns));
+                }
+                break;
+            case InstanceCompletedEvent or InstanceCancelledEvent:
+                RefreshInstances();
+                break;
+        }
+
         UpdatePanel(e);
+    }
+
+    private InstanceRunTimelineVM Timeline(string instanceId)
+    {
+        if (!_timelines.TryGetValue(instanceId, out var timeline))
+        {
+            timeline = new InstanceRunTimelineVM();
+            _timelines[instanceId] = timeline;
+        }
+
+        return timeline;
     }
 
     private void BuildPanel()
@@ -283,7 +432,6 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         control?.Apply(prop, value is JsonElement je ? je : null);
     }
 
-    /// <summary>Parses <c>.../{instanceId}/panel/{controlId}/{prop}</c> (or the bare suffix) into controlId + prop.</summary>
     private static bool TryParsePanelKey(string key, out string controlId, out string prop)
     {
         controlId = string.Empty;
@@ -317,14 +465,25 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         SelectedTrigger = ManualTriggers.FirstOrDefault();
     }
 
+    /// <summary>Cross-window focus request: refresh tree, select instance, optionally show panel.</summary>
+    internal void FocusInstance(string instanceId, bool openPanel)
+    {
+        RefreshInstances();
+        SelectedInstance = Instances.FirstOrDefault(i => i.InstanceId == instanceId);
+        if (openPanel)
+            SelectedTab = 0;
+    }
+
     private void RefreshInstances()
     {
         var selectedId = SelectedInstance?.InstanceId;
         Instances.Clear();
         foreach (var snapshot in _toolkitService.Instances)
+        {
             Instances.Add(snapshot);
+            Timeline(snapshot.InstanceId).ReconcileFromSnapshot(snapshot.ActiveRuns, snapshot.CompletedRuns, snapshot.FailedRuns);
+        }
 
-        // Rebuild the grouped tree.
         InstanceGroups.Clear();
         foreach (var group in Instances.GroupBy(i => i.ToolkitId))
         {
@@ -332,10 +491,13 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             var vm = new InstanceGroupVM(group.Key, toolkit?.Meta.Name ?? group.Key);
             foreach (var snapshot in group)
                 vm.Instances.Add(snapshot);
+            vm.RunningCount = group.Count(i => i.Status == KitX.ToolKit.Instances.InstanceStatus.Running);
+            vm.RaisePropertyChanged(nameof(InstanceGroupVM.HasRunning));
             InstanceGroups.Add(vm);
         }
 
-        SelectedInstance = Instances.FirstOrDefault(i => i.InstanceId == selectedId);
+        var stillThere = Instances.FirstOrDefault(i => i.InstanceId == selectedId);
+        SelectedInstance = stillThere;
         this.RaisePropertyChanged(nameof(Summary));
     }
 

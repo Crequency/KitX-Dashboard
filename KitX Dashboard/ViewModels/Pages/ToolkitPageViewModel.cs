@@ -84,6 +84,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     public override void InitEvents()
     {
         _toolkitService.ToolkitListChanged += OnToolkitListChanged;
+        _toolkitService.BenchEvent += OnBenchEvent;
         _eventService.Subscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 
@@ -93,6 +94,13 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     }
 
     private void OnToolkitListChanged(object? sender, EventArgs e) => RefreshCards();
+
+    private void OnBenchEvent(object? sender, KitX.ToolKit.Contracts.Events.BenchEvent e)
+    {
+        foreach (var card in _cards)
+            card.RunningInstances = _toolkitService.Instances.Count(i =>
+                i.ToolkitId == card.Model.GetId() && i.Status == KitX.ToolKit.Instances.InstanceStatus.Running);
+    }
 
     private void RefreshCards()
     {
@@ -107,6 +115,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         _toolkitService.ToolkitListChanged -= OnToolkitListChanged;
+        _toolkitService.BenchEvent -= OnBenchEvent;
         _eventService.Unsubscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 }

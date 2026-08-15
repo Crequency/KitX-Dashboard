@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reactive;
 using KitX.Dashboard.Services;
 using KitX.ToolKit.Contracts;
@@ -17,12 +18,14 @@ public sealed class ToolkitCardVM : ReactiveObject
     private readonly IToolkitService _toolkitService;
     private bool _isMounted;
     private string? _errorMessage;
+    private int _runningInstances;
 
     public ToolkitCardVM(Toolkit model, IToolkitService toolkitService)
     {
         Model = model;
         _toolkitService = toolkitService;
         _isMounted = toolkitService.IsMounted(model.GetId());
+        _runningInstances = toolkitService.Instances.Count(i => i.ToolkitId == model.GetId() && i.Status == KitX.ToolKit.Instances.InstanceStatus.Running);
         ToggleMountCommand = ReactiveCommand.Create(ToggleMount);
         OpenBenchCommand = ReactiveCommand.Create(OpenBench);
     }
@@ -50,6 +53,21 @@ public sealed class ToolkitCardVM : ReactiveObject
         get => _errorMessage;
         set => this.RaiseAndSetIfChanged(ref _errorMessage, value);
     }
+
+    /// <summary>Running instance count badge (Bench UX v2 G25b).</summary>
+    public int RunningInstances
+    {
+        get => _runningInstances;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _runningInstances, value);
+            this.RaisePropertyChanged(nameof(HasRunningInstances));
+            this.RaisePropertyChanged(nameof(RunningBadge));
+        }
+    }
+
+    public bool HasRunningInstances => RunningInstances > 0;
+    public string RunningBadge => $"{RunningInstances} 运行中";
 
     public ReactiveCommand<Unit, Unit> ToggleMountCommand { get; }
     public ReactiveCommand<Unit, Unit> OpenBenchCommand { get; }

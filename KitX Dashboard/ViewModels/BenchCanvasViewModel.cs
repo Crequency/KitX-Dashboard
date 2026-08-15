@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using KitX.Core.Contract.Plugin;
 using KitX.ToolKit.Models;
 using KitX.ToolKit.Validation;
 using NodifyM.Avalonia.ViewModelBase;
@@ -20,22 +23,37 @@ namespace KitX.Dashboard.ViewModels;
 public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 {
     /// <summary>Node discriminant.</summary>
-    public enum BenchNodeKind { Source, Workflow, Panel }
+    public enum BenchNodeKind { Source, Workflow, Panel, Comment }
 
     private readonly Toolkit _toolkit;
+    private readonly IPluginService? _pluginService;
     private readonly Dictionary<BenchNodeVM, object> _nodeConfig = new();
     private readonly Dictionary<BenchConnectorVM, (BenchNodeVM node, string pin)> _connectorInfo = new();
     private int _sourceCount;
     private int _workflowCount;
     private bool _hasPanel;
+    private bool _isCommentMode;
+    private bool _isEdgeMode;
 
-    public BenchCanvasViewModel(Toolkit toolkit)
+    public BenchCanvasViewModel(Toolkit toolkit, IPluginService? pluginService = null)
     {
         _toolkit = toolkit ?? throw new ArgumentNullException(nameof(toolkit));
-        BuildGraph();
+        _pluginService = pluginService;
+        ToolkitInspector = new BenchToolkitInspectorVM(toolkit, pluginService, NotifyEdited);
         SelectedNodes.CollectionChanged += (_, _) =>
             SelectedNode = SelectedNodes.OfType<BenchNodeVM>().FirstOrDefault();
+        BuildGraph();
+        RefreshPalette();
         RefreshValidation();
+    }
+
+    /// <summary>Raised after any user edit so the host can maintain dirty state.</summary>
+    public event Action? ConfigEdited;
+
+    private void NotifyEdited()
+    {
+        RefreshValidation();
+        ConfigEdited?.Invoke();
     }
 
     /// <summary>The in-memory config the canvas edits (shared with the host for saving).</summary>
@@ -43,6 +61,18 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     /// <summary>True when the config had any nodes.</summary>
     public bool HasContent => Nodes.Count > 0;
+
+    /// <summary>ToolKit page (metadata / plugins / run params) shown when nothing is selected.</summary>
+    public BenchToolkitInspectorVM ToolkitInspector { get; }
+
+    // ── Palette state ──
+
+    [ObservableProperty]
+    private string _paletteSearchText = string.Empty;
+
+    public ObservableCollection<BenchPaletteGroupVM> PaletteGroups { get; } = [];
+
+    partial void OnPaletteSearchTextChanged(string value) => RefreshPalette();
 
     // ── Inspector state ──
 
@@ -62,10 +92,31 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     private UiControl? _selectedControl;
 
     [ObservableProperty]
+    private BenchUiControlVM? _selectedControlVM;
+
+    [ObservableProperty]
     private ObservableCollection<BenchBindingRowVM> _selectedBindings = new();
 
     [ObservableProperty]
     private ObservableCollection<UiControl> _selectedControls = new();
+
+    /// <summary>Observable control-inspector rows (supports per-control editing + reorder).</summary>
+    public ObservableCollection<BenchUiControlVM> SelectedControlVMs { get; } = [];
+
+    [ObservableProperty]
+    private BenchConnectionVM? _selectedConnection;
+
+    [ObservableProperty]
+    private ToolkitComment? _selectedComment;
+
+    [ObservableProperty]
+    private ObservableCollection<BenchDiagnosticVM> _diagnostics = [];
+
+    [ObservableProperty]
+    private bool _isDiagnosticsExpanded;
+
+    [ObservableProperty]
+    private string _newWorkflowName = string.Empty;
 
     [ObservableProperty]
     private IReadOnlyList<string> _validationErrors = [];
@@ -81,17 +132,45 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     partial void OnSelectedNodeChanged(BenchNodeVM? value)
     {
+        _isCommentMode = value is { IsComment: true };
+        _isEdgeMode = false;
+        if (value is not null && SelectedConnection is not null)
+            SelectedConnection = null;
         UpdateInspector();
         OnPropertyChanged(nameof(IsSourceSelected));
         OnPropertyChanged(nameof(IsWorkflowSelected));
         OnPropertyChanged(nameof(IsPanelSelected));
+        OnPropertyChanged(nameof(IsCommentSelected));
         OnPropertyChanged(nameof(IsNothingSelected));
         OnPropertyChanged(nameof(IsTimerSelected));
         OnPropertyChanged(nameof(IsPluginEventSelected));
         OnPropertyChanged(nameof(IsUIEventSelected));
+        OnPropertyChanged(nameof(IsEdgeSelected));
+        OnPropertyChanged(nameof(IsToolkitInspectorVisible));
+    }
+
+    partial void OnSelectedConnectionChanged(BenchConnectionVM? value)
+    {
+        _isEdgeMode = value is not null;
+        _isCommentMode = false;
+        if (value is not null && SelectedNodes.Count > 0)
+            SelectedNodes.Clear();
+        UpdateCompletionInspector();
+        OnPropertyChanged(nameof(IsEdgeSelected));
+        OnPropertyChanged(nameof(IsBindingEdgeSelected));
+        OnPropertyChanged(nameof(IsCompletionEdgeSelected));
+        OnPropertyChanged(nameof(IsToolkitInspectorVisible));
     }
 
     /// <summary>Inspector panels visibility (driven by the selected node kind).</summary>
+    /// <summary>The WorkflowCompletion trigger shown by the completion-edge inspector.</summary>
+    public Trigger? CompletionInspectorTrigger { get; private set; }
+
+    public ObservableCollection<BenchBindingRowVM> CompletionInspectorBindings { get; } = [];
+
+    /// <summary>The source node shown by the completion-edge inspector.</summary>
+    public BenchNodeVM? CompletionFromNode { get; private set; }
+
     public bool IsSourceSelected => SelectedNode is { Kind: BenchNodeKind.Source };
     public bool IsWorkflowSelected => SelectedNode is { Kind: BenchNodeKind.Workflow };
     public bool IsPanelSelected => SelectedNode is { Kind: BenchNodeKind.Panel };
@@ -99,6 +178,417 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     public bool IsTimerSelected => SelectedTrigger is { Type: TriggerType.Timer };
     public bool IsPluginEventSelected => SelectedTrigger is { Type: TriggerType.PluginEvent };
     public bool IsUIEventSelected => SelectedTrigger is { Type: TriggerType.UIEvent };
+    public bool IsCommentSelected => SelectedNode is { Kind: BenchNodeKind.Comment };
+    public bool IsEdgeSelected => SelectedConnection is not null;
+    public bool IsToolkitInspectorVisible => SelectedNode is null && SelectedConnection is null;
+    public bool IsBindingEdgeSelected => SelectedConnection is { Kind: BenchEdgeKind.Binding };
+    public bool IsCompletionEdgeSelected => SelectedConnection is { Kind: BenchEdgeKind.Completion };
+    public bool HasPanel => _toolkit.UiPanel is not null;
+    public bool HasValidationErrors => ValidationErrors.Count > 0;
+    public string ValidationBadgeText => HasValidationErrors ? $"⚠ {ValidationErrors.Count} 项" : "✓";
+
+    // ── Inspector write-through wrappers ──
+    // The inspector binds these instead of the raw POCO fields so every edit can write
+    // through to the config model AND refresh the canvas projection (node Title / KindLabel)
+    // plus re-validate. Fields with no canvas projection still go through a wrapper so the
+    // edit triggers RefreshValidation (config stays the single source of truth).
+
+    /// <summary>Edits the selected trigger's <see cref="Trigger.Id"/> (write-through + node Title refresh).</summary>
+    public string? SelectedTriggerId
+    {
+        get => SelectedTrigger?.Id;
+        set
+        {
+            if (SelectedTrigger is null || string.IsNullOrWhiteSpace(value))
+                return;
+            if (value == SelectedTrigger.Id)
+                return;
+            if (_toolkit.Triggers.Any(t => t.Id == value))
+            {
+                SetError("触发器 Id 已存在");
+                OnPropertyChanged(nameof(SelectedTriggerId));
+                return;
+            }
+
+            SelectedTrigger.Id = value;
+            // Re-key the current node so Rebuild's selection-restore (matching by
+            // ConfigId) finds it under the new id, and so the rebuilt pins (src:{id})
+            // stay consistent for AddBinding/RemoveBinding edge sync.
+            if (SelectedNode is { Kind: BenchNodeKind.Source })
+                SelectedNode.ConfigId = value;
+            Rebuild();
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Surface"/> (write-through + re-validate).</summary>
+    public string? SelectedTriggerSurface
+    {
+        get => SelectedTrigger?.Config?.Surface;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.Surface = value;
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Cron"/> (write-through + re-validate).</summary>
+    public string? SelectedTriggerCron
+    {
+        get => SelectedTrigger?.Config?.Cron;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.Cron = value;
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.IntervalMs"/> (write-through + re-validate).</summary>
+    public double? SelectedTriggerIntervalMs
+    {
+        get => SelectedTrigger?.Config?.IntervalMs;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.IntervalMs = value;
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.OneShot"/> (write-through + re-validate).</summary>
+    public bool? SelectedTriggerOneShot
+    {
+        get => SelectedTrigger?.Config?.OneShot;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.OneShot = value;
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.PluginName"/> (write-through + source KindLabel refresh).</summary>
+    public string? SelectedTriggerPluginName
+    {
+        get => SelectedTrigger?.Config?.PluginName;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.PluginName = value;
+            RefreshSourceKindLabel();
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.TriggerName"/> (write-through + re-validate).</summary>
+    public string? SelectedTriggerTriggerName
+    {
+        get => SelectedTrigger?.Config?.TriggerName;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.TriggerName = value;
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Control"/> (write-through + source KindLabel refresh).</summary>
+    public string? SelectedTriggerControl
+    {
+        get => SelectedTrigger?.Config?.Control;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.Control = value;
+            RefreshSourceKindLabel();
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Event"/> (write-through + re-validate).</summary>
+    public string? SelectedTriggerEvent
+    {
+        get => SelectedTrigger?.Config?.Event;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.Event = value;
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected workflow's <see cref="ToolkitWorkflow.Id"/> with a full cascade:
+    /// re-keys the node, every <see cref="TriggerBinding.Workflow"/>, and any
+    /// <see cref="TriggerConfig.From"/> on WorkflowCompletion triggers, then rebuilds the graph
+    /// (preserving node locations) so pins and edges stay consistent.</summary>
+    public string? SelectedWorkflowId
+    {
+        get => SelectedWorkflow?.Id;
+        set
+        {
+            if (SelectedWorkflow is null || string.IsNullOrWhiteSpace(value))
+                return;
+            if (value == SelectedWorkflow.Id)
+                return;
+            if (_toolkit.Workflows.Any(w => w.Id == value))
+            {
+                SetError("工作流 Id 已存在");
+                OnPropertyChanged(nameof(SelectedWorkflowId));
+                return;
+            }
+
+            var oldId = SelectedWorkflow.Id;
+            SelectedWorkflow.Id = value;
+            foreach (var t in _toolkit.Triggers)
+            {
+                foreach (var b in t.Bindings)
+                    if (b.Workflow == oldId)
+                        b.Workflow = value;
+                if (t.Type == TriggerType.WorkflowCompletion && t.Config?.From == oldId)
+                    t.Config.From = value;
+            }
+
+            Rebuild();
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected workflow's <see cref="ToolkitWorkflow.Name"/> (write-through + node Title refresh).</summary>
+    public string? SelectedWorkflowName
+    {
+        get => SelectedWorkflow?.Name;
+        set
+        {
+            if (SelectedWorkflow is null)
+                return;
+            SelectedWorkflow.Name = value ?? string.Empty;
+            if (SelectedNode is { Kind: BenchNodeKind.Workflow })
+                SelectedNode.Title = value ?? string.Empty;
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected workflow's <see cref="ToolkitWorkflow.File"/> (write-through + re-validate).</summary>
+    public string? SelectedWorkflowFile
+    {
+        get => SelectedWorkflow?.File;
+        set
+        {
+            if (SelectedWorkflow is null)
+                return;
+            SelectedWorkflow.File = value ?? string.Empty;
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected panel's <see cref="UiPanel.Layout"/> (write-through + re-validate).</summary>
+    public string? SelectedPanelLayout
+    {
+        get => SelectedPanel?.Layout;
+        set
+        {
+            if (SelectedPanel is null)
+                return;
+            SelectedPanel.Layout = value ?? string.Empty;
+            LastError = null;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.DueTimeMs"/>.</summary>
+    public double? SelectedTriggerDueTimeMs
+    {
+        get => SelectedTrigger?.Config?.DueTimeMs;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.DueTimeMs = value;
+            NotifyEdited();
+        }
+    }
+
+    /// <summary>Timer mode: Cron / Interval / OneShot (Bench UX v2 C7).</summary>
+    public int SelectedTriggerTimerMode
+    {
+        get
+        {
+            if (SelectedTrigger?.Config is null)
+                return 1;
+            if (!string.IsNullOrWhiteSpace(SelectedTrigger.Config.Cron))
+                return 2;
+            return SelectedTrigger.Config.OneShot == true ? 0 : 1;
+        }
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            switch (value)
+            {
+                case 0: // one-shot (also covers "run at KitX launch" per RFC)
+                    SelectedTrigger.Config.Cron = null;
+                    SelectedTrigger.Config.OneShot = true;
+                    break;
+                case 2: // cron
+                    SelectedTrigger.Config.OneShot = null;
+                    SelectedTrigger.Config.Cron = "0 * * * *";
+                    break;
+                default: // periodic interval
+                    SelectedTrigger.Config.OneShot = null;
+                    SelectedTrigger.Config.Cron = null;
+                    SelectedTrigger.Config.IntervalMs ??= 1000;
+                    break;
+            }
+
+            OnPropertyChanged(nameof(SelectedTriggerTimerMode));
+            OnPropertyChanged(nameof(IsCronTimerMode));
+            OnPropertyChanged(nameof(IsIntervalTimerMode));
+            NotifyEdited();
+        }
+    }
+
+    public bool IsCronTimerMode => SelectedTriggerTimerMode == 2;
+    public bool IsIntervalTimerMode => SelectedTriggerTimerMode == 1;
+
+    public string TimerModeHint => "周期 = IntervalMs 每轮触发；单次 = 仅触发一次（含 KitX 启动自运行）；Cron = 5 字段表达式";
+
+    // Cron 5-field builder (writes through to TriggerConfig.Cron).
+    public string CronMinute
+    {
+        get => CronField(0);
+        set => SetCronField(0, value);
+    }
+
+    public string CronHour
+    {
+        get => CronField(1);
+        set => SetCronField(1, value);
+    }
+
+    public string CronDay
+    {
+        get => CronField(2);
+        set => SetCronField(2, value);
+    }
+
+    public string CronMonth
+    {
+        get => CronField(3);
+        set => SetCronField(3, value);
+    }
+
+    public string CronDow
+    {
+        get => CronField(4);
+        set => SetCronField(4, value);
+    }
+
+    public string CronPreview => string.Join(" ", CronMinute, CronHour, CronDay, CronMonth, CronDow);
+
+    private string CronField(int index)
+    {
+        var parts = (SelectedTrigger?.Config?.Cron ?? "0 * * * *").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return index < parts.Length ? parts[index] : "*";
+    }
+
+    private void SetCronField(int index, string value)
+    {
+        if (SelectedTrigger?.Config is null)
+            return;
+        var parts = (SelectedTrigger.Config.Cron ?? "0 * * * *").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        while (parts.Length < 5)
+            parts = [.. parts, "*"];
+        parts[index] = string.IsNullOrWhiteSpace(value) ? "*" : value.Trim();
+        SelectedTrigger.Config.Cron = string.Join(" ", parts);
+        OnPropertyChanged(nameof(CronPreview));
+        OnPropertyChanged(nameof(SelectedTriggerCron));
+        NotifyEdited();
+    }
+
+    /// <summary>Plugin names = requirement declarations ∪ locally installed plugins (C8).</summary>
+    public IReadOnlyList<string> PluginOptions
+    {
+        get
+        {
+            var names = new List<string>();
+            names.AddRange(_toolkit.Plugins.Select(p => p.Name));
+            try
+            {
+                names.AddRange(_pluginService?.GetInstalledPlugins()
+                    .Select(p => p.PluginInfo?.Name)
+                    .Where(n => !string.IsNullOrWhiteSpace(n))
+                    .Cast<string>() ?? []);
+            }
+            catch
+            {
+                // Plugin service may not be initialized in headless tests.
+            }
+
+            return names.Where(n => !string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+    }
+
+    /// <summary>Panel control ids for UIEvent control picker (C9; refreshes with panel edits).</summary>
+    public IReadOnlyList<string> PanelControlIds => _toolkit.UiPanel?.Controls.Select(c => c.Id).ToList() ?? [];
+
+    /// <summary>Comment text of the selected comment node (write-through to Toolkit.Comments).</summary>
+    public string SelectedCommentText
+    {
+        get => SelectedComment?.Text ?? string.Empty;
+        set
+        {
+            if (SelectedComment is null)
+                return;
+            if (SelectedComment.Text != value)
+            {
+                SelectedComment.Text = value ?? string.Empty;
+                if (SelectedNode is { IsComment: true })
+                    SelectedNode.CommentText = value ?? string.Empty;
+                NotifyEdited();
+            }
+        }
+    }
+
+    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Panel"/> (reserved UIEvent field).</summary>
+    public string? SelectedTriggerPanel
+    {
+        get => SelectedTrigger?.Config?.Panel;
+        set
+        {
+            if (SelectedTrigger?.Config is null)
+                return;
+            SelectedTrigger.Config.Panel = value;
+            NotifyEdited();
+        }
+    }
+
+    private void RefreshSourceKindLabel()
+    {
+        if (SelectedNode is { Kind: BenchNodeKind.Source } && SelectedTrigger is not null)
+            SelectedNode.KindLabel = SourceKindLabel(SelectedTrigger);
+    }
 
     // ── Graph construction ──
 
@@ -116,6 +606,9 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             AddWorkflowNode(wf, _workflowCount++);
         if (_toolkit.UiPanel is not null)
             AddPanelNode(_toolkit.UiPanel);
+        var commentIndex = 0;
+        foreach (var comment in _toolkit.Comments)
+            AddCommentNode(comment, commentIndex++);
 
         foreach (var t in _toolkit.Triggers)
         {
@@ -132,12 +625,55 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
                     ConnectExisting("src:" + t.Id, "in:" + b.Workflow, BenchEdgeKind.Binding);
             }
         }
+
+        RefreshDegreeBadges();
+    }
+
+    /// <summary>
+    /// Re-runs the config→canvas projection, preserving the <see cref="BenchNodeVM.Location"/>
+    /// of every config object that is still alive (matched by <see cref="BenchNodeVM.ConfigId"/>)
+    /// and restoring the previously selected node (if it still exists). Used as the fallback
+    /// when the config may have been mutated externally (e.g. window Activated) or after a
+    /// workflow-id cascade.
+    /// </summary>
+    public void Rebuild()
+    {
+        var locations = Nodes.OfType<BenchNodeVM>()
+            .ToDictionary(n => n.ConfigId, n => n.Location);
+        var selectedConfigId = SelectedNode?.ConfigId;
+
+        SelectedNodes.Clear();
+        BuildGraph();
+
+        foreach (var node in Nodes.OfType<BenchNodeVM>())
+        {
+            if (locations.TryGetValue(node.ConfigId, out var loc))
+                node.Location = loc;
+        }
+
+        if (selectedConfigId is not null)
+        {
+            var restored = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.ConfigId == selectedConfigId);
+            if (restored is not null)
+                SelectedNodes.Add(restored);
+        }
+
+        RefreshValidation();
     }
 
     private void AddSourceNode(Trigger trigger, int index)
     {
         var node = new BenchNodeVM(trigger.Id, BenchNodeKind.Source, SourceKindLabel(trigger), trigger.Id,
             new Point(60, 40 + index * 100));
+        node.AffinityLabel = trigger.Type == TriggerType.UIEvent ? "实例内" : "Spawn";
+        node.NodeIcon = trigger.Type switch
+        {
+            TriggerType.Manual => Material.Icons.MaterialIconKind.Hand,
+            TriggerType.Timer => Material.Icons.MaterialIconKind.Clock,
+            TriggerType.PluginEvent => Material.Icons.MaterialIconKind.Puzzle,
+            TriggerType.UIEvent => Material.Icons.MaterialIconKind.ViewList,
+            _ => Material.Icons.MaterialIconKind.Hand,
+        };
         var outPin = new BenchConnectorVM("触发", ConnectorViewModelBase.ConnectorFlow.Output, "src:" + trigger.Id);
         node.Output.Add(outPin);
         RegisterNode(node, outPin, trigger);
@@ -165,6 +701,17 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             Controls = panel.Controls,
         };
         _nodeConfig[node] = panel;
+        Nodes.Add(node);
+    }
+
+    private void AddCommentNode(ToolkitComment comment, int index)
+    {
+        var node = new BenchNodeVM(comment.Text, BenchNodeKind.Comment, "注释", comment.Id,
+            new Point(240, 40 + index * 110))
+        {
+            CommentText = comment.Text,
+        };
+        _nodeConfig[node] = comment;
         Nodes.Add(node);
     }
 
@@ -241,7 +788,9 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         outCon.IsConnected = true;
         inCon.IsConnected = true;
         LastError = null;
-        RefreshValidation();
+        RefreshSelectedBindings();
+        RefreshDegreeBadges();
+        NotifyEdited();
     }
 
     /// <summary>Adds (or reuses) a workflow→workflow completion edge; rejects on cycle.</summary>
@@ -270,7 +819,8 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             _toolkit.Triggers.Add(existing);
         }
 
-        Connections.Add(new BenchConnectionVM(this, outCon, inCon, BenchEdgeKind.Completion));
+        var added = new BenchConnectionVM(this, outCon, inCon, BenchEdgeKind.Completion);
+        Connections.Add(added);
 
         var result = new ConfigValidator().Validate(_toolkit);
         if (result.Errors.Any(e => e.Contains("cycle", StringComparison.OrdinalIgnoreCase)))
@@ -284,7 +834,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
                     _toolkit.Triggers.Remove(t);
             }
 
-            Connections.Remove(Connections.OfType<BenchConnectionVM>().LastOrDefault());
+            Connections.Remove(added);
             SetError("检测到环：完成边不得形成循环");
             return false;
         }
@@ -310,8 +860,12 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             return;
         RemoveConfigEdge(connection);
         Connections.Remove(connection);
+        if (SelectedConnection == connection)
+            SelectedConnection = null;
         RefreshIsConnected();
-        RefreshValidation();
+        RefreshSelectedBindings();
+        RefreshDegreeBadges();
+        NotifyEdited();
     }
 
     private void RemoveConfigEdge(BenchConnectionVM conn)
@@ -367,15 +921,27 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             case BenchNodeKind.Panel:
                 _toolkit.UiPanel = null;
                 _hasPanel = false;
+                RefreshPalette();
+                break;
+            case BenchNodeKind.Comment:
+                _toolkit.Comments.RemoveAll(c => c.Id == node.ConfigId);
                 break;
         }
 
         CleanupNodeMaps(node);
         Nodes.Remove(node);
         if (SelectedNode == node)
+        {
             SelectedNode = null;
+            SelectedConnection = null;
+        }
+
+        foreach (var edge in Connections.OfType<BenchConnectionVM>())
+            edge.IsSelected = edge == SelectedConnection;
         RefreshIsConnected();
-        RefreshValidation();
+        RefreshSelectedBindings();
+        RefreshDegreeBadges();
+        NotifyEdited();
     }
 
     [RelayCommand]
@@ -413,7 +979,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         _toolkit.Triggers.Add(trigger);
         AddSourceNode(trigger, _sourceCount++);
         LastError = null;
-        RefreshValidation();
+        NotifyEdited();
     }
 
     [RelayCommand]
@@ -428,8 +994,9 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         _toolkit.UiPanel = new UiPanel { Layout = "stack" };
         AddPanelNode(_toolkit.UiPanel);
         _hasPanel = true;
+        RefreshPalette();
         LastError = null;
-        RefreshValidation();
+        NotifyEdited();
     }
 
     [RelayCommand]
@@ -441,7 +1008,8 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         SelectedPanel.Controls.Add(control);
         RefreshSelectedControls();
         SelectedControl = control;
-        RefreshValidation();
+        SelectedControlVM = SelectedControlVMs.FirstOrDefault(c => c.Model == control);
+        NotifyEdited();
     }
 
     [RelayCommand]
@@ -452,8 +1020,11 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         SelectedPanel.Controls.Remove(control);
         RefreshSelectedControls();
         if (SelectedControl == control)
+        {
             SelectedControl = null;
-        RefreshValidation();
+            SelectedControlVM = null;
+        }
+        NotifyEdited();
     }
 
     [RelayCommand]
@@ -468,8 +1039,16 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         }
 
         SelectedTrigger.Bindings.Add(new TriggerBinding { Workflow = workflowId });
+
+        // Mirror the new binding as a canvas edge (source out pin → workflow in pin).
+        var srcCon = AllConnectors().FirstOrDefault(c => c.Key == "src:" + SelectedTrigger.Id);
+        var tgtCon = AllConnectors().FirstOrDefault(c => c.Key == "in:" + workflowId);
+        if (srcCon is not null && tgtCon is not null)
+            Connections.Add(new BenchConnectionVM(this, srcCon, tgtCon, BenchEdgeKind.Binding));
+
         RefreshSelectedBindings();
-        RefreshValidation();
+        RefreshDegreeBadges();
+        NotifyEdited();
     }
 
     [RelayCommand]
@@ -478,8 +1057,215 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         if (SelectedTrigger is null || row is null)
             return;
         SelectedTrigger.Bindings.Remove(row.Model);
+
+        // Drop the matching canvas edge (source out pin → workflow in pin).
+        var edge = Connections.OfType<BenchConnectionVM>()
+            .FirstOrDefault(c => c.Source is BenchConnectorVM s && s.Key == "src:" + SelectedTrigger.Id
+                              && c.Target is BenchConnectorVM t && t.Key == "in:" + row.Model.Workflow);
+        if (edge is not null)
+            Connections.Remove(edge);
+
         RefreshSelectedBindings();
-        RefreshValidation();
+        RefreshDegreeBadges();
+        NotifyEdited();
+    }
+
+    // ── Structured parameter mapping (Bench UX v2 §4.4) ──
+
+    [RelayCommand]
+    private void AddParamRow(BenchBindingRowVM? row)
+    {
+        row?.AddParamRow();
+        NotifyEdited();
+    }
+
+    [RelayCommand]
+    private void RemoveParamRow(BenchParamRowVM? param)
+    {
+        if (param is null)
+            return;
+        var row = SelectedBindings.FirstOrDefault(r => r.ParamRows.Contains(param))
+                  ?? CompletionInspectorBindings.FirstOrDefault(r => r.ParamRows.Contains(param));
+        row?.RemoveParamRow(param);
+        NotifyEdited();
+    }
+
+    [RelayCommand]
+    private void SelectControl(BenchUiControlVM? control)
+    {
+        if (control is null)
+            return;
+        SelectedControlVM = control;
+        SelectedControl = control.Model;
+    }
+
+    [RelayCommand]
+    private void MoveControlUp(BenchUiControlVM? control) => control?.MoveUp();
+
+    [RelayCommand]
+    private void MoveControlDown(BenchUiControlVM? control) => control?.MoveDown();
+
+    [RelayCommand]
+    private void AddSelectItem(BenchUiControlVM? control) => control?.AddSelectItem();
+
+    [RelayCommand]
+    private void RemoveSelectItem(string? item)
+    {
+        if (SelectedControlVM is null)
+            return;
+        SelectedControlVM.RemoveSelectItem(item);
+        NotifyEdited();
+    }
+
+    // ── Palette dispatch / new workflow / comments ──
+
+    /// <summary>Raised when the user asks to open the v6 editor for a workflow.</summary>
+    public event Action<ToolkitWorkflow>? EditWorkflowRequested;
+
+    /// <summary>Raised after a workflow was created (host logs / focuses).</summary>
+    public event Action<ToolkitWorkflow>? WorkflowCreated;
+
+    [RelayCommand]
+    private void RunPaletteItem(BenchPaletteItemVM? item)
+    {
+        switch (item?.Key)
+        {
+            case "Manual":
+            case "Timer":
+            case "PluginEvent":
+            case "UIEvent":
+                AddTrigger(item.Key);
+                break;
+            case "Workflow":
+                AddWorkflow();
+                break;
+            case "Panel":
+                AddPanel();
+                break;
+            case "Comment":
+                AddComment();
+                break;
+        }
+    }
+
+    /// <summary>Adds a comment node; text persists in <see cref="Toolkit.Comments"/>, position does not.</summary>
+    [RelayCommand]
+    private void AddComment()
+    {
+        var comment = new ToolkitComment { Id = "note_" + Guid.NewGuid().ToString("N")[..8], Text = "双击右侧文本编辑注释" };
+        _toolkit.Comments.Add(comment);
+        AddCommentNode(comment, _toolkit.Comments.Count - 1);
+        var node = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.ConfigId == comment.Id);
+        if (node is not null)
+        {
+            SelectedNodes.Clear();
+            SelectedNodes.Add(node);
+        }
+        LastError = null;
+        NotifyEdited();
+    }
+
+    /// <summary>Creates a minimal workflow .kcs + config entry + canvas node (Bench UX v2 §4.5).</summary>
+    [RelayCommand]
+    private async Task AddWorkflow()
+    {
+        var name = (NewWorkflowName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            SetError("请先输入新工作流名称");
+            return;
+        }
+
+        var id = "wf_" + Guid.NewGuid().ToString("N")[..8];
+        var file = "workflows/" + id + ".kcs";
+        var workflow = new ToolkitWorkflow { Id = id, Name = name, File = file };
+        try
+        {
+            await Services.ToolkitWorkflowFileService.WriteMinimalWorkflowAsync(_toolkit, workflow);
+        }
+        catch (Exception ex)
+        {
+            SetError("创建工作流文件失败：" + ex.Message);
+            return;
+        }
+
+        _toolkit.Workflows.Add(workflow);
+        AddWorkflowNode(workflow, _workflowCount++);
+        NewWorkflowName = string.Empty;
+        RefreshPalette();
+        LastError = null;
+        WorkflowCreated?.Invoke(workflow);
+        NotifyEdited();
+    }
+
+    [RelayCommand]
+    private void EditWorkflow(ToolkitWorkflow? workflow)
+    {
+        if (workflow is not null)
+            EditWorkflowRequested?.Invoke(workflow);
+    }
+
+    // ── Edge selection ──
+
+    [RelayCommand]
+    private void SelectConnection(BenchConnectionVM? connection)
+    {
+        if (connection is null)
+            return;
+
+        if (connection.Kind == BenchEdgeKind.Binding)
+        {
+            // Design decision: selecting a binding edge jumps to its source trigger page.
+            var src = connection.Source as BenchConnectorVM;
+            var node = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.ConfigId == src?.Key.Replace("src:", ""));
+            if (node is not null)
+            {
+                SelectedNodes.Clear();
+                SelectedNodes.Add(node);
+            }
+            return;
+        }
+
+        foreach (var edge in Connections.OfType<BenchConnectionVM>())
+            edge.IsSelected = edge == connection;
+        SelectedConnection = connection;
+    }
+
+    [RelayCommand]
+    private void ClearConnectionSelection()
+    {
+        foreach (var edge in Connections.OfType<BenchConnectionVM>())
+            edge.IsSelected = false;
+        SelectedConnection = null;
+    }
+
+    private void UpdateCompletionInspector()
+    {
+        CompletionInspectorTrigger = null;
+        CompletionInspectorBindings.Clear();
+        CompletionFromNode = null;
+
+        if (SelectedConnection is not { Kind: BenchEdgeKind.Completion } completion)
+            return;
+
+        var src = completion.Source as BenchConnectorVM;
+        var tgt = completion.Target as BenchConnectorVM;
+        if (src is null || tgt is null)
+            return;
+
+        var from = src.Key.Replace("out:", "");
+        var to = tgt.Key.Replace("in:", "");
+        var trigger = _toolkit.Triggers.FirstOrDefault(t =>
+            t.Type == TriggerType.WorkflowCompletion && t.Config?.From == from
+            && t.Bindings.Any(b => b.Workflow == to));
+        CompletionInspectorTrigger = trigger;
+        CompletionFromNode = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.ConfigId == from);
+        if (trigger is null)
+            return;
+
+        var options = _toolkit.Workflows.Select(w => w.Id).ToList();
+        foreach (var binding in trigger.Bindings)
+            CompletionInspectorBindings.Add(new BenchBindingRowVM(binding, options, true, NotifyEdited));
     }
 
     /// <summary>The fixed ten-control palette offered by the panel designer.</summary>
@@ -494,6 +1280,109 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     /// <summary>Panel layout strategies.</summary>
     public static IReadOnlyList<string> LayoutOptions { get; } = ["stack", "grid"];
+    /// <summary>Timer tri-state labels (single / interval / cron).</summary>
+    public static IReadOnlyList<string> TimerModes { get; } = ["单次", "周期", "Cron"];
+
+    [ObservableProperty]
+    private string _addControlType = "Text";
+
+    // ── Palette construction / filtering ──
+
+    private void RefreshPalette()
+    {
+        PaletteGroups.Clear();
+        var q = (PaletteSearchText ?? string.Empty).Trim();
+        var match = (string text) => text.Contains(q, StringComparison.OrdinalIgnoreCase);
+
+        var triggers = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupTriggers") ?? "触发器",
+            new BenchPaletteItemVM("Manual", ViewModelBase.TranslateTextWithSuffix("Bench", "ManualTrigger") ?? "手动触发", "触发器", Material.Icons.MaterialIconKind.Hand),
+            new BenchPaletteItemVM("Timer", ViewModelBase.TranslateTextWithSuffix("Bench", "TimerTrigger") ?? "定时", "触发器", Material.Icons.MaterialIconKind.Clock),
+            new BenchPaletteItemVM("PluginEvent", ViewModelBase.TranslateTextWithSuffix("Bench", "PluginEventTrigger") ?? "插件事件", "触发器", Material.Icons.MaterialIconKind.Puzzle),
+            new BenchPaletteItemVM("UIEvent", ViewModelBase.TranslateTextWithSuffix("Bench", "UIEventTrigger") ?? "UI 控件事件", "触发器", Material.Icons.MaterialIconKind.ViewList,
+                HasPanel ? null : "请先添加 GUI 面板"));
+        var workflows = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupWorkflows") ?? "工作流",
+            new BenchPaletteItemVM("Workflow", ViewModelBase.TranslateTextWithSuffix("Bench", "NewWorkflow") ?? "新建工作流", "工作流", Material.Icons.MaterialIconKind.Plus));
+        var panel = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupPanel") ?? "GUI 面板",
+            new BenchPaletteItemVM("Panel", ViewModelBase.TranslateTextWithSuffix("Bench", "AddPanel") ?? "添加面板", "GUI 面板", Material.Icons.MaterialIconKind.ViewDashboard,
+                HasPanel ? "至多 1 个（已添加）" : null));
+        var comments = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupComments") ?? "注释",
+            new BenchPaletteItemVM("Comment", ViewModelBase.TranslateTextWithSuffix("Bench", "CommentNode") ?? "注释节点", "注释", Material.Icons.MaterialIconKind.CommentOutline));
+
+        foreach (var group in new[] { triggers, workflows, panel, comments })
+        {
+            foreach (var item in group.Items)
+            {
+                item.IsVisible = match(group.Title) || match(item.Title) || match(item.Key);
+                if (item.Key == "UIEvent")
+                    item.IsEnabled = HasPanel;
+                if (item.Key == "Panel")
+                    item.IsEnabled = !HasPanel;
+            }
+
+            var visible = group.Items.Where(i => i.IsVisible).ToList();
+            if (visible.Count == 0)
+                continue;
+            var filtered = new BenchPaletteGroupVM(group.Title, visible.ToArray());
+            PaletteGroups.Add(filtered);
+        }
+    }
+
+    // ── Diagnostics ──
+
+    /// <summary>Raised so the view can bring the target node into view.</summary>
+    public event Action<BenchNodeVM>? LocateRequested;
+
+    [RelayCommand]
+    private void ToggleDiagnostics() => IsDiagnosticsExpanded = !IsDiagnosticsExpanded;
+
+    [RelayCommand]
+    private void LocateDiagnostic(BenchDiagnosticVM? diagnostic)
+    {
+        if (diagnostic is null || string.IsNullOrWhiteSpace(diagnostic.NodeId))
+            return;
+
+        var nodeId = diagnostic.NodeId!;
+        var node = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.ConfigId == nodeId);
+        if (node is null && diagnostic.NodeKind == "panel")
+            node = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.Kind == BenchNodeKind.Panel);
+
+        if (node is null)
+            return;
+
+        SelectedNodes.Clear();
+        SelectedNodes.Add(node);
+        IsDiagnosticsExpanded = true;
+        LocateRequested?.Invoke(node);
+    }
+
+    private static BenchDiagnosticVM ParseDiagnostic(string message)
+    {
+        var control = Regex.Match(message, @"Control '([^']+)'");
+        if (control.Success)
+            return new BenchDiagnosticVM(message, "panel", "panel");
+
+        var predecessor = Regex.Match(message, @"predecessor '([^']+)'");
+        if (predecessor.Success)
+            return new BenchDiagnosticVM(message, predecessor.Groups[1].Value, "workflow");
+
+        var duplicateWorkflow = Regex.Match(message, @"Duplicate workflow Id '([^']+)'");
+        if (duplicateWorkflow.Success)
+            return new BenchDiagnosticVM(message, duplicateWorkflow.Groups[1].Value, "workflow");
+
+        var workflow = Regex.Match(message, @"workflow '([^']+)'");
+        if (workflow.Success)
+            return new BenchDiagnosticVM(message, workflow.Groups[1].Value, "workflow");
+
+        var duplicateTrigger = Regex.Match(message, @"Duplicate trigger Id '([^']+)'");
+        if (duplicateTrigger.Success)
+            return new BenchDiagnosticVM(message, duplicateTrigger.Groups[1].Value, "source");
+
+        var trigger = Regex.Match(message, @"Trigger '([^']+)'");
+        if (trigger.Success)
+            return new BenchDiagnosticVM(message, trigger.Groups[1].Value, "source");
+
+        return new BenchDiagnosticVM(message, null, null);
+    }
 
     // ── Inspector helpers ──
 
@@ -503,6 +1392,8 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         SelectedWorkflow = null;
         SelectedPanel = null;
         SelectedControl = null;
+        SelectedControlVM = null;
+        SelectedComment = null;
         SelectedBindings.Clear();
         SelectedControls.Clear();
 
@@ -510,11 +1401,17 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             return;
 
         InspectorWorkflowOptions = _toolkit.Workflows.Select(w => w.Id).ToList();
+        OnPropertyChanged(nameof(PluginOptions));
+        OnPropertyChanged(nameof(PanelControlIds));
 
         switch (SelectedNode.Kind)
         {
             case BenchNodeKind.Source:
                 SelectedTrigger = cfg as Trigger;
+                OnPropertyChanged(nameof(SelectedTriggerTimerMode));
+                OnPropertyChanged(nameof(IsCronTimerMode));
+                OnPropertyChanged(nameof(IsIntervalTimerMode));
+                OnPropertyChanged(nameof(CronPreview));
                 RefreshSelectedBindings();
                 break;
             case BenchNodeKind.Workflow:
@@ -524,6 +1421,11 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
                 SelectedPanel = cfg as UiPanel;
                 RefreshSelectedControls();
                 break;
+            case BenchNodeKind.Comment:
+                SelectedComment = cfg as ToolkitComment;
+                if (SelectedNode is { IsComment: true })
+                    SelectedNode.CommentText = SelectedComment?.Text ?? string.Empty;
+                break;
         }
     }
 
@@ -532,28 +1434,80 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         var options = _toolkit.Workflows.Select(w => w.Id).ToList();
         SelectedBindings = new ObservableCollection<BenchBindingRowVM>(
             (SelectedTrigger?.Bindings ?? [])
-                .Select(b => new BenchBindingRowVM(b, options, RefreshValidation)));
+                .Select(b => new BenchBindingRowVM(b, options, false, NotifyEdited)));
     }
 
     private void RefreshSelectedControls()
     {
         SelectedControls.Clear();
+        SelectedControlVMs.Clear();
         if (SelectedPanel is not null)
+        {
             foreach (var c in SelectedPanel.Controls)
+            {
                 SelectedControls.Add(c);
+                SelectedControlVMs.Add(new BenchUiControlVM(c, NotifyEdited, MoveControl));
+            }
+        }
+
+        OnPropertyChanged(nameof(PanelControlIds));
+    }
+
+    /// <summary>Moves a control in the panel declaration (delta -1 up / +1 down).</summary>
+    private void MoveControl(BenchUiControlVM control, int delta)
+    {
+        if (SelectedPanel is null)
+            return;
+        var index = SelectedPanel.Controls.IndexOf(control.Model);
+        var target = index + delta;
+        if (index < 0 || target < 0 || target >= SelectedPanel.Controls.Count)
+            return;
+        SelectedPanel.Controls.RemoveAt(index);
+        SelectedPanel.Controls.Insert(target, control.Model);
+        RefreshSelectedControls();
+        NotifyEdited();
+    }
+
+    /// <summary>fan-out / AND-join degree badges (only shown when degree > 1).</summary>
+    private void RefreshDegreeBadges()
+    {
+        var completionEdges = _toolkit.Triggers
+            .Where(t => t.Type == TriggerType.WorkflowCompletion && !string.IsNullOrWhiteSpace(t.Config?.From))
+            .SelectMany(t => t.Bindings.Select(b => (From: t.Config!.From!, To: b.Workflow)))
+            .ToList();
+
+        foreach (var node in Nodes.OfType<BenchNodeVM>().Where(n => n.Kind == BenchNodeKind.Workflow))
+        {
+            var outgoing = completionEdges.Count(e => e.From == node.ConfigId);
+            var incoming = completionEdges.Count(e => e.To == node.ConfigId);
+            node.OutDegreeText = outgoing > 1 ? $"fan-out {outgoing}" : string.Empty;
+            node.InDegreeText = incoming > 1 ? $"AND-join {incoming}" : string.Empty;
+        }
     }
 
     private void RefreshIsConnected()
     {
-        foreach (var conn in Connections.OfType<BenchConnectionVM>())
-        {
-            conn.Source.IsConnected = Connections.Any(c => c.Source == conn.Source || c.Target == conn.Source);
-            conn.Target.IsConnected = Connections.Any(c => c.Source == conn.Target || c.Target == conn.Target);
-        }
+        // Walk every pin, not just pins still on remaining edges, so a pin whose last
+        // edge was removed drops its "connected" highlight.
+        foreach (var connector in AllConnectors())
+            connector.IsConnected = Connections.Any(c => c.Source == connector || c.Target == connector);
     }
 
     private void RefreshValidation()
-        => ValidationErrors = new ConfigValidator().Validate(_toolkit).Errors;
+    {
+        var errors = new ConfigValidator().Validate(_toolkit).Errors;
+        ValidationErrors = errors;
+        Diagnostics = new ObservableCollection<BenchDiagnosticVM>(errors.Select(ParseDiagnostic));
+
+        var flaggedIds = Diagnostics.Where(d => d.NodeId is not null)
+            .Select(d => d.NodeId!)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var node in Nodes.OfType<BenchNodeVM>())
+            node.HasDiagnostic = flaggedIds.Contains(node.ConfigId);
+
+        OnPropertyChanged(nameof(HasValidationErrors));
+        OnPropertyChanged(nameof(ValidationBadgeText));
+    }
 
     private void SetError(string message)
         => LastError = message;
@@ -565,7 +1519,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         TriggerType.Manual => "手动",
         TriggerType.PluginEvent => $"插件: {trigger.Config?.PluginName}",
         TriggerType.UIEvent => $"UI: {trigger.Config?.Control}",
-        TriggerType.Timer => "定时",
+        TriggerType.Timer => ViewModelBase.TranslateTextWithSuffix("Bench", "TimerTrigger") ?? "定时",
         _ => trigger.Type.ToString(),
     };
 

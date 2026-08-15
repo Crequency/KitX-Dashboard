@@ -6,6 +6,7 @@ using System.Reactive;
 using System.Text.Json;
 using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Models;
+using Material.Icons;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
@@ -46,6 +47,10 @@ internal sealed class PanelControlViewModel : ReactiveObject
         ToggleCommand = ReactiveCommand.Create<bool>(v => _panelRuntime.SetControlValue(_instanceId, Id, v));
         NumberCommand = ReactiveCommand.Create<double>(v => _panelRuntime.SetControlValue(_instanceId, Id, v));
         DialogConfirmCommand = ReactiveCommand.Create<string>(result => _panelRuntime.RaiseControlEvent(_instanceId, Id, "Confirm", result));
+
+        if (!Enum.TryParse<MaterialIconKind>(StaticText, true, out var iconKind))
+            iconKind = MaterialIconKind.Image;
+        IconKind = iconKind;
     }
 
     /// <summary>The fixed control type discriminant (Text/Input/Button/...).</summary>
@@ -81,8 +86,49 @@ internal sealed class PanelControlViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _enabled, value);
     }
 
+    private bool _isApplyingBackend;
+    private double _numberValue;
+    private string? _selectedValue;
+
+    /// <summary>Two-way Number value (UI edit writes back through NumberCommand).</summary>
+    internal double NumberValue
+    {
+        get => _numberValue;
+        set
+        {
+            var changed = _numberValue != value;
+            if (changed)
+            {
+                _numberValue = value;
+                this.RaisePropertyChanged();
+                if (!_isApplyingBackend)
+                    NumberCommand?.Execute(value);
+            }
+        }
+    }
+
+    /// <summary>Two-way Select value (UI edit writes back through SelectCommand).</summary>
+    internal string? SelectedValue
+    {
+        get => _selectedValue;
+        set
+        {
+            var changed = _selectedValue != value;
+            if (changed)
+            {
+                _selectedValue = value;
+                this.RaisePropertyChanged();
+                if (!_isApplyingBackend && value is not null)
+                    SelectCommand?.Execute(value);
+            }
+        }
+    }
+
     /// <summary>Appended log entries (Log control).</summary>
     internal ObservableCollection<string> LogEntries => _logEntries;
+
+    /// <summary>Parsed Material icon kind (falls back to Image).</summary>
+    internal MaterialIconKind IconKind { get; }
 
     /// <summary>Select options extracted from <see cref="Options"/>["Items"].</summary>
     internal IReadOnlyList<string> SelectItems
@@ -135,7 +181,7 @@ internal sealed class PanelControlViewModel : ReactiveObject
 
         if (prop == "value")
         {
-            Value = Type switch
+            object converted = Type switch
             {
                 "Switch" => value is { ValueKind: JsonValueKind.True } or { ValueKind: JsonValueKind.False }
                     ? value.Value.GetBoolean()
@@ -143,6 +189,21 @@ internal sealed class PanelControlViewModel : ReactiveObject
                 "Number" or "Progress" => value is { ValueKind: JsonValueKind.Number } n ? n.GetDouble() : 0d,
                 _ => value is { ValueKind: JsonValueKind.String } sv ? sv.GetString() : value?.GetRawText(),
             };
+
+            _isApplyingBackend = true;
+            try
+            {
+                Value = converted;
+                if (converted is double number)
+                    NumberValue = number;
+                if (converted is string str)
+                    SelectedValue = str;
+            }
+            finally
+            {
+                _isApplyingBackend = false;
+            }
+
             return;
         }
 

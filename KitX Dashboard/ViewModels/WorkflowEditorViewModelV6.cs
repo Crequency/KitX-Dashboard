@@ -56,6 +56,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     private EditorMode _mode = EditorMode.BlockScript;
     private string? _workflowId;
+    private string? _workflowFilePath;
     private string _workflowName = "Untitled Workflow (v6)";
     private string _workflowDescription = string.Empty;
     private string _workflowAuthor = string.Empty;
@@ -948,7 +949,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 BlueprintLayout = _mode == EditorMode.Blueprint ? layout : _savedLayout,
             };
 
-            await _storageService.SaveWorkflowDataAsync(_workflowId, data);
+            if (_workflowFilePath is not null)
+                await Services.ToolkitWorkflowFileService.SaveAsync(_workflowFilePath, data);
+            else
+                await _storageService.SaveWorkflowDataAsync(_workflowId, data);
             IsDirty = false;
 
             _eventService?.Publish(EventNames.WorkflowDataSaved,
@@ -966,6 +970,12 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     /// <summary>Sets the workflow ID (called by LoadWorkflowAsync in the window code-behind).</summary>
     internal void SetWorkflowId(string id) => _workflowId = id;
+
+    /// <summary>
+    /// Sets an optional explicit bundle file path. When non-null, SaveAsync writes to that
+    /// path instead of the global workflow storage (ToolKit bundled workflows).
+    /// </summary>
+    internal void SetWorkflowFilePath(string? path) => _workflowFilePath = path;
 
     // ── ShowDashboard ──
 
