@@ -40,6 +40,7 @@ internal sealed class PanelControlViewModel : ReactiveObject
         _instanceId = instanceId;
         _panelRuntime = panelRuntime;
         Options = control.Options;
+        _selectItems = ParseStaticItems(control.Options);
 
         ClickCommand = ReactiveCommand.Create(() => _panelRuntime.RaiseControlEvent(_instanceId, Id, "Click", null));
         SubmitCommand = ReactiveCommand.Create(() => _panelRuntime.RaiseControlEvent(_instanceId, Id, "Submit", Value));
@@ -89,6 +90,7 @@ internal sealed class PanelControlViewModel : ReactiveObject
     private bool _isApplyingBackend;
     private double _numberValue;
     private string? _selectedValue;
+    private IReadOnlyList<string> _selectItems;
 
     /// <summary>Two-way Number value (UI edit writes back through NumberCommand).</summary>
     internal double NumberValue
@@ -130,20 +132,12 @@ internal sealed class PanelControlViewModel : ReactiveObject
     /// <summary>Parsed Material icon kind (falls back to Image).</summary>
     internal MaterialIconKind IconKind { get; }
 
-    /// <summary>Select options extracted from <see cref="Options"/>["Items"].</summary>
+    /// <summary>Select options: static config <c>Options["Items"]</c> initially, replaced
+    /// wholesale by backend "options" pushes (<c>UiSet(controlId, "options", jsonArray)</c>).</summary>
     internal IReadOnlyList<string> SelectItems
     {
-        get
-        {
-            if (Options is null || !Options.TryGetValue("Items", out var items) || items is null)
-                return [];
-            return items switch
-            {
-                System.Text.Json.Nodes.JsonArray arr => arr.Select(n => n?.ToString() ?? string.Empty).ToList(),
-                IEnumerable<string> strs => strs.ToList(),
-                _ => [],
-            };
-        }
+        get => _selectItems;
+        private set => this.RaiseAndSetIfChanged(ref _selectItems, value);
     }
 
     /// <summary>Button click → UIEvent "Click".</summary>
@@ -207,12 +201,61 @@ internal sealed class PanelControlViewModel : ReactiveObject
             return;
         }
 
+        if (prop == "options")
+        {
+            // Dynamic Select items: the backend pushes either a JSON array or a
+            // JSON-array string. The current selection survives when still present;
+            // clearing it bypasses the write-back path (a backend push is not a user edit).
+            var items = ParseOptionsValue(value);
+            SelectItems = items;
+            if (SelectedValue is { } current && !items.Contains(current))
+            {
+                _isApplyingBackend = true;
+                try { SelectedValue = null; }
+                finally { _isApplyingBackend = false; }
+            }
+            return;
+        }
+
         if (prop == "log")
         {
             var entry = value is { ValueKind: JsonValueKind.String } l ? l.GetString() : value?.GetRawText();
             if (entry is not null)
                 LogEntries.Add(entry);
         }
+    }
+
+    private static IReadOnlyList<string> ParseStaticItems(Dictionary<string, object?>? options)
+    {
+        if (options is null || !options.TryGetValue("Items", out var items) || items is null)
+            return [];
+        return items switch
+        {
+            System.Text.Json.Nodes.JsonArray arr => arr.Select(n => n?.ToString() ?? string.Empty).ToList(),
+            IEnumerable<string> strs => strs.ToList(),
+            _ => [],
+        };
+    }
+
+    /// <summary>Normalises a backend "options" push (JSON array or JSON-array string;
+    /// scalars inside are rendered via raw text) into the Select item list.</summary>
+    private static IReadOnlyList<string> ParseOptionsValue(JsonElement? value)
+    {
+        if (value is not { } v)
+            return [];
+        if (v.ValueKind == JsonValueKind.String)
+        {
+            var text = v.GetString();
+            if (string.IsNullOrWhiteSpace(text))
+                return [];
+            try { v = JsonDocument.Parse(text).RootElement; }
+            catch (JsonException) { return []; }
+        }
+        if (v.ValueKind != JsonValueKind.Array)
+            return [];
+        return v.EnumerateArray()
+            .Select(e => e.ValueKind == JsonValueKind.String ? e.GetString() ?? string.Empty : e.GetRawText())
+            .ToList();
     }
 
     private static bool NormalizeBool(JsonElement? value) => value switch
