@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
@@ -16,18 +17,34 @@ namespace KitX.Dashboard.Views;
 public partial class PanelHostWindow : Window
 {
     private readonly PanelHostViewModel viewModel = App.GetService<PanelHostViewModel>();
+    private readonly string _baseTitle;
 
     public PanelHostWindow()
     {
         InitializeComponent();
 
         DataContext = viewModel;
+        _baseTitle = Title ?? string.Empty;
         viewModel.PanelOpenRequested += OnPanelOpenRequested;
+        // Dialog pending indicator (C27): append a pulse marker to the window title while
+        // the single-slot dialog queue is non-empty.
+        viewModel.PropertyChanged += OnViewModelPropertyChanged;
         Closed += (_, _) =>
         {
+            viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             viewModel.PanelOpenRequested -= OnPanelOpenRequested;
             viewModel.Dispose();
+            // The window cannot be re-shown after Close; drop the static singleton so the
+            // tray / workbench spawn creates a fresh window (and a fresh VM) next time.
+            Services.UIStateService.PanelHostWindow = null;
         };
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(PanelHostViewModel.HasPendingDialog))
+            return;
+        Title = viewModel.HasPendingDialog ? _baseTitle + " ⚠" : _baseTitle;
     }
 
     private readonly Dictionary<ScrollViewer, NotifyCollectionChangedEventHandler> _logScrollHandlers = [];
@@ -57,8 +74,16 @@ public partial class PanelHostWindow : Window
     /// <summary>Present the window without stealing foreground focus more than necessary.</summary>
     private void OnPanelOpenRequested()
     {
+        if (!IsVisible)
+        {
+            // auto/silent surface requests must not yank keyboard focus (C28);
+            // the next manual tray open resets ShowActivated to true.
+            ShowActivated = false;
+            Show();
+            return;
+        }
+
         if (WindowState == WindowState.Minimized)
             WindowState = WindowState.Normal;
-        Activate();
     }
 }

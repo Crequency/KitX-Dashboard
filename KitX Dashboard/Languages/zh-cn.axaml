@@ -328,6 +328,9 @@
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI 控件事件</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">新建工作流</sys:String>
     <sys:String x:Key="Text_Bench_AddPanel">添加面板</sys:String>
+    <sys:String x:Key="Text_Bench_PanelNodeHint">控件事件经「UI 控件事件」触发器接入工作流；面板节点本身是声明节点，无连线口。</sys:String>
+    <sys:String x:Key="Text_Bench_NoManualTrigger">试运行需要一个「手动触发」触发器——请从左侧原料库添加。</sys:String>
+    <sys:String x:Key="Text_Bench_Close">关闭</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">注释节点</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowNameWatermark">输入工作流名称</sys:String>
     <sys:String x:Key="Text_Bench_ExportMermaid">导出 mermaid</sys:String>

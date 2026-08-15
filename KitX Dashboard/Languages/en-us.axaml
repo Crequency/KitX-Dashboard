@@ -328,6 +328,9 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI control event</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">New workflow</sys:String>
     <sys:String x:Key="Text_Bench_AddPanel">Add panel</sys:String>
+    <sys:String x:Key="Text_Bench_PanelNodeHint">Wire control events to workflows through a "UI control event" trigger; the panel node itself is a declaration and has no connectors.</sys:String>
+    <sys:String x:Key="Text_Bench_NoManualTrigger">Trial run requires a Manual trigger — add one from the palette on the left.</sys:String>
+    <sys:String x:Key="Text_Bench_Close">Close</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">Comment node</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowNameWatermark">Workflow name</sys:String>
     <sys:String x:Key="Text_Bench_ExportMermaid">Export mermaid</sys:String>

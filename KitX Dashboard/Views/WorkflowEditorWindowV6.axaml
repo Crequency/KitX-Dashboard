@@ -277,29 +277,6 @@
                        IsVisible="{Binding IsBlockScriptMode}"
                        Margin="5">
 
-                <!-- Trigger Settings -->
-                <Border DockPanel.Dock="Top"
-                        BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}" BorderThickness="0,0,0,1"
-                        Padding="5,8" Margin="0,0,0,5">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Trigger" FontWeight="Bold" Margin="0,0,0,4"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                        <ComboBox ItemsSource="{Binding TriggerTypeOptions}"
-                                  SelectedItem="{Binding TriggerType, Mode=TwoWay}"
-                                  HorizontalAlignment="Stretch" />
-                        <StackPanel IsVisible="{Binding IsPluginEventTrigger}" Spacing="4">
-                            <TextBlock Text="Plugin" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                            <ComboBox ItemsSource="{Binding AvailablePlugins}"
-                                      SelectedItem="{Binding TriggerPluginName, Mode=TwoWay}"
-                                      HorizontalAlignment="Stretch" FontSize="11" />
-                            <TextBlock Text="Trigger" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                            <ComboBox ItemsSource="{Binding AvailableTriggers}"
-                                      SelectedItem="{Binding TriggerName, Mode=TwoWay}"
-                                      HorizontalAlignment="Stretch" FontSize="11" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
                 <!-- Code Sections -->
                 <TextBlock DockPanel.Dock="Top"
                            Text="Code Sections"
@@ -421,24 +398,6 @@
                                     <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
                                         <Button Content="{Binding DisplayName}"
                                                 Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"
-                                                Margin="0,2"
-                                                HorizontalAlignment="Stretch"
-                                                HorizontalContentAlignment="Left"
-                                                Padding="8,4" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <TextBlock Text="Plugin Triggers"
-                                       FontWeight="Bold"
-                                       Margin="0,14,0,4"
-                                       IsVisible="{Binding BlueprintVM.HasPluginTriggers}" />
-                            <ItemsControl ItemsSource="{Binding BlueprintVM.PluginTriggers}"
-                                          IsVisible="{Binding BlueprintVM.HasPluginTriggers}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type viewModels:PluginTriggerPaletteItemV6}">
-                                        <Button Content="{Binding DisplayName}"
-                                                Command="{Binding DataContext.BlueprintVM.AddPluginTriggerNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                 CommandParameter="{Binding}"
                                                 Margin="0,2"
                                                 HorizontalAlignment="Stretch"

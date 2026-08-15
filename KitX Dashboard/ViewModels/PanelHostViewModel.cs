@@ -11,6 +11,7 @@ using KitX.ToolKit.Models;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
+using Serilog;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -80,6 +81,9 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         InitEvents();
 
         RefreshInstances();
+        Log.Information(
+            "[PanelHostViewModel] Created — instances:{Instances.Count} groups:{InstanceGroups.Count} " +
+            "selected:" + (SelectedInstance?.InstanceId ?? "‹null›"));
     }
 
     /// <summary>Raised when the host window should present itself (without stealing focus).</summary>
@@ -96,14 +100,23 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         get => _selectedInstance;
         set
         {
+            var previous = _selectedInstance;
+            // A refreshed snapshot of the SAME instance (e.g. after a run event) must not
+            // tear down the panel controls: that would lose live Log entries and UI values.
+            var sameInstance = value is not null && previous is not null && value.InstanceId == previous.InstanceId;
             this.RaiseAndSetIfChanged(ref _selectedInstance, value);
+            if (sameInstance)
+                HasPanel = _toolkitService.GetToolkit(value!.ToolkitId)?.UiPanel is not null;
+            else
+                BuildPanel();
+            PendingDialog = value is null ? null : _pendingDialogs.GetValueOrDefault(value.InstanceId);
+            // Raise the dependent notifications AFTER BuildPanel/HasPanel have settled so
+            // NoPanel/IsEmpty read the final panel state.
             this.RaisePropertyChanged(nameof(HasSelection));
             this.RaisePropertyChanged(nameof(IsEmpty));
             this.RaisePropertyChanged(nameof(NoPanel));
             this.RaisePropertyChanged(nameof(ActiveRuns));
             this.RaisePropertyChanged(nameof(CompletedRuns));
-            PendingDialog = value is null ? null : _pendingDialogs.GetValueOrDefault(value.InstanceId);
-            BuildPanel();
         }
     }
 
@@ -225,7 +238,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     internal ReactiveCommand<Unit, Unit>? TogglePickerCommand { get; set; }
     internal ReactiveCommand<Unit, Unit>? NewInstanceCommand { get; set; }
     internal ReactiveCommand<string, Unit>? ConfirmDialogCommand { get; set; }
-    internal ReactiveCommand<int, Unit>? SelectTabCommand { get; set; }
+    internal ReactiveCommand<string, Unit>? SelectTabCommand { get; set; }
 
     public override void InitCommands()
     {
@@ -327,7 +340,17 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             PendingDialog = null;
         });
 
-        SelectTabCommand = ReactiveCommand.Create<int>(tab => SelectedTab = tab);
+        // XAML CommandParameter="0/1" arrives as a STRING. Accept a string and parse it;
+        // a ReactiveCommand<int> throws "Command requires parameters of type System.Int32,
+        // but received parameter of type System.String" and froze the panel host when the
+        // run tab was clicked (see dump.log).
+        SelectTabCommand = ReactiveCommand.Create<string>(tab =>
+        {
+            if (int.TryParse(tab, out var index))
+                SelectedTab = index;
+            else
+                Log.Warning("[PanelHostViewModel] SelectTabCommand received non-numeric parameter '{Parameter}'", tab);
+        });
     }
 
     public override void InitEvents()
@@ -339,11 +362,33 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     private void OnLanguageChanged(object? sender, EventArgs e)
         => this.RaisePropertyChanged(nameof(Summary));
 
+    /// <summary>
+    /// Bench events can originate on Timer callbacks or workflow background threads;
+    /// marshal every event onto the UI thread before touching observable collections
+    /// (design invariant: events are dispatched uniformly via Dispatcher.UIThread).
+    /// </summary>
     private void OnBenchEvent(object? sender, BenchEvent e)
+    {
+        var dispatcher = Avalonia.Threading.Dispatcher.UIThread;
+        if (dispatcher.CheckAccess())
+            HandleBenchEvent(sender, e);
+        else
+            dispatcher.Post(() => HandleBenchEvent(sender, e));
+    }
+
+    private void HandleBenchEvent(object? sender, BenchEvent e)
     {
         switch (e)
         {
+            case InstanceSpawnedEvent spawned when string.IsNullOrWhiteSpace(spawned.InstanceId):
+                // Legacy rejection encoding: never select/clear anything, only surface the notice.
+                SpawnRejectedMessage = BuildSpawnRejectedMessage(spawned.ToolkitId);
+                Log.Warning("[PanelHostViewModel] Spawn event with empty instance id treated as rejection (toolkit {Toolkit})",
+                    spawned.ToolkitId);
+                break;
             case InstanceSpawnedEvent spawned:
+                Log.Information("[PanelHostViewModel] InstanceSpawned {Instance} (toolkit {Toolkit}, trigger {Trigger})",
+                    spawned.InstanceId, spawned.ToolkitId, spawned.TriggerId);
                 RefreshInstances();
                 var toolkit = _toolkitService.GetToolkit(spawned.ToolkitId);
                 var trigger = toolkit?.Triggers.FirstOrDefault(t => t.Id == spawned.TriggerId);
@@ -352,31 +397,35 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
                 if (openPanel)
                     PanelOpenRequested?.Invoke();
                 break;
+            case InstanceSpawnRejectedEvent rejected:
+                SpawnRejectedMessage = BuildSpawnRejectedMessage(rejected.ToolkitId, rejected.Reason);
+                Log.Warning("[PanelHostViewModel] Spawn rejected for toolkit {Toolkit}: {Reason}",
+                    rejected.ToolkitId, rejected.Reason);
+                break;
             case PanelOpenRequestedEvent open:
+                Log.Information("[PanelHostViewModel] PanelOpenRequested {Instance}", open.InstanceId);
                 FocusInstance(open.InstanceId, openPanel: true);
                 PanelOpenRequested?.Invoke();
                 break;
             case DialogRequestedEvent dialog:
+                Log.Information("[PanelHostViewModel] DialogRequested {Instance}/{Control}: {Message}",
+                    dialog.InstanceId, dialog.ControlId, dialog.Message);
                 _pendingDialogs[dialog.InstanceId] = new PendingDialogVM(
                     dialog.InstanceId, dialog.ToolkitId, dialog.ControlId, dialog.Message, dialog.Buttons);
                 if (SelectedInstance?.InstanceId == dialog.InstanceId)
                     PendingDialog = _pendingDialogs[dialog.InstanceId];
                 break;
             case RunStartedEvent runStarted:
+                Log.Information("[PanelHostViewModel] RunStarted {Instance}/{Run}/{Workflow}",
+                    runStarted.InstanceId, runStarted.RunId, runStarted.WorkflowId);
                 Timeline(runStarted.InstanceId).Apply(runStarted);
-                if (SelectedInstance?.InstanceId == runStarted.InstanceId)
-                {
-                    this.RaisePropertyChanged(nameof(ActiveRuns));
-                    this.RaisePropertyChanged(nameof(CompletedRuns));
-                }
+                RefreshInstances();
                 break;
             case RunCompletedEvent runCompleted:
+                Log.Information("[PanelHostViewModel] RunCompleted {Instance}/{Run}/{Workflow} succeeded={Succeeded}",
+                    runCompleted.InstanceId, runCompleted.RunId, runCompleted.WorkflowId, runCompleted.Succeeded);
                 Timeline(runCompleted.InstanceId).Apply(runCompleted);
-                if (SelectedInstance?.InstanceId == runCompleted.InstanceId)
-                {
-                    this.RaisePropertyChanged(nameof(ActiveRuns));
-                    this.RaisePropertyChanged(nameof(CompletedRuns));
-                }
+                RefreshInstances();
                 break;
             case InstanceCompletedEvent or InstanceCancelledEvent:
                 RefreshInstances();
@@ -384,6 +433,15 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         }
 
         UpdatePanel(e);
+    }
+
+    /// <summary>Tree-top spawn-rejection notice (MaxInstances / unmounted, C25).</summary>
+    private string BuildSpawnRejectedMessage(string toolkitId, string? reason = null)
+    {
+        var toolkitName = _toolkitService.GetToolkit(toolkitId)?.Meta?.Name ?? toolkitId;
+        return string.IsNullOrWhiteSpace(reason)
+            ? $"实例启动被拒绝：{toolkitName} 已达最大实例数限制"
+            : $"实例启动被拒绝：{toolkitName}（{reason}）";
     }
 
     private InstanceRunTimelineVM Timeline(string instanceId)
@@ -406,7 +464,14 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         if (panel is null || SelectedInstance is null)
             return;
         foreach (var control in panel.Controls)
-            _panelControls.Add(new PanelControlViewModel(control, SelectedInstance.InstanceId, _panelRuntime));
+        {
+            var vm = new PanelControlViewModel(control, SelectedInstance.InstanceId, _panelRuntime);
+            // Hydrate the live value from the DataStore (a workflow may have written it
+            // before the user opened/selected this instance; C26).
+            if (_panelRuntime.GetControlValue(SelectedInstance.InstanceId, control.Id) is { } initial)
+                vm.Apply("value", initial);
+            _panelControls.Add(vm);
+        }
     }
 
     private void UpdatePanel(BenchEvent e)

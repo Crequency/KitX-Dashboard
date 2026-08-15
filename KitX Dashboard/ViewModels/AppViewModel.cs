@@ -104,6 +104,8 @@ internal class AppViewModel : ViewModelBase
                 return;
             }
 
+            // Manual tray entry may activate; auto panel-open requests set this to false.
+            win.ShowActivated = true;
             win.Show();
 
             win.Activate();

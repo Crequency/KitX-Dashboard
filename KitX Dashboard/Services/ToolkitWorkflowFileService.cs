@@ -20,6 +20,13 @@ public static class ToolkitWorkflowFileService
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
+    /// <summary>
+    /// Built-in minimal runnable v6 workflow template (UX v2 §4.5/V17). The v6 IR has no
+    /// Entry/Return statements — an empty body IS the minimal runnable program, and the
+    /// editor projects it as the default empty program on open.
+    /// </summary>
+    private static readonly V6Workflow MinimalWorkflowTemplate = new();
+
     /// <summary>Absolute root of a ToolKit's storage directory.</summary>
     public static string GetToolkitRoot(string toolkitId)
         => Path.Combine(AppContext.BaseDirectory, "Data", "Toolkits", toolkitId);
@@ -42,8 +49,7 @@ public static class ToolkitWorkflowFileService
     }
 
     /// <summary>
-    /// Writes the built-in minimal runnable v6 workflow template (empty IR — the v6 editor
-    /// projects the default empty program on open, matching <c>WorkflowStorageService</c>).
+    /// Writes the built-in minimal runnable v6 workflow template (UX v2 §4.5/V17).
     /// </summary>
     public static async Task WriteMinimalWorkflowAsync(Toolkit toolkit, ToolkitWorkflow workflow)
     {
@@ -61,7 +67,7 @@ public static class ToolkitWorkflowFileService
             LastModifiedTime = now,
             IrVersion = "v6",
             VariableConstants = [],
-            IrData = KitX.WorkflowV6.Serialization.WorkflowSerializer.Serialize(new V6Workflow()),
+            IrData = KitX.WorkflowV6.Serialization.WorkflowSerializer.Serialize(MinimalWorkflowTemplate),
         };
 
         await File.WriteAllTextAsync(path, JsonSerializer.Serialize(kcs, JsonOptions));

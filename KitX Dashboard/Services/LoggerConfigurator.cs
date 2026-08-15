@@ -39,7 +39,13 @@ internal static class LoggerConfigurator
                 outputTemplate: logConf.LogTemplate,
                 rollingInterval: RollingInterval.Hour,
                 fileSizeLimitBytes: logConf.LogFileSingleMaxSize,
+#if DEBUG
+                // Debug builds flush every event so force-killed sessions (the usual
+                // way we collect UI-freeze reports) still leave their last log lines.
+                buffered: false,
+#else
                 buffered: true,
+#endif
                 flushToDiskInterval: new(0, 0, logConf.LogFileFlushInterval),
                 restrictedToMinimumLevel: minLevel,
                 rollOnFileSizeLimit: true,

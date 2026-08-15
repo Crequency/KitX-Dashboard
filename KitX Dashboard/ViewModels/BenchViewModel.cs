@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
 using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Dashboard.Services;
 using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Models;
 using KitX.ToolKit.Visualization;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
@@ -28,6 +31,7 @@ internal class BenchViewModel : ViewModelBase
     private bool _isDirty;
     private Trigger? _selectedManualTrigger;
     private string? _saveMessage;
+    private IReadOnlyList<Trigger> _manualTriggers = [];
 
     public BenchViewModel(
         IToolkitService toolkitService,
@@ -46,7 +50,7 @@ internal class BenchViewModel : ViewModelBase
         Canvas = ActiveToolkit is null ? null : new BenchCanvasViewModel(ActiveToolkit, pluginService);
         if (Canvas is not null)
         {
-            Canvas.ConfigEdited += () => IsDirty = true;
+            Canvas.ConfigEdited += OnCanvasEdited;
             Canvas.EditWorkflowRequested += OpenWorkflowEditor;
         }
 
@@ -73,8 +77,20 @@ internal class BenchViewModel : ViewModelBase
     /// <summary>The ToolKit's declared triggers.</summary>
     internal IReadOnlyList<Trigger> Triggers { get; }
 
-    /// <summary>Manual (Spawn) triggers available for a trial run.</summary>
-    internal IReadOnlyList<Trigger> ManualTriggers { get; }
+    /// <summary>Manual (Spawn) triggers available for a trial run. Re-evaluated on every
+    /// canvas edit so the header trial-run controls appear/refresh after adding/removing
+    /// a Manual trigger.</summary>
+    internal IReadOnlyList<Trigger> ManualTriggers
+    {
+        get => _manualTriggers;
+        private set
+        {
+            _manualTriggers = value;
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(HasManualTriggers));
+            this.RaisePropertyChanged(nameof(FireDisabledHint));
+        }
+    }
 
     /// <summary>True when a Manual trigger exists (drives the trial-run controls).</summary>
     internal bool HasManualTriggers => ManualTriggers.Count > 0;
@@ -174,6 +190,24 @@ internal class BenchViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Save button path: on rejection show the diagnostics summary popup (C15).</summary>
+    private async Task SaveWithFeedbackAsync()
+    {
+        if (TrySave())
+            return;
+
+        var owner = ActiveToolkit is null ? null : UIStateService.BenchWindows.GetValueOrDefault(ActiveToolkit.GetId());
+        var box = MessageBoxManager.GetMessageBoxStandard(
+            TranslateTextWithSuffix("Bench", "SaveRejectedTitle") ?? "保存被拒绝",
+            SaveMessage ?? TranslateTextWithSuffix("Bench", "SaveRejected") ?? "配置校验未通过",
+            ButtonEnum.Ok,
+            Icon.Error);
+        if (owner is not null)
+            await box.ShowWindowDialogAsync(owner);
+        else
+            await box.ShowWindowAsync();
+    }
+
     public override void InitCommands()
     {
         FireManualCommand = ReactiveCommand.Create(() =>
@@ -191,11 +225,13 @@ internal class BenchViewModel : ViewModelBase
 
             SaveMessage = null;
             UIStateService.ShowPanelHostWindow();
+            // auto = present the instance panel; silent = only select the new instance (C19).
+            var openPanel = manual.Config?.Surface is null or "auto";
             (UIStateService.PanelHostWindow?.DataContext as PanelHostViewModel)
-                ?.FocusInstance(instanceId, openPanel: true);
+                ?.FocusInstance(instanceId, openPanel);
         });
 
-        SaveCommand = ReactiveCommand.Create(() => { TrySave(); });
+        SaveCommand = ReactiveCommand.CreateFromTask(SaveWithFeedbackAsync);
 
         UnmountAndEditCommand = ReactiveCommand.Create(() =>
         {
@@ -237,9 +273,19 @@ internal class BenchViewModel : ViewModelBase
     private void OnLanguageChanged(object? sender, System.EventArgs e)
         => this.RaisePropertyChanged(nameof(TriggerSummary));
 
+    /// <summary>Called for every canvas/config edit: dirty state + header-derived state refresh.</summary>
+    private void OnCanvasEdited()
+    {
+        IsDirty = true;
+        RefreshManualTriggers();
+        this.RaisePropertyChanged(nameof(TriggerSummary));
+    }
+
     private void RefreshManualTriggers()
     {
-        // Re-evaluate after language change / external mutation.
+        ManualTriggers = Triggers.Where(t => t.Type == TriggerType.Manual).ToList();
+        if (SelectedManualTrigger is not null && !ManualTriggers.Contains(SelectedManualTrigger))
+            SelectedManualTrigger = ManualTriggers.FirstOrDefault();
     }
 
     private void OpenWorkflowEditor(ToolkitWorkflow workflow)

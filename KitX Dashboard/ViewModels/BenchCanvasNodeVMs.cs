@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Media;
-using KitX.ToolKit.Models;
 using Material.Icons;
 using NodifyM.Avalonia.ViewModelBase;
 using ReactiveUI;
@@ -66,8 +66,10 @@ public sealed class BenchNodeVM : NodeViewModelBase
         set => SetProperty(ref _configId, value);
     }
 
-    /// <summary>Panel controls (only set for Panel nodes) — previewed on the node body.</summary>
-    public IReadOnlyList<UiControl>? Controls { get; set; }
+    /// <summary>Live preview rows for the panel node body. Rebuilt/refreshed by the canvas
+    /// whenever the panel's control definitions change, so inspector edits appear on the
+    /// canvas node in real time.</summary>
+    public ObservableCollection<BenchUiControlVM> ControlVMs { get; } = [];
 
     /// <summary>True for the GUI panel node (renders the control-list body).</summary>
     public bool IsPanel => Kind == BenchCanvasViewModel.BenchNodeKind.Panel;

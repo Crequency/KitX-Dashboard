@@ -328,6 +328,9 @@
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI control event</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">New workflow</sys:String>
     <sys:String x:Key="Text_Bench_AddPanel">Add panel</sys:String>
+    <sys:String x:Key="Text_Bench_PanelNodeHint">События элементов подключаются к рабочим процессам через триггер «UI control event»; узел панели — это декларация, разъёмов у него нет.</sys:String>
+    <sys:String x:Key="Text_Bench_NoManualTrigger">Для пробного запуска нужен триггер «Manual» — добавьте его из палитры слева.</sys:String>
+    <sys:String x:Key="Text_Bench_Close">Закрыть</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">Comment node</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowNameWatermark">Workflow name</sys:String>
     <sys:String x:Key="Text_Bench_ExportMermaid">Export mermaid</sys:String>

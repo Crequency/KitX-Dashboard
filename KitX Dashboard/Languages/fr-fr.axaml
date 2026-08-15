@@ -328,6 +328,9 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI control event</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">New workflow</sys:String>
     <sys:String x:Key="Text_Bench_AddPanel">Add panel</sys:String>
+    <sys:String x:Key="Text_Bench_PanelNodeHint">Les événements des contrôles se connectent aux workflows via un déclencheur « UI control event » ; le nœud panneau est une déclaration et n’a pas de connecteurs.</sys:String>
+    <sys:String x:Key="Text_Bench_NoManualTrigger">L’essai nécessite un déclencheur « Manual » — ajoutez-en un depuis la palette de gauche.</sys:String>
+    <sys:String x:Key="Text_Bench_Close">Fermer</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">Comment node</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowNameWatermark">Workflow name</sys:String>
     <sys:String x:Key="Text_Bench_ExportMermaid">Export mermaid</sys:String>

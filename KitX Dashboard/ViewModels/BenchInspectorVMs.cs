@@ -200,10 +200,10 @@ public sealed class BenchBindingRowVM : ReactiveObject
 {
     private readonly Action _onEdit;
 
-    public BenchBindingRowVM(TriggerBinding model, IEnumerable<string> workflowOptions, bool completionBinding, Action onEdit)
+    public BenchBindingRowVM(TriggerBinding model, ObservableCollection<string> workflowOptions, bool completionBinding, Action onEdit)
     {
         Model = model;
-        WorkflowOptions = workflowOptions.ToList();
+        WorkflowOptions = workflowOptions;
         IsCompletionBinding = completionBinding;
         _onEdit = onEdit;
         ParamRows = new ObservableCollection<BenchParamRowVM>(
@@ -212,7 +212,8 @@ public sealed class BenchBindingRowVM : ReactiveObject
 
     public TriggerBinding Model { get; }
 
-    public List<string> WorkflowOptions { get; }
+    /// <summary>Shared live workflow-id options (the canvas updates it on add/rename/delete).</summary>
+    public ObservableCollection<string> WorkflowOptions { get; }
 
     public ObservableCollection<BenchParamRowVM> ParamRows { get; }
 
@@ -223,12 +224,23 @@ public sealed class BenchBindingRowVM : ReactiveObject
         {
             if (Model.Workflow != value)
             {
-                Model.Workflow = value;
+                var oldValue = Model.Workflow;
+                Model.Workflow = value ?? string.Empty;
                 this.RaisePropertyChanged();
+                WorkflowChanged?.Invoke(oldValue, Model.Workflow);
                 _onEdit();
             }
         }
     }
+
+    /// <summary>
+    /// Raised when the row's target workflow changes, before <see cref="_onEdit"/> runs.
+    /// The canvas subscribes to keep the projected edge in sync with the config.
+    /// </summary>
+    public event Action<string, string>? WorkflowChanged;
+
+    /// <summary>Re-raises the workflow binding so the UI snaps back after a rejected change.</summary>
+    public void NotifyWorkflowChanged() => this.RaisePropertyChanged(nameof(SelectedWorkflow));
 
     /// <summary>Adds one empty literal parameter row (the inspector may pre-fill it).</summary>
     public void AddParamRow()
@@ -634,6 +646,29 @@ public sealed class BenchUiControlVM : ReactiveObject
     public string Type => _model.Type;
     public bool IsSelect => _model.Type == "Select";
     public bool IsProgress => _model.Type == "Progress";
+
+    /// <summary>
+    /// Re-reads every displayed field from the model and raises change notifications.
+    /// Used by the canvas panel-node preview: the preview row is a separate VM instance
+    /// from the inspector row, so it must be refreshed when the inspector edits the POCO.
+    /// </summary>
+    public void RefreshFromModel()
+    {
+        SelectItems.Clear();
+        foreach (var item in ReadSelectItems(_model))
+            SelectItems.Add(item);
+        _progressMax = ReadProgressMax(_model);
+
+        this.RaisePropertyChanged(nameof(Id));
+        this.RaisePropertyChanged(nameof(Text));
+        this.RaisePropertyChanged(nameof(Bind));
+        this.RaisePropertyChanged(nameof(BindEnabled));
+        this.RaisePropertyChanged(nameof(BindVisible));
+        this.RaisePropertyChanged(nameof(SelectItems));
+        this.RaisePropertyChanged(nameof(ProgressMax));
+        this.RaisePropertyChanged(nameof(IsSelect));
+        this.RaisePropertyChanged(nameof(IsProgress));
+    }
 
     public string Id
     {

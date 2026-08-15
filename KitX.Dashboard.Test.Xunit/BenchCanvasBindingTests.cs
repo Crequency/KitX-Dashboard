@@ -1,12 +1,15 @@
 using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Styling;
+using NodifyM.Avalonia.Controls;
+using NodifyM.Avalonia.ViewModelBase;
 using Xunit;
 
 [assembly: AvaloniaTestApplication(typeof(KitX.Dashboard.Test.Xunit.TestAppBuilder))]
@@ -93,5 +96,37 @@ public class BenchCanvasBindingTests
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
         Assert.Same(outer.Canvas.Nodes, target.GetValue(ItemsControl.ItemsSourceProperty));
+    }
+
+    [AvaloniaFact]
+    public void NodifyEditor_SelectedItems_TwoWay_Binding_WritesBackToVm()
+    {
+        // BenchWindow must bind NodifyEditor.SelectedItems with Mode=TwoWay: the Avalonia
+        // property's default binding mode is OneWay, so node clicks would never reach
+        // BenchCanvasViewModel.SelectedNodes and the inspector would stay on the toolkit
+        // page. This pins the TwoWay contract as a regression guard.
+        var editorVm = new NodifyEditorViewModelBase();
+        editorVm.Nodes.Add("n1");
+        editorVm.Nodes.Add("n2");
+
+        var editor = new NodifyEditor
+        {
+            Width = 800,
+            Height = 600,
+            DataContext = editorVm,
+            ItemsSource = editorVm.Nodes,
+            ItemTemplate = new FuncDataTemplate<object>((_, _) => new Node(), true),
+        };
+        editor.Bind(NodifyEditor.SelectedItemsProperty, new Binding("SelectedNodes") { Mode = BindingMode.TwoWay });
+
+        var window = new Window { Width = 800, Height = 600, Content = editor };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        editor.UpdateLayout();
+
+        editor.Selection.Select(0);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.Contains("n1", editorVm.SelectedNodes);
     }
 }

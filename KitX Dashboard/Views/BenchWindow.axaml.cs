@@ -57,8 +57,9 @@ public partial class BenchWindow : Window
             var canvas = viewModel.Canvas;
             if (canvas is null)
                 return;
+            viewModel.RefreshMountState();
             canvas.Rebuild();
-            Log.Information($"[BenchWindow] Rebuild on activated: nodes={canvas.Nodes.Count}");
+            Log.Information($"[BenchWindow] Rebuild on activated: nodes={canvas.Nodes.Count} mounted={viewModel.IsMounted}");
         };
     }
 
@@ -132,6 +133,9 @@ public partial class BenchWindow : Window
                 canvas.EditWorkflowCommand.Execute(workflow);
         }
     }
+
+    /// <summary>Header close button (dirty-close confirmation is handled by OnWindowClosing).</summary>
+    private void OnCloseClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => Close();
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {

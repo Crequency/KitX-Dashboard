@@ -328,6 +328,9 @@
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI control event</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">New workflow</sys:String>
     <sys:String x:Key="Text_Bench_AddPanel">Add panel</sys:String>
+    <sys:String x:Key="Text_Bench_PanelNodeHint">컨트롤 이벤트는 "UI 컨트롤 이벤트" 트리거를 통해 워크플로에 연결됩니다. 패널 노드는 선언 노드이며 커넥터가 없습니다.</sys:String>
+    <sys:String x:Key="Text_Bench_NoManualTrigger">시험 실행에는 "수동 트리거" 트리거가 필요합니다. 왼쪽 팔레트에서 추가하세요.</sys:String>
+    <sys:String x:Key="Text_Bench_Close">닫기</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">Comment node</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowNameWatermark">Workflow name</sys:String>
     <sys:String x:Key="Text_Bench_ExportMermaid">Export mermaid</sys:String>

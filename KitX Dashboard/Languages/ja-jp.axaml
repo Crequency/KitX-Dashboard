@@ -328,6 +328,9 @@
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI control event</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">New workflow</sys:String>
     <sys:String x:Key="Text_Bench_AddPanel">Add panel</sys:String>
+    <sys:String x:Key="Text_Bench_PanelNodeHint">コントロールイベントは「UI コントロールイベント」トリガーでワークフローに接続します。パネルノードは宣言でありコネクタはありません。</sys:String>
+    <sys:String x:Key="Text_Bench_NoManualTrigger">試運転には「手動トリガー」が必要です。左のパレットから追加してください。</sys:String>
+    <sys:String x:Key="Text_Bench_Close">閉じる</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">Comment node</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowNameWatermark">Workflow name</sys:String>
     <sys:String x:Key="Text_Bench_ExportMermaid">Export mermaid</sys:String>

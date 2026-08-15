@@ -79,7 +79,10 @@ public static class UIStateService
         var window = new Views.BenchWindow();
         BenchWindows[id] = window;
         window.Closed += (_, _) => BenchWindows.Remove(id);
-        ShowWindow(window, MainWindow);
+        // Show the workbench as an independent top-level window: showing it with the
+        // MainWindow as owner keeps it permanently above the dashboard and prevents the
+        // user from raising the dashboard above the editor (Windows owned-window z-order).
+        ShowWindow(window);
     }
 
     /// <summary>Shows (and activates) the singleton Panel host window, creating it lazily.</summary>
@@ -95,7 +98,11 @@ public static class UIStateService
             return;
         }
 
+        // Workbench trial-run and other manual entries activate the panel host; auto
+        // surface requests have already set ShowActivated=false on their code path.
+        win.ShowActivated = true;
         ShowWindow(win, MainWindow);
+        win.Activate();
     }
 
     public static void ShowWindow<T>(T window, Window? owner = null, bool showDialog = false, bool onlyOneInSameTime = false)

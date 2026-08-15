@@ -6,7 +6,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:nd="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
-        xmlns:models="using:KitX.ToolKit.Models"
         xmlns:views="using:KitX.Dashboard.Views"
         Title="{DynamicResource Text_Bench_Title}"
         Width="1360"
@@ -33,39 +32,39 @@
             </nd:NodeOutput>
         </DataTemplate>
 
-        <DataTemplate x:Key="UiTextPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiTextPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12"/>
         </DataTemplate>
-        <DataTemplate x:Key="UiIconPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiIconPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <StackPanel Orientation="Horizontal" Spacing="6">
                 <icon:MaterialIcon Width="16" Height="16" Kind="Image"/>
                 <TextBlock Text="图标" FontSize="11" Opacity="0.6"/>
             </StackPanel>
         </DataTemplate>
-        <DataTemplate x:Key="UiButtonPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiButtonPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <Button Content="{Binding Text}" IsEnabled="False" HorizontalAlignment="Stretch" FontSize="12"/>
         </DataTemplate>
-        <DataTemplate x:Key="UiInputPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiInputPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <TextBox Text="{Binding Text}" IsEnabled="False" Watermark="输入" FontSize="12"/>
         </DataTemplate>
-        <DataTemplate x:Key="UiNumberPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiNumberPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <NumericUpDown IsEnabled="False"/>
         </DataTemplate>
-        <DataTemplate x:Key="UiSelectPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiSelectPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <ComboBox IsEnabled="False"/>
         </DataTemplate>
-        <DataTemplate x:Key="UiSwitchPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiSwitchPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <ToggleSwitch IsEnabled="False"/>
         </DataTemplate>
-        <DataTemplate x:Key="UiLogPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiLogPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <Border Padding="6" CornerRadius="4" Background="{DynamicResource LayerFillColorDefaultBrush}">
                 <TextBlock Text="日志" FontSize="11" Opacity="0.6"/>
             </Border>
         </DataTemplate>
-        <DataTemplate x:Key="UiProgressPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiProgressPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <ProgressBar Value="0" Maximum="100" Height="8"/>
         </DataTemplate>
-        <DataTemplate x:Key="UiDialogPreview" DataType="{x:Type models:UiControl}">
+        <DataTemplate x:Key="UiDialogPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <Border Padding="8" CornerRadius="4" BorderBrush="{DynamicResource ThemePrimaryAccent}" BorderThickness="1">
                 <TextBlock Text="弹窗" FontSize="11" Opacity="0.7"/>
             </Border>
@@ -136,6 +135,9 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <TextBlock VerticalAlignment="Center" FontSize="11" Opacity="0.7"
+                           Text="{DynamicResource Text_Bench_NoManualTrigger}"
+                           IsVisible="{Binding !HasManualTriggers}"/>
                 <Button Command="{Binding FireManualCommand}" IsEnabled="{Binding HasManualTriggers}"
                         ToolTip.Tip="{Binding FireDisabledHint}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
@@ -147,6 +149,12 @@
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="ContentSave"/>
                         <TextBlock Text="{DynamicResource Text_Bench_Save}"/>
+                    </StackPanel>
+                </Button>
+                <Button Click="OnCloseClick">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Close"/>
+                        <TextBlock Text="{DynamicResource Text_Bench_Close}"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -223,7 +231,7 @@
                                          ItemsSource="{Binding Canvas.Nodes}"
                                          Connections="{Binding Canvas.Connections}"
                                          PendingConnection="{Binding Canvas.PendingConnection}"
-                                         SelectedItems="{Binding Canvas.SelectedNodes}"
+                                         SelectedItems="{Binding Canvas.SelectedNodes, Mode=TwoWay}"
                                          DisconnectConnectorCommand="{Binding Canvas.DisconnectConnectorCommand}"
                                          RemoveConnectionCommand="{Binding Canvas.RemoveConnectionCommand}"
                                          Background="Transparent"
@@ -331,14 +339,18 @@
                                                 <StackPanel>
                                                     <Border Padding="8" Background="{DynamicResource LayerFillColorDefaultBrush}"
                                                             IsVisible="{Binding IsPanel}">
-                                                        <ItemsControl ItemsSource="{Binding Controls}"
-                                                                      ItemTemplate="{StaticResource UiControlPreviewSelector}">
-                                                            <ItemsControl.ItemsPanel>
-                                                                <ItemsPanelTemplate>
-                                                                    <StackPanel Spacing="6"/>
-                                                                </ItemsPanelTemplate>
-                                                            </ItemsControl.ItemsPanel>
-                                                        </ItemsControl>
+                                                        <StackPanel Spacing="6">
+                                                            <ItemsControl ItemsSource="{Binding ControlVMs}"
+                                                                          ItemTemplate="{StaticResource UiControlPreviewSelector}">
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <StackPanel Spacing="6"/>
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                            </ItemsControl>
+                                                            <TextBlock Classes="hint" MaxWidth="220"
+                                                                       Text="{DynamicResource Text_Bench_PanelNodeHint}"/>
+                                                        </StackPanel>
                                                     </Border>
                                                     <Border Padding="10" Background="{DynamicResource LayerFillColorDefaultBrush}"
                                                             IsVisible="{Binding IsComment}" MinWidth="160" MaxWidth="260">
@@ -422,13 +434,17 @@
                                         <Border Margin="0,2" Padding="8" CornerRadius="6"
                                                 BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
                                             <DockPanel>
-                                                <StackPanel>
-                                                    <TextBlock FontSize="13" Text="{Binding Name}"/>
-                                                    <TextBlock Classes="hint" Text="{Binding InstallStatus}"/>
-                                                </StackPanel>
-                                                <Button DockPanel.Dock="Right" Content="删除" Padding="6,2"
+                                                <Button DockPanel.Dock="Right" Content="×" Padding="6,2" Margin="8,0,0,0"
                                                         Command="{Binding $parent[Window].DataContext.Canvas.ToolkitInspector.RemovePluginCommand}"
                                                         CommandParameter="{Binding}"/>
+                                                <StackPanel Spacing="4">
+                                                    <Grid ColumnDefinitions="2*, *, Auto">
+                                                        <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="名称"/>
+                                                        <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Version}" Watermark="版本"/>
+                                                        <TextBox Grid.Column="2" Margin="4,0,0,0" MinWidth="90" Text="{Binding Source}" Watermark="local"/>
+                                                    </Grid>
+                                                    <TextBlock Classes="hint" Text="{Binding InstallStatus}"/>
+                                                </StackPanel>
                                             </DockPanel>
                                         </Border>
                                     </DataTemplate>
@@ -576,7 +592,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                             <DockPanel>
-                                <ComboBox ItemsSource="{Binding Canvas.InspectorWorkflowOptions}"
+                                <ComboBox ItemsSource="{Binding Canvas.WorkflowIdOptions}"
                                           SelectedItem="{Binding Canvas.AddWorkflowId}" MinWidth="120"/>
                                 <Button DockPanel.Dock="Right" Content="{DynamicResource Text_Bench_AddBinding}"
                                         Command="{Binding Canvas.AddBindingCommand}"
@@ -617,6 +633,7 @@
                                       SelectedItem="{Binding Canvas.SelectedPanelLayout}"/>
                         </StackPanel>
                         <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_ControlList}"/>
+                        <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_PanelNodeHint}"/>
                         <ItemsControl ItemsSource="{Binding Canvas.SelectedControlVMs}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -765,6 +782,13 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        <DockPanel>
+                            <ComboBox ItemsSource="{Binding Canvas.WorkflowIdOptions}"
+                                      SelectedItem="{Binding Canvas.AddWorkflowId}" MinWidth="120"/>
+                            <Button DockPanel.Dock="Right" Content="{DynamicResource Text_Bench_AddBinding}"
+                                    Command="{Binding Canvas.AddBindingCommand}"
+                                    CommandParameter="{Binding Canvas.AddWorkflowId}"/>
+                        </DockPanel>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>

@@ -1,14 +1,14 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using KitX.ToolKit.Models;
+using KitX.Dashboard.ViewModels;
 
 namespace KitX.Dashboard.Views;
 
 /// <summary>
-/// Selects the on-canvas preview template for a <see cref="UiControl"/> definition based on
-/// its <see cref="UiControl.Type"/> discriminant (the fixed ten-control set). Reuses the same
-/// card-styled control visuals as the Panel host, but renders the control's <b>definition</b>
-/// (static preview) rather than a live bound instance. Templates are supplied from the view.
+/// Selects the on-canvas preview template for a <see cref="BenchUiControlVM"/> based on
+/// its <see cref="BenchUiControlVM.Type"/> discriminant (the fixed ten-control set).
+/// The rows are observable view-model facades so inspector edits re-render the panel
+/// node's preview in real time.
 /// </summary>
 public sealed class UiControlPreviewTemplateSelector : IDataTemplate
 {
@@ -25,7 +25,7 @@ public sealed class UiControlPreviewTemplateSelector : IDataTemplate
 
     public Control? Build(object? param)
     {
-        if (param is not UiControl control)
+        if (param is not BenchUiControlVM control)
             return null;
         var template = control.Type switch
         {
@@ -44,5 +44,5 @@ public sealed class UiControlPreviewTemplateSelector : IDataTemplate
         return template?.Build(param);
     }
 
-    public bool Match(object? data) => data is UiControl;
+    public bool Match(object? data) => data is BenchUiControlVM;
 }

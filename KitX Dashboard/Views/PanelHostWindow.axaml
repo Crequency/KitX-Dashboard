@@ -18,6 +18,8 @@
         mc:Ignorable="d">
     <Window.Resources>
         <converters:InstanceStatusToBrushConverter x:Key="InstanceStatusToBrushConverter"/>
+        <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter"/>
+        <converters:TakeFirstCharactersConverter x:Key="TakeFirstCharactersConverter"/>
         <DataTemplate x:Key="PanelTextTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
             <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13"/>
         </DataTemplate>
@@ -115,7 +117,7 @@
                         <TextBlock Text="{DynamicResource Text_PanelHost_NewInstance}"/>
                     </StackPanel>
                 </Button>
-                <Button Command="{Binding OpenBenchCommand}">
+                <Button Command="{Binding OpenBenchCommand}" IsEnabled="{Binding HasSelection}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <icon:MaterialIcon Width="18" Height="18" Kind="Toolbox"/>
                         <TextBlock Text="{DynamicResource Text_PanelHost_OpenBench}"/>
@@ -183,7 +185,17 @@
                         <ItemsControl ItemsSource="{Binding InstanceGroups}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Expander Header="{Binding Name}" IsExpanded="True" Margin="8,0">
+                                    <Expander IsExpanded="True" Margin="8,0">
+                                        <Expander.Header>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                <Border Padding="6,0" CornerRadius="8" HorizontalAlignment="Left"
+                                                        Background="{DynamicResource SystemFillColorSuccessBackgroundBrush}"
+                                                        IsVisible="{Binding HasRunning}">
+                                                    <TextBlock FontSize="10" Text="{Binding RunningCount, StringFormat='{}{0} 运行中'}"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </Expander.Header>
                                         <ListBox ItemsSource="{Binding Instances}"
                                                  SelectedItem="{Binding $parent[Window].DataContext.SelectedInstance}"
                                                  Background="Transparent">
@@ -194,7 +206,12 @@
                                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                                 <Ellipse Width="9" Height="9" VerticalAlignment="Center"
                                                                          Fill="{Binding Status, Converter={StaticResource InstanceStatusToBrushConverter}}"/>
-                                                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding InstanceId}" TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding InstanceId}"
+                                                                           TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding InstanceId}"/>
+                                                                <Border Padding="4,0" CornerRadius="6" Background="#338A8A8A"
+                                                                        IsVisible="{Binding IsSilent}">
+                                                                    <TextBlock FontSize="9" Text="silent" Foreground="White"/>
+                                                                </Border>
                                                             </StackPanel>
                                                             <TextBlock DockPanel.Dock="Right" FontSize="10" Text="{Binding Status}"
                                                                        Foreground="{Binding Status, Converter={StaticResource InstanceStatusToBrushConverter}}"/>
@@ -203,7 +220,7 @@
                                                         <TextBlock FontSize="11" Opacity="0.7"
                                                                    Text="{Binding Initiator.DeviceName, StringFormat='来自: {0}'}"
                                                                    IsVisible="{Binding Initiator.DeviceName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                                                   ToolTip.Tip="{Binding Initiator.DeviceId}"/>
+                                                                   ToolTip.Tip="{Binding Initiator.DeviceId, Converter={StaticResource TakeFirstCharactersConverter}, ConverterParameter=8}"/>
                                                         <Button HorizontalAlignment="Left" Padding="8,2" FontSize="11"
                                                                 Command="{Binding $parent[Window].DataContext.EndInstanceCommand}"
                                                                 CommandParameter="{Binding}">
@@ -232,8 +249,9 @@
                     <DockPanel Grid.Row="0" Margin="12,8">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Button Content="{DynamicResource Text_PanelHost_PanelTab}" Command="{Binding SelectTabCommand}" CommandParameter="0"
-                                    FontWeight="{Binding IsPanelTabSelected, Converter={x:Static BoolConverters.Not}}" IsEnabled="True"/>
-                            <Button Content="{DynamicResource Text_PanelHost_RunTab}" Command="{Binding SelectTabCommand}" CommandParameter="1"/>
+                                    FontWeight="{Binding IsPanelTabSelected, Converter={StaticResource BoolToFontWeightConverter}}"/>
+                            <Button Content="{DynamicResource Text_PanelHost_RunTab}" Command="{Binding SelectTabCommand}" CommandParameter="1"
+                                    FontWeight="{Binding IsRunTabSelected, Converter={StaticResource BoolToFontWeightConverter}}"/>
                             <ToggleSwitch Content="{DynamicResource Text_PanelHost_PauseLogScroll}" IsChecked="{Binding IsLogPaused}"/>
                         </StackPanel>
                     </DockPanel>

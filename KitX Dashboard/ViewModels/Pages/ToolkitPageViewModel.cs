@@ -84,7 +84,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     public override void InitEvents()
     {
         _toolkitService.ToolkitListChanged += OnToolkitListChanged;
-        _toolkitService.BenchEvent += OnBenchEvent;
+        _toolkitService.BenchEvent += OnBenchEventDispatch;
         _eventService.Subscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 
@@ -94,6 +94,19 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     }
 
     private void OnToolkitListChanged(object? sender, EventArgs e) => RefreshCards();
+
+    /// <summary>
+    /// Bench events can arrive on Timer/workflow background threads; marshal to the UI
+    /// thread before touching card VMs/observable state (design invariant).
+    /// </summary>
+    private void OnBenchEventDispatch(object? sender, KitX.ToolKit.Contracts.Events.BenchEvent e)
+    {
+        var dispatcher = Avalonia.Threading.Dispatcher.UIThread;
+        if (dispatcher.CheckAccess())
+            OnBenchEvent(sender, e);
+        else
+            dispatcher.Post(() => OnBenchEvent(sender, e));
+    }
 
     private void OnBenchEvent(object? sender, KitX.ToolKit.Contracts.Events.BenchEvent e)
     {
@@ -115,7 +128,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         _toolkitService.ToolkitListChanged -= OnToolkitListChanged;
-        _toolkitService.BenchEvent -= OnBenchEvent;
+        _toolkitService.BenchEvent -= OnBenchEventDispatch;
         _eventService.Unsubscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 }
