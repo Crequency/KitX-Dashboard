@@ -29,6 +29,14 @@ public partial class MainWindow : Window, IView
     /// <summary>Debounces window geometry writes to the config (D13).</summary>
     private readonly System.Threading.CancellationTokenSource _geometrySaveCts = new();
 
+    /// <summary>
+    /// Suppresses <see cref="MainNavigationView_SelectionChanged"/> while the initial page
+    /// selection is deferred to the dispatcher (see <see cref="InitMainWindow"/>). Without
+    /// this, FluentAvalonia's NavigationView falls back to the first menu item on realize,
+    /// overriding the restored page (e.g. Page_Lib) with Home a second after startup.
+    /// </summary>
+    private bool _suppressSelectionChanged = true;
+
     private static IAppConfig AppConfig => App.GetService<IConfigService>().AppConfig;
 
     public MainWindow()
@@ -106,7 +114,16 @@ public partial class MainWindow : Window, IView
 
     private void InitMainWindow()
     {
-        MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
+        // Defer the initial page selection until the NavigationView has realized. Setting
+        // SelectedItem in the constructor — before the control is attached — lets
+        // FluentAvalonia's NavigationView fall back to the first menu item on realize,
+        // which would override the restored page (e.g. Page_Lib) with Home a second later.
+        // SelectionChanged is suppressed until this deferred selection runs.
+        Dispatcher.UIThread.Post(() =>
+        {
+            _suppressSelectionChanged = false;
+            MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
+        });
 
         UpdateGreetingText();
 
@@ -201,6 +218,12 @@ public partial class MainWindow : Window, IView
         try
         {
             if (sender is null)
+                return;
+
+            // Ignore selection changes while the initial page selection is deferred to the
+            // dispatcher (see InitMainWindow) — otherwise the NavigationView's realize-time
+            // fallback to the first menu item would navigate away from the restored page.
+            if (_suppressSelectionChanged)
                 return;
 
             var navView = sender as NavigationView;
