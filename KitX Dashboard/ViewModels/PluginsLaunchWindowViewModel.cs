@@ -40,6 +40,10 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase, IDisposable
         InitCommands();
 
         InitEvents();
+
+        // Plugins may already be connected when the window opens — the count must
+        // reflect the CURRENT state, not wait for the next collection change.
+        PluginsCount = $"{PluginInfos.Count}";
     }
 
     public sealed override void InitCommands() { }

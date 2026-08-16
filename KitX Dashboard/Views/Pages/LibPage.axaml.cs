@@ -13,8 +13,10 @@ public partial class LibPage : UserControl
 
         DataContext = libViewModel;
 
-        // D11: the VM is recreated on every navigation — dispose its subscriptions
-        // when the page leaves the visual tree.
+        // D11: resubscribe on every attach — Unloaded disposes the subscription, and a
+        // reused page instance (navigation cache) would otherwise stay frozen at its
+        // first-render values. InitEvents is idempotent.
+        Loaded += (_, _) => libViewModel.InitEvents();
         Unloaded += (_, _) => libViewModel.Dispose();
     }
 }

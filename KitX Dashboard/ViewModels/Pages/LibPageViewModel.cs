@@ -51,8 +51,15 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         });
     }
 
+    /// <summary>Guard so <see cref="InitEvents"/> is idempotent — the page re-invokes
+    /// it on every Loaded (D11 symmetry), and a duplicate subscription would run the
+    /// handler (and its UI-thread post) once per extra subscribe.</summary>
+    private bool _eventsSubscribed;
+
     public sealed override void InitEvents()
     {
+        if (_eventsSubscribed) return;
+        _eventsSubscribed = true;
         PluginInfos.CollectionChanged += _pluginInfosChangedHandler;
     }
 
@@ -61,6 +68,8 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
     /// </summary>
     public void Dispose()
     {
+        if (!_eventsSubscribed) return;
+        _eventsSubscribed = false;
         PluginInfos.CollectionChanged -= _pluginInfosChangedHandler;
     }
 
