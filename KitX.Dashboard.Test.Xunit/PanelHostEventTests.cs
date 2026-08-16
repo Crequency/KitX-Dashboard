@@ -175,5 +175,8 @@ public class PanelHostEventTests
         public void Subscribe<TEventArgs>(string eventName, EventHandler<TEventArgs> handler) where TEventArgs : EventArgs { }
         public void Unsubscribe<TEventArgs>(string eventName, EventHandler<TEventArgs> handler) where TEventArgs : EventArgs { }
         public void Publish<TEventArgs>(string eventName, TEventArgs args) where TEventArgs : EventArgs { }
+        public void Subscribe<TEvent>(Action<TEvent> handler) { }
+        public void Unsubscribe<TEvent>(Action<TEvent> handler) { }
+        public void Publish<TEvent>(TEvent payload) { }
     }
 }
