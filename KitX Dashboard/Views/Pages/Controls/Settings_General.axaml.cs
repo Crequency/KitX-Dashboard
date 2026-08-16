@@ -12,5 +12,10 @@ public partial class Settings_General : UserControl
         InitializeComponent();
 
         DataContext = viewModel;
+
+        // D11: the VM is transient per view and subscribes to the singleton event bus —
+        // dispose it when the view leaves the visual tree (SettingsFrame re-navigates
+        // between sub-views, which would otherwise leak one subscription per navigation).
+        Unloaded += (_, _) => viewModel.Dispose();
     }
 }

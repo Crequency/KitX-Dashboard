@@ -25,6 +25,11 @@ public partial class PluginBar : UserControl
         viewModel.PluginBar = this;
 
         DataContext = viewModel;
+
+        // D11: the VM is transient per card and subscribes to the singleton event bus —
+        // dispose it when the card leaves the visual tree (RepoPage rebuilds the list on
+        // every refresh, which would otherwise leak one subscription per card).
+        Unloaded += (_, _) => viewModel.Dispose();
     }
 
     /// <summary>

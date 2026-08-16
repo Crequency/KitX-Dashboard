@@ -30,11 +30,16 @@ internal class RepoPageViewModel : ViewModelBase
     private readonly IPluginService _pluginService;
     private RepoPage? CurrentPage { get; set; }
 
+    /// <summary>Named handler so <see cref="Cleanup"/> can unsubscribe it (D11).</summary>
+    private readonly EventHandler<EventArgs> _appConfigChangedHandler;
+
     public RepoPageViewModel(IConfigService configService, IEventService eventService, IPluginService pluginService)
     {
         _configService = configService;
         _eventService = eventService;
         _pluginService = pluginService;
+
+        _appConfigChangedHandler = (_, _) => ImportButtonVisibility = _configService.AppConfig.App.DeveloperSetting;
 
         InitCommands();
 
@@ -110,7 +115,7 @@ internal class RepoPageViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        _eventService.Subscribe(EventNames.AppConfigChanged, (s, e) => ImportButtonVisibility = _configService.AppConfig.App.DeveloperSetting);
+        _eventService.Subscribe(EventNames.AppConfigChanged, _appConfigChangedHandler);
 
         // Subscribe to plugin status changes for runtime auto-refresh
         _pluginService.PluginStatusChanged += OnPluginStatusChanged;
@@ -143,6 +148,7 @@ internal class RepoPageViewModel : ViewModelBase
     internal void Cleanup()
     {
         _pluginService.PluginStatusChanged -= OnPluginStatusChanged;
+        _eventService.Unsubscribe(EventNames.AppConfigChanged, _appConfigChangedHandler);
     }
 
     /// <summary>

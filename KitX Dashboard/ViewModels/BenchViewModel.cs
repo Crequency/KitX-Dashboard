@@ -22,7 +22,7 @@ namespace KitX.Dashboard.ViewModels;
 /// (<see cref="BenchCanvasViewModel"/>), saves via <see cref="IToolkitService.UpdateToolkit"/>
 /// (hard validation), and spawns a manual run via <see cref="IBenchService"/>.
 /// </summary>
-internal class BenchViewModel : ViewModelBase
+internal class BenchViewModel : ViewModelBase, IDisposable
 {
     private readonly IToolkitService _toolkitService;
     private readonly IBenchService _benchService;
@@ -272,6 +272,16 @@ internal class BenchViewModel : ViewModelBase
 
     private void OnLanguageChanged(object? sender, System.EventArgs e)
         => this.RaisePropertyChanged(nameof(TriggerSummary));
+
+    /// <summary>
+    /// Unsubscribes the language handler. Called when the owning <see cref="BenchWindow"/>
+    /// closes — the VM is transient per window, so a leak would accumulate one subscription
+    /// per workbench open.
+    /// </summary>
+    public void Dispose()
+    {
+        _eventService.Unsubscribe(EventNames.LanguageChanged, OnLanguageChanged);
+    }
 
     /// <summary>Called for every canvas/config edit: dirty state + header-derived state refresh.</summary>
     private void OnCanvasEdited()

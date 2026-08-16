@@ -23,12 +23,15 @@ using Serilog;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class PluginBarViewModel : ViewModelBase
+internal class PluginBarViewModel : ViewModelBase, IDisposable
 {
     private readonly IConfigService _configService;
     private readonly IEventService _eventService;
     private readonly IPluginService _pluginService;
     private readonly IPluginServer _pluginServer;
+
+    /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
+    private readonly EventHandler<EventArgs> _languageChangedHandler;
 
     public PluginBarViewModel(
         IConfigService configService,
@@ -40,6 +43,8 @@ internal class PluginBarViewModel : ViewModelBase
         _eventService = eventService;
         _pluginService = pluginService;
         _pluginServer = pluginServer;
+
+        _languageChangedHandler = (_, _) => this.RaisePropertyChanged(nameof(DisplayName));
 
         InitCommands();
         InitEvents();
@@ -160,7 +165,17 @@ internal class PluginBarViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        _eventService.Subscribe(EventNames.LanguageChanged, (s, e) => this.RaisePropertyChanged(nameof(DisplayName)));
+        _eventService.Subscribe(EventNames.LanguageChanged, _languageChangedHandler);
+    }
+
+    /// <summary>
+    /// Unsubscribes the language handler. Called when the owning <see cref="PluginBar"/>
+    /// leaves the visual tree — a transient VM per card would otherwise accumulate one
+    /// subscription per refresh (RepoPage rebuilds the bar list on every refresh).
+    /// </summary>
+    public void Dispose()
+    {
+        _eventService.Unsubscribe(EventNames.LanguageChanged, _languageChangedHandler);
     }
 
     internal PluginBar? PluginBar { get; set; }

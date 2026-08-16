@@ -28,6 +28,9 @@ public partial class BenchWindow : Window
         DataContext = viewModel;
         KeyDown += OnWindowKeyDown;
         Closing += OnWindowClosing;
+        // D11: the VM is transient per window and subscribes to the singleton event bus —
+        // dispose it when the workbench actually closes.
+        Closed += (_, _) => viewModel.Dispose();
         if (viewModel.Canvas is { } locateCanvas)
         {
             locateCanvas.LocateRequested += node =>

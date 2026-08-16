@@ -13,17 +13,22 @@ using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
-internal class Settings_GeneralViewModel : ViewModelBase
+internal class Settings_GeneralViewModel : ViewModelBase, IDisposable
 {
     private readonly IConfigService _configService;
     private readonly IAnnouncementService _announcementService;
     private readonly ITasksService _tasksService;
+
+    /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
+    private readonly EventHandler<EventArgs> _developSettingsChangedHandler;
 
     public Settings_GeneralViewModel(IConfigService configService, IAnnouncementService announcementService, ITasksService tasksService)
     {
         _configService = configService;
         _announcementService = announcementService;
         _tasksService = tasksService;
+
+        _developSettingsChangedHandler = (_, _) => this.RaisePropertyChanged(nameof(DeveloperSettingEnabled));
 
         InitCommands();
 
@@ -52,7 +57,17 @@ internal class Settings_GeneralViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        Events.Subscribe(EventNames.DevelopSettingsChanged, (s, e) => this.RaisePropertyChanged(nameof(DeveloperSettingEnabled)));
+        Events.Subscribe(EventNames.DevelopSettingsChanged, _developSettingsChangedHandler);
+    }
+
+    /// <summary>
+    /// Unsubscribes the develop-settings handler. Called when the owning
+    /// <see cref="Settings_General"/> view leaves the visual tree — the VM is transient
+    /// per view, so a leak would accumulate one subscription per settings navigation.
+    /// </summary>
+    public void Dispose()
+    {
+        Events.Unsubscribe(EventNames.DevelopSettingsChanged, _developSettingsChangedHandler);
     }
 
     internal string LocalPluginsFileDirectory
