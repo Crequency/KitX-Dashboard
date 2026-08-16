@@ -8,11 +8,15 @@ using KitX.Dashboard.Services;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Plugin;
 using ReactiveUI;
+using Serilog;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class LibPageViewModel : ViewModelBase, IDisposable
 {
+    /// <summary>Diagnostic tag identifying this transient VM instance in logs.</summary>
+    private string DiagTag => $"[LibDiag] VM#{GetHashCode():X8}";
+
     /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
     private readonly NotifyCollectionChangedEventHandler _pluginInfosChangedHandler;
 
@@ -22,6 +26,7 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         {
             // D-REG: plugin events may arrive on the server thread — the filter
             // mutates a UI-bound collection, so marshal it to the UI thread.
+            Log.Information($"{DiagTag} source CollectionChanged (UI-thread post queued)");
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
                 ApplyFilter();
@@ -38,6 +43,7 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         // alone only fires on future changes, leaving the page empty on first open).
         ApplyFilter();
         PluginsCount = $"{PluginInfos.Count}";
+        Log.Information($"{DiagTag} ctor done: source={PluginInfos.Count} displayed={_displayedPluginInfos.Count}");
     }
 
     public sealed override void InitCommands()
@@ -61,6 +67,7 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         if (_eventsSubscribed) return;
         _eventsSubscribed = true;
         PluginInfos.CollectionChanged += _pluginInfosChangedHandler;
+        Log.Information($"{DiagTag} InitEvents: subscribed (source count={PluginInfos.Count})");
     }
 
     /// <summary>
@@ -71,6 +78,7 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         if (!_eventsSubscribed) return;
         _eventsSubscribed = false;
         PluginInfos.CollectionChanged -= _pluginInfosChangedHandler;
+        Log.Information($"{DiagTag} Dispose: unsubscribed (displayed={_displayedPluginInfos.Count})");
     }
 
     private string? _searchingText;
@@ -111,6 +119,9 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         }
 
         NoPlugins_TipHeight = _displayedPluginInfos.Count == 0 ? 300 : 0;
+
+        Log.Information($"{DiagTag} ApplyFilter: keyword='{keyword}' source={PluginInfos.Count} " +
+            $"displayed={_displayedPluginInfos.Count} count text={PluginsCount}");
     }
 
     public string pluginsCount = $"{PluginInfos.Count}";
