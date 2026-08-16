@@ -11,15 +11,11 @@ using KitX.Core.Device;
 using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Device;
 using ReactiveUI;
-using Serilog;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class DevicesPageViewModel : ViewModelBase, IDisposable
 {
-    /// <summary>Diagnostic tag identifying this transient VM instance in logs.</summary>
-    private string DiagTag => $"[DevDiag] VM#{GetHashCode():X8}";
-
     private readonly IDeviceDiscoveryService _discoveryService;
     private readonly INetworkService _networkService;
     private readonly IConfigService _configService;
@@ -46,8 +42,6 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
         // D-REG: populate the filtered view from the current source immediately —
         // CollectionChanged alone only fires on future changes.
         ApplyFilter();
-
-        Log.Information($"{DiagTag} ctor done: source={DeviceCases.Count} displayed={_displayedDeviceCases.Count}");
     }
 
     public sealed override void InitCommands()
@@ -86,8 +80,6 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
             _discoveryService.DeviceDiscovered += OnDeviceDiscovered;
 
         DeviceCases.CollectionChanged += OnDeviceCasesChanged;
-
-        Log.Information($"{DiagTag} InitEvents: subscribed (source={DeviceCases.Count})");
     }
 
     private void OnDeviceDiscovered(object? sender, DeviceDiscoveredEventArgs e)
@@ -112,13 +104,11 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
             // (DeviceCase requires the runtime DeviceInfo plus DI services).
             var deviceCase = new DeviceCase(deviceInfo, _configService, _securityService, _devicesServer, _discoveryService);
             DeviceCases.Add(deviceCase);
-            Log.Information($"{DiagTag} added device card: {deviceInfo.Device.DeviceName} plugins={deviceInfo.PluginsCount}");
         }
         else
         {
             // Update existing device info
             existingDevice.DeviceInfo = deviceInfo;
-            Log.Debug($"{DiagTag} updated device card: {deviceInfo.Device.DeviceName} plugins={deviceInfo.PluginsCount}");
         }
     }
 
@@ -142,8 +132,6 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
             _discoveryService.DeviceDiscovered -= OnDeviceDiscovered;
 
         DeviceCases.CollectionChanged -= OnDeviceCasesChanged;
-
-        Log.Information($"{DiagTag} Dispose: unsubscribed (displayed={_displayedDeviceCases.Count})");
     }
 
     private string? _searchingText;
@@ -185,9 +173,6 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
         }
 
         NoDevice_TipHeight = _displayedDeviceCases.Count == 0 ? 300 : 0;
-
-        Log.Debug($"{DiagTag} ApplyFilter: keyword='{keyword}' source={DeviceCases.Count} " +
-            $"displayed={_displayedDeviceCases.Count} tipHeight={NoDevice_TipHeight}");
     }
 
     internal string devicesCount = DeviceCases.Count.ToString();
