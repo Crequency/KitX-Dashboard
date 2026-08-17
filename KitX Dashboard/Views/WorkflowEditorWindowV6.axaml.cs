@@ -535,16 +535,16 @@ public partial class WorkflowEditorWindowV6 : Window
 
         // D4: an async void handler cannot extend the close — the window is already
         // gone when SaveAsync completes, so a quick reopen may read the stale file.
-        // Cancel the close, save synchronously from the user's perspective, then
-        // close again (guarded against re-entry). SaveAsync swallows its own errors,
-        // so no exception can escape and wedge the close path.
-        var neededSave = await _viewModel.SaveOnCloseAsync();
-        if (neededSave)
-        {
-            e.Cancel = true;
-            _closingAfterSave = true;
-            Close();
-        }
+        // Cancel the close FIRST (synchronously, before the first await), save, then
+        // close again (guarded against re-entry). SaveOnCloseAsync swallows its own
+        // errors, so no exception can escape and wedge the close path.
+        if (!_viewModel.IsDirty)
+            return;
+
+        e.Cancel = true;
+        _closingAfterSave = true;
+        await _viewModel.SaveOnCloseAsync();
+        Close();
     }
 
     // ── Keyboard shortcuts ──

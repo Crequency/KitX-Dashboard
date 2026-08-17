@@ -1133,8 +1133,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     /// <summary>
     /// Save-on-close (D4): stops the auto-save loop and the pending debounce, then saves
-    /// when dirty. Returns true when a save was needed — the view uses this to cancel the
-    /// close and re-issue it after the (synchronous-from-the-user's-perspective) save.
+    /// when dirty. Returns true when a save was performed. The view checks IsDirty
+    /// itself and cancels the close BEFORE awaiting this, so the save always completes
+    /// before the window is actually gone.
     /// <see cref="SaveAsync"/> swallows its own errors, so no exception can escape and
     /// wedge the close path.
     /// </summary>

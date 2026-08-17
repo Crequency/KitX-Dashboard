@@ -67,6 +67,7 @@ internal static class LanguageLoader
                 Application.Current.Resources.MergedDictionaries.Add(LoadDictionary(backupLang));
 
                 config.App.AppLanguage = backupLang;
+                App.AppLanguage = backupLang;
             }
             catch (Exception e)
             {
