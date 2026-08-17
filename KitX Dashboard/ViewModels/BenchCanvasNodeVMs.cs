@@ -192,8 +192,8 @@ public sealed class BenchConnectionVM : ConnectionViewModelBase
             var src = Source is BenchConnectorVM s ? s.Title : Source.Title;
             var tgt = Target is BenchConnectorVM t ? t.Title : Target.Title;
             return Kind == BenchEdgeKind.Completion
-                ? $"完成边（线束）：{src} → {tgt}"
-                : $"绑定：{src} → {tgt}";
+                ? string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "EdgeToolTipCompletion") ?? "完成边（线束）：{0} → {1}", src, tgt)
+                : string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "EdgeToolTipBinding") ?? "绑定：{0} → {1}", src, tgt);
         }
     }
 }

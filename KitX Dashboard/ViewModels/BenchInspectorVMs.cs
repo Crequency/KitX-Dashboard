@@ -53,13 +53,13 @@ public sealed class BenchParamRowVM : ReactiveObject
 
             if (string.IsNullOrWhiteSpace(value))
             {
-                Error = "形参名不能为空";
+                Error = ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorParamNameEmpty") ?? "形参名不能为空";
                 return;
             }
 
             if (_binding.Params.ContainsKey(value) && _name != value)
             {
-                Error = "形参名已存在";
+                Error = ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorParamNameExists") ?? "形参名已存在";
                 return;
             }
 
@@ -138,9 +138,15 @@ public sealed class BenchParamRowVM : ReactiveObject
     /// <summary><c>$output</c> is only valid on WorkflowCompletion bindings (Bench UX v2 §4.4).</summary>
     public bool HasWarning => SourceKind == BenchParamSourceKind.Output && !_completionBinding;
 
-    public string? Warning => HasWarning ? "完成边才可注入 $output；Spawn 绑定中此参数将不会解析" : null;
+    public string? Warning => HasWarning
+        ? ViewModelBase.TranslateTextWithSuffix("Bench", "ParamWarning") ?? "完成边才可注入 $output；Spawn 绑定中此参数将不会解析"
+        : null;
 
-    public static IReadOnlyList<string> SourceOptions { get; } = ["$payload 路径", "$output 路径", "字面量"];
+    public static IReadOnlyList<string> SourceOptions => [
+        ViewModelBase.TranslateTextWithSuffix("Bench", "SourcePayloadPath") ?? "$payload 路径",
+        ViewModelBase.TranslateTextWithSuffix("Bench", "SourceOutputPath") ?? "$output 路径",
+        ViewModelBase.TranslateTextWithSuffix("Bench", "SourceLiteral") ?? "字面量",
+    ];
 
     public int SourceIndex
     {
@@ -183,11 +189,11 @@ public sealed class BenchParamRowVM : ReactiveObject
     public static string? ValidatePath(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
-            return "路径不能为空";
+            return ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorPathEmpty") ?? "路径不能为空";
         if (path.Contains("..", StringComparison.Ordinal))
-            return "路径不能包含 ..";
+            return ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorPathDotDot") ?? "路径不能包含 ..";
         if (path.Split('.').Any(segment => segment.Length == 0 || segment.Any(c => !char.IsLetterOrDigit(c) && c is not ('_' or '-'))))
-            return "路径段只能包含字母、数字、_、-";
+            return ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorPathInvalidChars") ?? "路径段只能包含字母、数字、_、-";
         return null;
     }
 }
@@ -363,7 +369,11 @@ public sealed class BenchPluginRequirementVM : ReactiveObject
 
     public bool IsInstalled => _isInstalled(_model.Name);
 
-    public string InstallStatus => IsInstalled ? "已安装" : (_model.Source == "local" ? "未安装" : "远程来源");
+    public string InstallStatus => IsInstalled
+        ? ViewModelBase.TranslateTextWithSuffix("Bench", "Installed") ?? "已安装"
+        : (_model.Source == "local"
+            ? ViewModelBase.TranslateTextWithSuffix("Bench", "NotInstalled") ?? "未安装"
+            : ViewModelBase.TranslateTextWithSuffix("Bench", "RemoteSource") ?? "远程来源");
 }
 
 /// <summary>ToolKit metadata / plugins / run-parameter inspector page (Bench UX v2 §4.3).</summary>
@@ -573,7 +583,8 @@ public sealed class BenchToolkitInspectorVM : ReactiveObject
         }
     }
 
-    public string MaxInstancesHint => "关闭 = null（不限制）；开启后同一工具箱最多同时运行该数量的实例";
+    public string MaxInstancesHint => ViewModelBase.TranslateTextWithSuffix("Bench", "MaxInstancesHint")
+        ?? "关闭 = null（不限制）；开启后同一工具箱最多同时运行该数量的实例";
 
     private void AddTag()
     {
@@ -740,7 +751,8 @@ public sealed class BenchUiControlVM : ReactiveObject
         }
     }
 
-    public string BindHint => "留空 = 自动派生 {toolkitId}/panel/{Id}/{主属性}；填写时必须保持在 panel/ 命名空间内";
+    public string BindHint => ViewModelBase.TranslateTextWithSuffix("Bench", "BindHint")
+        ?? "留空 = 自动派生 {toolkitId}/panel/{Id}/{主属性}；填写时必须保持在 panel/ 命名空间内";
 
     public ObservableCollection<string> SelectItems { get; }
 

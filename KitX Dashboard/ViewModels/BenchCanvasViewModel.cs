@@ -238,7 +238,9 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     public bool IsCompletionEdgeSelected => SelectedConnection is { Kind: BenchEdgeKind.Completion };
     public bool HasPanel => _toolkit.UiPanel is not null;
     public bool HasValidationErrors => ValidationErrors.Count > 0;
-    public string ValidationBadgeText => HasValidationErrors ? $"⚠ {ValidationErrors.Count} 项" : "✓";
+    public string ValidationBadgeText => HasValidationErrors
+        ? string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "ValidationBadge") ?? "⚠ {0} 项", ValidationErrors.Count)
+        : "✓";
 
     // ── Inspector write-through wrappers ──
     // The inspector binds these instead of the raw POCO fields so every edit can write
@@ -258,7 +260,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
                 return;
             if (_toolkit.Triggers.Any(t => t.Id == value))
             {
-                SetError("触发器 Id 已存在");
+                SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorTriggerIdExists") ?? "触发器 Id 已存在");
                 OnPropertyChanged(nameof(SelectedTriggerId));
                 return;
             }
@@ -404,7 +406,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
                 return;
             if (_toolkit.Workflows.Any(w => w.Id == value))
             {
-                SetError("工作流 Id 已存在");
+                SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorWorkflowIdExists") ?? "工作流 Id 已存在");
                 OnPropertyChanged(nameof(SelectedWorkflowId));
                 return;
             }
@@ -529,7 +531,8 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     public bool IsCronTimerMode => SelectedTriggerTimerMode == 2;
     public bool IsIntervalTimerMode => SelectedTriggerTimerMode == 1;
 
-    public string TimerModeHint => "周期 = IntervalMs 每轮触发；单次 = 仅触发一次（含 KitX 启动自运行）；Cron = 5 字段表达式";
+    public string TimerModeHint => ViewModelBase.TranslateTextWithSuffix("Bench", "TimerModeHint")
+        ?? "周期 = IntervalMs 每轮触发；单次 = 仅触发一次（含 KitX 启动自运行）；Cron = 5 字段表达式";
 
     // Cron 5-field builder (writes through to TriggerConfig.Cron).
     public string CronMinute
@@ -723,7 +726,9 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     {
         var node = new BenchNodeVM(trigger.Id, BenchNodeKind.Source, SourceKindLabel(trigger), trigger.Id,
             new Point(60, 40 + index * 100));
-        node.AffinityLabel = trigger.Type == TriggerType.UIEvent ? "实例内" : "Spawn";
+        node.AffinityLabel = trigger.Type == TriggerType.UIEvent
+            ? ViewModelBase.TranslateTextWithSuffix("Bench", "AffinityInInstance") ?? "实例内"
+            : "Spawn";
         node.NodeIcon = trigger.Type switch
         {
             TriggerType.Manual => Material.Icons.MaterialIconKind.Hand,
@@ -732,17 +737,17 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             TriggerType.UIEvent => Material.Icons.MaterialIconKind.ViewList,
             _ => Material.Icons.MaterialIconKind.Hand,
         };
-        var outPin = new BenchConnectorVM("触发", ConnectorViewModelBase.ConnectorFlow.Output, "src:" + trigger.Id);
+        var outPin = new BenchConnectorVM(ViewModelBase.TranslateTextWithSuffix("Bench", "ConnectorTrigger") ?? "触发", ConnectorViewModelBase.ConnectorFlow.Output, "src:" + trigger.Id);
         node.Output.Add(outPin);
         RegisterNode(node, outPin, trigger);
     }
 
     private void AddWorkflowNode(ToolkitWorkflow wf, int index)
     {
-        var node = new BenchNodeVM(wf.Name, BenchNodeKind.Workflow, "工作流", wf.Id,
+        var node = new BenchNodeVM(wf.Name, BenchNodeKind.Workflow, ViewModelBase.TranslateTextWithSuffix("Bench", "NodeKindWorkflow") ?? "工作流", wf.Id,
             new Point(460, 40 + index * 100));
-        var inPin = new BenchConnectorVM("输入", ConnectorViewModelBase.ConnectorFlow.Input, "in:" + wf.Id);
-        var outPin = new BenchConnectorVM("输出", ConnectorViewModelBase.ConnectorFlow.Output, "out:" + wf.Id);
+        var inPin = new BenchConnectorVM(ViewModelBase.TranslateTextWithSuffix("Bench", "ConnectorInput") ?? "输入", ConnectorViewModelBase.ConnectorFlow.Input, "in:" + wf.Id);
+        var outPin = new BenchConnectorVM(ViewModelBase.TranslateTextWithSuffix("Bench", "ConnectorOutput") ?? "输出", ConnectorViewModelBase.ConnectorFlow.Output, "out:" + wf.Id);
         node.Input.Add(inPin);
         node.Output.Add(outPin);
         _nodeConfig[node] = wf;
@@ -753,7 +758,8 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     private void AddPanelNode(UiPanel panel)
     {
-        var node = new BenchNodeVM("GUI 面板", BenchNodeKind.Panel, $"控件 {panel.Controls.Count}", "panel",
+        var node = new BenchNodeVM(ViewModelBase.TranslateTextWithSuffix("Bench", "NodeKindPanel") ?? "GUI 面板", BenchNodeKind.Panel,
+            string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "ControlCount") ?? "控件 {0}", panel.Controls.Count), "panel",
             new Point(460, 40 + _workflowCount * 100 + 60));
         _nodeConfig[node] = panel;
         Nodes.Add(node);
@@ -762,7 +768,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     private void AddCommentNode(ToolkitComment comment, int index)
     {
-        var node = new BenchNodeVM(comment.Text, BenchNodeKind.Comment, "注释", comment.Id,
+        var node = new BenchNodeVM(comment.Text, BenchNodeKind.Comment, ViewModelBase.TranslateTextWithSuffix("Bench", "NodeKindComment") ?? "注释", comment.Id,
             new Point(240, 40 + index * 110))
         {
             CommentText = comment.Text,
@@ -810,14 +816,14 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         {
             if (inNode.Kind != BenchNodeKind.Workflow)
             {
-                SetError("绑定连线只能连接到工作流节点");
+                SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorBindingOnlyWorkflow") ?? "绑定连线只能连接到工作流节点");
                 return;
             }
 
             var trigger = (Trigger)_nodeConfig[outNode];
             if (trigger.Bindings.Any(b => b.Workflow == inNode.ConfigId))
             {
-                SetError("该触发器已绑定此工作流");
+                SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorTriggerAlreadyBound") ?? "该触发器已绑定此工作流");
                 return;
             }
 
@@ -828,7 +834,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         {
             if (inNode.Kind != BenchNodeKind.Workflow)
             {
-                SetError("完成边只能连接到工作流节点");
+                SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorCompletionOnlyWorkflow") ?? "完成边只能连接到工作流节点");
                 return;
             }
 
@@ -837,7 +843,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         }
         else
         {
-            SetError("面板节点不能作为连线源");
+            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorPanelCannotBeSource") ?? "面板节点不能作为连线源");
             return;
         }
 
@@ -857,7 +863,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         {
             if (existing.Bindings.Any(b => b.Workflow == toWf))
             {
-                SetError("该完成边已存在");
+                SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorCompletionEdgeExists") ?? "该完成边已存在");
                 return false;
             }
 
@@ -891,7 +897,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             }
 
             Connections.Remove(added);
-            SetError("检测到环：完成边不得形成循环");
+            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorCycleDetected") ?? "检测到环：完成边不得形成循环");
             return false;
         }
 
@@ -1050,7 +1056,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     {
         if (_toolkit.UiPanel is not null)
         {
-            SetError("该工具箱已有一个 GUI 面板");
+            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorPanelAlreadyExists") ?? "该工具箱已有一个 GUI 面板");
             return;
         }
 
@@ -1105,7 +1111,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         {
             if (completionTrigger.Bindings.Any(b => b.Workflow == workflowId))
             {
-                SetError("该工作流已被此触发器绑定");
+                SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorWorkflowAlreadyBound") ?? "该工作流已被此触发器绑定");
                 return;
             }
 
@@ -1126,7 +1132,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             return;
         if (SelectedTrigger.Bindings.Any(b => b.Workflow == workflowId))
         {
-            SetError("该工作流已被此触发器绑定");
+            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorWorkflowAlreadyBound") ?? "该工作流已被此触发器绑定");
             return;
         }
 
@@ -1264,7 +1270,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     [RelayCommand]
     private void AddComment()
     {
-        var comment = new ToolkitComment { Id = "note_" + Guid.NewGuid().ToString("N")[..8], Text = "双击右侧文本编辑注释" };
+        var comment = new ToolkitComment { Id = "note_" + Guid.NewGuid().ToString("N")[..8], Text = ViewModelBase.TranslateTextWithSuffix("Bench", "CommentDefaultText") ?? "双击右侧文本编辑注释" };
         _toolkit.Comments.Add(comment);
         AddCommentNode(comment, _toolkit.Comments.Count - 1);
         var node = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.ConfigId == comment.Id);
@@ -1284,7 +1290,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         var name = (NewWorkflowName ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            SetError("请先输入新工作流名称");
+            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorWorkflowNameRequired") ?? "请先输入新工作流名称");
             return;
         }
 
@@ -1295,14 +1301,14 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         {
             if (_fileStore is null)
             {
-                SetError("文件存储服务未注入，无法创建工作流文件");
+                SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorFileServiceNotInjected") ?? "文件存储服务未注入，无法创建工作流文件");
                 return;
             }
             await _fileStore.WriteMinimalWorkflowAsync(_toolkit.GetId(), workflow, _toolkit.Meta.Author);
         }
         catch (Exception ex)
         {
-            SetError("创建工作流文件失败：" + ex.Message);
+            SetError(string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorCreateWorkflowFile") ?? "创建工作流文件失败：{0}", ex.Message));
             return;
         }
 
@@ -1397,7 +1403,11 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     /// <summary>Panel layout strategies.</summary>
     public static IReadOnlyList<string> LayoutOptions { get; } = ["stack", "grid"];
     /// <summary>Timer tri-state labels (single / interval / cron).</summary>
-    public static IReadOnlyList<string> TimerModes { get; } = ["单次", "周期", "Cron"];
+    public static IReadOnlyList<string> TimerModes => [
+        ViewModelBase.TranslateTextWithSuffix("Bench", "TimerModeOnce") ?? "单次",
+        ViewModelBase.TranslateTextWithSuffix("Bench", "TimerModeInterval") ?? "周期",
+        "Cron",
+    ];
 
     [ObservableProperty]
     private string _addControlType = "Text";
@@ -1415,12 +1425,12 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             new BenchPaletteItemVM("Timer", ViewModelBase.TranslateTextWithSuffix("Bench", "TimerTrigger") ?? "定时", "触发器", Material.Icons.MaterialIconKind.Clock),
             new BenchPaletteItemVM("PluginEvent", ViewModelBase.TranslateTextWithSuffix("Bench", "PluginEventTrigger") ?? "插件事件", "触发器", Material.Icons.MaterialIconKind.Puzzle),
             new BenchPaletteItemVM("UIEvent", ViewModelBase.TranslateTextWithSuffix("Bench", "UIEventTrigger") ?? "UI 控件事件", "触发器", Material.Icons.MaterialIconKind.ViewList,
-                HasPanel ? null : "请先添加 GUI 面板"));
+                HasPanel ? null : ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteUIEventHint") ?? "请先添加 GUI 面板"));
         var workflows = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupWorkflows") ?? "工作流",
             new BenchPaletteItemVM("Workflow", ViewModelBase.TranslateTextWithSuffix("Bench", "NewWorkflow") ?? "新建工作流", "工作流", Material.Icons.MaterialIconKind.Plus));
         var panel = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupPanel") ?? "GUI 面板",
             new BenchPaletteItemVM("Panel", ViewModelBase.TranslateTextWithSuffix("Bench", "AddPanel") ?? "添加面板", "GUI 面板", Material.Icons.MaterialIconKind.ViewDashboard,
-                HasPanel ? "至多 1 个（已添加）" : null));
+                HasPanel ? ViewModelBase.TranslateTextWithSuffix("Bench", "PalettePanelHint") ?? "至多 1 个（已添加）" : null));
         var comments = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupComments") ?? "注释",
             new BenchPaletteItemVM("Comment", ViewModelBase.TranslateTextWithSuffix("Bench", "CommentNode") ?? "注释节点", "注释", Material.Icons.MaterialIconKind.CommentOutline));
 
@@ -1587,7 +1597,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         {
             row.Model.Workflow = oldWorkflow;
             row.NotifyWorkflowChanged();
-            SetError("该工作流已被此触发器绑定");
+            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorWorkflowAlreadyBound") ?? "该工作流已被此触发器绑定");
             return;
         }
 
@@ -1672,7 +1682,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     {
         var panelNode = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.Kind == BenchNodeKind.Panel);
         if (panelNode is not null && SelectedPanel is not null)
-            panelNode.KindLabel = $"控件 {SelectedPanel.Controls.Count}";
+            panelNode.KindLabel = string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "ControlCount") ?? "控件 {0}", SelectedPanel.Controls.Count);
     }
 
     /// <summary>fan-out / AND-join degree badges (only shown when degree > 1).</summary>
@@ -1723,9 +1733,9 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     private static string SourceKindLabel(Trigger trigger) => trigger.Type switch
     {
-        TriggerType.Manual => "手动",
-        TriggerType.PluginEvent => $"插件: {trigger.Config?.PluginName}",
-        TriggerType.UIEvent => $"UI: {trigger.Config?.Control}",
+        TriggerType.Manual => ViewModelBase.TranslateTextWithSuffix("Bench", "TriggerKindManual") ?? "手动",
+        TriggerType.PluginEvent => string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "TriggerKindPlugin") ?? "插件: {0}", trigger.Config?.PluginName),
+        TriggerType.UIEvent => string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "TriggerKindUI") ?? "UI: {0}", trigger.Config?.Control),
         TriggerType.Timer => ViewModelBase.TranslateTextWithSuffix("Bench", "TimerTrigger") ?? "定时",
         _ => trigger.Type.ToString(),
     };

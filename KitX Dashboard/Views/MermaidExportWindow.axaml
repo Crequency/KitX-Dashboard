@@ -2,7 +2,7 @@
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:icon="using:Material.Icons.Avalonia"
-        Title="mermaid 导出预览"
+        Title="{DynamicResource Text_Mermaid_Title}"
         Width="720"
         Height="520"
         WindowStartupLocation="CenterOwner">
@@ -18,13 +18,13 @@
             <Button Click="OnCopyClick">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <icon:MaterialIcon Width="16" Height="16" Kind="ContentCopy"/>
-                    <TextBlock Text="复制"/>
+                    <TextBlock Text="{DynamicResource Text_Mermaid_Copy}"/>
                 </StackPanel>
             </Button>
             <Button Click="OnCloseClick">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <icon:MaterialIcon Width="16" Height="16" Kind="Close"/>
-                    <TextBlock Text="关闭"/>
+                    <TextBlock Text="{DynamicResource Text_Mermaid_Close}"/>
                 </StackPanel>
             </Button>
         </StackPanel>

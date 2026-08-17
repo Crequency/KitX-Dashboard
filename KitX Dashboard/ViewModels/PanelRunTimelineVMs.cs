@@ -9,7 +9,7 @@ namespace KitX.Dashboard.ViewModels;
 /// <summary>One workflow chain row in the Panel host's run tab.</summary>
 public sealed class RunChainVM : ReactiveObject
 {
-    private string _status = "运行中";
+    private string _status = "running";
 
     public RunChainVM(string runId, string workflowId)
     {
@@ -22,11 +22,16 @@ public sealed class RunChainVM : ReactiveObject
 
     public string Status
     {
-        get => _status;
+        get => _status switch
+        {
+            "running" => ViewModelBase.TranslateTextWithSuffix("PanelHost", "StatusRunning") ?? "运行中",
+            "completed" => ViewModelBase.TranslateTextWithSuffix("PanelHost", "StatusCompleted") ?? "已完成",
+            _ => ViewModelBase.TranslateTextWithSuffix("PanelHost", "StatusFailed") ?? "失败",
+        };
         set => this.RaiseAndSetIfChanged(ref _status, value);
     }
 
-    public bool IsActive => Status == "运行中";
+    public bool IsActive => _status == "running";
 
     public bool IsFailed { get; private set; }
 
@@ -36,7 +41,7 @@ public sealed class RunChainVM : ReactiveObject
     {
         IsFailed = !succeeded;
         Error = error;
-        Status = succeeded ? "已完成" : "失败";
+        Status = succeeded ? "completed" : "failed";
         this.RaisePropertyChanged(nameof(IsActive));
         this.RaisePropertyChanged(nameof(IsFailed));
         this.RaisePropertyChanged(nameof(Error));
@@ -76,15 +81,15 @@ public sealed class InstanceRunTimelineVM
     {
         // Snapshot counters are the fallback when the Panel host opens after events have fired.
         while (ActiveRuns.Count < activeRuns)
-            ActiveRuns.Add(new RunChainVM("snapshot-" + ActiveRuns.Count, "(来自实例快照)"));
+            ActiveRuns.Add(new RunChainVM("snapshot-" + ActiveRuns.Count, ViewModelBase.TranslateTextWithSuffix("PanelHost", "FromSnapshot") ?? "(来自实例快照)"));
         while (ActiveRuns.Count > activeRuns)
             ActiveRuns.RemoveAt(ActiveRuns.Count - 1);
 
         var known = CompletedRuns.Count(r => r.IsFailed);
         while (known < failedRuns)
         {
-            var failed = new RunChainVM("snapshot-failed-" + known, "(来自实例快照)");
-            failed.Complete(false, "实例快照计数");
+            var failed = new RunChainVM("snapshot-failed-" + known, ViewModelBase.TranslateTextWithSuffix("PanelHost", "FromSnapshot") ?? "(来自实例快照)");
+            failed.Complete(false, ViewModelBase.TranslateTextWithSuffix("PanelHost", "SnapshotCount") ?? "实例快照计数");
             CompletedRuns.Add(failed);
         }
         while (known > failedRuns && CompletedRuns.Count > 0)
@@ -105,7 +110,7 @@ public sealed class PendingDialogVM : ReactiveObject
         ToolkitId = toolkitId;
         ControlId = controlId;
         Message = message;
-        Buttons = buttons.Count > 0 ? buttons : ["确定"];
+        Buttons = buttons.Count > 0 ? buttons : [ViewModelBase.TranslateTextWithSuffix("PanelHost", "Ok") ?? "确定"];
     }
 
     public string InstanceId { get; }

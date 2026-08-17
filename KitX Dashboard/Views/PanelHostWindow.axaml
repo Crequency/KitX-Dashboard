@@ -20,6 +20,7 @@
         <converters:InstanceStatusToBrushConverter x:Key="InstanceStatusToBrushConverter"/>
         <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter"/>
         <converters:TakeFirstCharactersConverter x:Key="TakeFirstCharactersConverter"/>
+        <converters:LocalizedFormatConverter x:Key="LocalizedFormatConverter"/>
         <DataTemplate x:Key="PanelTextTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
             <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13"/>
         </DataTemplate>
@@ -192,7 +193,7 @@
                                                 <Border Padding="6,0" CornerRadius="8" HorizontalAlignment="Left"
                                                         Background="{DynamicResource SystemFillColorSuccessBackgroundBrush}"
                                                         IsVisible="{Binding HasRunning}">
-                                                    <TextBlock FontSize="10" Text="{Binding RunningCount, StringFormat='{}{0} 运行中'}"/>
+                                                    <TextBlock FontSize="10" Text="{Binding RunningCount, Converter={StaticResource LocalizedFormatConverter}, ConverterParameter=Text_PanelHost_RunningCount}"/>
                                                 </Border>
                                             </StackPanel>
                                         </Expander.Header>
@@ -218,7 +219,7 @@
                                                         </DockPanel>
                                                         <TextBlock FontSize="11" Opacity="0.7" Text="{Binding RunSummary}"/>
                                                         <TextBlock FontSize="11" Opacity="0.7"
-                                                                   Text="{Binding Initiator.DeviceName, StringFormat='来自: {0}'}"
+                                                                   Text="{Binding Initiator.DeviceName, Converter={StaticResource LocalizedFormatConverter}, ConverterParameter=Text_PanelHost_From}"
                                                                    IsVisible="{Binding Initiator.DeviceName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                                                    ToolTip.Tip="{Binding Initiator.DeviceId, Converter={StaticResource TakeFirstCharactersConverter}, ConverterParameter=8}"/>
                                                         <Button HorizontalAlignment="Left" Padding="8,2" FontSize="11"

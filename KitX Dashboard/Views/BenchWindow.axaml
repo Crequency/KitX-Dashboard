@@ -38,14 +38,14 @@
         <DataTemplate x:Key="UiIconPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <StackPanel Orientation="Horizontal" Spacing="6">
                 <icon:MaterialIcon Width="16" Height="16" Kind="Image"/>
-                <TextBlock Text="图标" FontSize="11" Opacity="0.6"/>
+                <TextBlock Text="{DynamicResource Text_Bench_UiIconPreview}" FontSize="11" Opacity="0.6"/>
             </StackPanel>
         </DataTemplate>
         <DataTemplate x:Key="UiButtonPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <Button Content="{Binding Text}" IsEnabled="False" HorizontalAlignment="Stretch" FontSize="12"/>
         </DataTemplate>
         <DataTemplate x:Key="UiInputPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
-            <TextBox Text="{Binding Text}" IsEnabled="False" Watermark="输入" FontSize="12"/>
+            <TextBox Text="{Binding Text}" IsEnabled="False" Watermark="{DynamicResource Text_Bench_UiInputPreview}" FontSize="12"/>
         </DataTemplate>
         <DataTemplate x:Key="UiNumberPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <NumericUpDown IsEnabled="False"/>
@@ -58,7 +58,7 @@
         </DataTemplate>
         <DataTemplate x:Key="UiLogPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <Border Padding="6" CornerRadius="4" Background="{DynamicResource LayerFillColorDefaultBrush}">
-                <TextBlock Text="日志" FontSize="11" Opacity="0.6"/>
+                <TextBlock Text="{DynamicResource Text_Bench_UiLogPreview}" FontSize="11" Opacity="0.6"/>
             </Border>
         </DataTemplate>
         <DataTemplate x:Key="UiProgressPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
@@ -66,7 +66,7 @@
         </DataTemplate>
         <DataTemplate x:Key="UiDialogPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
             <Border Padding="8" CornerRadius="4" BorderBrush="{DynamicResource ThemePrimaryAccent}" BorderThickness="1">
-                <TextBlock Text="弹窗" FontSize="11" Opacity="0.7"/>
+                <TextBlock Text="{DynamicResource Text_Bench_UiDialogPreview}" FontSize="11" Opacity="0.7"/>
             </Border>
         </DataTemplate>
 
@@ -264,10 +264,10 @@
                                         </ToolTip.Tip>
                                         <nd:Connection.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Header="选择此边"
+                                                <MenuItem Header="{DynamicResource Text_Bench_SelectEdge}"
                                                           Command="{Binding $parent[Window].DataContext.Canvas.SelectConnectionCommand}"
                                                           CommandParameter="{Binding}"/>
-                                                <MenuItem Header="删除此边"
+                                                <MenuItem Header="{DynamicResource Text_Bench_DeleteEdge}"
                                                           Command="{Binding $parent[Window].DataContext.Canvas.RemoveConnectionCommand}"
                                                           CommandParameter="{Binding}"/>
                                             </ContextMenu>
@@ -300,7 +300,7 @@
                                                  DoubleTapped="OnNodeDoubleTapped">
                                             <nd:Node.ContextMenu>
                                                 <ContextMenu>
-                                                    <MenuItem Header="删除节点"
+                                                    <MenuItem Header="{DynamicResource Text_Bench_DeleteNode}"
                                                               Command="{Binding $parent[Window].DataContext.Canvas.DeleteNodeCommand}"
                                                               CommandParameter="{Binding}"/>
                                                 </ContextMenu>
@@ -422,7 +422,7 @@
                             <DockPanel>
                                 <Button DockPanel.Dock="Right" Content="{DynamicResource Text_Bench_AddTag}"
                                         Command="{Binding Canvas.ToolkitInspector.AddTagCommand}"/>
-                                <TextBox Margin="0,0,8,0" Text="{Binding Canvas.ToolkitInspector.NewTag}" Watermark="新标签"/>
+                                <TextBox Margin="0,0,8,0" Text="{Binding Canvas.ToolkitInspector.NewTag}" Watermark="{DynamicResource Text_Bench_NewTag}"/>
                             </DockPanel>
                         </StackPanel>
 
@@ -439,8 +439,8 @@
                                                         CommandParameter="{Binding}"/>
                                                 <StackPanel Spacing="4">
                                                     <Grid ColumnDefinitions="2*, *, Auto">
-                                                        <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="名称"/>
-                                                        <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Version}" Watermark="版本"/>
+                                                        <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="{DynamicResource Text_Bench_PluginNameWatermark}"/>
+                                                        <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Version}" Watermark="{DynamicResource Text_Bench_PluginVersionWatermark}"/>
                                                         <TextBox Grid.Column="2" Margin="4,0,0,0" MinWidth="90" Text="{Binding Source}" Watermark="local"/>
                                                     </Grid>
                                                     <TextBlock Classes="hint" Text="{Binding InstallStatus}"/>
@@ -451,8 +451,8 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                             <Grid ColumnDefinitions="2*, *, *, Auto">
-                                <TextBox Grid.Column="0" Text="{Binding Canvas.ToolkitInspector.NewPluginName}" Watermark="名称"/>
-                                <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Canvas.ToolkitInspector.NewPluginVersion}" Watermark="版本"/>
+                                <TextBox Grid.Column="0" Text="{Binding Canvas.ToolkitInspector.NewPluginName}" Watermark="{DynamicResource Text_Bench_PluginNameWatermark}"/>
+                                <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Canvas.ToolkitInspector.NewPluginVersion}" Watermark="{DynamicResource Text_Bench_PluginVersionWatermark}"/>
                                 <TextBox Grid.Column="2" Margin="4,0,0,0" Text="{Binding Canvas.ToolkitInspector.NewPluginSource}" Watermark="local"/>
                                 <Button Grid.Column="3" Margin="4,0,0,0" Content="{DynamicResource Text_Bench_AddTag}"
                                         Command="{Binding Canvas.ToolkitInspector.AddPluginCommand}"/>
@@ -471,7 +471,7 @@
                     <!-- Source (trigger) inspector -->
                     <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsSourceSelected}">
                         <StackPanel>
-                            <TextBlock FontSize="12" Opacity="0.6" Text="Id"/>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Id}"/>
                             <TextBox Text="{Binding Canvas.SelectedTriggerId}"/>
                         </StackPanel>
                         <StackPanel>
@@ -503,11 +503,11 @@
                             <StackPanel IsVisible="{Binding Canvas.IsCronTimerMode}">
                                 <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_CronBuilder}"/>
                                 <Grid ColumnDefinitions="*,*,*,*,*">
-                                    <TextBox Grid.Column="0" Text="{Binding Canvas.CronMinute}" Watermark="分"/>
-                                    <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Canvas.CronHour}" Watermark="时"/>
-                                    <TextBox Grid.Column="2" Margin="4,0,0,0" Text="{Binding Canvas.CronDay}" Watermark="日"/>
-                                    <TextBox Grid.Column="3" Margin="4,0,0,0" Text="{Binding Canvas.CronMonth}" Watermark="月"/>
-                                    <TextBox Grid.Column="4" Margin="4,0,0,0" Text="{Binding Canvas.CronDow}" Watermark="周"/>
+                                    <TextBox Grid.Column="0" Text="{Binding Canvas.CronMinute}" Watermark="{DynamicResource Text_Bench_CronMinute}"/>
+                                    <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Canvas.CronHour}" Watermark="{DynamicResource Text_Bench_CronHour}"/>
+                                    <TextBox Grid.Column="2" Margin="4,0,0,0" Text="{Binding Canvas.CronDay}" Watermark="{DynamicResource Text_Bench_CronDay}"/>
+                                    <TextBox Grid.Column="3" Margin="4,0,0,0" Text="{Binding Canvas.CronMonth}" Watermark="{DynamicResource Text_Bench_CronMonth}"/>
+                                    <TextBox Grid.Column="4" Margin="4,0,0,0" Text="{Binding Canvas.CronDow}" Watermark="{DynamicResource Text_Bench_CronDow}"/>
                                 </Grid>
                                 <TextBlock Classes="hint" Text="{Binding Canvas.CronPreview, StringFormat='{}{0}'}"/>
                             </StackPanel>
@@ -539,7 +539,7 @@
                             <StackPanel>
                                 <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_PanelReserved}"/>
                                 <TextBox Text="{Binding Canvas.SelectedTriggerPanel}"/>
-                                <TextBlock Classes="hint" Text="Panel 字段为 GUI RFC 预留；当前面板 id 固定为工具箱主面板"/>
+                                <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_PanelReservedHint}"/>
                             </StackPanel>
                         </StackPanel>
 
@@ -565,7 +565,7 @@
                                                                     Background="{DynamicResource LayerFillColorDefaultBrush}">
                                                                 <StackPanel Spacing="2">
                                                                     <Grid ColumnDefinitions="*, *, Auto">
-                                                                        <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="形参名"/>
+                                                                        <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="{DynamicResource Text_Bench_ParamName}"/>
                                                                         <ComboBox Grid.Column="1" Margin="4,0,0,0"
                                                                                   ItemsSource="{Binding SourceOptions}"
                                                                                   SelectedIndex="{Binding SourceIndex}"/>
@@ -573,9 +573,9 @@
                                                                                 Command="{Binding $parent[Window].DataContext.Canvas.RemoveParamRowCommand}"
                                                                                 CommandParameter="{Binding}"/>
                                                                     </Grid>
-                                                                    <TextBox Text="{Binding Path}" Watermark="点路径，如 input.name" IsVisible="{Binding IsPayload}"/>
-                                                                    <TextBox Text="{Binding Path}" Watermark="点路径，如 model" IsVisible="{Binding IsOutput}"/>
-                                                                    <TextBox Text="{Binding LiteralValue}" Watermark="字面量" IsVisible="{Binding IsLiteral}"/>
+                                                                    <TextBox Text="{Binding Path}" Watermark="{DynamicResource Text_Bench_PathWatermarkInput}" IsVisible="{Binding IsPayload}"/>
+                                                                    <TextBox Text="{Binding Path}" Watermark="{DynamicResource Text_Bench_PathWatermarkOutput}" IsVisible="{Binding IsOutput}"/>
+                                                                    <TextBox Text="{Binding LiteralValue}" Watermark="{DynamicResource Text_Bench_LiteralWatermark}" IsVisible="{Binding IsLiteral}"/>
                                                                     <TextBlock Foreground="Red" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                                                                     <TextBlock Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="{Binding Warning}" IsVisible="{Binding HasWarning}"/>
                                                                 </StackPanel>
@@ -604,7 +604,7 @@
                     <!-- Workflow inspector -->
                     <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsWorkflowSelected}">
                         <StackPanel>
-                            <TextBlock FontSize="12" Opacity="0.6" Text="Id"/>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Id}"/>
                             <TextBox Text="{Binding Canvas.SelectedWorkflowId}"/>
                         </StackPanel>
                         <StackPanel>
@@ -651,7 +651,7 @@
                                                 <Button Padding="5,0" Content="↓"
                                                         Command="{Binding $parent[Window].DataContext.Canvas.MoveControlDownCommand}"
                                                         CommandParameter="{Binding}"/>
-                                                <Button Padding="5,0" Content="编辑"
+                                                <Button Padding="5,0" Content="{DynamicResource Text_Bench_Edit}"
                                                         Command="{Binding $parent[Window].DataContext.Canvas.SelectControlCommand}"
                                                         CommandParameter="{Binding}"/>
                                                 <Button Padding="5,0" Content="×"
@@ -674,7 +674,7 @@
                         <StackPanel Spacing="6" IsVisible="{Binding Canvas.SelectedControlVM, Converter={x:Static ObjectConverters.IsNotNull}}">
                             <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_ControlProperties}"/>
                             <StackPanel>
-                                <TextBlock FontSize="12" Opacity="0.6" Text="Id"/>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Id}"/>
                                 <TextBox Text="{Binding Canvas.SelectedControlVM.Id}"/>
                             </StackPanel>
                             <StackPanel>
@@ -730,11 +730,11 @@
                     <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsCompletionEdgeSelected}">
                         <TextBlock Classes="section" Text="{DynamicResource Text_Bench_EdgeInspector}"/>
                         <StackPanel>
-                            <TextBlock FontSize="12" Opacity="0.6" Text="Id"/>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Id}"/>
                             <TextBox Text="{Binding Canvas.CompletionInspectorTrigger.Id}"/>
                         </StackPanel>
                         <StackPanel>
-                            <TextBlock FontSize="12" Opacity="0.6" Text="Type"/>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Type}"/>
                             <TextBlock Text="WorkflowCompletion"/>
                         </StackPanel>
                         <StackPanel>
@@ -760,7 +760,7 @@
                                                     <DataTemplate>
                                                         <StackPanel Spacing="2">
                                                             <Grid ColumnDefinitions="*, *, Auto">
-                                                                <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="形参名"/>
+                                                                <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="{DynamicResource Text_Bench_ParamName}"/>
                                                                 <ComboBox Grid.Column="1" Margin="4,0,0,0" ItemsSource="{Binding SourceOptions}"
                                                                           SelectedIndex="{Binding SourceIndex}"/>
                                                                 <Button Grid.Column="2" Content="×" Padding="5,0"

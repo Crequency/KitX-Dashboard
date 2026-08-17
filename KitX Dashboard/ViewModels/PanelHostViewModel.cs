@@ -249,7 +249,8 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             if (snapshot.Status == KitX.ToolKit.Instances.InstanceStatus.Running)
             {
                 var result = await MessageBoxManager.GetMessageBoxStandard(
-                    "结束实例", $"确定要结束实例 {snapshot.InstanceId[..Math.Min(12, snapshot.InstanceId.Length)]} 吗？",
+                    TranslateTextWithSuffix("PanelHost", "EndInstanceTitle") ?? "结束实例",
+                    string.Format(TranslateTextWithSuffix("PanelHost", "EndInstanceConfirm") ?? "确定要结束实例 {0} 吗？", snapshot.InstanceId[..Math.Min(12, snapshot.InstanceId.Length)]),
                     ButtonEnum.YesNo, Icon.Warning).ShowWindowAsync();
                 if (result != ButtonResult.Yes)
                     return Unit.Default;
@@ -265,7 +266,8 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             if (Instances.Count == 0)
                 return;
             var result = await MessageBoxManager.GetMessageBoxStandard(
-                "结束全部", $"确定要结束全部 {Instances.Count} 个实例吗？",
+                TranslateTextWithSuffix("PanelHost", "EndAllTitle") ?? "结束全部",
+                string.Format(TranslateTextWithSuffix("PanelHost", "EndAllConfirm") ?? "确定要结束全部 {0} 个实例吗？", Instances.Count),
                 ButtonEnum.YesNo, Icon.Warning).ShowWindowAsync();
             if (result != ButtonResult.Yes)
                 return;
@@ -440,8 +442,8 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     {
         var toolkitName = _toolkitService.GetToolkit(toolkitId)?.Meta?.Name ?? toolkitId;
         return string.IsNullOrWhiteSpace(reason)
-            ? $"实例启动被拒绝：{toolkitName} 已达最大实例数限制"
-            : $"实例启动被拒绝：{toolkitName}（{reason}）";
+            ? string.Format(TranslateTextWithSuffix("PanelHost", "SpawnRejectedLimit") ?? "实例启动被拒绝：{0} 已达最大实例数限制", toolkitName)
+            : string.Format(TranslateTextWithSuffix("PanelHost", "SpawnRejectedReason") ?? "实例启动被拒绝：{0}（{1}）", toolkitName, reason);
     }
 
     private InstanceRunTimelineVM Timeline(string instanceId)
