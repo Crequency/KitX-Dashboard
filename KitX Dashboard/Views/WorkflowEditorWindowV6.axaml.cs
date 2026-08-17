@@ -102,6 +102,15 @@ public partial class WorkflowEditorWindowV6 : Window
         Closing += OnWindowClosing;
     }
 
+    protected override void OnClosed(EventArgs e)
+    {
+        // Symmetric teardown for the ctor subscription (symmetric-unsubscribe rule):
+        // the VM is transient per window, so release the PropertyChanged hook on close
+        // to avoid retaining the window via the VM.
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        base.OnClosed(e);
+    }
+
     // ── Load workflow ──
 
     public async Task LoadWorkflowAsync(string workflowId)

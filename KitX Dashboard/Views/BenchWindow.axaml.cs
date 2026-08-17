@@ -29,23 +29,16 @@ public partial class BenchWindow : Window
         KeyDown += OnWindowKeyDown;
         Closing += OnWindowClosing;
         // D11: the VM is transient per window and subscribes to the singleton event bus —
-        // dispose it when the workbench actually closes.
-        Closed += (_, _) => viewModel.Dispose();
+        // dispose it when the workbench actually closes. Also release the named
+        // LocateRequested handler here so the window can't be retained via the canvas.
+        Closed += (_, _) =>
+        {
+            viewModel.Canvas?.LocateRequested -= OnLocateRequested;
+            viewModel.Dispose();
+        };
         if (viewModel.Canvas is { } locateCanvas)
         {
-            locateCanvas.LocateRequested += node =>
-            {
-                try
-                {
-                    var index = locateCanvas.Nodes.IndexOf(node);
-                    if (index >= 0 && BenchEditor.ContainerFromIndex(index) is Control container)
-                        container.BringIntoView();
-                }
-                catch
-                {
-                    // NodifyEditor container lookup is best-effort; selection already happened.
-                }
-            };
+            locateCanvas.LocateRequested += OnLocateRequested;
         }
 
         // Diagnostics: once the editor is in the tree, log whether the canvas
@@ -70,6 +63,21 @@ public partial class BenchWindow : Window
         // Reflection bindings settle on the dispatcher — re-check one frame later.
         => Avalonia.Threading.Dispatcher.UIThread.Post(VerifyCanvasBinding,
             Avalonia.Threading.DispatcherPriority.Loaded);
+
+    /// <summary>Brings the located node's container into view (LocateRequested handler).</summary>
+    private void OnLocateRequested(BenchNodeVM node)
+    {
+        try
+        {
+            var index = viewModel.Canvas?.Nodes.IndexOf(node) ?? -1;
+            if (index >= 0 && BenchEditor.ContainerFromIndex(index) is Control container)
+                container.BringIntoView();
+        }
+        catch
+        {
+            // NodifyEditor container lookup is best-effort; selection already happened.
+        }
+    }
 
     private void VerifyCanvasBinding()
     {

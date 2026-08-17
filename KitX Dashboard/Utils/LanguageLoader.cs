@@ -48,6 +48,8 @@ internal static class LanguageLoader
         if (!config.App.SurpportLanguages.ContainsKey(lang))
             lang = backupLang;
 
+        App.AppLanguage = lang;
+
         try
         {
             Application.Current.Resources.MergedDictionaries.Clear();

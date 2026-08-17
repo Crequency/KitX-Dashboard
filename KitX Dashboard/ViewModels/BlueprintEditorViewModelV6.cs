@@ -1789,8 +1789,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             return;
         }
 
-        // Legacy single-PinType mode: collect the node's pins belonging to the variadic
-        // group (matching PinType). Expand only when the LAST pin was just connected.
+        // Unprefixed single-PinType variadic mode: collect the node's pins belonging to
+        // the variadic group (matching PinType). Expand only when the LAST pin was just
+        // connected. Reached by specs built without PinNamePrefixes (e.g. StringConcat's
+        // "Input " pins, ToolKit's "Button "/"Key " pins, Plugin/Device "Param " pins).
         var pinList = nodeVm.Input;
         var pins = pinList.OfType<BlueprintConnectorVMV6>()
             .Where(c => c.PinType == spec.PinType)

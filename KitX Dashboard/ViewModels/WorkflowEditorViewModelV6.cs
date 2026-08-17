@@ -48,7 +48,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private readonly IConfigService _configService;
     private readonly KsTextLens _ksTextLens;
     private readonly BpGraphLens _bpGraphLens;
-    private readonly WorkflowRunner _runner;
+    private readonly IWorkflowRunner _runner;
     private CancellationTokenSource? _cancellationTokenSource;
     private RealBlueprintDebugger? _debugController;
     private bool _isDebugging;
@@ -112,7 +112,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         BpGraphLens bpGraphLens,
         BuiltinFunctionRegistry registry,
         IPluginServer pluginServer,
-        WorkflowRunner runner,
+        IWorkflowRunner runner,
         IWorkflowStorageService storageService,
         IEventService eventService,
         IConfigService configService)

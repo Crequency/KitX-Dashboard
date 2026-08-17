@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Avalonia.Data.Converters;
-using KitX.Core.Contract.Configuration;
 
 namespace KitX.Dashboard.Converters;
 
@@ -16,7 +15,9 @@ public class PluginMultiLanguagePropertyConverter : IValueConverter
 
         if (value is Dictionary<string, string> dict && dict.Count > 0)
         {
-            var appLanguage = App.GetService<IConfigService>().AppConfig.App.AppLanguage;
+            // Current UI language from the app-level static (kept in sync by
+            // LanguageLoader) — pure display conversion, no service lookup.
+            var appLanguage = App.AppLanguage;
             var result = dict.TryGetValue(appLanguage, out var lang) ? lang : dict.Values.FirstOrDefault() ?? string.Empty;
 
             return result;
