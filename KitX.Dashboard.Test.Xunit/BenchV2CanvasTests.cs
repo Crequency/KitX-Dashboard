@@ -359,8 +359,7 @@ public class BenchV2CanvasTests
 
     [Fact]
     public void CycleDiagnostic_HasLocatableWorkflowTarget()
-    {
-        var toolkit = new Toolkit
+    {        var toolkit = new Toolkit
         {
             Workflows =
             {
@@ -390,5 +389,38 @@ public class BenchV2CanvasTests
         var cycle = Assert.Single(canvas.Diagnostics.Where(d => d.Message.Contains("cycle detected")));
         Assert.NotNull(cycle.NodeId);
         Assert.True(cycle.CanLocate);
+    }
+
+    [Fact]
+    public void ApplyWorkflowSaved_UpdatesMatchingNodeLabelAndModel()
+    {
+        var toolkit = new Toolkit
+        {
+            Workflows = { new ToolkitWorkflow { Id = "wf1", Name = "Old Name", File = "w1.kcs" } },
+        };
+        var canvas = new BenchCanvasViewModel(toolkit);
+        var node = Assert.Single(canvas.Nodes.OfType<BenchNodeVM>());
+        Assert.Equal("Old Name", node.Title);
+
+        canvas.ApplyWorkflowSaved("wf1", "New Name", "a description");
+
+        Assert.Equal("New Name", toolkit.Workflows[0].Name);
+        // Rebuild re-projects the canvas, so re-query the (new) node for its label.
+        Assert.Equal("New Name", Assert.Single(canvas.Nodes.OfType<BenchNodeVM>()).Title);
+    }
+
+    [Fact]
+    public void ApplyWorkflowSaved_UnknownId_IsNoOp()
+    {
+        var toolkit = new Toolkit
+        {
+            Workflows = { new ToolkitWorkflow { Id = "wf1", Name = "Keep Me", File = "w1.kcs" } },
+        };
+        var canvas = new BenchCanvasViewModel(toolkit);
+
+        canvas.ApplyWorkflowSaved("does-not-exist", "Should Not Apply", null);
+
+        Assert.Equal("Keep Me", toolkit.Workflows[0].Name);
+        Assert.Equal("Keep Me", Assert.Single(canvas.Nodes.OfType<BenchNodeVM>()).Title);
     }
 }

@@ -271,10 +271,19 @@ internal class BenchViewModel : ViewModelBase, IDisposable
     public override void InitEvents()
     {
         _eventService.Subscribe(EventNames.LanguageChanged, OnLanguageChanged);
+        _eventService.Subscribe<WorkflowSavedEventArgs>(EventNames.WorkflowDataSaved, OnWorkflowDataSaved);
     }
 
     private void OnLanguageChanged(object? sender, System.EventArgs e)
         => this.RaisePropertyChanged(nameof(TriggerSummary));
+
+    /// <summary>
+    /// Routes a workflow-save from the editor (global <c>EventNames.WorkflowDataSaved</c>)
+    /// to the canvas so the Bench reflects the saved metadata without waiting for a window
+    /// activation. Thin routing only — the actual apply/refresh lives on the canvas.
+    /// </summary>
+    private void OnWorkflowDataSaved(object? sender, WorkflowSavedEventArgs e)
+        => Canvas?.ApplyWorkflowSaved(e.WorkflowId, e.WorkflowName, e.Description);
 
     /// <summary>
     /// Unsubscribes the language handler. Called when the owning <see cref="BenchWindow"/>
@@ -284,6 +293,7 @@ internal class BenchViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         _eventService.Unsubscribe(EventNames.LanguageChanged, OnLanguageChanged);
+        _eventService.Unsubscribe<WorkflowSavedEventArgs>(EventNames.WorkflowDataSaved, OnWorkflowDataSaved);
     }
 
     /// <summary>Called for every canvas/config edit: dirty state + header-derived state refresh.</summary>

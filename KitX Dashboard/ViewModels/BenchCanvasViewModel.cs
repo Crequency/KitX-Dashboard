@@ -722,6 +722,31 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         RefreshValidation();
     }
 
+    /// <summary>
+    /// Applies metadata saved by the workflow editor (the global
+    /// <c>EventNames.WorkflowDataSaved</c> event) to the matching workflow in the active
+    /// config, then re-projects the canvas so the node label reflects the new name.
+    /// No-op when the workflow id is not part of this ToolKit (e.g. a global/standalone
+    /// workflow). <see cref="Rebuild"/> preserves node locations and the current selection
+    /// (matched by <see cref="BenchNodeVM.ConfigId"/>), so an in-progress edit is untouched.
+    /// </summary>
+    internal void ApplyWorkflowSaved(string workflowId, string? name, string? description)
+    {
+        var workflow = _toolkit.Workflows.FirstOrDefault(w => w.Id == workflowId);
+        if (workflow is null)
+            return;
+
+        var changed = false;
+        if (!string.IsNullOrWhiteSpace(name) && workflow.Name != name)
+        {
+            workflow.Name = name;
+            changed = true;
+        }
+
+        if (changed)
+            Rebuild();
+    }
+
     private void AddSourceNode(Trigger trigger, int index)
     {
         var node = new BenchNodeVM(trigger.Id, BenchNodeKind.Source, SourceKindLabel(trigger), trigger.Id,
@@ -1240,9 +1265,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     /// <summary>Raised when the user asks to open the v6 editor for a workflow.</summary>
     public event Action<ToolkitWorkflow>? EditWorkflowRequested;
 
-    /// <summary>Raised after a workflow was created (host logs / focuses).</summary>
-    public event Action<ToolkitWorkflow>? WorkflowCreated;
-
     [RelayCommand]
     private void RunPaletteItem(BenchPaletteItemVM? item)
     {
@@ -1317,7 +1339,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         NewWorkflowName = string.Empty;
         RefreshPalette();
         LastError = null;
-        WorkflowCreated?.Invoke(workflow);
         NotifyEdited();
     }
 
