@@ -53,6 +53,11 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private readonly IWorkflowRunner _runner;
     private CancellationTokenSource? _cancellationTokenSource;
     private RealBlueprintDebugger? _debugController;
+
+    // Debounced constant-parse + periodic auto-save scheduling (B1: moved out of the
+    // window code-behind into the VM so the timing logic is testable and UI-free).
+    private CancellationTokenSource? _debounceCts;
+    private CancellationTokenSource? _autoSaveCts;
     private bool _isDebugging;
     private bool _isPaused;
 
@@ -402,6 +407,30 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     {
         foreach (var c in VariableConstants) c.UserValue = c.DefaultValue;
         OnPropertyChanged(nameof(VariableConstants));
+    }
+
+    // ── Helper Function parameter collection ops (B1: moved out of the window
+    // code-behind into VM commands so the view binds them in XAML) ──
+
+    [RelayCommand]
+    private void AddParameter()
+    {
+        if (SelectedHelperFunction == null) return;
+        var newParam = new HelperFunctionParameter
+        {
+            Name = $"param{SelectedHelperFunction.Parameters.Count + 1}",
+            Type = "object"
+        };
+        Parameters.Add(newParam);
+        SelectedHelperFunction.Parameters.Add(newParam);
+    }
+
+    [RelayCommand]
+    private void RemoveParameter(HelperFunctionParameter? param)
+    {
+        if (param == null || SelectedHelperFunction == null) return;
+        Parameters.Remove(param);
+        SelectedHelperFunction.Parameters.Remove(param);
     }
 
     /// <summary>
@@ -872,6 +901,79 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
     }
 
+    // ── Load from storage / file (B1: moved out of the window code-behind) ──
+
+    /// <summary>
+    /// Loads a v6 workflow from global workflow storage by its ID, deserialises its
+    /// IrData and renders it into the editor. The view then mirrors KsSource /
+    /// VariableConstants onto the editor controls (see the window's forwarding wrapper).
+    /// </summary>
+    public async Task LoadWorkflowAsync(string workflowId)
+    {
+        if (_storageService == null)
+        {
+            StatusText = "Storage service unavailable";
+            return;
+        }
+
+        var kcs = await _storageService.LoadWorkflowDataAsync(workflowId);
+        if (kcs == null)
+        {
+            StatusText = $"Workflow not found: {workflowId}";
+            return;
+        }
+        if (kcs.IrVersion != "v6")
+        {
+            StatusText = $"Not a v6 workflow (IrVersion={kcs.IrVersion ?? "null"})";
+            return;
+        }
+
+        try
+        {
+            var ir = KitX.WorkflowV6.Serialization.WorkflowSerializer.Deserialize(kcs.IrData);
+            SetWorkflowId(workflowId);
+            LoadFromIr(ir, kcs.Name, kcs);
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Failed to load v6 IR: {ex.Message}";
+        }
+    }
+
+    /// <summary>Loads a ToolKit-bundled workflow by explicit file path (Bench UX v2 C5).</summary>
+    public async Task LoadWorkflowFileAsync(string filePath)
+    {
+        if (_fileStore == null)
+        {
+            StatusText = "File store unavailable";
+            return;
+        }
+
+        var kcs = await _fileStore.LoadAsync(filePath);
+        if (kcs == null)
+        {
+            StatusText = $"Workflow not found: {filePath}";
+            return;
+        }
+        if (kcs.IrVersion != "v6")
+        {
+            StatusText = $"Not a v6 workflow (IrVersion={kcs.IrVersion ?? "null"})";
+            return;
+        }
+
+        try
+        {
+            var ir = KitX.WorkflowV6.Serialization.WorkflowSerializer.Deserialize(kcs.IrData);
+            SetWorkflowId(kcs.Id);
+            SetWorkflowFilePath(filePath);
+            LoadFromIr(ir, kcs.Name, kcs);
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Failed to load v6 IR: {ex.Message}";
+        }
+    }
+
     // ── Save ──
 
     /// <summary>
@@ -970,6 +1072,79 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             StatusText = $"Save failed: {ex.Message}";
             Log.Error(ex, "[WorkflowEditorVMV6] SaveAsync failed");
         }
+    }
+
+    // ── Debounced constant parse + auto-save scheduling (B1) ──
+    //
+    // Moved out of the window code-behind so the timing/parsing logic lives in the VM
+    // (UI-free, testable). The view's TextChanged handler is a pure UI hook: it routes
+    // text to KsSource and forwards the edit here. Constants stay 500 ms debounced;
+    // auto-save keeps its 3 s self-rescheduling loop for the window's lifetime.
+
+    /// <summary>
+    /// Called from the editor's TextChanged UI hook for the MAIN PROGRAM context (after
+    /// the view has already written the new text to <see cref="KsSource"/>). Debounces
+    /// constant parsing to 500 ms (re-parsing from the live editor text via
+    /// <see cref="EditorTextProvider"/>) and schedules the periodic auto-save.
+    /// </summary>
+    public void OnMainProgramTextEdited(string doc)
+    {
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+        _ = Task.Delay(500, token).ContinueWith(t =>
+        {
+            if (t.IsCanceled) return;
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (token.IsCancellationRequested) return;
+                // Read the LIVE editor text at fire time (not the stale captured doc) —
+                // equivalent to the old code-behind that re-read the document here.
+                var live = EditorTextProvider?.Invoke();
+                if (live != null) ParseConstantsFromCode(live);
+            });
+        }, token);
+
+        ScheduleAutoSave();
+    }
+
+    /// <summary>
+    /// Periodic dirty check (3 s interval, self-rescheduling). Runs for the whole window
+    /// lifetime; cancelled on close via <see cref="SaveOnCloseAsync"/>.
+    /// </summary>
+    private void ScheduleAutoSave()
+    {
+        _autoSaveCts?.Cancel();
+        _autoSaveCts = new CancellationTokenSource();
+        var token = _autoSaveCts.Token;
+        _ = Task.Delay(3000, token).ContinueWith(t =>
+        {
+            if (t.IsCanceled) return;
+            Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                if (IsDirty)
+                    await SaveAsync();
+                // Self-reschedule: keep watching for edits for the window's lifetime.
+                if (!token.IsCancellationRequested)
+                    ScheduleAutoSave();
+            });
+        }, token);
+    }
+
+    /// <summary>
+    /// Save-on-close (D4): stops the auto-save loop and the pending debounce, then saves
+    /// when dirty. Returns true when a save was needed — the view uses this to cancel the
+    /// close and re-issue it after the (synchronous-from-the-user's-perspective) save.
+    /// <see cref="SaveAsync"/> swallows its own errors, so no exception can escape and
+    /// wedge the close path.
+    /// </summary>
+    public async Task<bool> SaveOnCloseAsync()
+    {
+        _autoSaveCts?.Cancel();
+        _debounceCts?.Cancel();
+        if (!IsDirty) return false;
+        await SaveAsync();
+        return true;
     }
 
     /// <summary>Sets the workflow ID (called by LoadWorkflowAsync in the window code-behind).</summary>

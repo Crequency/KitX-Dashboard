@@ -457,6 +457,7 @@
                                        VerticalAlignment="Center" />
                             <Button Name="ResetAllConstantsButton"
                                     Content="Reset All"
+                                    Command="{Binding ResetAllConstantsCommand}"
                                     Margin="10,0,0,0" Padding="5,2" />
                         </StackPanel>
 
@@ -490,7 +491,8 @@
                                                      Margin="5,0" />
                                             <Button Grid.Column="2"
                                                     Content="R"
-                                                    Tag="{Binding}"
+                                                    Command="{Binding DataContext.ResetConstantCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
                                                     ToolTip.Tip="Reset to default"
                                                     Padding="5,2" />
                                         </Grid>
@@ -511,6 +513,7 @@
                                     <TextBlock Text="Params:" VerticalAlignment="Center" Width="60" />
                                     <Button Name="AddParameterButton"
                                             Content="Add Parameter" Padding="5,2"
+                                            Command="{Binding AddParameterCommand}"
                                             ToolTip.Tip="Add a new parameter" />
                                 </StackPanel>
                                 <ItemsControl Name="ParametersItemsControl" Margin="0,5,0,0"
@@ -523,7 +526,8 @@
                                                 <TextBox Text="{Binding Name, Mode=TwoWay}"
                                                          Width="70" ToolTip.Tip="Parameter name" />
                                                 <Button Content="X" Padding="5,2"
-                                                        Tag="{Binding}" ToolTip.Tip="Remove parameter" />
+                                                        Command="{Binding DataContext.RemoveParameterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}" ToolTip.Tip="Remove parameter" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>

@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -18,14 +17,11 @@ using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
 using KitX.Core.Contract.Workflow;
 using KitX.Dashboard.ViewModels;
-using KitX.ToolKit.Contracts;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
-using KitX.WorkflowV6.Serialization;
 using NodifyM.Avalonia;
 using Serilog;
 using TextMateSharp.Grammars;
-using V6Workflow = KitX.WorkflowV6.Ir.Workflow;
 
 namespace KitX.Dashboard.Views;
 
@@ -50,8 +46,6 @@ public partial class WorkflowEditorWindowV6 : Window
     private readonly WorkflowEditorViewModelV6 _viewModel;
     private EditorContext _context = EditorContext.MainProgram;
     private bool _textChangedWired;
-    private CancellationTokenSource? _debounceCts;
-    private CancellationTokenSource? _autoSaveCts;
 
     public WorkflowEditorWindowV6()
     {
@@ -116,70 +110,27 @@ public partial class WorkflowEditorWindowV6 : Window
 
     public async Task LoadWorkflowAsync(string workflowId)
     {
-        var storage = App.GetService<KitX.Core.Contract.Workflow.IWorkflowStorageService>();
-        var kcs = await storage.LoadWorkflowDataAsync(workflowId);
-        if (kcs == null)
-        {
-            _viewModel.StatusText = $"Workflow not found: {workflowId}";
-            return;
-        }
-        if (kcs.IrVersion != "v6")
-        {
-            _viewModel.StatusText = $"Not a v6 workflow (IrVersion={kcs.IrVersion ?? "null"})";
-            return;
-        }
-
-        try
-        {
-            var ir = WorkflowSerializer.Deserialize(kcs.IrData);
-            _viewModel.SetWorkflowId(workflowId);
-            _viewModel.LoadFromIr(ir, kcs.Name, kcs);
-
-            SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
-
-            var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
-            if (constantsItemsControl != null)
-                constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
-        }
-        catch (Exception ex)
-        {
-            _viewModel.StatusText = $"Failed to load v6 IR: {ex.Message}";
-        }
+        // B1: business logic (storage load + IR deserialisation) lives in the VM; the
+        // view keeps the name so external callers (BenchViewModel) are unchanged, then
+        // re-syncs the editor controls to the loaded state.
+        await _viewModel.LoadWorkflowAsync(workflowId);
+        SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
+        RefreshConstantsPanel();
     }
 
     /// <summary>Loads a ToolKit-bundled workflow by explicit file path (Bench UX v2 C5).</summary>
     public async Task LoadWorkflowFileAsync(string filePath)
     {
-        // TODO(B1): move into VM
-        var kcs = await App.GetService<IToolkitWorkflowFileStore>().LoadAsync(filePath);
-        if (kcs == null)
-        {
-            _viewModel.StatusText = $"Workflow not found: {filePath}";
-            return;
-        }
-        if (kcs.IrVersion != "v6")
-        {
-            _viewModel.StatusText = $"Not a v6 workflow (IrVersion={kcs.IrVersion ?? "null"})";
-            return;
-        }
+        await _viewModel.LoadWorkflowFileAsync(filePath);
+        SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
+        RefreshConstantsPanel();
+    }
 
-        try
-        {
-            var ir = WorkflowSerializer.Deserialize(kcs.IrData);
-            _viewModel.SetWorkflowId(kcs.Id);
-            _viewModel.SetWorkflowFilePath(filePath);
-            _viewModel.LoadFromIr(ir, kcs.Name, kcs);
-
-            SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
-
-            var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
-            if (constantsItemsControl != null)
-                constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
-        }
-        catch (Exception ex)
-        {
-            _viewModel.StatusText = $"Failed to load v6 IR: {ex.Message}";
-        }
+    private void RefreshConstantsPanel()
+    {
+        var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
+        if (constantsItemsControl != null)
+            constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
     }
 
     public void LoadSource(string ksSource)
@@ -292,8 +243,9 @@ public partial class WorkflowEditorWindowV6 : Window
     }
 
     /// <summary>
-    /// The single editor TextChanged handler. Routes by current context, and — for the
-    /// main program — refreshes KsSource, debounced constant parsing, and auto-save.
+    /// The single editor TextChanged handler. Pure UI hook: routes by current context and,
+    /// for the main program, writes the new text to KsSource then forwards the debounced
+    /// constant parsing + auto-save scheduling to the VM (B1).
     /// </summary>
     private void OnEditorTextChanged(object? sender, EventArgs e)
     {
@@ -308,25 +260,7 @@ public partial class WorkflowEditorWindowV6 : Window
         }
 
         _viewModel.KsSource = doc;
-
-        // Debounced constant parsing (500ms).
-        _debounceCts?.Cancel();
-        _debounceCts = new CancellationTokenSource();
-        var token = _debounceCts.Token;
-        _ = Task.Delay(500, token).ContinueWith(t =>
-        {
-            if (t.IsCanceled) return;
-            Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                if (codeEditor.Document == null) return;
-                _viewModel.ParseConstantsFromCode(codeEditor.Document.Text);
-                var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
-                if (constantsItemsControl != null)
-                    constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
-            });
-        }, token);
-
-        ScheduleAutoSave();
+        _viewModel.OnMainProgramTextEdited(doc);
     }
 
     // ── Helper Functions wiring ──
@@ -431,70 +365,15 @@ public partial class WorkflowEditorWindowV6 : Window
 
     private void WireUpConstants()
     {
+        // B1: Reset All / Add Parameter / reset-constant / remove-parameter are now VM
+        // RelayCommands bound directly in XAML. The panel's ItemsControl ItemsSource is
+        // still set here (it is not XAML-bound); the constants refresh on collection
+        // changes, and Reset All / reset-constant drive a re-bind via
+        // OnViewModelPropertyChanged (VariableConstant.UserValue has no per-item
+        // notification).
         var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
         if (constantsItemsControl != null)
             constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
-
-        var resetAllBtn = this.FindControl<Button>("ResetAllConstantsButton");
-        if (resetAllBtn != null)
-            resetAllBtn.Click += OnResetAllConstants;
-
-        var addParamBtn = this.FindControl<Button>("AddParameterButton");
-        if (addParamBtn != null)
-            addParamBtn.Click += OnAddParameter;
-
-        AddHandler(Button.ClickEvent, OnConstantsButtonClick);
-    }
-
-    private void OnResetAllConstants(object? sender, RoutedEventArgs e)
-    {
-        _viewModel.ResetAllConstantsCommand.Execute(null);
-        var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
-        if (constantsItemsControl != null)
-        {
-            constantsItemsControl.ItemsSource = null;
-            constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
-        }
-    }
-
-    private void OnAddParameter(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel.SelectedHelperFunction != null)
-        {
-            var newParam = new HelperFunctionParameter
-            {
-                Name = $"param{_viewModel.SelectedHelperFunction.Parameters.Count + 1}",
-                Type = "object"
-            };
-            _viewModel.Parameters.Add(newParam);
-            _viewModel.SelectedHelperFunction.Parameters.Add(newParam);
-        }
-    }
-
-    private void OnConstantsButtonClick(object? sender, RoutedEventArgs e)
-    {
-        if (e.Source is not Button button) return;
-
-        // Reset constant button
-        if (button.Tag is VariableConstant constant && button.Content?.ToString() == "R")
-        {
-            _viewModel.ResetConstantCommand.Execute(constant);
-            var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
-            if (constantsItemsControl != null)
-            {
-                constantsItemsControl.ItemsSource = null;
-                constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
-            }
-        }
-        // Remove parameter button
-        else if (button.Tag is HelperFunctionParameter param && button.Content?.ToString() == "X")
-        {
-            if (_viewModel.SelectedHelperFunction != null)
-            {
-                _viewModel.Parameters.Remove(param);
-                _viewModel.SelectedHelperFunction.Parameters.Remove(param);
-            }
-        }
     }
 
     // ── Mode switch synchronization ──
@@ -620,34 +499,27 @@ public partial class WorkflowEditorWindowV6 : Window
                     scrollViewer.ScrollToEnd();
             });
         }
-    }
 
-    // ── Auto-save ──
-
-    /// <summary>
-    /// Periodic dirty check (3 s interval, self-rescheduling). Runs for the whole
-    /// window lifetime — a single fire at construction (the old behaviour) would only
-    /// ever auto-save once, leaving every later edit to the window-close path.
-    /// Cancelled on window closing (OnWindowClosing) so the loop stops cleanly.
-    /// </summary>
-    private void ScheduleAutoSave()
-    {
-        _autoSaveCts?.Cancel();
-        _autoSaveCts = new CancellationTokenSource();
-        var token = _autoSaveCts.Token;
-        _ = Task.Delay(3000, token).ContinueWith(t =>
+        // B1: the constants panel's ItemsControl is set programmatically (not XAML-bound),
+        // and VariableConstant.UserValue carries no per-item change notification. Reset
+        // Constant / Reset All mutate UserValue in place and raise VariableConstants —
+        // re-bind here so the reset reflects immediately.
+        if (e.PropertyName == nameof(WorkflowEditorViewModelV6.VariableConstants))
         {
-            if (t.IsCanceled) return;
-            Dispatcher.UIThread.InvokeAsync(async () =>
+            var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
+            if (constantsItemsControl != null)
             {
-                if (_viewModel.IsDirty)
-                    await _viewModel.SaveAsync();
-                // Self-reschedule: keep watching for edits for the window's lifetime.
-                if (!token.IsCancellationRequested)
-                    ScheduleAutoSave();
-            });
-        }, token);
+                constantsItemsControl.ItemsSource = null;
+                constantsItemsControl.ItemsSource = _viewModel.VariableConstants;
+            }
+        }
     }
+
+    // ── Save-then-close (B1) ──
+    //
+    // The periodic auto-save loop and the save-on-close business logic live in the VM
+    // (ScheduleAutoSave / SaveOnCloseAsync). The Closing event is a pure UI hook that
+    // only decides whether to cancel + re-issue the close around a VM save.
 
     /// <summary>
     /// True while the close path is inside the save-then-close sequence; lets the
@@ -661,19 +533,16 @@ public partial class WorkflowEditorWindowV6 : Window
         if (_closingAfterSave)
             return;
 
-        _autoSaveCts?.Cancel();
-        _debounceCts?.Cancel();
-
         // D4: an async void handler cannot extend the close — the window is already
         // gone when SaveAsync completes, so a quick reopen may read the stale file.
         // Cancel the close, save synchronously from the user's perspective, then
         // close again (guarded against re-entry). SaveAsync swallows its own errors,
         // so no exception can escape and wedge the close path.
-        if (_viewModel.IsDirty)
+        var neededSave = await _viewModel.SaveOnCloseAsync();
+        if (neededSave)
         {
             e.Cancel = true;
             _closingAfterSave = true;
-            await _viewModel.SaveAsync();
             Close();
         }
     }
