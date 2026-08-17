@@ -18,6 +18,7 @@ using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
 using KitX.Core.Contract.Workflow;
 using KitX.Dashboard.ViewModels;
+using KitX.ToolKit.Contracts;
 using KitX.WorkflowV6.Lens.BpGraphLens;
 using KitX.WorkflowV6.Lens.KsTextLens;
 using KitX.WorkflowV6.Serialization;
@@ -149,7 +150,8 @@ public partial class WorkflowEditorWindowV6 : Window
     /// <summary>Loads a ToolKit-bundled workflow by explicit file path (Bench UX v2 C5).</summary>
     public async Task LoadWorkflowFileAsync(string filePath)
     {
-        var kcs = await Services.ToolkitWorkflowFileService.LoadAsync(filePath);
+        // TODO(B1): move into VM
+        var kcs = await App.GetService<IToolkitWorkflowFileStore>().LoadAsync(filePath);
         if (kcs == null)
         {
             _viewModel.StatusText = $"Workflow not found: {filePath}";

@@ -8,6 +8,7 @@ using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Plugin;
+using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Models;
 using KitX.ToolKit.Validation;
 using NodifyM.Avalonia.ViewModelBase;
@@ -27,6 +28,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     private readonly Toolkit _toolkit;
     private readonly IPluginService? _pluginService;
+    private IToolkitWorkflowFileStore? _fileStore;
     private readonly Dictionary<BenchNodeVM, object> _nodeConfig = new();
     private readonly Dictionary<BenchConnectorVM, (BenchNodeVM node, string pin)> _connectorInfo = new();
     private int _sourceCount;
@@ -36,10 +38,11 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     private bool _isEdgeMode;
     private readonly Dictionary<UiControl, BenchUiControlVM> _panelControlPreviewVMs = new();
 
-    public BenchCanvasViewModel(Toolkit toolkit, IPluginService? pluginService = null)
+    public BenchCanvasViewModel(Toolkit toolkit, IPluginService? pluginService = null, IToolkitWorkflowFileStore? fileStore = null)
     {
         _toolkit = toolkit ?? throw new ArgumentNullException(nameof(toolkit));
         _pluginService = pluginService;
+        _fileStore = fileStore;
         ToolkitInspector = new BenchToolkitInspectorVM(toolkit, pluginService, NotifyEdited);
         SelectedNodes.CollectionChanged += (_, _) =>
             SelectedNode = SelectedNodes.OfType<BenchNodeVM>().FirstOrDefault();
@@ -1290,7 +1293,12 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         var workflow = new ToolkitWorkflow { Id = id, Name = name, File = file };
         try
         {
-            await Services.ToolkitWorkflowFileService.WriteMinimalWorkflowAsync(_toolkit, workflow);
+            if (_fileStore is null)
+            {
+                SetError("文件存储服务未注入，无法创建工作流文件");
+                return;
+            }
+            await _fileStore.WriteMinimalWorkflowAsync(_toolkit.GetId(), workflow, _toolkit.Meta.Author);
         }
         catch (Exception ex)
         {

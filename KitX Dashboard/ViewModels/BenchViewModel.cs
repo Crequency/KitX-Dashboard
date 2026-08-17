@@ -27,6 +27,7 @@ internal class BenchViewModel : ViewModelBase, IDisposable
     private readonly IToolkitService _toolkitService;
     private readonly IBenchService _benchService;
     private readonly IEventService _eventService;
+    private readonly IToolkitWorkflowFileStore _fileStore;
 
     private bool _isDirty;
     private Trigger? _selectedManualTrigger;
@@ -37,17 +38,19 @@ internal class BenchViewModel : ViewModelBase, IDisposable
         IToolkitService toolkitService,
         IBenchService benchService,
         IEventService eventService,
-        IPluginService pluginService)
+        IPluginService pluginService,
+        IToolkitWorkflowFileStore fileStore)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;
         _eventService = eventService;
+        _fileStore = fileStore;
 
         ActiveToolkit = UIStateService.BenchToolkit;
         Workflows = ActiveToolkit?.Workflows ?? [];
         Triggers = ActiveToolkit?.Triggers ?? [];
         ManualTriggers = Triggers.Where(t => t.Type == TriggerType.Manual).ToList();
-        Canvas = ActiveToolkit is null ? null : new BenchCanvasViewModel(ActiveToolkit, pluginService);
+        Canvas = ActiveToolkit is null ? null : new BenchCanvasViewModel(ActiveToolkit, pluginService, _fileStore);
         if (Canvas is not null)
         {
             Canvas.ConfigEdited += OnCanvasEdited;
@@ -301,7 +304,7 @@ internal class BenchViewModel : ViewModelBase, IDisposable
     private void OpenWorkflowEditor(ToolkitWorkflow workflow)
     {
         var toolkitId = ActiveToolkit?.GetId() ?? string.Empty;
-        var filePath = Services.ToolkitWorkflowFileService.ResolveWorkflowPath(toolkitId, workflow.File);
+        var filePath = _fileStore.ResolveWorkflowPath(toolkitId, workflow.File);
         var key = workflow.Id;
 
         if (UIStateService.WorkflowEditorWindows.TryGetValue(key, out var existing) && existing is { IsVisible: true })

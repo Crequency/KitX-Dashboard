@@ -13,6 +13,7 @@ using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Workflow;
 using KitX.Dashboard.Services;
+using KitX.ToolKit.Contracts;
 using KitX.WorkflowV6.Backend.Debugging;
 using KitX.WorkflowV6.Builtin;
 using KitX.WorkflowV6.Ir;
@@ -43,6 +44,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     public enum EditorMode { BlockScript, Blueprint }
 
     private readonly IWorkflowStorageService _storageService;
+    private readonly IToolkitWorkflowFileStore _fileStore;
     private readonly IEventService _eventService;
     private readonly IPluginServer _pluginServer;
     private readonly IConfigService _configService;
@@ -115,13 +117,15 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         IWorkflowRunner runner,
         IWorkflowStorageService storageService,
         IEventService eventService,
-        IConfigService configService)
+        IConfigService configService,
+        IToolkitWorkflowFileStore fileStore)
     {
         _ksTextLens = ksTextLens ?? throw new ArgumentNullException(nameof(ksTextLens));
         _bpGraphLens = bpGraphLens ?? throw new ArgumentNullException(nameof(bpGraphLens));
         _pluginServer = pluginServer;
         _runner = runner;
         _storageService = storageService;
+        _fileStore = fileStore;
         _eventService = eventService;
         _configService = configService;
 
@@ -950,7 +954,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             };
 
             if (_workflowFilePath is not null)
-                await Services.ToolkitWorkflowFileService.SaveAsync(_workflowFilePath, data);
+                await _fileStore.SaveAsync(_workflowFilePath, data);
             else
                 await _storageService.SaveWorkflowDataAsync(_workflowId, data);
             IsDirty = false;
