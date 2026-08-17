@@ -129,21 +129,6 @@ public partial class App : Application
         // OnReceiveExchangeDeviceKey before any exchange request can arrive.
         _ = provider.GetRequiredService<IDeviceKeyExchangeUi>();
 
-        // Initialize the workflow library's own service locator with the same provider,
-        // so workflow code created outside DI (builtin functions, lazy singletons) can
-        // resolve shared services (IPluginService, IDeviceServer, workflow services, ...).
-        //
-        // Phase 12-prep: legacy KitX.Workflow.Hosting.ServiceLocator archived; v6 runs
-        // fully through the DI container. Workflow eager-resolution is intentionally disabled.
-        // KitX.Workflow.Hosting.ServiceLocator.Initialize(provider);
-
-        // Pre-resolve the plugin manager bridge to force eager singleton construction
-        // (the concrete RealPluginManager subscribes to plugin events in its ctor).
-        // Phase 12-prep: bridge no longer registered (old lib archived). Re-enable when
-        // the new library's RealPluginManager equivalent is wired.
-        // var rpm = provider.GetRequiredService<IRealPluginManagerBridge>();
-        // Log.Information("RealPluginManager pre-resolved. HashCode: {HashCode}", rpm.GetHashCode());
-
         // NOTE: no startup trigger re-subscription — a workflow is armed ONLY while the
         // user keeps it Running (Run=register, Stop=unregister). The old
         // InitializeFromPersistedWorkflows silently armed every saved PluginEvent

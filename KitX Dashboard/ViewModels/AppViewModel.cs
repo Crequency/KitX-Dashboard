@@ -196,7 +196,7 @@ internal class AppViewModel : ViewModelBase
         // Subscribe to announcement events to show announcement window
         _announcementService.NewAnnouncementsAvailable += (_, e) =>
         {
-            // Convert IAnnouncement list to Dictionary<string, string> format (Legacy compatible)
+            // Convert IAnnouncement list to Dictionary<string, string> format for the announcement window
             var src = new System.Collections.Generic.Dictionary<string, string>();
             foreach (var announcement in e.Announcements)
             {

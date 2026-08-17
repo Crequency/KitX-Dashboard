@@ -35,7 +35,7 @@ namespace KitX.Dashboard.ViewModels;
 //   • WorkflowSerializer (v6 IR) instead of IrSerializer (v5 IR)
 //   • V6 Constant record uses InitialValueExpression (not V5 IrConstant.DefaultValue)
 //   • IrVersion = "v6" in KcsFileFormat
-//   • Run/Save use v6 backend (P4); currently stubs for Run, basic save implemented
+//   • Run/Save use v6 backend (P4); RunAsync fully implemented (Roslyn compile + execute + cancel), save fully implemented
 // ─────────────────────────────────────────────────────────────────────────────
 
 internal partial class WorkflowEditorViewModelV6 : ObservableObject
