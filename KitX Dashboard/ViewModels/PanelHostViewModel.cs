@@ -6,6 +6,7 @@ using System.Reactive;
 using System.Text.Json;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
+using KitX.Dashboard.Services;
 using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Contracts.Events;
 using KitX.ToolKit.Models;
@@ -52,6 +53,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     private readonly IBenchService _benchService;
     private readonly IPanelRuntime _panelRuntime;
     private readonly IEventService _eventService;
+    private readonly IWindowService? _windowService;
     private readonly int _panelLogLimit;
 
     private readonly ObservableCollection<InstanceSnapshot> _instances = [];
@@ -78,12 +80,13 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
 
     /// <param name="configService">Optional config provider for the per-control Log ring
     /// cap. Left null (headless tests) it falls back to the configured default.</param>
-    public PanelHostViewModel(IToolkitService toolkitService, IBenchService benchService, IPanelRuntime panelRuntime, IEventService eventService, IConfigService? configService = null)
+    public PanelHostViewModel(IToolkitService toolkitService, IBenchService benchService, IPanelRuntime panelRuntime, IEventService eventService, IWindowService? windowService = null, IConfigService? configService = null)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;
         _panelRuntime = panelRuntime;
         _eventService = eventService;
+        _windowService = windowService;
         _panelLogLimit = configService?.AppConfig.Performance.PanelLogLimit ?? 1000;
 
         InitCommands();
@@ -297,10 +300,11 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             var toolkit = SelectedInstance is null
                 ? null
                 : _toolkitService.GetToolkit(SelectedInstance.ToolkitId);
+            var windowService = _windowService ?? App.GetService<IWindowService>();
             if (toolkit is not null)
-                Services.UIStateService.OpenBenchWindow(toolkit);
+                windowService.OpenBenchWindow(toolkit);
             else
-                Services.UIStateService.ShowWindow(new Views.BenchWindow(), Services.UIStateService.MainWindow);
+                windowService.ShowWindow(new Views.BenchWindow(), windowService.MainWindow);
         });
 
         TogglePickerCommand = ReactiveCommand.Create(() =>

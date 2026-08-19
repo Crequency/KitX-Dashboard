@@ -223,7 +223,7 @@ public static class AppFramework
             {
                 Dispatcher.UIThread.Post(() =>
                 {
-                    UIStateService.PluginsLaunchWindow = new();
+                    App.GetService<IWindowService>().PluginsLaunchWindow = new();
                 });
             }
         );

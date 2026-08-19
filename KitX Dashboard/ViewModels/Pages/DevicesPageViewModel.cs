@@ -23,6 +23,7 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
     private readonly IDeviceServer _devicesServer;
     private readonly IDeviceConnectionClient _connectionClient;
     private readonly IDeviceKeyExchangeUi _keyExchangeUi;
+    private readonly IGlobalDataStore _dataStore;
 
     public DevicesPageViewModel(
         IDeviceDiscoveryService discoveryService,
@@ -31,7 +32,8 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
         IDeviceKeyService securityService,
         IDeviceServer devicesServer,
         IDeviceConnectionClient connectionClient,
-        IDeviceKeyExchangeUi keyExchangeUi)
+        IDeviceKeyExchangeUi keyExchangeUi,
+        IGlobalDataStore dataStore)
     {
         _discoveryService = discoveryService;
         _networkService = networkService;
@@ -40,6 +42,10 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
         _devicesServer = devicesServer;
         _connectionClient = connectionClient;
         _keyExchangeUi = keyExchangeUi;
+        _dataStore = dataStore;
+
+        DevicesCount = DeviceCases.Count.ToString();
+        NoDevice_TipHeight = DeviceCases.Count == 0 ? 300 : 0;
 
         InitCommands();
 
@@ -181,7 +187,7 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
         NoDevice_TipHeight = _displayedDeviceCases.Count == 0 ? 300 : 0;
     }
 
-    internal string devicesCount = DeviceCases.Count.ToString();
+    internal string devicesCount = "0";
 
     internal string DevicesCount
     {
@@ -189,7 +195,7 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
         set => this.RaiseAndSetIfChanged(ref devicesCount, value);
     }
 
-    internal double noDevice_TipHeight = DeviceCases.Count == 0 ? 300 : 0;
+    internal double noDevice_TipHeight = 0;
 
     internal double NoDevice_TipHeight
     {
@@ -197,7 +203,7 @@ internal class DevicesPageViewModel : ViewModelBase, IDisposable
         set => this.RaiseAndSetIfChanged(ref noDevice_TipHeight, value);
     }
 
-    internal static ObservableCollection<IDeviceCase> DeviceCases => UIStateService.DeviceCases;
+    internal ObservableCollection<IDeviceCase> DeviceCases => _dataStore.DeviceCases;
 
     internal ReactiveCommand<Unit, Task>? RestartDevicesServerCommand { get; set; }
 

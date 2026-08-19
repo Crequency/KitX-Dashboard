@@ -29,6 +29,7 @@ internal class PluginBarViewModel : ViewModelBase, IDisposable
     private readonly IEventService _eventService;
     private readonly IPluginService _pluginService;
     private readonly IPluginServer _pluginServer;
+    private readonly IWindowService _windowService;
 
     /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
     private readonly EventHandler<EventArgs> _languageChangedHandler;
@@ -37,12 +38,14 @@ internal class PluginBarViewModel : ViewModelBase, IDisposable
         IConfigService configService,
         IEventService eventService,
         IPluginService pluginService,
-        IPluginServer pluginServer)
+        IPluginServer pluginServer,
+        IWindowService windowService)
     {
         _configService = configService;
         _eventService = eventService;
         _pluginService = pluginService;
         _pluginServer = pluginServer;
+        _windowService = windowService;
 
         _languageChangedHandler = (_, _) => this.RaisePropertyChanged(nameof(DisplayName));
 
@@ -54,10 +57,10 @@ internal class PluginBarViewModel : ViewModelBase, IDisposable
     {
         ViewDetailsCommand = ReactiveCommand.Create(() =>
         {
-            if (Plugin is not null && UIStateService.MainWindow is not null)
+            if (Plugin is not null && _windowService.MainWindow is not null)
                 new PluginDetailWindow() { WindowStartupLocation = WindowStartupLocation.CenterOwner }
                     .SetPluginInfo(Plugin.PluginInfo!)
-                    .Show(UIStateService.MainWindow);
+                    .Show(_windowService.MainWindow);
         });
 
         // D6: Remove/Delete differ only in the order of UI removal vs. file deletion.

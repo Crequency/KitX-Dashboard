@@ -50,6 +50,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private readonly KsTextLens _ksTextLens;
     private readonly BpGraphLens _bpGraphLens;
     private readonly IWorkflowRunner _runner;
+    private readonly IWindowService? _windowService;
     private CancellationTokenSource? _cancellationTokenSource;
     private RealBlueprintDebugger? _debugController;
 
@@ -115,7 +116,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         IWorkflowRunner runner,
         IEventService eventService,
         IConfigService configService,
-        IToolkitWorkflowFileStore fileStore)
+        IToolkitWorkflowFileStore fileStore,
+        IWindowService? windowService = null)
     {
         _ksTextLens = ksTextLens ?? throw new ArgumentNullException(nameof(ksTextLens));
         _bpGraphLens = bpGraphLens ?? throw new ArgumentNullException(nameof(bpGraphLens));
@@ -124,6 +126,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         _fileStore = fileStore;
         _eventService = eventService;
         _configService = configService;
+        _windowService = windowService;
 
         BlueprintVM = new BlueprintEditorViewModelV6(_bpGraphLens, registry, pluginServer);
 
@@ -969,7 +972,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     [RelayCommand]
     private void ShowDashboard()
     {
-        Services.UIStateService.MainWindow?.Activate();
+        (_windowService ?? App.GetService<IWindowService>()).MainWindow?.Activate();
     }
 
     // ── Toolbar commands ──

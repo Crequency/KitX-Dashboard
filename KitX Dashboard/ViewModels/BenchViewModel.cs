@@ -18,7 +18,7 @@ namespace KitX.Dashboard.ViewModels;
 /// <summary>
 /// ViewModel for the Bench orchestration window (the <b>workbench</b> — the design surface).
 /// Shows the config of the ToolKit selected on the management page (read from
-/// <see cref="UIStateService.BenchToolkit"/>), hosts the editable canvas
+/// <see cref="IWindowService.BenchToolkit"/>), hosts the editable canvas
 /// (<see cref="BenchCanvasViewModel"/>), saves via <see cref="IToolkitService.UpdateToolkit"/>
 /// (hard validation), and spawns a manual run via <see cref="IBenchService"/>.
 /// </summary>
@@ -28,6 +28,7 @@ internal class BenchViewModel : ViewModelBase, IDisposable
     private readonly IBenchService _benchService;
     private readonly IEventService _eventService;
     private readonly IToolkitWorkflowFileStore _fileStore;
+    private readonly IWindowService _windowService;
 
     private bool _isDirty;
     private Trigger? _selectedManualTrigger;
@@ -39,14 +40,16 @@ internal class BenchViewModel : ViewModelBase, IDisposable
         IBenchService benchService,
         IEventService eventService,
         IPluginService pluginService,
-        IToolkitWorkflowFileStore fileStore)
+        IToolkitWorkflowFileStore fileStore,
+        IWindowService windowService)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;
         _eventService = eventService;
         _fileStore = fileStore;
+        _windowService = windowService;
 
-        ActiveToolkit = UIStateService.BenchToolkit;
+        ActiveToolkit = _windowService.BenchToolkit;
         Workflows = ActiveToolkit?.Workflows ?? [];
         Triggers = ActiveToolkit?.Triggers ?? [];
         ManualTriggers = Triggers.Where(t => t.Type == TriggerType.Manual).ToList();
@@ -203,7 +206,7 @@ internal class BenchViewModel : ViewModelBase, IDisposable
         if (TrySave())
             return;
 
-        var owner = ActiveToolkit is null ? null : UIStateService.BenchWindows.GetValueOrDefault(ActiveToolkit.GetId());
+        var owner = ActiveToolkit is null ? null : _windowService.BenchWindows.GetValueOrDefault(ActiveToolkit.GetId());
         var box = MessageBoxManager.GetMessageBoxStandard(
             TranslateTextWithSuffix("Bench", "SaveRejectedTitle") ?? "保存被拒绝",
             SaveMessage ?? TranslateTextWithSuffix("Bench", "SaveRejected") ?? "配置校验未通过",
@@ -231,11 +234,10 @@ internal class BenchViewModel : ViewModelBase, IDisposable
             }
 
             SaveMessage = null;
-            UIStateService.ShowPanelHostWindow();
+            _windowService.ShowPanelHostWindow();
             // auto = present the instance panel; silent = only select the new instance (C19).
             var openPanel = manual.Config?.Surface is null or "auto";
-            (UIStateService.PanelHostWindow?.DataContext as PanelHostViewModel)
-                ?.FocusInstance(instanceId, openPanel);
+            _windowService.FocusPanelInstance(instanceId, openPanel);
         });
 
         SaveCommand = ReactiveCommand.CreateFromTask(SaveWithFeedbackAsync);
@@ -263,12 +265,7 @@ internal class BenchViewModel : ViewModelBase, IDisposable
             if (ActiveToolkit is null)
                 return;
             var text = MermaidExporter.Export(ActiveToolkit);
-            var window = new Views.MermaidExportWindow(text);
-            var owner = UIStateService.BenchWindows.GetValueOrDefault(ActiveToolkit.GetId());
-            if (owner is not null)
-                window.ShowDialog(owner);
-            else
-                window.Show();
+            _windowService.ShowMermaidExportWindow(text, ActiveToolkit.GetId());
         });
     }
 
@@ -321,16 +318,6 @@ internal class BenchViewModel : ViewModelBase, IDisposable
         var filePath = _fileStore.ResolveWorkflowPath(toolkitId, workflow.File);
         var key = workflow.Id;
 
-        if (UIStateService.WorkflowEditorWindows.TryGetValue(key, out var existing) && existing is { IsVisible: true })
-        {
-            existing.Activate();
-            return;
-        }
-
-        var window = new Views.WorkflowEditorWindowV6();
-        UIStateService.WorkflowEditorWindows[key] = window;
-        window.Closed += (_, _) => UIStateService.WorkflowEditorWindows.Remove(key);
-        window.Show();
-        _ = window.LoadWorkflowFileAsync(filePath);
+        _windowService.ShowWorkflowEditorWindow(key, filePath);
     }
 }

@@ -14,11 +14,17 @@ namespace KitX.Dashboard.ViewModels.Pages;
 
 internal class LibPageViewModel : ViewModelBase, IDisposable
 {
+    private readonly IGlobalDataStore _dataStore;
+    private readonly IWindowService _windowService;
+
     /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
     private readonly NotifyCollectionChangedEventHandler _pluginInfosChangedHandler;
 
-    public LibPageViewModel()
+    public LibPageViewModel(IGlobalDataStore dataStore, IWindowService windowService)
     {
+        _dataStore = dataStore;
+        _windowService = windowService;
+
         _pluginInfosChangedHandler = (_, e) =>
         {
             // D-REG: plugin events may arrive on the server thread — the filter
@@ -44,10 +50,10 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
     {
         ViewDetailsCommand = ReactiveCommand.Create<PluginInfo>(info =>
         {
-            if (UIStateService.MainWindow is not null)
+            if (_windowService.MainWindow is not null)
                 new PluginDetailWindow() { WindowStartupLocation = WindowStartupLocation.CenterOwner }
                     .SetPluginInfo(info)
-                    .Show(UIStateService.MainWindow);
+                    .Show(_windowService.MainWindow);
         });
 
         // G4: grows the realized window of plugin cards (rendering cost, not the filter).
@@ -291,7 +297,7 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         HasMoreItems = _visibleCount < _filteredPlugins.Count;
     }
 
-    public string pluginsCount = $"{PluginInfos.Count}";
+    public string pluginsCount = "0";
 
     public string PluginsCount
     {
@@ -299,7 +305,7 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         set => this.RaiseAndSetIfChanged(ref pluginsCount, value);
     }
 
-    public double noPlugins_tipHeight = PluginInfos.Count == 0 ? 300 : 0;
+    public double noPlugins_tipHeight = 0;
 
     public double NoPlugins_TipHeight
     {
@@ -307,7 +313,7 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         set => this.RaiseAndSetIfChanged(ref noPlugins_tipHeight, value);
     }
 
-    public static ObservableCollection<PluginInfo> PluginInfos => UIStateService.PluginInfos;
+    private ObservableCollection<PluginInfo> PluginInfos => _dataStore.PluginInfos;
 
     internal ReactiveCommand<PluginInfo, Unit>? ViewDetailsCommand { get; set; }
 }

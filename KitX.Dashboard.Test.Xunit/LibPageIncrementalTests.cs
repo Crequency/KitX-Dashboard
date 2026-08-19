@@ -33,14 +33,15 @@ public class LibPageIncrementalTests
     [AvaloniaFact]
     public void Storm_Of_Adds_Coalesces_Into_Correct_Window()
     {
-        UIStateService.PluginInfos.Clear();
-        var vm = new LibPageViewModel();
+        var store = new GlobalDataStore();
+        store.PluginInfos.Clear();
+        var vm = new LibPageViewModel(store, new WindowService());
 
         // 300 plugins connected in one burst (server-thread shape, marshalled to UI thread).
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             for (var i = 0; i < 300; i++)
-                UIStateService.PluginInfos.Add(MakeInfo($"KitX.Agent.{i:D3}"));
+                store.PluginInfos.Add(MakeInfo($"KitX.Agent.{i:D3}"));
         });
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
@@ -50,7 +51,7 @@ public class LibPageIncrementalTests
 
         // Incremental result must match a full recompute (empty keyword => all match):
         // the realized window is the first InitialBatch source plugins in order.
-        var expected = UIStateService.PluginInfos.Take(InitialBatch).Select(p => p.Name).ToArray();
+        var expected = store.PluginInfos.Take(InitialBatch).Select(p => p.Name).ToArray();
         Assert.Equal(expected, vm.DisplayedPluginInfos.Select(p => p.Name).ToArray());
 
         vm.Dispose();
@@ -59,13 +60,14 @@ public class LibPageIncrementalTests
     [AvaloniaFact]
     public void Load_More_Grows_The_Realized_Window()
     {
-        UIStateService.PluginInfos.Clear();
-        var vm = new LibPageViewModel();
+        var store = new GlobalDataStore();
+        store.PluginInfos.Clear();
+        var vm = new LibPageViewModel(store, new WindowService());
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             for (var i = 0; i < 300; i++)
-                UIStateService.PluginInfos.Add(MakeInfo($"KitX.Agent.{i:D3}"));
+                store.PluginInfos.Add(MakeInfo($"KitX.Agent.{i:D3}"));
         });
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
@@ -79,16 +81,17 @@ public class LibPageIncrementalTests
     [AvaloniaFact]
     public void Keyword_Change_Restricts_The_Full_View()
     {
-        UIStateService.PluginInfos.Clear();
+        var store = new GlobalDataStore();
+        store.PluginInfos.Clear();
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.LLM"));
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.Context"));
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.FileTools"));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.LLM"));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.Context"));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.FileTools"));
         });
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-        var vm = new LibPageViewModel();
+        var vm = new LibPageViewModel(store, new WindowService());
         Assert.Equal(3, vm.DisplayedPluginInfos.Count);
 
         vm.SearchingText = "LLM";
@@ -104,20 +107,21 @@ public class LibPageIncrementalTests
     [AvaloniaFact]
     public void Live_Remove_Syncs_The_Window_Incrementally()
     {
-        UIStateService.PluginInfos.Clear();
-        var vm = new LibPageViewModel();
+        var store = new GlobalDataStore();
+        store.PluginInfos.Clear();
+        var vm = new LibPageViewModel(store, new WindowService());
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.LLM"));
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.Context"));
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.FileTools"));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.LLM"));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.Context"));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.FileTools"));
         });
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Assert.Equal(3, vm.DisplayedPluginInfos.Count);
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            UIStateService.PluginInfos.RemoveAt(0));
+            store.PluginInfos.RemoveAt(0));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
         Assert.Equal(2, vm.DisplayedPluginInfos.Count);
@@ -133,13 +137,14 @@ public class LibPageIncrementalTests
         // connects, navigates away (Unloaded → Dispose unsubscribes), a plugin connects
         // (event missed while detached), then navigates back. Re-attaching must recompute
         // from the authoritative source or the page stays frozen at zero forever.
-        UIStateService.PluginInfos.Clear();
-        var vm = new LibPageViewModel();
+        var store = new GlobalDataStore();
+        store.PluginInfos.Clear();
+        var vm = new LibPageViewModel(store, new WindowService());
         Assert.Equal("0", vm.PluginsCount);
 
         vm.Dispose(); // page unloaded — subscription dropped
 
-        UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.Late")); // missed event
+        store.PluginInfos.Add(MakeInfo("KitX.Agent.Late")); // missed event
 
         vm.InitEvents(); // page reloaded — re-attach must recompute
 

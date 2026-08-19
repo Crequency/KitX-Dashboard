@@ -16,14 +16,16 @@ namespace KitX.Dashboard.ViewModels.Pages;
 public sealed class ToolkitCardVM : ReactiveObject
 {
     private readonly IToolkitService _toolkitService;
+    private readonly IWindowService _windowService;
     private bool _isMounted;
     private string? _errorMessage;
     private int _runningInstances;
 
-    public ToolkitCardVM(Toolkit model, IToolkitService toolkitService)
+    public ToolkitCardVM(Toolkit model, IToolkitService toolkitService, IWindowService windowService)
     {
         Model = model;
         _toolkitService = toolkitService;
+        _windowService = windowService;
         _isMounted = toolkitService.IsMounted(model.GetId());
         _runningInstances = toolkitService.Instances.Count(i => i.ToolkitId == model.GetId() && i.Status == KitX.ToolKit.Instances.InstanceStatus.Running);
         ToggleMountCommand = ReactiveCommand.Create(ToggleMount);
@@ -92,5 +94,5 @@ public sealed class ToolkitCardVM : ReactiveObject
         }
     }
 
-    private void OpenBench() => UIStateService.OpenBenchWindow(Model);
+    private void OpenBench() => _windowService.OpenBenchWindow(Model);
 }

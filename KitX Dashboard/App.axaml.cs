@@ -88,6 +88,16 @@ public partial class App : Application
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();
 
+        // Shared cross-window observable data collections (replaces the retired
+        // static UI-state collections). Singleton so all pages/VM subscriptions
+        // observe the same collections.
+        services.AddSingleton<IGlobalDataStore, GlobalDataStore>();
+
+        // Window orchestration (replaces the retired static UI-state window members).
+        // Singleton coordinator only — constructor-injects no ViewModel (a VM dependency
+        // here would create a DI cycle that surfaces as a frozen UI).
+        services.AddSingleton<IWindowService, WindowService>();
+
         // Device key-exchange UI coordinator (initiator password display + receive-side
         // prompt). Registered as a singleton so it can subscribe to OnReceiveExchangeDeviceKey.
         services.AddSingleton<IDeviceKeyExchangeUi, DeviceKeyExchangeUiService>();

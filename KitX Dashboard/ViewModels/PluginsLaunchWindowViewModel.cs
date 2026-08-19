@@ -18,13 +18,15 @@ namespace KitX.Dashboard.ViewModels;
 internal class PluginsLaunchWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly IPluginServer _pluginServer;
+    private readonly IGlobalDataStore _dataStore;
 
     /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
     private readonly NotifyCollectionChangedEventHandler _pluginInfosChangedHandler;
 
-    public PluginsLaunchWindowViewModel(IPluginServer pluginServer)
+    public PluginsLaunchWindowViewModel(IPluginServer pluginServer, IGlobalDataStore dataStore)
     {
         _pluginServer = pluginServer;
+        _dataStore = dataStore;
 
         _pluginInfosChangedHandler = (_, _) =>
         {
@@ -75,7 +77,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public static double NoPlugins_TipHeight => PluginInfos.Count == 0 ? 40 : 0;
+    public double NoPlugins_TipHeight => PluginInfos.Count == 0 ? 40 : 0;
 
     private int selectedPluginIndex = 0;
 
@@ -122,7 +124,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public static ObservableCollection<PluginInfo> PluginInfos => UIStateService.PluginInfos;
+    private ObservableCollection<PluginInfo> PluginInfos => _dataStore.PluginInfos;
 
     private bool isSelectingPlugin = true;
 
@@ -243,7 +245,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase, IDisposable
     /// <summary>Grid cell height (px) of the plugin launch grid (D13.11).</summary>
     private const double PluginCardHeight = 80;
 
-    private static bool PluginIndexInRange(int index) => index >= 0 && index < PluginInfos.Count;
+    private bool PluginIndexInRange(int index) => index >= 0 && index < PluginInfos.Count;
 
     private void CheckPluginIndex()
     {

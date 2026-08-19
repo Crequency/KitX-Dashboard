@@ -24,15 +24,21 @@ internal class AppViewModel : ViewModelBase
     private readonly IConfigService _configService;
     private readonly IAnnouncementService _announcementService;
     private readonly IEventService _eventService;
+    private readonly IWindowService _windowService;
+    private readonly IGlobalDataStore _dataStore;
 
     public AppViewModel(
         IConfigService configService,
         IAnnouncementService announcementService,
-        IEventService eventService)
+        IEventService eventService,
+        IWindowService windowService,
+        IGlobalDataStore dataStore)
     {
         _configService = configService;
         _announcementService = announcementService;
         _eventService = eventService;
+        _windowService = windowService;
+        _dataStore = dataStore;
 
         InitCommands();
 
@@ -45,7 +51,7 @@ internal class AppViewModel : ViewModelBase
     {
         TrayIconClickedCommand = ReactiveCommand.Create(() =>
         {
-            var win = UIStateService.MainWindow;
+            var win = _windowService.MainWindow;
 
             if (win?.WindowState == WindowState.Minimized)
                 win.WindowState = WindowState.Normal;
@@ -70,14 +76,14 @@ internal class AppViewModel : ViewModelBase
             if (!_configService.AppConfig.App.DeveloperSetting)
                 return;
 
-            UIStateService.ShowWindow(new DebugWindow());
+            _windowService.ShowWindow(new DebugWindow());
         });
 
         PluginLauncherCommand = ReactiveCommand.Create(() =>
         {
-            UIStateService.PluginsLaunchWindow ??= new();
+            _windowService.PluginsLaunchWindow ??= new();
 
-            var win = UIStateService.PluginsLaunchWindow;
+            var win = _windowService.PluginsLaunchWindow;
 
             if (win.IsVisible)
             {
@@ -93,9 +99,9 @@ internal class AppViewModel : ViewModelBase
 
         OpenPanelHostCommand = ReactiveCommand.Create(() =>
         {
-            UIStateService.PanelHostWindow ??= new();
+            _windowService.PanelHostWindow ??= new();
 
-            var win = UIStateService.PanelHostWindow;
+            var win = _windowService.PanelHostWindow;
 
             if (win.IsVisible)
             {
@@ -123,29 +129,29 @@ internal class AppViewModel : ViewModelBase
 
     public sealed override void InitEvents()
     {
-        UIStateService.DeviceCases.CollectionChanged += (_, _) => UpdateTrayIconText();
+        _dataStore.DeviceCases.CollectionChanged += (_, _) => UpdateTrayIconText();
 
-        UIStateService.PluginInfos.CollectionChanged += (_, _) => UpdateTrayIconText();
+        _dataStore.PluginInfos.CollectionChanged += (_, _) => UpdateTrayIconText();
 
         // Subscribe to port changes via EventService to update tray icon
         _eventService.Subscribe<PortChangedEventArgs>(EventNames.DevicesServerPortChanged, (s, e) => UpdateTrayIconText());
 
         _eventService.Subscribe<PortChangedEventArgs>(EventNames.PluginsServerPortChanged, (s, e) => UpdateTrayIconText());
 
-        // Subscribe to plugin events via EventService to update UIStateService.PluginInfos
+        // Subscribe to plugin events via EventService to update the shared PluginInfos store
         _eventService.Subscribe<PluginRegisteredEventArgs>(EventNames.PluginRegistered, (s, e) =>
         {
             Log.Information($"[AppViewModel] Received PluginRegistered event for: {e.PluginInfo?.Name}");
-            if (e.PluginInfo is not null && !UIStateService.PluginInfos.Any(x => x.Name == e.PluginInfo.Name))
+            if (e.PluginInfo is not null && !_dataStore.PluginInfos.Any(x => x.Name == e.PluginInfo.Name))
             {
                 // D-REG: plugin events arrive on the server thread — mutate the
                 // UI-bound collection on the UI thread.
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    if (UIStateService.PluginInfos.Any(x => x.Name == e.PluginInfo!.Name))
+                    if (_dataStore.PluginInfos.Any(x => x.Name == e.PluginInfo!.Name))
                         return;
-                    UIStateService.PluginInfos.Add(e.PluginInfo);
-                    Log.Information($"[AppViewModel] Added plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+                    _dataStore.PluginInfos.Add(e.PluginInfo);
+                    Log.Information($"[AppViewModel] Added plugin: {e.PluginInfo.Name}, count: {_dataStore.PluginInfos.Count}");
                 });
             }
         });
@@ -157,11 +163,11 @@ internal class AppViewModel : ViewModelBase
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo!.Name);
+                    var existing = _dataStore.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo!.Name);
                     if (existing is not null)
                     {
-                        UIStateService.PluginInfos.Remove(existing);
-                        Log.Information($"[AppViewModel] Removed plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+                        _dataStore.PluginInfos.Remove(existing);
+                        Log.Information($"[AppViewModel] Removed plugin: {e.PluginInfo.Name}, count: {_dataStore.PluginInfos.Count}");
                     }
                     else
                     {
@@ -171,7 +177,7 @@ internal class AppViewModel : ViewModelBase
             }
         });
 
-        // Subscribe to plugin disconnected events to update UIStateService.PluginInfos
+        // Subscribe to plugin disconnected events to update _dataStore.PluginInfos
         _eventService.Subscribe<PluginConnectionEventArgs>(EventNames.PluginDisconnected, (s, e) =>
         {
             Log.Information($"[AppViewModel] Received PluginDisconnected event for: {e.PluginInfo?.Name}, connection: {e.ConnectionId}");
@@ -179,11 +185,11 @@ internal class AppViewModel : ViewModelBase
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    var existing = UIStateService.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo!.Name);
+                    var existing = _dataStore.PluginInfos.FirstOrDefault(x => x.Name == e.PluginInfo!.Name);
                     if (existing is not null)
                     {
-                        UIStateService.PluginInfos.Remove(existing);
-                        Log.Information($"[AppViewModel] Removed disconnected plugin: {e.PluginInfo.Name}, count: {UIStateService.PluginInfos.Count}");
+                        _dataStore.PluginInfos.Remove(existing);
+                        Log.Information($"[AppViewModel] Removed disconnected plugin: {e.PluginInfo.Name}, count: {_dataStore.PluginInfos.Count}");
                     }
                     else
                     {
@@ -206,7 +212,7 @@ internal class AppViewModel : ViewModelBase
             if (src.Count > 0)
             {
                 var window = new AnnouncementsWindow().UpdateSource(src);
-                UIStateService.ShowWindow(window);
+                _windowService.ShowWindow(window);
             }
         };
     }
@@ -222,9 +228,9 @@ internal class AppViewModel : ViewModelBase
             .Append(Translate("Text_Settings_Performance_Web_PluginsServerPort"))
             .AppendLine(": " + ConstantTable.PluginsServerPort)
             .AppendLine()
-            .Append(UIStateService.DeviceCases.Count + " ")
+            .Append(_dataStore.DeviceCases.Count + " ")
             .AppendLine(Translate("Text_Device_Tip_Detected"))
-            .Append(UIStateService.PluginInfos.Count + " ")
+            .Append(_dataStore.PluginInfos.Count + " ")
             .AppendLine(Translate("Text_Lib_Tip_Connected"))
             .AppendLine()
             .Append("Hello, World!");
@@ -234,15 +240,15 @@ internal class AppViewModel : ViewModelBase
 
     public void Exit()
     {
-        UIStateService.DeviceCases.Clear();
+        _dataStore.DeviceCases.Clear();
 
-        UIStateService.PluginInfos.Clear();
+        _dataStore.PluginInfos.Clear();
 
         ConstantTable.Exiting = true;
 
         _eventService.Publish(EventNames.OnExiting, EventArgs.Empty);
 
-        var win = UIStateService.MainWindow;
+        var win = _windowService.MainWindow;
 
         win?.Close();
     }

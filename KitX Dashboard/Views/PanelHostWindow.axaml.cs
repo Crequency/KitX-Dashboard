@@ -5,6 +5,7 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using KitX.Dashboard.Services;
 using KitX.Dashboard.ViewModels;
 
 namespace KitX.Dashboard.Views;
@@ -37,7 +38,7 @@ public partial class PanelHostWindow : Window
             viewModel.Dispose();
             // The window cannot be re-shown after Close; drop the static singleton so the
             // tray / workbench spawn creates a fresh window (and a fresh VM) next time.
-            Services.UIStateService.PanelHostWindow = null;
+            App.GetService<IWindowService>().PanelHostWindow = null;
         };
     }
 

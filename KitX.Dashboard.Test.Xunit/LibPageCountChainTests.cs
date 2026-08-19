@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Regression tests for the "库 page shows 0 plugins connected" report:
-//   1. LibPageViewModel's count/list must follow UIStateService.PluginInfos
+//   1. LibPageViewModel's count/list must follow IGlobalDataStore.PluginInfos
 //      changes posted from the server thread (AppViewModel's marshalled Add).
 //   2. A disposed-and-recreated page (navigation away and back) must resubscribe —
 //      Dispose() unsubscribes on Unloaded, so a reused page instance would be
@@ -27,15 +27,16 @@ public class LibPageCountChainTests
     [AvaloniaFact]
     public void Count_And_List_Follow_Live_Connections()
     {
-        UIStateService.PluginInfos.Clear();
-        var vm = new LibPageViewModel();
+        var store = new GlobalDataStore();
+        store.PluginInfos.Clear();
+        var vm = new LibPageViewModel(store, new WindowService());
 
         Assert.Equal("0", vm.PluginsCount);
         Assert.Empty(vm.DisplayedPluginInfos);
 
         // Server-thread shape: AppViewModel posts the mutation to the UI thread.
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.LLM")));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.LLM")));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
         Assert.Equal("1", vm.PluginsCount);
@@ -43,8 +44,8 @@ public class LibPageCountChainTests
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.Context"));
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.FileTools"));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.Context"));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.FileTools"));
         });
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
@@ -59,15 +60,16 @@ public class LibPageCountChainTests
     {
         // Navigation away disposes the VM's subscription; navigating back must not
         // show a stale 0 — a fresh instance reads the live count in its constructor.
-        UIStateService.PluginInfos.Clear();
-        var first = new LibPageViewModel();
+        var store = new GlobalDataStore();
+        store.PluginInfos.Clear();
+        var first = new LibPageViewModel(store, new WindowService());
         first.Dispose(); // navigated away while 0 connected
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.LLM")));
+            store.PluginInfos.Add(MakeInfo("KitX.Agent.LLM")));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-        var second = new LibPageViewModel();
+        var second = new LibPageViewModel(store, new WindowService());
         Assert.Equal("1", second.PluginsCount);
         Assert.Single(second.DisplayedPluginInfos);
         second.Dispose();

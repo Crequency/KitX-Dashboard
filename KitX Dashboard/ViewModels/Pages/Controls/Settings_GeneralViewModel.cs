@@ -18,15 +18,17 @@ internal class Settings_GeneralViewModel : ViewModelBase, IDisposable
     private readonly IConfigService _configService;
     private readonly IAnnouncementService _announcementService;
     private readonly ITasksService _tasksService;
+    private readonly IWindowService _windowService;
 
     /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
     private readonly EventHandler<EventArgs> _developSettingsChangedHandler;
 
-    public Settings_GeneralViewModel(IConfigService configService, IAnnouncementService announcementService, ITasksService tasksService)
+    public Settings_GeneralViewModel(IConfigService configService, IAnnouncementService announcementService, ITasksService tasksService, IWindowService windowService)
     {
         _configService = configService;
         _announcementService = announcementService;
         _tasksService = tasksService;
+        _windowService = windowService;
 
         _developSettingsChangedHandler = (_, _) => this.RaisePropertyChanged(nameof(DeveloperSettingEnabled));
 
@@ -51,7 +53,7 @@ internal class Settings_GeneralViewModel : ViewModelBase, IDisposable
             if (!_configService.AppConfig.App.DeveloperSetting)
                 return;
 
-            UIStateService.ShowWindow(new DebugWindow(), UIStateService.MainWindow);
+            _windowService.ShowWindow(new DebugWindow(), _windowService.MainWindow);
         });
     }
 

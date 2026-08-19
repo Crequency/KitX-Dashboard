@@ -45,7 +45,7 @@ public partial class MainWindow : Window, IView
 
         InitializeComponent();
 
-        UIStateService.MainWindow = this;
+        App.GetService<IWindowService>().MainWindow = this;
 
         DataContext = viewModel;
 

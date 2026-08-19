@@ -21,13 +21,15 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
 {
     private readonly IToolkitService _toolkitService;
     private readonly IEventService _eventService;
+    private readonly IWindowService _windowService;
 
     private readonly ObservableCollection<ToolkitCardVM> _cards = [];
 
-    public ToolkitPageViewModel(IToolkitService toolkitService, IBenchService benchService, IEventService eventService)
+    public ToolkitPageViewModel(IToolkitService toolkitService, IBenchService benchService, IEventService eventService, IWindowService windowService)
     {
         _toolkitService = toolkitService;
         _eventService = eventService;
+        _windowService = windowService;
 
         InitCommands();
         InitEvents();
@@ -119,7 +121,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     {
         _cards.Clear();
         foreach (var toolkit in _toolkitService.ListToolkits())
-            _cards.Add(new ToolkitCardVM(toolkit, _toolkitService));
+            _cards.Add(new ToolkitCardVM(toolkit, _toolkitService, _windowService));
         this.RaisePropertyChanged(nameof(IsEmpty));
         this.RaisePropertyChanged(nameof(HasCards));
     }
