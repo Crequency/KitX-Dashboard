@@ -125,4 +125,28 @@ public class LibPageIncrementalTests
 
         vm.Dispose();
     }
+
+    [AvaloniaFact]
+    public void Reattach_After_Unload_Recovers_Missed_Adds()
+    {
+        // Real-world regression (2026-08-20): the user opens the page before any plugin
+        // connects, navigates away (Unloaded → Dispose unsubscribes), a plugin connects
+        // (event missed while detached), then navigates back. Re-attaching must recompute
+        // from the authoritative source or the page stays frozen at zero forever.
+        UIStateService.PluginInfos.Clear();
+        var vm = new LibPageViewModel();
+        Assert.Equal("0", vm.PluginsCount);
+
+        vm.Dispose(); // page unloaded — subscription dropped
+
+        UIStateService.PluginInfos.Add(MakeInfo("KitX.Agent.Late")); // missed event
+
+        vm.InitEvents(); // page reloaded — re-attach must recompute
+
+        Assert.Equal("1", vm.PluginsCount);
+        Assert.Single(vm.DisplayedPluginInfos);
+        Assert.Equal("KitX.Agent.Late", vm.DisplayedPluginInfos[0].Name);
+
+        vm.Dispose();
+    }
 }

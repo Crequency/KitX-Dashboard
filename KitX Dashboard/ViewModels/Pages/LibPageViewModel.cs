@@ -32,12 +32,12 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
 
         InitCommands();
 
-        InitEvents();
-
         // D-REG: plugins may already be connected before this page is navigated to —
         // the filtered view must be populated from the current source (CollectionChanged
         // alone only fires on future changes, leaving the page empty on first open).
-        ApplyFilter();
+        // InitEvents performs that initial ApplyFilter (and the same recompute on every
+        // re-attach, covering plugins connected while the page was unloaded).
+        InitEvents();
     }
 
     public sealed override void InitCommands()
@@ -64,6 +64,11 @@ internal class LibPageViewModel : ViewModelBase, IDisposable
         if (_eventsSubscribed) return;
         _eventsSubscribed = true;
         PluginInfos.CollectionChanged += _pluginInfosChangedHandler;
+        // Re-attach path: the page was unloaded (Dispose unsubscribed) and plugins may
+        // have connected meanwhile — those events are invisible to the incremental
+        // path, so recompute from the authoritative source or the page stays frozen
+        // at its detach-time values forever.
+        ApplyFilter();
     }
 
     /// <summary>
