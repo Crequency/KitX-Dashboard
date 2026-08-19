@@ -486,10 +486,6 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             case UiControlStateChangedEvent uie when uie.InstanceId == SelectedInstance.InstanceId:
                 ApplyToControl(uie.ControlId, uie.Prop, uie.Value);
                 break;
-            case DataStoreChangedEvent dse when dse.InstanceId == SelectedInstance.InstanceId
-                                                    && TryParsePanelKey(dse.Key, out var controlId, out var prop):
-                ApplyToControl(controlId, prop, dse.NewValue);
-                break;
         }
     }
 
@@ -497,21 +493,6 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     {
         var control = _panelControls.FirstOrDefault(c => c.Id == controlId);
         control?.Apply(prop, value is JsonElement je ? je : null);
-    }
-
-    private static bool TryParsePanelKey(string key, out string controlId, out string prop)
-    {
-        controlId = string.Empty;
-        prop = string.Empty;
-        var idx = key.LastIndexOf("/panel/", StringComparison.Ordinal);
-        if (idx < 0)
-            return false;
-        var seg = key[(idx + "/panel/".Length)..].Split('/');
-        if (seg.Length < 2)
-            return false;
-        controlId = seg[0];
-        prop = seg[1];
-        return true;
     }
 
     private void RefreshMountedToolkits()

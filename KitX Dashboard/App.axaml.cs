@@ -62,7 +62,9 @@ public partial class App : Application
 
         // ToolKit / Bench orchestration layer — unified Trigger system + DataStore +
         // workflow meta-orchestration. Registers the DataStore built-in plugin (routed by
-        // PluginHostAdapter for the reserved "KitX.DataStore" name) and the BenchTriggerManager.
+        // PluginHostAdapter for the reserved "KitX.DataStore" name); trigger registration is
+        // handled by the unified ToolkitInstanceManager-based trigger system (WorkflowV6
+        // hosts the trigger runtime, ToolKit owns the instance lifecycle).
         services.AddKitXToolKit();
 
         // Register Dashboard-specific services
@@ -72,9 +74,9 @@ public partial class App : Application
         // prompt). Registered as a singleton so it can subscribe to OnReceiveExchangeDeviceKey.
         services.AddSingleton<IDeviceKeyExchangeUi, DeviceKeyExchangeUiService>();
 
-        // S2/S4/S6 (WorkflowStorageService / WorkflowSessionManager / TriggerManager) are
-        // now registered inside AddKitXWorkflowV6() above (migrated from Dashboard to
-        // KitX.WorkflowV6.Services).
+        // S2 (WorkflowStorageService) is still registered inside AddKitXWorkflowV6() above;
+        // the former S4 (WorkflowSessionManager) and S6 (TriggerManager) services were
+        // retired as part of the v5 lifecycle cleanup.
 
         // Register SignalTasksManager for signal-based coordination
         services.AddSingleton<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
