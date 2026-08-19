@@ -5,6 +5,7 @@
         xmlns:icon="using:Material.Icons.Avalonia"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:nd="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
+        xmlns:converters="using:KitX.Dashboard.Converters"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
         xmlns:views="using:KitX.Dashboard.Views"
         Title="{DynamicResource Text_Bench_Title}"
@@ -17,8 +18,13 @@
         WindowStartupLocation="CenterOwner"
         mc:Ignorable="d">
     <Window.Resources>
+        <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
+
         <DataTemplate x:Key="BenchInputTemplate" DataType="{x:Type viewModels:BenchConnectorVM}">
             <nd:NodeInput IsConnected="{Binding IsConnected}" Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <nd:NodeInput.BorderBrush>
+                    <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
+                </nd:NodeInput.BorderBrush>
                 <nd:NodeInput.Header>
                     <TextBlock Text="{Binding Title}" FontSize="11"/>
                 </nd:NodeInput.Header>
@@ -26,6 +32,9 @@
         </DataTemplate>
         <DataTemplate x:Key="BenchOutputTemplate" DataType="{x:Type viewModels:BenchConnectorVM}">
             <nd:NodeOutput IsConnected="{Binding IsConnected}" Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <nd:NodeOutput.BorderBrush>
+                    <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
+                </nd:NodeOutput.BorderBrush>
                 <nd:NodeOutput.Header>
                     <TextBlock Text="{Binding Title}" FontSize="11"/>
                 </nd:NodeOutput.Header>

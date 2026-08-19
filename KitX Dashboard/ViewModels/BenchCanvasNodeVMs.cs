@@ -4,6 +4,8 @@ using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Media;
+using Avalonia.Styling;
+using Avalonia.Threading;
 using Material.Icons;
 using NodifyM.Avalonia.ViewModelBase;
 using ReactiveUI;
@@ -152,10 +154,39 @@ public sealed class BenchConnectorVM : ConnectorViewModelBase
         Title = title;
         Flow = flow;
         Key = key;
+        CanConnect = true; // default connectable until C14 hover-preview rejects
+        // CanConnect / IsConnected live on the base class; forward their changes to derived visuals.
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(CanConnect))
+                OnPropertyChanged(nameof(EffectiveBorderColorHex));
+        };
     }
 
     /// <summary>Stable pin key used to (re)build config edges.</summary>
     public string Key { get; }
+
+    /// <summary>
+    /// Border colour: red when <see cref="CanConnect"/> is false (hover-preview rejection,
+    /// C14), else the theme's default pin border. Bench pins carry no per-type colour, so the
+    /// normal colour mirrors the NodifyM theme default (Light #4B91B8 / Dark DodgerBlue).
+    /// </summary>
+    public string EffectiveBorderColorHex => CanConnect ? DefaultPinBorderColorHex : "#F44336";
+
+    /// <summary>
+    /// Theme-aware default pin border, matching NodifyM's NodeInput/NodeOutput resource.
+    /// Off the UI thread (unit tests) Avalonia theme state is unreadable — fall back to Light.
+    /// </summary>
+    private static string DefaultPinBorderColorHex
+    {
+        get
+        {
+            var app = Application.Current;
+            if (app is null || !Dispatcher.UIThread.CheckAccess())
+                return "#4B91B8";
+            return app.RequestedThemeVariant == ThemeVariant.Dark ? "#1E90FF" : "#4B91B8";
+        }
+    }
 }
 
 /// <summary>A connection (edge) on the Bench canvas, tagged with its config role.</summary>

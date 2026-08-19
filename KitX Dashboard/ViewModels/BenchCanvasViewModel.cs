@@ -81,6 +81,9 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         ToolkitInspector = new BenchToolkitInspectorVM(toolkit, pluginService, NotifyEdited);
         SelectedNodes.CollectionChanged += (_, _) =>
             SelectedNode = SelectedNodes.OfType<BenchNodeVM>().FirstOrDefault();
+        // C14 hover preview: re-evaluate pin legality whenever the dragged connection
+        // hovers over a new potential target.
+        PendingConnection.PropertyChanged += OnPendingConnectionPropertyChanged;
         BuildGraph();
         RefreshPalette();
         RefreshValidation();
@@ -966,25 +969,25 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
         if (outNode.Kind == BenchNodeKind.Source)
         {
-            if (inNode.Kind != BenchNodeKind.Workflow)
+            if (!IsBindingTargetValid(inNode))
             {
                 SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorBindingOnlyWorkflow") ?? "绑定连线只能连接到工作流节点");
                 return;
             }
 
-            var trigger = (Trigger)_nodeConfig[outNode];
-            if (trigger.Bindings.Any(b => b.Workflow == inNode.ConfigId))
+            if (IsBindingDuplicate(outNode, inNode))
             {
                 SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorTriggerAlreadyBound") ?? "该触发器已绑定此工作流");
                 return;
             }
 
+            var trigger = (Trigger)_nodeConfig[outNode];
             trigger.Bindings.Add(new TriggerBinding { Workflow = inNode.ConfigId });
             Connections.Add(new BenchConnectionVM(this, outCon, inCon, BenchEdgeKind.Binding));
         }
         else if (outNode.Kind == BenchNodeKind.Workflow)
         {
-            if (inNode.Kind != BenchNodeKind.Workflow)
+            if (!IsCompletionTargetValid(inNode))
             {
                 SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorCompletionOnlyWorkflow") ?? "完成边只能连接到工作流节点");
                 return;
@@ -1010,15 +1013,24 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     /// <summary>Adds (or reuses) a workflow→workflow completion edge; rejects on cycle.</summary>
     private bool AddCompletionEdge(string fromWf, string toWf, BenchConnectorVM outCon, BenchConnectorVM inCon)
     {
+        if (IsCompletionEdgeDuplicate(fromWf, toWf))
+        {
+            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorCompletionEdgeExists") ?? "该完成边已存在");
+            return false;
+        }
+
+        // Fast pre-check on the candidate edge (shared with the hover preview): the current
+        // graph is a DAG, so a cycle can only arise if the new edge closes a path to its head.
+        // The ConfigValidator pass below remains the authoritative gate.
+        if (WouldCreateCompletionCycle(fromWf, toWf))
+        {
+            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorCycleDetected") ?? "检测到环：完成边不得形成循环");
+            return false;
+        }
+
         var existing = _toolkit.Triggers.FirstOrDefault(t => t.Type == TriggerType.WorkflowCompletion && t.Config?.From == fromWf);
         if (existing is not null)
         {
-            if (existing.Bindings.Any(b => b.Workflow == toWf))
-            {
-                SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorCompletionEdgeExists") ?? "该完成边已存在");
-                return false;
-            }
-
             existing.Bindings.Add(new TriggerBinding { Workflow = toWf });
         }
         else
@@ -1054,6 +1066,118 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         }
 
         return true;
+    }
+
+    // ── Connection validation predicates (shared by drop + C14 hover preview) ──
+
+    /// <summary>True when a trigger's binding may target the node (must be a Workflow).</summary>
+    private bool IsBindingTargetValid(BenchNodeVM inNode) => inNode.Kind == BenchNodeKind.Workflow;
+
+    /// <summary>True when the trigger is already bound to the target workflow (duplicate binding).</summary>
+    private bool IsBindingDuplicate(BenchNodeVM outNode, BenchNodeVM inNode)
+    {
+        var trigger = (Trigger)_nodeConfig[outNode];
+        return trigger.Bindings.Any(b => b.Workflow == inNode.ConfigId);
+    }
+
+    /// <summary>True when a workflow's completion edge may target the node (must be a Workflow).</summary>
+    private bool IsCompletionTargetValid(BenchNodeVM inNode) => inNode.Kind == BenchNodeKind.Workflow;
+
+    /// <summary>True when a from→to completion edge already exists.</summary>
+    private bool IsCompletionEdgeDuplicate(string fromWf, string toWf)
+    {
+        var existing = _toolkit.Triggers.FirstOrDefault(t => t.Type == TriggerType.WorkflowCompletion && t.Config?.From == fromWf);
+        return existing is not null && existing.Bindings.Any(b => b.Workflow == toWf);
+    }
+
+    /// <summary>The workflows a given workflow has completion edges to (from WorkflowCompletion triggers).</summary>
+    private IEnumerable<string> CompletionSuccessors(string wfId)
+    {
+        foreach (var t in _toolkit.Triggers)
+        {
+            if (t.Type != TriggerType.WorkflowCompletion || t.Config?.From != wfId)
+                continue;
+            foreach (var b in t.Bindings)
+                if (!string.IsNullOrWhiteSpace(b.Workflow))
+                    yield return b.Workflow;
+        }
+    }
+
+    /// <summary>
+    /// True when adding a completion edge from → to would close a cycle. A new edge creates
+    /// a cycle iff its head already reaches its tail (the current graph is a strict DAG, so no
+    /// other cycle can be introduced).
+    /// </summary>
+    private bool WouldCreateCompletionCycle(string fromWf, string toWf)
+    {
+        if (fromWf == toWf)
+            return true;
+
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        var stack = new Stack<string>();
+        stack.Push(toWf);
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            if (current == fromWf)
+                return true;
+            if (!visited.Add(current))
+                continue;
+            foreach (var next in CompletionSuccessors(current))
+                stack.Push(next);
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Shared legality check for a candidate edge, used by both the drop path (<see cref="Connect"/>)
+    /// and the hover preview (<see cref="UpdateHoverPreview"/>). The edge kind is derived from the
+    /// source pin's node kind, exactly as <see cref="Connect"/> does.
+    /// </summary>
+    private bool IsConnectionValid(BenchConnectorVM source, BenchConnectorVM target)
+    {
+        if (!_connectorInfo.TryGetValue(source, out var si) || !_connectorInfo.TryGetValue(target, out var ti))
+            return false;
+        var (srcNode, _) = si;
+        var (tgtNode, _) = ti;
+        var (outNode, inNode) = source.Flow == ConnectorViewModelBase.ConnectorFlow.Output
+            ? (srcNode, tgtNode)
+            : (tgtNode, srcNode);
+
+        if (outNode.Kind == BenchNodeKind.Source)
+            return IsBindingTargetValid(inNode) && !IsBindingDuplicate(outNode, inNode);
+
+        if (outNode.Kind == BenchNodeKind.Workflow)
+            return IsCompletionTargetValid(inNode)
+                   && !IsCompletionEdgeDuplicate(outNode.ConfigId, inNode.ConfigId)
+                   && !WouldCreateCompletionCycle(outNode.ConfigId, inNode.ConfigId);
+
+        return false;
+    }
+
+    // ── Hover preview (C14) ──
+
+    private void OnPendingConnectionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(PendingConnectionViewModelBase.PreviewTarget))
+            UpdateHoverPreview();
+    }
+
+    /// <summary>
+    /// Re-evaluates pin legality while a connection is dragged over the canvas. Resets every pin
+    /// to connectable, then flags the hovered target red when the candidate edge is invalid. Pure
+    /// frontend predicate — Bench has no backend lens, so no structural simulation/debounce.
+    /// </summary>
+    private void UpdateHoverPreview()
+    {
+        foreach (var connector in AllConnectors())
+            connector.CanConnect = true;
+
+        if (PendingConnection.Source is not BenchConnectorVM src) return;
+        if (PendingConnection.PreviewTarget is not BenchConnectorVM tgt) return;
+        if (!IsConnectionValid(src, tgt))
+            tgt.CanConnect = false;
     }
 
     // ── Disconnect / delete (config double-write) ──
