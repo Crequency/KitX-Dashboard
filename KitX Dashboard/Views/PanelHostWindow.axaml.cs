@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -48,27 +49,60 @@ public partial class PanelHostWindow : Window
     }
 
     private readonly Dictionary<ScrollViewer, NotifyCollectionChangedEventHandler> _logScrollHandlers = [];
+    private readonly Dictionary<ScrollViewer, DispatcherTimer> _logScrollTimers = [];
 
-    /// <summary>Auto-scroll each Log control unless the global pause switch is on.</summary>
+    /// <summary>
+    /// Auto-scroll each Log control to the newest entry, unless the global pause switch
+    /// is on or the user has scrolled up to read history. Follows are coalesced through a
+    /// short debounce window so a burst of appended entries (G2) collapses into at most
+    /// one ScrollToEnd instead of one Dispatcher post per entry.
+    /// </summary>
     private void OnLogScrollAttached(object? sender, VisualTreeAttachmentEventArgs e)
     {
         if (sender is not ScrollViewer scroll || scroll.DataContext is not PanelControlViewModel control)
             return;
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            if (!viewModel.IsLogPaused && IsNearBottom(scroll))
+                scroll.ScrollToEnd();
+        };
+
         NotifyCollectionChangedEventHandler handler = (_, _) =>
         {
-            if (!viewModel.IsLogPaused)
-                Dispatcher.UIThread.Post(() => scroll.ScrollToEnd());
+            if (viewModel.IsLogPaused)
+                return;
+            timer.Stop();
+            timer.Start();
         };
+
         _logScrollHandlers[scroll] = handler;
+        _logScrollTimers[scroll] = timer;
         control.LogEntries.CollectionChanged += handler;
+
+        // Jump to the newest entries when the control first appears (existing logs).
+        timer.Start();
     }
 
     private void OnLogScrollDetached(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        if (sender is not ScrollViewer scroll || !_logScrollHandlers.Remove(scroll, out var handler))
+        if (sender is not ScrollViewer scroll)
             return;
-        if (scroll.DataContext is PanelControlViewModel control)
+        if (_logScrollHandlers.Remove(scroll, out var handler) && scroll.DataContext is PanelControlViewModel control)
             control.LogEntries.CollectionChanged -= handler;
+        if (_logScrollTimers.Remove(scroll, out var timer))
+            timer.Stop();
+    }
+
+    /// <summary>True when the view sits at (or near) the newest entry, so a follow is wanted.</summary>
+    private static bool IsNearBottom(ScrollViewer scroll)
+    {
+        if (scroll.Viewport.Height <= 0)
+            return true;
+        var remaining = scroll.Extent.Height - (scroll.Offset.Y + scroll.Viewport.Height);
+        return remaining <= 40;
     }
 
     /// <summary>Present the window without stealing foreground focus more than necessary.</summary>

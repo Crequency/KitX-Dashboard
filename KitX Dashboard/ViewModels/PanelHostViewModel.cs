@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Text.Json;
+using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
 using KitX.ToolKit.Contracts;
 using KitX.ToolKit.Contracts.Events;
@@ -51,6 +52,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     private readonly IBenchService _benchService;
     private readonly IPanelRuntime _panelRuntime;
     private readonly IEventService _eventService;
+    private readonly int _panelLogLimit;
 
     private readonly ObservableCollection<InstanceSnapshot> _instances = [];
     private readonly ObservableCollection<InstanceGroupVM> _instanceGroups = [];
@@ -70,12 +72,15 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     private int _selectedTab;
     private bool _isLogPaused;
 
-    public PanelHostViewModel(IToolkitService toolkitService, IBenchService benchService, IPanelRuntime panelRuntime, IEventService eventService)
+    /// <param name="configService">Optional config provider for the per-control Log ring
+    /// cap. Left null (headless tests) it falls back to the configured default.</param>
+    public PanelHostViewModel(IToolkitService toolkitService, IBenchService benchService, IPanelRuntime panelRuntime, IEventService eventService, IConfigService? configService = null)
     {
         _toolkitService = toolkitService;
         _benchService = benchService;
         _panelRuntime = panelRuntime;
         _eventService = eventService;
+        _panelLogLimit = configService?.AppConfig.Performance.PanelLogLimit ?? 1000;
 
         InitCommands();
         InitEvents();
@@ -391,7 +396,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             case InstanceSpawnedEvent spawned:
                 Log.Information("[PanelHostViewModel] InstanceSpawned {Instance} (toolkit {Toolkit}, trigger {Trigger})",
                     spawned.InstanceId, spawned.ToolkitId, spawned.TriggerId);
-                RefreshInstances();
+                ReconcileInstanceFromService(spawned.InstanceId);
                 var toolkit = _toolkitService.GetToolkit(spawned.ToolkitId);
                 var trigger = toolkit?.Triggers.FirstOrDefault(t => t.Id == spawned.TriggerId);
                 var openPanel = trigger?.Config?.Surface is null or "auto";
@@ -421,16 +426,22 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
                 Log.Information("[PanelHostViewModel] RunStarted {Instance}/{Run}/{Workflow}",
                     runStarted.InstanceId, runStarted.RunId, runStarted.WorkflowId);
                 Timeline(runStarted.InstanceId).Apply(runStarted);
-                RefreshInstances();
+                ReconcileInstanceFromService(runStarted.InstanceId);
                 break;
             case RunCompletedEvent runCompleted:
                 Log.Information("[PanelHostViewModel] RunCompleted {Instance}/{Run}/{Workflow} succeeded={Succeeded}",
                     runCompleted.InstanceId, runCompleted.RunId, runCompleted.WorkflowId, runCompleted.Succeeded);
                 Timeline(runCompleted.InstanceId).Apply(runCompleted);
-                RefreshInstances();
+                ReconcileInstanceFromService(runCompleted.InstanceId);
                 break;
-            case InstanceCompletedEvent or InstanceCancelledEvent:
-                RefreshInstances();
+            case InstanceCompletedEvent completed:
+                Log.Information("[PanelHostViewModel] InstanceCompleted {Instance} succeeded={Succeeded}",
+                    completed.InstanceId, completed.Succeeded);
+                MarkInstanceCompleted(completed.InstanceId);
+                break;
+            case InstanceCancelledEvent cancelled:
+                Log.Information("[PanelHostViewModel] InstanceCancelled {Instance}", cancelled.InstanceId);
+                RemoveInstance(cancelled.InstanceId);
                 break;
         }
 
@@ -467,7 +478,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             return;
         foreach (var control in panel.Controls)
         {
-            var vm = new PanelControlViewModel(control, SelectedInstance.InstanceId, _panelRuntime);
+            var vm = new PanelControlViewModel(control, SelectedInstance.InstanceId, _panelRuntime, _panelLogLimit);
             // Hydrate the live value from the DataStore (a workflow may have written it
             // before the user opened/selected this instance; C26).
             if (_panelRuntime.GetControlValue(SelectedInstance.InstanceId, control.Id) is { } initial)
@@ -513,16 +524,25 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         SelectedTrigger = ManualTriggers.FirstOrDefault();
     }
 
-    /// <summary>Cross-window focus request: refresh tree, select instance, optionally show panel.</summary>
+    /// <summary>Cross-window focus request: select instance, optionally show panel. The
+    /// instance should already be known to this VM via the incremental event path; a full
+    /// reconciliation is only a defensive fallback for out-of-order requests.</summary>
     internal void FocusInstance(string instanceId, bool openPanel)
     {
-        RefreshInstances();
+        if (Instances.FirstOrDefault(i => i.InstanceId == instanceId) is null)
+            RefreshInstances();
         SelectedInstance = Instances.FirstOrDefault(i => i.InstanceId == instanceId);
         if (openPanel)
             SelectedTab = 0;
     }
 
-    private void RefreshInstances()
+    /// <summary>
+    /// Full reconciliation entry point: rebuilds the flat list, grouped tree, selection and
+    /// summary wholesale from <see cref="IToolkitService.Instances"/>. Kept as the defensive
+    /// entry for initial load, out-of-order events and unknown cases; the event-driven
+    /// incremental path must produce the same final state as this method.
+    /// </summary>
+    internal void RefreshInstances()
     {
         var selectedId = SelectedInstance?.InstanceId;
         Instances.Clear();
@@ -547,6 +567,112 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         var stillThere = Instances.FirstOrDefault(i => i.InstanceId == selectedId);
         SelectedInstance = stillThere;
         this.RaisePropertyChanged(nameof(Summary));
+    }
+
+    // ── Incremental, event-driven instance updates (G3) ──
+    // Each Bench event mutates only the affected row/group instead of rebuilding the whole
+    // tree. These paths must keep the VM's observable collections equal to a full
+    // <see cref="RefreshInstances"/> rebuild for the same underlying service state.
+
+    /// <summary>Reconcile one instance's row from the service state; fall back to a full
+    /// refresh if the service does not yet know it (out-of-order event).</summary>
+    private void ReconcileInstanceFromService(string instanceId)
+    {
+        var snapshot = _toolkitService.Instances.FirstOrDefault(i => i.InstanceId == instanceId);
+        if (snapshot is null)
+        {
+            RefreshInstances();
+            return;
+        }
+        UpsertInstance(snapshot);
+    }
+
+    /// <summary>Transition one row to <see cref="KitX.ToolKit.Instances.InstanceStatus.Completed"/>
+    /// in place (retained for later review, never removed).</summary>
+    private void MarkInstanceCompleted(string instanceId)
+    {
+        var snapshot = _toolkitService.Instances.FirstOrDefault(i => i.InstanceId == instanceId);
+        if (snapshot is null)
+        {
+            RefreshInstances();
+            return;
+        }
+        if (snapshot.Status != KitX.ToolKit.Instances.InstanceStatus.Completed)
+            snapshot = snapshot with { Status = KitX.ToolKit.Instances.InstanceStatus.Completed };
+        UpsertInstance(snapshot);
+    }
+
+    /// <summary>Insert or replace an instance in the flat list and its toolkit group,
+    /// creating the group on demand (it may be a not-yet-mounted toolkit).</summary>
+    private void UpsertInstance(InstanceSnapshot snapshot)
+    {
+        var flatIdx = IndexOf(_instances, snapshot.InstanceId);
+        if (flatIdx >= 0)
+            _instances[flatIdx] = snapshot;
+        else
+            _instances.Add(snapshot);
+
+        var group = _instanceGroups.FirstOrDefault(g => g.ToolkitId == snapshot.ToolkitId);
+        if (group is null)
+        {
+            var toolkit = _toolkitService.GetToolkit(snapshot.ToolkitId);
+            group = new InstanceGroupVM(snapshot.ToolkitId, toolkit?.Meta.Name ?? snapshot.ToolkitId);
+            _instanceGroups.Add(group);
+        }
+        var groupIdx = IndexOf(group.Instances, snapshot.InstanceId);
+        if (groupIdx >= 0)
+            group.Instances[groupIdx] = snapshot;
+        else
+            group.Instances.Add(snapshot);
+
+        RecomputeGroupRunning(group);
+
+        // Keep the selection pointing at the freshest snapshot of the selected instance
+        // without tearing down its panel controls (the VM's same-instance guard handles that).
+        if (SelectedInstance?.InstanceId == snapshot.InstanceId)
+            SelectedInstance = snapshot;
+
+        this.RaisePropertyChanged(nameof(Summary));
+    }
+
+    /// <summary>Remove an instance and its toolkit group when the group becomes empty.</summary>
+    private void RemoveInstance(string instanceId)
+    {
+        var flatIdx = IndexOf(_instances, instanceId);
+        if (flatIdx >= 0)
+        {
+            _instances.RemoveAt(flatIdx);
+            if (SelectedInstance?.InstanceId == instanceId)
+                SelectedInstance = null;
+        }
+
+        for (var gi = _instanceGroups.Count - 1; gi >= 0; gi--)
+        {
+            var group = _instanceGroups[gi];
+            var idx = IndexOf(group.Instances, instanceId);
+            if (idx < 0)
+                continue;
+            group.Instances.RemoveAt(idx);
+            RecomputeGroupRunning(group);
+            if (group.Instances.Count == 0)
+                _instanceGroups.RemoveAt(gi);
+        }
+
+        this.RaisePropertyChanged(nameof(Summary));
+    }
+
+    private void RecomputeGroupRunning(InstanceGroupVM group)
+    {
+        group.RunningCount = group.Instances.Count(i => i.Status == KitX.ToolKit.Instances.InstanceStatus.Running);
+        group.RaisePropertyChanged(nameof(InstanceGroupVM.HasRunning));
+    }
+
+    private static int IndexOf(ObservableCollection<InstanceSnapshot> list, string instanceId)
+    {
+        for (var i = 0; i < list.Count; i++)
+            if (list[i].InstanceId == instanceId)
+                return i;
+        return -1;
     }
 
     /// <summary>Unsubscribes event handlers (D11 window Unloaded-dispose pattern).</summary>

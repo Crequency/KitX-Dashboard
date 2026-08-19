@@ -26,11 +26,12 @@ public class PanelHostEventTests
 {
     private static InstanceSnapshot Snapshot(
         string instanceId,
+        string toolkitId = "tk",
         InstanceStatus status = InstanceStatus.Running,
         int activeRuns = 0,
         int completedRuns = 0,
         int failedRuns = 0)
-        => new(instanceId, "tk", "manual", Initiator.Unknown, status, DateTimeOffset.UtcNow, null,
+        => new(instanceId, toolkitId, "manual", Initiator.Unknown, status, DateTimeOffset.UtcNow, null,
             activeRuns, completedRuns, failedRuns);
 
     private static Toolkit Toolkit() => new()
@@ -38,6 +39,21 @@ public class PanelHostEventTests
         Id = "tk",
         Meta = new ToolkitMeta { Name = "demo" },
     };
+
+    private static InstanceSpawnedEvent Spawned(string toolkit, string instance)
+        => new(Guid.NewGuid().ToString("N"), toolkit, instance, DateTimeOffset.UtcNow, "manual", Initiator.Unknown, default);
+
+    private static RunStartedEvent RunStarted(string instance, string runId)
+        => new(Guid.NewGuid().ToString("N"), "tk", instance, DateTimeOffset.UtcNow, runId, "wf");
+
+    private static RunCompletedEvent RunCompleted(string instance, string runId, bool ok, string? error)
+        => new(Guid.NewGuid().ToString("N"), "tk", instance, DateTimeOffset.UtcNow, runId, "wf", ok, error);
+
+    private static InstanceCompletedEvent Completed(string toolkit, string instance)
+        => new(Guid.NewGuid().ToString("N"), toolkit, instance, DateTimeOffset.UtcNow, true);
+
+    private static InstanceCancelledEvent Cancelled(string toolkit, string instance)
+        => new(Guid.NewGuid().ToString("N"), toolkit, instance, DateTimeOffset.UtcNow);
 
     [AvaloniaFact]
     public void DialogRequestedEvent_PopulatesPendingDialog()
@@ -121,6 +137,95 @@ public class PanelHostEventTests
         Assert.Equal(0, vm.SelectedTab);
     }
 
+    // ── G2: Log ring cap ──
+
+    [Fact]
+    public void PanelControlLog_RingsAtConfiguredLimit()
+    {
+        var control = new UiControl { Type = "Log", Id = "log" };
+        var vm = new PanelControlViewModel(control, "inst-1", new FakePanelRuntime(), logLimit: 3);
+
+        for (var i = 1; i <= 5; i++)
+            vm.Apply("log", JsonSerializer.SerializeToElement("line-" + i));
+
+        // Oldest entries are trimmed as new ones append past the cap.
+        Assert.Equal(3, vm.LogEntries.Count);
+        Assert.Equal("line-3", vm.LogEntries[0]);
+        Assert.Equal("line-5", vm.LogEntries[^1]);
+    }
+
+    [Fact]
+    public void PanelControlLog_DefaultLimit_MatchesConfigDefault()
+    {
+        var control = new UiControl { Type = "Log", Id = "log" };
+        var vm = new PanelControlViewModel(control, "inst-1", new FakePanelRuntime());
+
+        for (var i = 1; i <= 1001; i++)
+            vm.Apply("log", JsonSerializer.SerializeToElement("line-" + i));
+
+        // The default cap (1000) is the config default Config_Performance.PanelLogLimit.
+        Assert.Equal(1000, vm.LogEntries.Count);
+        Assert.Equal("line-2", vm.LogEntries[0]);
+        Assert.Equal("line-1001", vm.LogEntries[^1]);
+    }
+
+    // ── G3: Incremental vs full-refresh consistency ──
+
+    [AvaloniaFact]
+    public void IncrementalEvents_ConsistentWithFullRefresh()
+    {
+        // Toolkit "tk" (known) + "tkB" (unknown to the mounted set — exercises on-demand grouping).
+        var toolkitA = Toolkit();
+        var toolkitB = new Toolkit { Id = "tkB", Meta = new ToolkitMeta { Name = "tkb" } };
+        var service = new FakeToolkitService([toolkitA, toolkitB], []);
+        var vm = new PanelHostViewModel(service, new FakeBenchService(), new FakePanelRuntime(), new FakeEventService());
+
+        // Drive a realistic mixed sequence through the incremental event path.
+        service.Add(Snapshot("a-1", toolkitId: "tk"));
+        service.Raise(Spawned("tk", "a-1"));
+
+        service.Add(Snapshot("a-2", toolkitId: "tk"));
+        service.Raise(Spawned("tk", "a-2"));
+
+        // Unknown toolkit spawn → on-demand group creation.
+        service.Add(Snapshot("b-1", toolkitId: "tkB"));
+        service.Raise(Spawned("tkB", "b-1"));
+
+        // Run events only touch the row counters (collection structure unchanged).
+        service.Replace(Snapshot("a-1", toolkitId: "tk", activeRuns: 1));
+        service.Raise(RunStarted("a-1", "run-1"));
+
+        service.Replace(Snapshot("b-1", toolkitId: "tkB", completedRuns: 1, failedRuns: 0));
+        service.Raise(RunCompleted("b-1", "run-x", true, null));
+
+        // Instance completed → row retained with Completed status.
+        service.Replace(Snapshot("a-2", toolkitId: "tk", status: InstanceStatus.Completed, completedRuns: 2));
+        service.Raise(Completed("tk", "a-2"));
+
+        // Instance cancelled → row removed; its group deleted when empty.
+        service.Remove("a-1");
+        service.Raise(Cancelled("tk", "a-1"));
+
+        // A second VM rebuilt wholesale from the identical final service state must match.
+        var full = new FakeToolkitService([toolkitA, toolkitB], [.. service.Instances]);
+        var fullVm = new PanelHostViewModel(full, new FakeBenchService(), new FakePanelRuntime(), new FakeEventService());
+        fullVm.RefreshInstances();
+
+        AssertEquivalentTree(vm, fullVm);
+    }
+
+    /// <summary>Compares flat list and grouped tree field-by-field between two VMs.</summary>
+    private static void AssertEquivalentTree(PanelHostViewModel a, PanelHostViewModel b)
+    {
+        Assert.Equal(
+            a.Instances.Select(i => (i.InstanceId, i.ToolkitId, i.Status, i.ActiveRuns, i.CompletedRuns, i.FailedRuns)),
+            b.Instances.Select(i => (i.InstanceId, i.ToolkitId, i.Status, i.ActiveRuns, i.CompletedRuns, i.FailedRuns)));
+
+        Assert.Equal(
+            a.InstanceGroups.Select(g => (g.ToolkitId, g.Name, g.RunningCount, string.Join(",", g.Instances.Select(i => i.InstanceId)))),
+            b.InstanceGroups.Select(g => (g.ToolkitId, g.Name, g.RunningCount, string.Join(",", g.Instances.Select(i => i.InstanceId)))));
+    }
+
     // ── Fakes ──
 
     private sealed class FakeToolkitService(List<Toolkit> toolkits, List<InstanceSnapshot> instances) : IToolkitService
@@ -130,7 +235,18 @@ public class PanelHostEventTests
 
         public void Raise(BenchEvent e) => BenchEvent?.Invoke(this, e);
 
-        public void Replace(InstanceSnapshot snapshot) => instances[0] = snapshot;
+        public void Replace(InstanceSnapshot snapshot)
+        {
+            var idx = instances.FindIndex(i => i.InstanceId == snapshot.InstanceId);
+            if (idx >= 0)
+                instances[idx] = snapshot;
+            else
+                instances.Add(snapshot);
+        }
+
+        public void Add(InstanceSnapshot snapshot) => instances.Add(snapshot);
+
+        public void Remove(string instanceId) => instances.RemoveAll(i => i.InstanceId == instanceId);
 
         public IReadOnlyList<Toolkit> ListToolkits() => toolkits;
         public Toolkit? GetToolkit(string toolkitId) => toolkits.FirstOrDefault(t => t.GetId() == toolkitId);

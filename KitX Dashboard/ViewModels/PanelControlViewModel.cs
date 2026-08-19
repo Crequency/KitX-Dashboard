@@ -25,13 +25,19 @@ internal sealed class PanelControlViewModel : ReactiveObject
 {
     private readonly string _instanceId;
     private readonly IPanelRuntime _panelRuntime;
+    private readonly int _logLimit;
 
     private string _text;
     private object? _value;
     private bool _enabled = true;
     private readonly ObservableCollection<string> _logEntries = [];
 
-    public PanelControlViewModel(UiControl control, string instanceId, IPanelRuntime panelRuntime)
+    /// <summary>
+    /// Creates a panel control VM. <paramref name="logLimit"/> bounds the number of log
+    /// entries this Log control retains (G2 ring cap): appending past it trims the oldest
+    /// entries so the on-screen list stays bounded.
+    /// </summary>
+    public PanelControlViewModel(UiControl control, string instanceId, IPanelRuntime panelRuntime, int logLimit = 1000)
     {
         Type = control.Type;
         Id = control.Id;
@@ -39,6 +45,7 @@ internal sealed class PanelControlViewModel : ReactiveObject
         _text = StaticText;
         _instanceId = instanceId;
         _panelRuntime = panelRuntime;
+        _logLimit = logLimit < 1 ? 1000 : logLimit;
         Options = control.Options;
         _selectItems = ParseStaticItems(control.Options);
 
@@ -221,7 +228,14 @@ internal sealed class PanelControlViewModel : ReactiveObject
         {
             var entry = value is { ValueKind: JsonValueKind.String } l ? l.GetString() : value?.GetRawText();
             if (entry is not null)
+            {
                 LogEntries.Add(entry);
+                // Ring cap (G2): trim the oldest entry when the per-control log exceeds the
+                // configured limit. RemoveAt(0) is O(n) but bounded to the cap, which is
+                // plenty for the typical < 1000-entry Log control.
+                while (LogEntries.Count > _logLimit)
+                    LogEntries.RemoveAt(0);
+            }
         }
     }
 
