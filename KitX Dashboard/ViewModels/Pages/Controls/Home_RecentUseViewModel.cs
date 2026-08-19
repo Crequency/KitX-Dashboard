@@ -1,5 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-using KitX.Core.Activity;
+using KitX.Core.Contract.Activity;
 using KitX.Core.Plugin;
 using KitX.Dashboard.Views;
 
@@ -7,8 +7,12 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Home_RecentUseViewModel : ViewModelBase, IView
 {
-    public Home_RecentUseViewModel()
+    private readonly IActivityService _activityService;
+
+    public Home_RecentUseViewModel(IActivityService activityService)
     {
+        _activityService = activityService;
+
         InitCommands();
 
         InitEvents();
@@ -21,11 +25,11 @@ internal class Home_RecentUseViewModel : ViewModelBase, IView
     /// activity type is recorded yet (Core currently records AppLifetime only), so
     /// this yields an empty list and the "no recent" tip stays visible; the pipeline
     /// is in place for future plugin-launch recordings. Follows the
-    /// Home_ActivityLogViewModel pattern (static ActivityManager read).
+    /// Home_ActivityLogViewModel pattern (IActivityService read).
     /// </summary>
     private void LoadRecentPlugins()
     {
-        var recent = ActivityManager.ReadActivities();
+        var recent = _activityService.ReadActivities();
 
         NoRecent_TipHeight = recent.Count == 0 ? 200 : 0;
     }

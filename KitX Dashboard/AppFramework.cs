@@ -11,7 +11,6 @@ using Avalonia.Threading;
 using CommandLine;
 using Common.BasicHelper.IO;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Core.Activity;
 using KitX.Core.Configuration;
 using KitX.Core.Contract.Activity;
 using KitX.Core.Contract.Configuration;
@@ -24,7 +23,6 @@ using KitX.Core.Contract.Tasks;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Options;
 using KitX.Dashboard.Services;
-using LiteDB;
 using ReactiveUI;
 using Serilog;
 using Serilog.Events;
@@ -173,14 +171,17 @@ public static class AppFramework
 
         #endregion
 
-        #region Initialize DataBase
-
-        // TODO: [Architecture] Database initialization should be moved to Core Activity module.
-        // Currently kept here because LiteDatabase instance needs to be set on both
-        // ActivityManager.ActivitiesDatabase before DI services use it.
-        InitDataBase();
-
-        #endregion
+        // Database initialization now happens inside the Core ActivityManager constructor:
+        // the DI singleton opens the LiteDB file on first IActivityService resolution, so no
+        // Dashboard-side init is needed. Record the app start here.
+        try
+        {
+            App.GetService<IActivityService>().RecordAppStart();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"In {nameof(AppFramework)}.RecordAppStart: {ex.Message}");
+        }
 
         #region Initialize WebManager
 
@@ -230,32 +231,6 @@ public static class AppFramework
         #endregion
 
         actionsInInitialization.ForEach(x => x.Invoke());
-    }
-
-    private static void InitDataBase()
-    {
-        const string location = $"{nameof(AppFramework)}.{nameof(InitDataBase)}";
-
-        try
-        {
-            var dir = ConstantTable.DataPath.GetFullPath();
-
-            if (!Directory.Exists(dir))
-                _ = Directory.CreateDirectory(dir);
-
-            var dbfile = ConstantTable.ActivitiesDataBaseFilePath.GetFullPath();
-
-            var db = new LiteDatabase(dbfile);
-
-            // Set the database for Core ActivityManager
-            KitX.Core.Activity.ActivityManager.ActivitiesDatabase = db;
-
-            App.GetService<IActivityService>().RecordAppStart();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, $"In {location}: {ex.Message}");
-        }
     }
 
     private static async void LoadResource()
