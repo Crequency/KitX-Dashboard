@@ -227,6 +227,9 @@
     <sys:String x:Key="Text_Settings_Performance_LogFileLevel">日志級別</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Update">更新相關設置</sys:String>
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">更新檢查每綫程處理文件數量</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow">工作流相關設置</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">腳本編譯緩存上限</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">已完成實例保留上限</sys:String>
     <sys:String x:Key="Text_Settings_Update">更新</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">檢查更新</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">組件名稱</sys:String>

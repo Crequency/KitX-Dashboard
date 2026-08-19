@@ -20,6 +20,7 @@ using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
 using KitX.WorkflowV6.Hosting;
 using KitX.ToolKit.Hosting;
+using KitX.ToolKit.Instances;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.ViewModels.Maintain;
 using KitX.Dashboard.ViewModels.Pages;
@@ -66,6 +67,23 @@ public partial class App : Application
         // handled by the unified ToolkitInstanceManager-based trigger system (WorkflowV6
         // hosts the trigger runtime, ToolKit owns the instance lifecycle).
         services.AddKitXToolKit();
+
+        // Startup-only performance knobs. Both extensions register a default
+        // options singleton with AddSingleton (Add, not TryAdd — last registration
+        // wins), so the config-backed factories below are registered AFTER the Add
+        // calls to reliably override those defaults. IConfigService is resolved
+        // lazily per service first use (not at registration time), so no temporary
+        // provider / duplicate BuildServiceProvider is needed.
+        services.AddSingleton(sp => new WorkflowV6Options
+        {
+            ScriptCompilerCacheCapacity = sp.GetRequiredService<IConfigService>()
+                .AppConfig.Performance.ScriptCompilerCacheCapacity,
+        });
+        services.AddSingleton(sp => new ToolkitInstanceManagerOptions
+        {
+            CompletedInstanceCap = sp.GetRequiredService<IConfigService>()
+                .AppConfig.Performance.CompletedInstanceCap,
+        });
 
         // Register Dashboard-specific services
         services.AddSingleton<IFileDialogService, FileDialogService>();

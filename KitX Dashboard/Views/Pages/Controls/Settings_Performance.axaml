@@ -410,6 +410,58 @@
 
             </Expander>
 
+            <Expander Margin="20,5" IsExpanded="False">
+                <Expander.Header>
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                        <icon:MaterialIcon Margin="5,0" Kind="Code"/>
+                        <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performance_Workflow}"/>
+                    </StackPanel>
+                </Expander.Header>
+
+                <StackPanel>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="Memory"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity}"/>
+                            </StackPanel>
+
+                            <ui:NumberBox Classes="Enabled"
+                                          Minimum="16"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding ScriptCompilerCacheCapacity}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="Storage"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performance_Workflow_CompletedInstanceCap}"/>
+                            </StackPanel>
+
+                            <ui:NumberBox Classes="Enabled"
+                                          Minimum="10"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding CompletedInstanceCap}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
+                </StackPanel>
+
+            </Expander>
+
             <Border Height="100"/>
 
         </StackPanel>

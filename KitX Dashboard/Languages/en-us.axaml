@@ -227,6 +227,9 @@
     <sys:String x:Key="Text_Settings_Performance_LogFileLevel">Log Level</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Update">Update Related Settings</sys:String>
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">Checker Per Threads Handled Files Count Limit</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow">Workflow Related Settings</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">Script Compiler Cache Capacity</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">Completed Instance Retention Cap</sys:String>
     <sys:String x:Key="Text_Settings_Update">Update</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">Check Update</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">Component Name</sys:String>

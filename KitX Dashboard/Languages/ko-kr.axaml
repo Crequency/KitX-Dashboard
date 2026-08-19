@@ -227,6 +227,9 @@
     <sys:String x:Key="Text_Settings_Performance_LogFileLevel">로그 수준</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Update">관련 설정 업데이트</sys:String>
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">업데이트는 스레드당 처리된 파일 수를 확인합니다.</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow">워크플로 관련 설정</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">스크립트 컴파일러 캐시 용량</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">완료된 인스턴스 보존 상한</sys:String>
     <sys:String x:Key="Text_Settings_Update">고쳐 쓰다</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">업데이트 확인</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">구성 요소 이름</sys:String>

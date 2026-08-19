@@ -227,6 +227,9 @@
     <sys:String x:Key="Text_Settings_Performance_LogFileLevel">уровень журнала</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Update">Обновить связанные настройки</sys:String>
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">Обновление проверяет количество файлов, обрабатываемых за поток</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow">Настройки, связанные с рабочим процессом</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">Вместимость кэша компилятора скриптов</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">Лимит хранения завершённых экземпляров</sys:String>
     <sys:String x:Key="Text_Settings_Update">возобновить</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">Проверить наличие обновлений</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">имя компонента</sys:String>

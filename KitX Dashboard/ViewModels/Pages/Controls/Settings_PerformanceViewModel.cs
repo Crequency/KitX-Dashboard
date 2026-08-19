@@ -433,6 +433,41 @@ internal class Settings_PerformanceViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Maximum number of compiled workflow assemblies kept in the WorkflowV6
+    /// ScriptCompiler in-memory LRU cache. This value is consumed at startup by the
+    /// WorkflowV6 backend (not hot-reloaded), so no EventNames publish is required
+    /// — unlike LogFileMaxCount which reconfigures the logger live.
+    /// </summary>
+    internal int ScriptCompilerCacheCapacity
+    {
+        get => _configService.AppConfig.Performance.ScriptCompilerCacheCapacity;
+        set
+        {
+            // Defensive lower bound — a capacity below the minimum is meaningless.
+            _configService.AppConfig.Performance.ScriptCompilerCacheCapacity = value < 16 ? 16 : value;
+
+            _configService.SaveAll();
+        }
+    }
+
+    /// <summary>
+    /// Maximum number of Completed instances retained by the ToolKit instance manager.
+    /// This value is consumed at startup (not hot-reloaded), so no EventNames is
+    /// published — unlike LogFileMaxCount which reconfigures the logger live.
+    /// </summary>
+    internal int CompletedInstanceCap
+    {
+        get => _configService.AppConfig.Performance.CompletedInstanceCap;
+        set
+        {
+            // Defensive clamp — a cap below the minimum floor is unusable.
+            _configService.AppConfig.Performance.CompletedInstanceCap = value < 10 ? 10 : value;
+
+            _configService.SaveAll();
+        }
+    }
+
     private static string GetLogLevelDisplayText(string key) => Translate(key, prefix: "Text_Log_") ?? string.Empty;
 
     internal List<SupportedLogLevel> SupportedLogLevels { get; } =

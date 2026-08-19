@@ -227,6 +227,9 @@
     <sys:String x:Key="Text_Settings_Performance_LogFileLevel">niveau de journalisation</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Update">Mettre à jour les paramètres associés</sys:String>
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">La mise à jour vérifie le nombre de fichiers traités par thread</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow">Paramètres liés au workflow</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">Capacité du cache du compilateur de scripts</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">Limite de rétention des instances terminées</sys:String>
     <sys:String x:Key="Text_Settings_Update">renouveler</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">Vérifier les mises à jour</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">Nom du composant</sys:String>
