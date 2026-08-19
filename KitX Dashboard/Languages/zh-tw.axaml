@@ -1,4 +1,5 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
+    <x:String x:Key="CurrentLanguage">zh-tw</x:String>
     <sys:String x:Key="Text_MainWindow_Title">KitX 儀表盤</sys:String>
     <sys:String x:Key="Text_Public_Enable">啟用</sys:String>
     <sys:String x:Key="Text_Public_Disable">禁用</sys:String>

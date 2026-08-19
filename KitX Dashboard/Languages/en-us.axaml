@@ -1,4 +1,5 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
+    <x:String x:Key="CurrentLanguage">en-us</x:String>
     <sys:String x:Key="Text_MainWindow_Title">KitX Dashboard</sys:String>
     <sys:String x:Key="Text_Public_Enable">Enable</sys:String>
     <sys:String x:Key="Text_Public_Disable">Disable</sys:String>

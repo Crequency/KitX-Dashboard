@@ -223,13 +223,6 @@ public partial class App : Application
         }
     }
 
-    /// <summary>
-    /// Effective UI language code (e.g. "zh-cn", "en-us"). Kept in sync by
-    /// <see cref="Utils.LanguageLoader.LoadLanguage"/> so pure display Converters can
-    /// read the current language without resolving <see cref="IConfigService"/>.
-    /// </summary>
-    public static string AppLanguage { get; internal set; } = "en-us";
-
     private AppViewModel? viewModel;
 
     public override void Initialize()

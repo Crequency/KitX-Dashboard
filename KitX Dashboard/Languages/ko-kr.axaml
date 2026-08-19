@@ -1,4 +1,5 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="using:System">
+    <x:String x:Key="CurrentLanguage">ko-kr</x:String>
     <sys:String x:Key="Text_MainWindow_Title">KitX 대시보드</sys:String>
     <sys:String x:Key="Text_Public_Enable">~할 수 있게 하다</sys:String>
     <sys:String x:Key="Text_Public_Disable">장애가 있는</sys:String>

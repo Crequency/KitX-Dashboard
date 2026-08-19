@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Data.Converters;
 
 namespace KitX.Dashboard.Converters;
@@ -15,15 +17,34 @@ public class PluginMultiLanguagePropertyConverter : IValueConverter
 
         if (value is Dictionary<string, string> dict && dict.Count > 0)
         {
-            // Current UI language from the app-level static (kept in sync by
-            // LanguageLoader) — pure display conversion, no service lookup.
-            var appLanguage = App.AppLanguage;
+            // Current UI language comes from the loaded language resource dictionary
+            // (each {lang}.axaml carries a CurrentLanguage key). This converter is
+            // instantiated parameterlessly in XAML resources, so it reads the current
+            // language from the resource tree instead of a static or a service lookup.
+            var appLanguage = CurrentLanguageCode(Application.Current);
             var result = dict.TryGetValue(appLanguage, out var lang) ? lang : dict.Values.FirstOrDefault() ?? string.Empty;
 
             return result;
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    /// Resolves the current UI language code from the loaded resource dictionary.
+    /// Falls back to <paramref name="fallback"/> when the host is null or the
+    /// <c>CurrentLanguage</c> resource is absent (e.g. in headless tests without an
+    /// <see cref="Application"/>). Pure display lookup — no service or static dependency.
+    /// </summary>
+    internal static string CurrentLanguageCode(IResourceHost? host, string fallback = "en-us")
+    {
+        if (host is not null
+            && host.TryFindResource("CurrentLanguage", out var found)
+            && found is string lang
+            && !string.IsNullOrWhiteSpace(lang))
+            return lang;
+
+        return fallback;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

@@ -48,8 +48,6 @@ internal static class LanguageLoader
         if (!config.App.SurpportLanguages.ContainsKey(lang))
             lang = backupLang;
 
-        App.AppLanguage = lang;
-
         try
         {
             Application.Current.Resources.MergedDictionaries.Clear();
@@ -67,7 +65,6 @@ internal static class LanguageLoader
                 Application.Current.Resources.MergedDictionaries.Add(LoadDictionary(backupLang));
 
                 config.App.AppLanguage = backupLang;
-                App.AppLanguage = backupLang;
             }
             catch (Exception e)
             {
