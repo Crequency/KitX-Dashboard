@@ -5,7 +5,6 @@ using System.Linq;
 using Avalonia.Controls;
 using KitX.Core.Contract.Device;
 using KitX.Core.Contract.Event;
-using KitX.Core.Contract.Workflow;
 using KitX.Dashboard;
 using KitX.Dashboard.Views;
 using KitX.Shared.CSharp.Plugin;
@@ -19,8 +18,6 @@ namespace KitX.Dashboard.Services;
 public static class UIStateService
 {
     public static ObservableCollection<IDeviceCase> DeviceCases { get; set; } = [];
-
-    public static ObservableCollection<IWorkflowCase> WorkflowCases { get; set; } = [];
 
     public static ObservableCollection<PluginInfo> PluginInfos { get; set; } = [];
 

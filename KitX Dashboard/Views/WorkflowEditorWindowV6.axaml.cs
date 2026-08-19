@@ -35,7 +35,7 @@ namespace KitX.Dashboard.Views;
 //   • Helper Function settings (return type, parameters add/remove).
 //   • Mode-switch synchronization (refresh TextEditor on BP→KS).
 //   • Save (Ctrl+S) and auto-save on window closing.
-//   • LoadWorkflowAsync (from .kcs by workflow ID).
+//   • LoadWorkflowFileAsync (ToolKit-bundled .kcs by file path).
 // ─────────────────────────────────────────────────────────────────────────────
 
 public partial class WorkflowEditorWindowV6 : Window
@@ -107,16 +107,6 @@ public partial class WorkflowEditorWindowV6 : Window
     }
 
     // ── Load workflow ──
-
-    public async Task LoadWorkflowAsync(string workflowId)
-    {
-        // B1: business logic (storage load + IR deserialisation) lives in the VM; the
-        // view keeps the name so external callers (BenchViewModel) are unchanged, then
-        // re-syncs the editor controls to the loaded state.
-        await _viewModel.LoadWorkflowAsync(workflowId);
-        SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
-        RefreshConstantsPanel();
-    }
 
     /// <summary>Loads a ToolKit-bundled workflow by explicit file path (Bench UX v2 C5).</summary>
     public async Task LoadWorkflowFileAsync(string filePath)

@@ -74,9 +74,11 @@ public partial class App : Application
         // prompt). Registered as a singleton so it can subscribe to OnReceiveExchangeDeviceKey.
         services.AddSingleton<IDeviceKeyExchangeUi, DeviceKeyExchangeUiService>();
 
-        // S2 (WorkflowStorageService) is still registered inside AddKitXWorkflowV6() above;
-        // the former S4 (WorkflowSessionManager) and S6 (TriggerManager) services were
-        // retired as part of the v5 lifecycle cleanup.
+        // The legacy standalone-workflow storage service (S2 WorkflowStorageService /
+        // IWorkflowStorageService) was retired in the D2 cleanup — workflows are now
+        // created/edited only through the ToolKit workbench. The former S4
+        // (WorkflowSessionManager) and S6 (TriggerManager) services were retired as part
+        // of the v5 lifecycle cleanup.
 
         // Register SignalTasksManager for signal-based coordination
         services.AddSingleton<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();

@@ -29,7 +29,6 @@ public class WorkflowEditorV6ParameterTests
             registry,
             pluginServer: null!,
             runner: null!,
-            storageService: null!,
             eventService: null!,
             configService: null!,
             fileStore: null!);

@@ -43,7 +43,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 {
     public enum EditorMode { BlockScript, Blueprint }
 
-    private readonly IWorkflowStorageService _storageService;
     private readonly IToolkitWorkflowFileStore _fileStore;
     private readonly IEventService _eventService;
     private readonly IPluginServer _pluginServer;
@@ -67,7 +66,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private string _workflowName = "Untitled Workflow (v6)";
     private string _workflowDescription = string.Empty;
     private string _workflowAuthor = string.Empty;
-    private TriggerConfig? _triggerConfig;
     private bool _isDirty;
     private string _executionOutput = string.Empty;
     private bool _isExecuting;
@@ -82,11 +80,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// positions survive round-trips. Null when the file carried no layout.
     /// </summary>
     private Dictionary<string, BlueprintLayoutEntry>? _savedLayout;
-
-    // ─── Trigger Configuration ──────────────────────────────────────────
-    private string _triggerType = "Manual";
-    private string? _triggerPluginName;
-    private string? _triggerName;
 
     // ─── Helper Function ───────────────────────────────────────────────
     private HelperFunction? _selectedHelperFunction;
@@ -120,7 +113,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         BuiltinFunctionRegistry registry,
         IPluginServer pluginServer,
         IWorkflowRunner runner,
-        IWorkflowStorageService storageService,
         IEventService eventService,
         IConfigService configService,
         IToolkitWorkflowFileStore fileStore)
@@ -129,7 +121,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         _bpGraphLens = bpGraphLens ?? throw new ArgumentNullException(nameof(bpGraphLens));
         _pluginServer = pluginServer;
         _runner = runner;
-        _storageService = storageService;
         _fileStore = fileStore;
         _eventService = eventService;
         _configService = configService;
@@ -239,67 +230,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     {
         get => _conversionError;
         set => SetProperty(ref _conversionError, value);
-    }
-
-    // ── Trigger ──
-
-    public string[] TriggerTypeOptions { get; } = ["Manual", "PluginEvent"];
-    public ObservableCollection<string> AvailablePlugins { get; } = [];
-    public ObservableCollection<string> AvailableTriggers { get; } = [];
-
-    public string TriggerType
-    {
-        get => _triggerType;
-        set
-        {
-            if (SetProperty(ref _triggerType, value))
-            {
-                OnPropertyChanged(nameof(IsPluginEventTrigger));
-                if (value == "PluginEvent") RefreshAvailablePlugins();
-                IsDirty = true;
-            }
-        }
-    }
-
-    public bool IsPluginEventTrigger => _triggerType == "PluginEvent";
-
-    public string? TriggerPluginName
-    {
-        get => _triggerPluginName;
-        set
-        {
-            if (SetProperty(ref _triggerPluginName, value))
-            {
-                RefreshAvailableTriggers();
-                IsDirty = true;
-            }
-        }
-    }
-
-    public string? TriggerName
-    {
-        get => _triggerName;
-        set { if (SetProperty(ref _triggerName, value)) IsDirty = true; }
-    }
-
-    private void RefreshAvailablePlugins()
-    {
-        AvailablePlugins.Clear();
-        if (_pluginServer == null) return;
-        foreach (var conn in _pluginServer.Connections)
-            if (!string.IsNullOrEmpty(conn.PluginInfo?.Name))
-                AvailablePlugins.Add(conn.PluginInfo.Name);
-    }
-
-    private void RefreshAvailableTriggers()
-    {
-        AvailableTriggers.Clear();
-        if (string.IsNullOrEmpty(_triggerPluginName) || _pluginServer == null) return;
-        var conn = _pluginServer.Connections
-            .FirstOrDefault(c => c.PluginInfo?.Name == _triggerPluginName);
-        if (conn?.PluginInfo?.SupportedTriggers == null) return;
-        foreach (var trigger in conn.PluginInfo.SupportedTriggers)
-            AvailableTriggers.Add(trigger);
     }
 
     // ── Helper Functions ──
@@ -618,12 +548,11 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// Rebuilds the BP canvas from a Workflow IR (reverse → project → load). Used by
     /// DebugRun so canvas node IDs are the FNV-1a statement IDs the debugger emits —
     /// palette-added nodes (random IDs) otherwise never highlight. Mirrors the
-    /// KS→BP switch flow (trigger entry + panel user values re-applied).
+    /// KS→BP switch flow (panel user values re-applied).
     /// </summary>
     private void ReloadCanvasFromIr(V6Workflow ir)
     {
         var bp = _bpGraphLens.Project(ir);
-        ApplyTriggerToBlueprint(bp);
         ApplySavedLayout(bp);
         RestoreUserValuesFromPanel(bp);
         var scopes = _bpGraphLens.AnalyzeScopes(bp);
@@ -633,9 +562,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// <summary>
     /// Overrides projected node coordinates with the persisted layout (T5). The layout
     /// keys are CANONICAL node ids — exactly the ids Project just produced — so nodes
-    /// map 1:1 back to their saved canvas positions. Entry/PluginTriggerNode ride
-    /// TriggerConfig instead; DetachedGraph nodes keep their snapshot coordinates
-    /// (their random ids can never match a canonical key).
+    /// map 1:1 back to their saved canvas positions. Entry/PluginTriggerNode are
+    /// excluded (their positions are not part of the layout table); DetachedGraph nodes
+    /// keep their snapshot coordinates (their random ids can never match a canonical key).
     /// </summary>
     private void ApplySavedLayout(Blueprint bp)
     {
@@ -672,7 +601,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                     // Variable Constants panel (as overrides) BEFORE reversing, so the
                     // reverse projection only carries the KS script defaults.
                     SyncUserValuesFromBlueprint(bp);
-                    RestoreTriggerFromBlueprint(bp);
                     // Re-attach KS-side privileged doc comments (block doc / file-end) from
                     // the pre-reversal IR — the BP graph does not project them (T7 K5), so
                     // a full reversal would otherwise drop them on the BP round-trip.
@@ -743,62 +671,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
     }
 
-    // ── Trigger ↔ Blueprint entry node (P3-δ) ──
-
-    /// <summary>
-    /// Applies the PluginEvent trigger configuration to a freshly projected Blueprint
-    /// (v5.1 pattern): restores the persisted entry coordinates from
-    /// <see cref="TriggerConfig.EntryNodeX/Y"/>, then — when the trigger type is
-    /// PluginEvent with a plugin selected — swaps the synthetic EntryNode for a
-    /// <see cref="PluginTriggerNode"/> carrying PluginName/TriggerName (in place,
-    /// preserving Id/pin Id via <see cref="TriggerEntrySwapper"/>), so the canvas
-    /// renders the trigger entry before scope analysis.
-    /// </summary>
-    private void ApplyTriggerToBlueprint(Blueprint bp)
-    {
-        var entry = TriggerEntrySwapper.FindEntry(bp);
-        if (entry is null) return;
-
-        // Restore persisted entry coordinates (they live in TriggerConfig, not IR).
-        if (_triggerConfig is not null && (_triggerConfig.EntryNodeX != 0 || _triggerConfig.EntryNodeY != 0))
-        {
-            entry.X = _triggerConfig.EntryNodeX;
-            entry.Y = _triggerConfig.EntryNodeY;
-        }
-
-        if (TriggerType != "PluginEvent" || string.IsNullOrEmpty(TriggerPluginName))
-            return;
-
-        TriggerEntrySwapper.SwapToPlugin(bp, TriggerPluginName, TriggerName ?? string.Empty);
-    }
-
-    /// <summary>
-    /// Reverses the frontend entry swap before BP→KS: when the canvas root is a
-    /// <see cref="PluginTriggerNode"/>, its PluginName/TriggerName (plus coordinates)
-    /// feed back into the TriggerConfig and the node reverts to an EntryNode so the
-    /// reverse translator walks the exec graph normally. If no trigger node is present
-    /// (user deleted it on the canvas) the trigger configuration resets to Manual.
-    /// </summary>
-    private void RestoreTriggerFromBlueprint(Blueprint bp)
-    {
-        var trigger = TriggerEntrySwapper.SwapBackToEntry(bp);
-        if (trigger is not null)
-        {
-            TriggerType = "PluginEvent";
-            TriggerPluginName = trigger.PluginName;
-            TriggerName = trigger.TriggerName;
-            _triggerConfig ??= new TriggerConfig();
-            _triggerConfig.EntryNodeX = trigger.X;
-            _triggerConfig.EntryNodeY = trigger.Y;
-        }
-        else
-        {
-            TriggerType = "Manual";
-            TriggerPluginName = null;
-            TriggerName = null;
-        }
-    }
-
     private void RenderBlueprintFromKs()
     {
         try
@@ -820,7 +692,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             _lastIr = ir;
 
             var bp = _bpGraphLens.Project(ir);
-            ApplyTriggerToBlueprint(bp);
             ApplySavedLayout(bp);
             Log.Information("[WFEVM] RenderBlueprintFromKs: bp={Nodes} nodes, panel={Consts} entries — restoring panel user values",
                 bp.Nodes.Count, VariableConstants.Count);
@@ -845,7 +716,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     /// <summary>
     /// Loads a v6 Workflow IR (deserialised from a .kcs file's IrData), renders it
-    /// to KS text, restores metadata/trigger/helper functions.
+    /// to KS text, restores metadata/helper functions.
     /// </summary>
     public void LoadFromIr(V6Workflow ir, string name, KcsFileFormat? kcs)
     {
@@ -880,19 +751,6 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             }
         }
 
-        // Restore trigger config
-        if (kcs?.TriggerConfig != null)
-        {
-            _triggerConfig = kcs.TriggerConfig;
-            TriggerType = kcs.TriggerConfig.TriggerType ?? "Manual";
-            TriggerPluginName = kcs.TriggerConfig.PluginName;
-            TriggerName = kcs.TriggerConfig.TriggerName;
-        }
-        else
-        {
-            _triggerConfig = new TriggerConfig();
-        }
-
         // Restore metadata
         if (kcs != null)
         {
@@ -901,44 +759,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
     }
 
-    // ── Load from storage / file (B1: moved out of the window code-behind) ──
-
-    /// <summary>
-    /// Loads a v6 workflow from global workflow storage by its ID, deserialises its
-    /// IrData and renders it into the editor. The view then mirrors KsSource /
-    /// VariableConstants onto the editor controls (see the window's forwarding wrapper).
-    /// </summary>
-    public async Task LoadWorkflowAsync(string workflowId)
-    {
-        if (_storageService == null)
-        {
-            StatusText = "Storage service unavailable";
-            return;
-        }
-
-        var kcs = await _storageService.LoadWorkflowDataAsync(workflowId);
-        if (kcs == null)
-        {
-            StatusText = $"Workflow not found: {workflowId}";
-            return;
-        }
-        if (kcs.IrVersion != "v6")
-        {
-            StatusText = $"Not a v6 workflow (IrVersion={kcs.IrVersion ?? "null"})";
-            return;
-        }
-
-        try
-        {
-            var ir = KitX.WorkflowV6.Serialization.WorkflowSerializer.Deserialize(kcs.IrData);
-            SetWorkflowId(workflowId);
-            LoadFromIr(ir, kcs.Name, kcs);
-        }
-        catch (Exception ex)
-        {
-            StatusText = $"Failed to load v6 IR: {ex.Message}";
-        }
-    }
+    // ── Load from file (B1: moved out of the window code-behind) ──
 
     /// <summary>Loads a ToolKit-bundled workflow by explicit file path (Bench UX v2 C5).</summary>
     public async Task LoadWorkflowFileAsync(string filePath)
@@ -982,7 +803,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// </summary>
     public async Task SaveAsync()
     {
-        if (_workflowId == null || _storageService == null) return;
+        // Workflows are ToolKit-bundled files — a save requires a resolved file path
+        // (set by LoadWorkflowFileAsync). The legacy global-storage save path was
+        // retired with the standalone-workflow system (D2).
+        if (_workflowId == null || _workflowFilePath is null) return;
 
         try
         {
@@ -1000,28 +824,15 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
             var irData = KitX.WorkflowV6.Serialization.WorkflowSerializer.Serialize(ir);
 
-            var tc = _triggerConfig ?? new TriggerConfig();
-            tc.TriggerType = TriggerType;
-            tc.PluginName = TriggerPluginName;
-            tc.TriggerName = TriggerName;
-
-            // Persist the entry/trigger node coordinates (P3-δ): they are not part of
-            // the IR annotation system — they follow the trigger envelope in TriggerConfig.
+            // T5: persist the BP canvas layout. Keys are CANONICAL node ids
+            // (FNV-1a of the BpRenderer path, from the Reverse id map) — never the
+            // random palette ids — so the load side can look them up straight after
+            // Project re-projection. Entry/PluginTriggerNode are excluded (their
+            // positions are not part of the layout table); DetachedGraph nodes have no
+            // path → no map key → naturally excluded.
             Dictionary<string, BlueprintLayoutEntry>? layout = null;
             if (BlueprintVM.WorkingBlueprint is { } wb)
             {
-                var root = wb.Nodes.FirstOrDefault(n => n is EntryNode or PluginTriggerNode);
-                if (root is not null)
-                {
-                    tc.EntryNodeX = root.X;
-                    tc.EntryNodeY = root.Y;
-                }
-
-                // T5: persist the BP canvas layout. Keys are CANONICAL node ids
-                // (FNV-1a of the BpRenderer path, from the Reverse id map) — never the
-                // random palette ids — so the load side can look them up straight after
-                // Project re-projection. Entry/PluginTriggerNode ride TriggerConfig (above);
-                // DetachedGraph nodes have no path → no map key → naturally excluded.
                 if (_mode == EditorMode.Blueprint && idMap is { Count: > 0 })
                 {
                     layout = new Dictionary<string, BlueprintLayoutEntry>();
@@ -1049,16 +860,12 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 VariableConstants = GetUserConstantOverridesV6() is { } ov
                     ? ov.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value)
                     : new Dictionary<string, object?>(),
-                TriggerConfig = tc,
                 // KS-mode saves must NOT clobber the persisted BP layout (the layout is
                 // BP-side state; KS edits don't touch it) — carry the last known table.
                 BlueprintLayout = _mode == EditorMode.Blueprint ? layout : _savedLayout,
             };
 
-            if (_workflowFilePath is not null)
-                await _fileStore.SaveAsync(_workflowFilePath, data);
-            else
-                await _storageService.SaveWorkflowDataAsync(_workflowId, data);
+            await _fileStore.SaveAsync(_workflowFilePath, data);
             IsDirty = false;
 
             _eventService?.Publish(EventNames.WorkflowDataSaved,
@@ -1148,7 +955,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         return true;
     }
 
-    /// <summary>Sets the workflow ID (called by LoadWorkflowAsync in the window code-behind).</summary>
+    /// <summary>Sets the workflow ID (called by LoadWorkflowFileAsync in the window code-behind).</summary>
     internal void SetWorkflowId(string id) => _workflowId = id;
 
     /// <summary>
