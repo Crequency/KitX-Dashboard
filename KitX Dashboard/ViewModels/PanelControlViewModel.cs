@@ -239,6 +239,20 @@ internal sealed class PanelControlViewModel : ReactiveObject
         }
     }
 
+    /// <summary>
+    /// Hydrates the log history when the panel is (re)built — the live <c>log</c> projection
+    /// only delivers future entries, so a rebuilt control VM starts empty without this
+    /// (the DataStore keeps the authoritative ring under the instance's panel namespace).
+    /// Applies the same ring cap as live appends.
+    /// </summary>
+    internal void SeedLogHistory(IEnumerable<string> entries)
+    {
+        foreach (var entry in entries)
+            LogEntries.Add(entry);
+        while (LogEntries.Count > _logLimit)
+            LogEntries.RemoveAt(0);
+    }
+
     private static IReadOnlyList<string> ParseStaticItems(Dictionary<string, object?>? options)
     {
         if (options is null || !options.TryGetValue("Items", out var items) || items is null)

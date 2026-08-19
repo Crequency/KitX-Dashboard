@@ -116,5 +116,6 @@ public class PanelSelectOptionsTests
             => WriteBacks.Add((controlId, value));
         public void RaiseControlEvent(string instanceId, string controlId, string eventName, object? value) { }
         public void RequestPanelOpen(string instanceId) { }
+        public IReadOnlyList<string> GetControlLog(string instanceId, string controlId) => [];
     }
 }

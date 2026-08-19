@@ -55,6 +55,54 @@ public class PanelHostEventTests
     private static InstanceCancelledEvent Cancelled(string toolkit, string instance)
         => new(Guid.NewGuid().ToString("N"), toolkit, instance, DateTimeOffset.UtcNow);
 
+    // ── Regression (2026-08-20): in-place row replacement must not tear down the
+    // selection/panel, and a rebuilt panel must hydrate its Log control's history. ──
+
+    private static Toolkit ToolkitWithLogPanel() => new()
+    {
+        Id = "tk",
+        Meta = new ToolkitMeta { Name = "demo" },
+        UiPanel = new UiPanel { Controls = [new UiControl { Type = "Log", Id = "log" }] },
+    };
+
+    [AvaloniaFact]
+    public void RunEvent_OnSelectedInstance_KeepsSelectionAndLiveLog()
+    {
+        // A run event replaces the selected row's snapshot in place; the UI selection
+        // model pushes a transient null through the TwoWay binding when the row item
+        // vanishes. The VM must swallow it: the panel controls (and their live Log
+        // entries) survive, and the selection is re-pointed at the fresh snapshot.
+        var service = new FakeToolkitService([ToolkitWithLogPanel()], [Snapshot("inst-1")]);
+        var vm = new PanelHostViewModel(service, new FakeBenchService(), new FakePanelRuntime(), new FakeEventService());
+        vm.SelectedInstance = service.Instances.First();
+
+        var logVm = vm.PanelControls.Single(c => c.Type == "Log");
+        logVm.Apply("log", JsonSerializer.SerializeToElement("live-entry"));
+
+        service.Replace(Snapshot("inst-1", activeRuns: 1));
+        service.Raise(RunStarted("inst-1", "run-1"));
+
+        Assert.Equal("inst-1", vm.SelectedInstance?.InstanceId);
+        Assert.Same(logVm, vm.PanelControls.Single(c => c.Type == "Log"));
+        Assert.Contains("live-entry", logVm.LogEntries);
+    }
+
+    [AvaloniaFact]
+    public void RebuiltPanel_SeedsLogHistory_FromRuntime()
+    {
+        // The live log projection only delivers future entries, so a panel rebuilt for
+        // an instance that already logged must seed its history from the runtime.
+        var service = new FakeToolkitService([ToolkitWithLogPanel()], [Snapshot("inst-1")]);
+        var runtime = new FakePanelRuntime();
+        runtime.SeedLog("inst-1", "log", ["hist-1", "hist-2"]);
+        var vm = new PanelHostViewModel(service, new FakeBenchService(), runtime, new FakeEventService());
+
+        vm.SelectedInstance = service.Instances.First();
+
+        var logVm = vm.PanelControls.Single(c => c.Type == "Log");
+        Assert.Equal(new[] { "hist-1", "hist-2" }, logVm.LogEntries);
+    }
+
     [AvaloniaFact]
     public void DialogRequestedEvent_PopulatesPendingDialog()
     {
@@ -281,6 +329,12 @@ public class PanelHostEventTests
 
         public void RaiseControlEvent(string instanceId, string controlId, string eventName, object? value) { }
         public void RequestPanelOpen(string instanceId) { }
+
+        private readonly Dictionary<string, IReadOnlyList<string>> _logs = new();
+        public IReadOnlyList<string> GetControlLog(string instanceId, string controlId)
+            => _logs.TryGetValue(instanceId + "/" + controlId, out var v) ? v : [];
+        public void SeedLog(string instanceId, string controlId, IReadOnlyList<string> entries)
+            => _logs[instanceId + "/" + controlId] = entries;
     }
 
     private sealed class FakeEventService : IEventService

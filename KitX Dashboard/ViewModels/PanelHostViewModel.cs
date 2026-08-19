@@ -61,6 +61,10 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     private readonly Dictionary<string, PendingDialogVM> _pendingDialogs = new(StringComparer.Ordinal);
 
     private InstanceSnapshot? _selectedInstance;
+
+    /// <summary>True while <see cref="UpsertInstance"/> replaces the selected row in place —
+    /// see the <see cref="SelectedInstance"/> setter for why the transient UI null is swallowed.</summary>
+    private bool _reattachingSelection;
     private PendingDialogVM? _pendingDialog;
     private bool _hasPanel;
     private bool _isPickerVisible;
@@ -105,6 +109,14 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         get => _selectedInstance;
         set
         {
+            // In-place row replacement (UpsertInstance) makes the UI selection model drop
+            // the vanished item and push a transient null back through the TwoWay binding.
+            // Swallowing it keeps the panel (and its live Log entries) alive across the
+            // replacement; the caller re-points the selection at the fresh snapshot
+            // immediately after, within the same dispatcher turn.
+            if (value is null && _reattachingSelection)
+                return;
+
             var previous = _selectedInstance;
             // A refreshed snapshot of the SAME instance (e.g. after a run event) must not
             // tear down the panel controls: that would lose live Log entries and UI values.
@@ -479,9 +491,13 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         foreach (var control in panel.Controls)
         {
             var vm = new PanelControlViewModel(control, SelectedInstance.InstanceId, _panelRuntime, _panelLogLimit);
-            // Hydrate the live value from the DataStore (a workflow may have written it
-            // before the user opened/selected this instance; C26).
-            if (_panelRuntime.GetControlValue(SelectedInstance.InstanceId, control.Id) is { } initial)
+            // Hydrate the live state from the DataStore (a workflow may have written it
+            // before the user opened/selected this instance; C26). Log controls keep their
+            // history in a separate ring key the live projection does not replay — seed it
+            // so a rebuilt panel does not start with an empty log.
+            if (control.Type == "Log")
+                vm.SeedLogHistory(_panelRuntime.GetControlLog(SelectedInstance.InstanceId, control.Id));
+            else if (_panelRuntime.GetControlValue(SelectedInstance.InstanceId, control.Id) is { } initial)
                 vm.Apply("value", initial);
             _panelControls.Add(vm);
         }
@@ -606,24 +622,38 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
     /// creating the group on demand (it may be a not-yet-mounted toolkit).</summary>
     private void UpsertInstance(InstanceSnapshot snapshot)
     {
+        InstanceGroupVM group;
         var flatIdx = IndexOf(_instances, snapshot.InstanceId);
-        if (flatIdx >= 0)
-            _instances[flatIdx] = snapshot;
-        else
-            _instances.Add(snapshot);
+        var replacing = flatIdx >= 0;
+        // Replacing the selected row drops it from the list mid-turn and the UI selection
+        // model pushes a transient null — flag the window so the setter swallows it.
+        var guardSelection = replacing && SelectedInstance?.InstanceId == snapshot.InstanceId;
 
-        var group = _instanceGroups.FirstOrDefault(g => g.ToolkitId == snapshot.ToolkitId);
-        if (group is null)
+        if (guardSelection) _reattachingSelection = true;
+        try
         {
-            var toolkit = _toolkitService.GetToolkit(snapshot.ToolkitId);
-            group = new InstanceGroupVM(snapshot.ToolkitId, toolkit?.Meta.Name ?? snapshot.ToolkitId);
-            _instanceGroups.Add(group);
+            if (replacing)
+                _instances[flatIdx] = snapshot;
+            else
+                _instances.Add(snapshot);
+
+            group = _instanceGroups.FirstOrDefault(g => g.ToolkitId == snapshot.ToolkitId);
+            if (group is null)
+            {
+                var toolkit = _toolkitService.GetToolkit(snapshot.ToolkitId);
+                group = new InstanceGroupVM(snapshot.ToolkitId, toolkit?.Meta.Name ?? snapshot.ToolkitId);
+                _instanceGroups.Add(group);
+            }
+            var groupIdx = IndexOf(group.Instances, snapshot.InstanceId);
+            if (groupIdx >= 0)
+                group.Instances[groupIdx] = snapshot;
+            else
+                group.Instances.Add(snapshot);
         }
-        var groupIdx = IndexOf(group.Instances, snapshot.InstanceId);
-        if (groupIdx >= 0)
-            group.Instances[groupIdx] = snapshot;
-        else
-            group.Instances.Add(snapshot);
+        finally
+        {
+            if (guardSelection) _reattachingSelection = false;
+        }
 
         RecomputeGroupRunning(group);
 
