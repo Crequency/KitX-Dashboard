@@ -42,6 +42,14 @@
                            VerticalAlignment="Center"
                            Text="{DynamicResource Text_Lib_Tip_NoPlugin}"/>
             </Border>
+            <Button x:Name="LoadMoreButton"
+                    Margin="0,5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Command="{Binding LoadMoreCommand}"
+                    Content="{DynamicResource Text_Public_More}"
+                    DockPanel.Dock="Bottom"
+                    IsVisible="{Binding HasMoreItems}"/>
             <ScrollViewer>
                 <ItemsControl ItemsSource="{Binding DisplayedPluginInfos}">
                     <ItemsControl.ItemsPanel>

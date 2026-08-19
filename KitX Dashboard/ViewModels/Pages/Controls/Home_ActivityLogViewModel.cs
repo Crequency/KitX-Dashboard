@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Reactive;
 using Common.Activity;
 using KitX.Core.Activity;
 using ReactiveUI;
@@ -10,6 +11,13 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 internal class Home_ActivityLogViewModel : ViewModelBase, IDisposable
 {
     internal static ObservableCollection<Activity> Activities { get; set; } = [];
+
+    /// <summary>
+    /// G6: number of activities fetched per page. The Home card loads only the most recent
+    /// <see cref="PageSize"/> rows (reverse-chronological page from <see cref="ActivityManager"/>)
+    /// instead of the full table scan, and older rows are paged in via "load more".
+    /// </summary>
+    private const int PageSize = 100;
 
     /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
     private readonly NotifyCollectionChangedEventHandler _activitiesChangedHandler;
@@ -27,11 +35,23 @@ internal class Home_ActivityLogViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private bool hasMoreActivities;
+
+    /// <summary>True while the store holds rows the UI has not yet loaded ("load more" shown).</summary>
+    internal bool HasMoreActivities
+    {
+        get => hasMoreActivities;
+        private set => this.RaiseAndSetIfChanged(ref hasMoreActivities, value);
+    }
+
+    internal ReactiveCommand<Unit, Unit>? LoadMoreCommand { get; private set; }
+
     public Home_ActivityLogViewModel()
     {
         _activitiesChangedHandler = (_, _) =>
         {
             NoActivityLog_TipHeight = Activities.Count == 0 ? 200 : 0;
+            HasMoreActivities = LoadMoreAvailable();
         };
 
         InitCommands();
@@ -45,11 +65,13 @@ internal class Home_ActivityLogViewModel : ViewModelBase, IDisposable
         // Common.Activity.Activity fields (Status/Title/Tasks/...). Migrating here would
         // break every binding in Home_ActivityLog.axaml — kept on the static read until
         // the contract exposes the full activity shape.
-        foreach (var item in ActivityManager.ReadActivities())
-            Activities.Add(item);
+        LoadMoreActivities();
     }
 
-    public sealed override void InitCommands() { }
+    public sealed override void InitCommands()
+    {
+        LoadMoreCommand = ReactiveCommand.Create(LoadMore, this.WhenAnyValue(x => x.HasMoreActivities));
+    }
 
     public sealed override void InitEvents()
     {
@@ -63,5 +85,25 @@ internal class Home_ActivityLogViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         Activities.CollectionChanged -= _activitiesChangedHandler;
+    }
+
+    private bool LoadMoreAvailable() => Activities.Count < ActivityManager.CountActivities();
+
+    private void LoadMore() => LoadMoreActivities();
+
+    /// <summary>
+    /// Loads the next reverse-chronological page (skip = already-loaded count) and prepends it
+    /// so the list stays oldest-first / newest-at-bottom, matching the pre-G6 display order.
+    /// The newest page is fetched newest-first by <see cref="ActivityManager.ReadActivities"/>;
+    /// inserting each row at index 0 flips it into the oldest-first display order.
+    /// </summary>
+    private void LoadMoreActivities()
+    {
+        var older = ActivityManager.ReadActivities(PageSize, Activities.Count);
+        for (var i = 0; i < older.Count; i++)
+            Activities.Insert(0, older[i]);
+
+        NoActivityLog_TipHeight = Activities.Count == 0 ? 200 : 0;
+        HasMoreActivities = LoadMoreAvailable();
     }
 }
