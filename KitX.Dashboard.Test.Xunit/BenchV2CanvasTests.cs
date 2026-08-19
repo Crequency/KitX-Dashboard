@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Avalonia;
 using KitX.Dashboard.ViewModels;
 using KitX.ToolKit.Models;
 using Xunit;
@@ -422,5 +423,95 @@ public class BenchV2CanvasTests
 
         Assert.Equal("Keep Me", toolkit.Workflows[0].Name);
         Assert.Equal("Keep Me", Assert.Single(canvas.Nodes.OfType<BenchNodeVM>()).Title);
+    }
+
+    [Fact]
+    public void ApplyWorkflowSaved_SamePayloadTwice_SkipsSecondRebuild()
+    {
+        // G5 fingerprint short-circuit: a re-broadcast of an identical external save (e.g. the
+        // same WorkflowDataSaved event arriving again on window activation) is a no-op once the
+        // content is already applied — no second graph reconstruction.
+        var toolkit = new Toolkit
+        {
+            Workflows = { new ToolkitWorkflow { Id = "wf1", Name = "Old", File = "w1.kcs" } },
+        };
+        var canvas = new BenchCanvasViewModel(toolkit);
+
+        canvas.ApplyWorkflowSaved("wf1", "New Name", "a description");
+        Assert.Equal(1, canvas.RebuildCount);
+        Assert.Equal("New Name", toolkit.Workflows[0].Name);
+
+        canvas.ApplyWorkflowSaved("wf1", "New Name", "a description");
+        Assert.Equal(1, canvas.RebuildCount); // fingerprint unchanged → zero rebuild
+        Assert.Equal("New Name", toolkit.Workflows[0].Name);
+    }
+
+    [Fact]
+    public void ApplyWorkflowSaved_ContentChange_RebuildsPreservingLocation()
+    {
+        // G5: a changed save payload must still re-project the canvas, preserving node
+        // locations (matched by ConfigId) exactly like the pre-existing Rebuild semantics.
+        var toolkit = new Toolkit
+        {
+            Workflows = { new ToolkitWorkflow { Id = "wf1", Name = "Old", File = "w1.kcs" } },
+        };
+        var canvas = new BenchCanvasViewModel(toolkit);
+        var node = canvas.Nodes.OfType<BenchNodeVM>().Single();
+        node.Location = new Avalonia.Point(321, 654); // position is VM state, not config
+
+        canvas.ApplyWorkflowSaved("wf1", "New Name", null);
+        var rebuilt = Assert.Single(canvas.Nodes.OfType<BenchNodeVM>());
+        Assert.Equal("New Name", rebuilt.Title);
+        Assert.Equal(new Avalonia.Point(321, 654), rebuilt.Location);
+
+        canvas.ApplyWorkflowSaved("wf1", "Final", null); // genuinely changed → rebuild again
+        Assert.Equal(2, canvas.RebuildCount);
+        Assert.Equal("Final", Assert.Single(canvas.Nodes.OfType<BenchNodeVM>()).Title);
+    }
+
+    [Fact]
+    public void ApplyWorkflowSaved_WithLocalEdit_MergesDespiteMatchingFingerprint()
+    {
+        // G5 dirty-edit guard: a pending local edit takes priority — an external save with a
+        // matching fingerprint must still be merged (applied), never silently skipped away.
+        var toolkit = new Toolkit
+        {
+            Workflows = { new ToolkitWorkflow { Id = "wf1", Name = "Old", File = "w1.kcs" } },
+        };
+        var canvas = new BenchCanvasViewModel(toolkit);
+
+        canvas.ApplyWorkflowSaved("wf1", "Synced", null);
+        Assert.Equal("Synced", toolkit.Workflows[0].Name);
+
+        // Local edit diverges the name (config + node label) and marks the canvas dirty.
+        canvas.SelectedNode = canvas.Nodes.OfType<BenchNodeVM>().Single();
+        canvas.SelectedWorkflowName = "Local";
+        Assert.Equal("Local", toolkit.Workflows[0].Name);
+
+        // Same external payload re-broadcast while dirty: the guard forces the merge so the
+        // canvas re-syncs from the config truth (a plain short-circuit would leave a stale label).
+        canvas.ApplyWorkflowSaved("wf1", "Synced", null);
+        Assert.Equal(2, canvas.RebuildCount);
+        Assert.Equal("Synced", toolkit.Workflows[0].Name);
+        Assert.Equal("Synced", Assert.Single(canvas.Nodes.OfType<BenchNodeVM>()).Title);
+    }
+
+    [Fact]
+    public void Validation_MultipleEdits_CoalesceIntoOneFlush()
+    {
+        // G5 validation debounce: a burst of edits schedules a single trailing validation; a
+        // Flush (the save/close path) runs it synchronously — the final state is never lost.
+        var canvas = Canvas(new ToolkitWorkflow { Id = "wf1", Name = "W1", File = "w1.kcs" });
+        var baseline = canvas.ValidationRunCount; // construction validated once
+
+        canvas.AddTriggerCommand.Execute("Manual");
+        canvas.AddTriggerCommand.Execute("Timer");
+
+        // Debounced: neither edit has run validation synchronously.
+        Assert.Equal(baseline, canvas.ValidationRunCount);
+
+        canvas.FlushValidation();
+        // The burst coalesced into a single trailing execution.
+        Assert.Equal(baseline + 1, canvas.ValidationRunCount);
     }
 }

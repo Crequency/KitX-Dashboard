@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -38,6 +41,38 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     private bool _isEdgeMode;
     private readonly Dictionary<UiControl, BenchUiControlVM> _panelControlPreviewVMs = new();
 
+    // ── External-save fingerprint / rebuild short-circuit (G5) ──
+    // The window re-projects the canvas on every activation (BenchWindow.axaml Activated →
+    // Rebuild). For a 280-node graph that is a full clear+rebuild+position-restore+reselect
+    // even when the config never changed. Two layers short-circuit it:
+    //   * whole-config signature — Rebuild() skips when the canvas-relevant config content
+    //     is identical to the last-built graph (covers the unguarded activation call);
+    //   * per-workflow signature — ApplyWorkflowSaved skips a re-broadcast of the same
+    //     external save payload (covers the WorkflowDataSaved path), gated by a local-edit
+    //     guard so in-progress edits are never optimized away.
+    // Both signatures are exact content strings (no hash), so an equality match is exact —
+    // a false skip (stale canvas) is impossible.
+
+    /// <summary>Fingerprint of the canvas-relevant config content at the last graph build.</summary>
+    private string? _configFingerprint;
+
+    /// <summary>Per-workflow fingerprint of the last externally-applied save (keyed by workflow id).</summary>
+    private readonly Dictionary<string, string> _appliedWorkflowFingerprints = new();
+
+    /// <summary>True when a local (canvas) edit happened since the last external workflow apply.</summary>
+    private bool _hasLocalEditsSinceApply;
+
+    /// <summary>
+    /// Forces the next <see cref="Rebuild"/> to run even when the whole-config signature
+    /// already matches. Set by <see cref="ApplyWorkflowSaved"/> when it applies a real change,
+    /// so a revert back to a previously-built content still re-syncs a manually-written node
+    /// label (config is the single source of truth).
+    /// </summary>
+    private bool _forceRebuildOnce;
+
+    /// <summary>Test seam: number of graph reconstructions actually performed by <see cref="Rebuild"/>.</summary>
+    internal int RebuildCount { get; private set; }
+
     public BenchCanvasViewModel(Toolkit toolkit, IPluginService? pluginService = null, IToolkitWorkflowFileStore? fileStore = null)
     {
         _toolkit = toolkit ?? throw new ArgumentNullException(nameof(toolkit));
@@ -56,13 +91,17 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     private void NotifyEdited()
     {
+        // Any local canvas edit marks the guard that keeps an external fingerprint
+        // short-circuit from swallowing a still-pending local change (G5).
+        _hasLocalEditsSinceApply = true;
+
         // Node count drives the inspector/save-button visibility (BenchWindow.axaml
         // binds Canvas.HasContent); re-raise it after every edit so a previously empty
         // canvas reveals the inspector and the save action as soon as the first node
         // is added.
         OnPropertyChanged(nameof(HasContent));
         RefreshPanelNodePreview();
-        RefreshValidation();
+        ScheduleValidation();
         ConfigEdited?.Invoke();
     }
 
@@ -688,6 +727,11 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
         RefreshDegreeBadges();
         RefreshWorkflowIdOptions();
+
+        // Capture the signature of the content this graph projects so a later Rebuild can
+        // short-circuit when the config is unchanged (G5). Set on every build (including the
+        // constructor's BuildGraph), so the very first activation Rebuild is already skipped.
+        _configFingerprint = ComputeConfigFingerprint();
     }
 
     /// <summary>
@@ -699,6 +743,19 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     /// </summary>
     public void Rebuild()
     {
+        // G5: skip the full clear+rebuild+position-restore+reselect when the config content
+        // the canvas projects is unchanged since the last build (e.g. a window activation or
+        // an external save that mutated nothing). Node positions are VM state, not config, so
+        // an unchanged signature also means the current layout is already correct — skipping
+        // is strictly cheaper and loses nothing. ApplyWorkflowSaved sets _forceRebuildOnce when
+        // it applies a real change, so a revert to a previously-built content still re-syncs a
+        // manually-written node label.
+        if (!_forceRebuildOnce && _configFingerprint == ComputeConfigFingerprint())
+            return;
+
+        _forceRebuildOnce = false;
+        RebuildCount++;
+
         var locations = Nodes.OfType<BenchNodeVM>()
             .ToDictionary(n => n.ConfigId, n => n.Location);
         var selectedConfigId = SelectedNode?.ConfigId;
@@ -736,6 +793,23 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         if (workflow is null)
             return;
 
+        // The applied content the save would produce. Name/description are the only fields
+        // the workflow editor writes back; description is not persisted on the
+        // ToolkitWorkflow model, so the applied signature is the workflow's identity + name.
+        var appliedName = string.IsNullOrWhiteSpace(name) ? workflow.Name : name;
+        var appliedSignature = workflow.Id + "\u001e" + appliedName + "\u001e" + workflow.File;
+
+        // G5 short-circuit: an identical external save re-broadcast (e.g. on window
+        // activation) is a no-op. Local unsaved edits take priority — when one is pending the
+        // incoming save must still be merged (matching the pre-existing semantics), so the
+        // guard blocks the short-circuit and the apply/rebuild below runs.
+        if (!_hasLocalEditsSinceApply
+            && _appliedWorkflowFingerprints.TryGetValue(workflowId, out var stored)
+            && stored == appliedSignature)
+        {
+            return;
+        }
+
         var changed = false;
         if (!string.IsNullOrWhiteSpace(name) && workflow.Name != name)
         {
@@ -743,8 +817,61 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             changed = true;
         }
 
+        // Force the re-projection even if the whole-config signature happens to match a
+        // previously-built graph: a manual node Title write (e.g. via SelectedWorkflowName)
+        // can diverge from the config, and Rebuild re-syncs it from the config truth.
         if (changed)
+        {
+            _forceRebuildOnce = true;
             Rebuild();
+        }
+
+        _appliedWorkflowFingerprints[workflowId] = appliedSignature;
+        _hasLocalEditsSinceApply = false;
+    }
+
+    /// <summary>
+    /// Exact signature of the canvas-relevant config content (everything <see cref="BuildGraph"/>
+    /// and <see cref="RefreshValidation"/> read: triggers + bindings, workflows, panel, comments).
+    /// Positions are intentionally excluded (node locations are VM state, never config). The
+    /// signature is compared for equality only — no hash — so two equal signatures mean the
+    /// config content is byte-identical and a rebuild can be skipped without any stale-canvas risk.
+    /// </summary>
+    private string ComputeConfigFingerprint()
+    {
+        var sb = new StringBuilder();
+
+        foreach (var t in _toolkit.Triggers)
+        {
+            sb.Append(t.Id).Append('\u001e').Append((int)t.Type).Append('\u001e');
+            var c = t.Config;
+            sb.Append(c.PluginName).Append('\u001e').Append(c.TriggerName).Append('\u001e')
+              .Append(c.From).Append('\u001e').Append(c.Cron).Append('\u001e')
+              .Append(c.IntervalMs.HasValue ? c.IntervalMs.Value.ToString(CultureInfo.InvariantCulture) : null).Append('\u001e')
+              .Append(c.OneShot?.ToString()).Append('\u001e')
+              .Append(c.DueTimeMs.HasValue ? c.DueTimeMs.Value.ToString(CultureInfo.InvariantCulture) : null).Append('\u001e')
+              .Append(c.Panel).Append('\u001e').Append(c.Control).Append('\u001e')
+              .Append(c.Event).Append('\u001e').Append(c.Surface).Append('\u001e');
+            foreach (var b in t.Bindings)
+                sb.Append(b.Workflow).Append('\u001d');
+            sb.Append('\u001f');
+        }
+
+        foreach (var w in _toolkit.Workflows)
+            sb.Append(w.Id).Append('\u001e').Append(w.Name).Append('\u001e').Append(w.File).Append('\u001f');
+
+        if (_toolkit.UiPanel is { } panel)
+        {
+            sb.Append(panel.Layout).Append('\u001e');
+            foreach (var c in panel.Controls)
+                sb.Append(c.Type).Append('\u001e').Append(c.Id).Append('\u001e').Append(c.Text).Append('\u001d');
+            sb.Append('\u001f');
+        }
+
+        foreach (var cm in _toolkit.Comments)
+            sb.Append(cm.Id).Append('\u001e').Append(cm.Text).Append('\u001f');
+
+        return sb.ToString();
     }
 
     private void AddSourceNode(Trigger trigger, int index)
@@ -1731,8 +1858,64 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             connector.IsConnected = Connections.Any(c => c.Source == connector || c.Target == connector);
     }
 
+    // ── Validation (debounced from edits; flushed synchronously on save/close) ──
+
+    /// <summary>Trailing window that coalesces the redundant validation triggered by rapid edits.</summary>
+    private const int ValidationDebounceMs = 300;
+
+    private CancellationTokenSource? _validationCts;
+
+    /// <summary>Test seam: number of times the full validation actually ran.</summary>
+    internal int ValidationRunCount { get; private set; }
+
+    /// <summary>
+    /// Debounced entry point for edits (see <see cref="NotifyEdited"/>). Coalesces the
+    /// validate-per-keystroke burst into a single trailing execution. A pending run is never
+    /// lost: the last edit always schedules a run, and <see cref="FlushValidation"/> executes
+    /// it immediately (used by save / window-close paths so the validation gate is never stale).
+    /// The deferred run is marshalled back through the <see cref="SynchronizationContext"/> of
+    /// the thread that scheduled it (the UI thread in the running app) so observable state is
+    /// still mutated on the UI thread; headless tests have no sync context, so the continuation
+    /// only ever runs if the test actually waits the debounce window.
+    /// </summary>
+    private void ScheduleValidation()
+    {
+        _validationCts?.Cancel();
+        _validationCts = new CancellationTokenSource();
+        var token = _validationCts.Token;
+        var sync = SynchronizationContext.Current;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(ValidationDebounceMs, token);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+
+            if (token.IsCancellationRequested)
+                return;
+
+            if (sync is null)
+                RefreshValidation();
+            else
+                sync.Post(_ => RefreshValidation(), null);
+        });
+    }
+
+    /// <summary>Runs any pending validation immediately (the trailing debounce's final state).</summary>
+    internal void FlushValidation()
+    {
+        _validationCts?.Cancel();
+        _validationCts = null;
+        RefreshValidation();
+    }
+
     private void RefreshValidation()
     {
+        ValidationRunCount++;
         var errors = new ConfigValidator().Validate(_toolkit).Errors;
         ValidationErrors = errors;
         Diagnostics = new ObservableCollection<BenchDiagnosticVM>(errors.Select(ParseDiagnostic));

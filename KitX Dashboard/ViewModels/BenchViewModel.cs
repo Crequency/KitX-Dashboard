@@ -162,6 +162,10 @@ internal class BenchViewModel : ViewModelBase, IDisposable
         if (ActiveToolkit is null || Canvas is null)
             return false;
 
+        // The canvas debounces per-edit validation (G5). Run any pending validation now so
+        // the save gate below reads the final state, not a stale one.
+        Canvas.FlushValidation();
+
         if (_toolkitService.IsMounted(ActiveToolkit.GetId()))
         {
             SaveMessage = TranslateTextWithSuffix("Bench", "SaveMountedRejected") ?? "工具箱已挂载，请先卸载后再保存配置";
