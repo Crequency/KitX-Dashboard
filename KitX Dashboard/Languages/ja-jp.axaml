@@ -230,6 +230,7 @@
     <sys:String x:Key="Text_Settings_Performance_Workflow">ワークフロー関連設定</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">スクリプトコンパイラのキャッシュ容量</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">完了インスタンスの保持上限</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_PanelLogLimit">パネルログ保持上限</sys:String>
     <sys:String x:Key="Text_Settings_Update">更新する</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">アップデートを確認</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">コンポーネント名</sys:String>

@@ -14,6 +14,8 @@
     <!-- FT.3: expose internal VMs to the test project -->
     <ItemGroup>
         <InternalsVisibleTo Include="KitX.Dashboard.Test.Xunit" />
+        <!-- G 批测量基建：KitX.Host.Perf 直构 internal PanelHostViewModel 测 RefreshInstances 重建成本 -->
+        <InternalsVisibleTo Include="KitX.Host.Perf" />
     </ItemGroup>
 
     <PropertyGroup>

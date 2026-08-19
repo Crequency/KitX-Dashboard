@@ -230,6 +230,7 @@
     <sys:String x:Key="Text_Settings_Performance_Workflow">Paramètres liés au workflow</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">Capacité du cache du compilateur de scripts</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">Limite de rétention des instances terminées</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_PanelLogLimit">Limite de rétention des journaux de panneau</sys:String>
     <sys:String x:Key="Text_Settings_Update">renouveler</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">Vérifier les mises à jour</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">Nom du composant</sys:String>

@@ -230,6 +230,7 @@
     <sys:String x:Key="Text_Settings_Performance_Workflow">Настройки, связанные с рабочим процессом</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">Вместимость кэша компилятора скриптов</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">Лимит хранения завершённых экземпляров</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_PanelLogLimit">Лимит хранения логов панели</sys:String>
     <sys:String x:Key="Text_Settings_Update">возобновить</sys:String>
     <sys:String x:Key="Text_Settings_Update_Check">Проверить наличие обновлений</sys:String>
     <sys:String x:Key="Text_Settings_Update_ComponentName">имя компонента</sys:String>

@@ -468,6 +468,23 @@ internal class Settings_PerformanceViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Maximum number of log entries retained per Log panel control. This value is
+    /// consumed at startup and by the Panel host when building a control (not
+    /// hot-reloaded), so no EventNames publish is required.
+    /// </summary>
+    internal int PanelLogLimit
+    {
+        get => _configService.AppConfig.Performance.PanelLogLimit;
+        set
+        {
+            // Defensive clamp — a per-control log cap below the floor is meaningless.
+            _configService.AppConfig.Performance.PanelLogLimit = value < 100 ? 100 : value;
+
+            _configService.SaveAll();
+        }
+    }
+
     private static string GetLogLevelDisplayText(string key) => Translate(key, prefix: "Text_Log_") ?? string.Empty;
 
     internal List<SupportedLogLevel> SupportedLogLevels { get; } =

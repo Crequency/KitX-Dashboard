@@ -458,6 +458,25 @@
                         </DockPanel>
                     </ui:InfoBar>
 
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="FileDocument"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performance_Workflow_PanelLogLimit}"/>
+                            </StackPanel>
+
+                            <ui:NumberBox Classes="Enabled"
+                                          Minimum="100"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding PanelLogLimit}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
                 </StackPanel>
 
             </Expander>
