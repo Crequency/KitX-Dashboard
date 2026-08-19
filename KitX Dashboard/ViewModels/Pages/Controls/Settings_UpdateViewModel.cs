@@ -401,7 +401,13 @@ internal class Settings_UpdateViewModel : ViewModelBase
     {
         Tip = GetUpdateTip("Download");
 
-        //TODO: 下载有变更的文件
+        // 文件级哈希增量下载已实现：CompareDifferentComponents 对比本地文件哈希与
+        // latest-components.json 清单哈希，此处仅下载 updatedComponents（有变更的文件）。
+        // 已知缺口（记录，暂不修复）：
+        //   ① 清单新增文件（new2addComponents）未下载；
+        //   ② 清单已删除的文件本地不清理；
+        //   ③ Update() 应用流程未实现，Common.Update.Replacer 未接入。
+        // 搁置原因：上游更新服务重构未完成未上线，更新功能暂停开发（负责人 2026-08-20 决策）。
         var deviceService = App.GetService<IDeviceDiscoveryService>();
         var deviceOSType = deviceService.DefaultDeviceInfo.DeviceOSType;
 
