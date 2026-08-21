@@ -16,6 +16,25 @@
         TransparencyLevelHint="Mica"
         WindowStartupLocation="CenterOwner"
         mc:Ignorable="d">
+    <Window.Styles>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="{DynamicResource ThemePrimaryAccent}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource KitXRadiusControl}"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="{DynamicResource ThemePrimaryAccentTransparentEE}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.primary:pressed">
+            <Setter Property="Background" Value="{DynamicResource ThemePrimaryAccentTransparentDD}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.primary:disabled">
+            <Setter Property="Opacity" Value="0.4"/>
+        </Style>
+    </Window.Styles>
     <Window.Resources>
         <converters:InstanceStatusToBrushConverter x:Key="InstanceStatusToBrushConverter"/>
         <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter"/>
@@ -31,24 +50,26 @@
 
         <DataTemplate x:Key="PanelButtonTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
             <Button Command="{Binding ClickCommand}" Content="{Binding Text}" IsEnabled="{Binding IsEnabled}"
-                    HorizontalAlignment="Stretch"/>
+                    HorizontalAlignment="Left" MinWidth="120"/>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelInputTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
-            <StackPanel Orientation="Horizontal" Spacing="8">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Classes="primary" MinWidth="88" Margin="8,0,0,0"
+                        Command="{Binding SubmitCommand}" Content="{DynamicResource Text_Panel_Submit}"/>
                 <TextBox Text="{Binding Value, Mode=TwoWay}" Watermark="{Binding StaticText}"
-                         MinWidth="200" IsEnabled="{Binding IsEnabled}"/>
-                <Button Command="{Binding SubmitCommand}" Content="{DynamicResource Text_Panel_Submit}"/>
-            </StackPanel>
+                         MinWidth="120" IsEnabled="{Binding IsEnabled}"/>
+            </DockPanel>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelNumberTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
-            <NumericUpDown Value="{Binding NumberValue, Mode=TwoWay}" IsEnabled="{Binding IsEnabled}"/>
+            <NumericUpDown Value="{Binding NumberValue, Mode=TwoWay}" IsEnabled="{Binding IsEnabled}"
+                           HorizontalAlignment="Stretch"/>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelSelectTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
             <ComboBox ItemsSource="{Binding SelectItems}" SelectedItem="{Binding SelectedValue, Mode=TwoWay}"
-                      IsEnabled="{Binding IsEnabled}"/>
+                      IsEnabled="{Binding IsEnabled}" HorizontalAlignment="Stretch"/>
         </DataTemplate>
 
         <DataTemplate x:Key="PanelSwitchTemplate" DataType="{x:Type viewModels:PanelControlViewModel}">
@@ -87,7 +108,7 @@
             <Border Padding="12" CornerRadius="6" BorderBrush="{DynamicResource ThemePrimaryAccent}" BorderThickness="1">
                 <StackPanel Spacing="8">
                     <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13"/>
-                    <Button Command="{Binding DialogConfirmCommand}" CommandParameter="确定"
+                    <Button Classes="primary" Command="{Binding DialogConfirmCommand}" CommandParameter="确定"
                             Content="{DynamicResource Text_Panel_Confirm}" HorizontalAlignment="Right"/>
                 </StackPanel>
             </Border>
@@ -279,10 +300,16 @@
                                            Text="{DynamicResource Text_PanelHost_NoPanel}"/>
                             </StackPanel>
                             <ScrollViewer IsVisible="{Binding HasPanel}">
-                                <StackPanel Margin="16" Spacing="10">
+                                <StackPanel Margin="16" Spacing="8">
                                     <TextBlock FontSize="14" FontWeight="SemiBold" Text="{DynamicResource Text_PanelHost_Panel}"/>
                                     <ItemsControl ItemsSource="{Binding PanelControls}"
-                                                  ItemTemplate="{StaticResource PanelControlTemplateSelector}"/>
+                                                  ItemTemplate="{StaticResource PanelControlTemplateSelector}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Spacing="8"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
                                     <Border Padding="12" CornerRadius="6"
                                             Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
                                             BorderBrush="{DynamicResource SystemFillColorCautionBrush}" BorderThickness="1"
