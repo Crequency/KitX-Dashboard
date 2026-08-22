@@ -1,15 +1,33 @@
-﻿using Avalonia;
+using System;
+using Avalonia;
 using Avalonia.Controls;
-using KitX.Dashboard.Configuration;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Announcement;
+using KitX.Core.Contract.Event;
 using ReactiveUI;
+using KitX.Core.Configuration;
 
 namespace KitX.Dashboard.ViewModels;
 
 public abstract class ViewModelBase : ReactiveObject
 {
-    protected static string? Translate(
+    // NOTE (ServiceLocator convergence): these static accessors are RETAINED only for
+    // Settings_UpdateViewModel, whose body (Update() / busy-wait / Components logic) is
+    // frozen during the server-side refactor and may not be touched. Every other VM has
+    // been migrated to constructor injection and no longer uses them.
+    /// <summary>
+    /// Gets the config service from DI container
+    /// </summary>
+    protected static IConfigService ConfigService =>
+        App.GetService<IConfigService>();
+
+    /// <summary>
+    /// Gets the announcement service from DI container
+    /// </summary>
+    protected static IAnnouncementService AnnouncementService =>
+        App.GetService<IAnnouncementService>();
+
+    public static string? Translate(
         string key = "",
         string prefix = "",
         string suffix = "",
@@ -33,18 +51,12 @@ public abstract class ViewModelBase : ReactiveObject
         return null;
     }
 
-    protected static string? TranslateText(string key = "", Application? app = null) => Translate(key, "Text", separator: "_", app: app);
+    public static string? TranslateText(string key = "", Application? app = null) => Translate(key, "Text", separator: "_", app: app);
 
-    protected static string? TranslateTextWithSuffix(string key = "", string suffix = "", Application? app = null) =>
+    public static string? TranslateTextWithSuffix(string key = "", string suffix = "", Application? app = null) =>
         Translate(key, "Text", suffix, "_", app);
-
-    protected static void SaveAppConfigChanges() => EventService.Invoke(nameof(EventService.AppConfigChanged));
 
     public abstract void InitCommands();
 
     public abstract void InitEvents();
-
-    internal static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
-
-    internal static AnnouncementConfig AnnouncementConfig => ConfigManager.Instance.AnnouncementConfig;
 }

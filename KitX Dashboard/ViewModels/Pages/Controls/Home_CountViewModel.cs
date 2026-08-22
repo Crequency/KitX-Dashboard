@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
-using KitX.Dashboard.Managers;
-using KitX.Dashboard.Services;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Event;
+using KitX.Core.Statistics;
+using KitX.Dashboard;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using ReactiveUI;
@@ -10,8 +13,14 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Home_CountViewModel : ViewModelBase
 {
-    public Home_CountViewModel()
+    private readonly IConfigService _configService;
+    private readonly IEventService _eventService;
+
+    public Home_CountViewModel(IConfigService configService, IEventService eventService)
     {
+        _configService = configService;
+        _eventService = eventService;
+
         RecoveryUseCount();
 
         InitEvents();
@@ -19,15 +28,30 @@ internal class Home_CountViewModel : ViewModelBase
         NoCount_TipHeight = Use_Series.Length == 0 ? 200 : 0;
     }
 
-    public override void InitCommands() => throw new System.NotImplementedException();
+    public override void InitCommands() { }
 
     public sealed override void InitEvents()
     {
-        EventService.UseStatisticsChanged += RecoveryUseCount;
+        _useStatisticsChangedHandler = (s, e) => RecoveryUseCount();
+        _eventService.Subscribe(EventNames.UseStatisticsChanged, _useStatisticsChangedHandler);
+    }
+
+    /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
+    private EventHandler<EventArgs>? _useStatisticsChangedHandler;
+
+    /// <summary>Unsubscribes event handlers to avoid leaks when the page is unloaded.</summary>
+    public void Dispose()
+    {
+        if (_useStatisticsChangedHandler is not null)
+            _eventService.Unsubscribe(EventNames.UseStatisticsChanged, _useStatisticsChangedHandler);
+        _useStatisticsChangedHandler = null;
     }
 
     internal void RecoveryUseCount()
     {
+        // D10 note: IStatisticsService.GetUsageStatistics() exists but returns DateTime
+        // keys + a date range filter, while the chart consumes the raw "yyyy.MM.dd"
+        // string keys (X labels). Kept on the static accessor to preserve label format.
         var use = StatisticsManager.UseStatistics;
 
         Use_XAxes = [new Axis { Labels = use?.Keys.ToList() }];
@@ -53,14 +77,14 @@ internal class Home_CountViewModel : ViewModelBase
 
     internal bool UseAreaExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Home.UseAreaExpanded;
+        get => _configService.AppConfig.Pages.Home.UseAreaExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Home.UseAreaExpanded = value;
+            _configService.AppConfig.Pages.Home.UseAreaExpanded = value;
 
             this.RaisePropertyChanged(nameof(UseAreaExpanded));
 
-            SaveAppConfigChanges();
+            _configService.SaveAll();
         }
     }
 

@@ -16,7 +16,8 @@ public class AvaloniaEditDocumentStringConverter : IValueConverter
 
         var document = new TextDocument(value as string);
 
-        if (parameter is ObservableCollection<ActivityTaskResultLine> lines) { }
+        // D13.7: the parameter (ActivityTaskResultLines) was never consumed — removed
+        // the empty branch; keep the parameter on the signature for XAML compatibility.
 
         return document;
     }

@@ -1,0 +1,1112 @@
+<Window x:Class="KitX.Dashboard.Views.WorkflowEditorWindowV6"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avalonedit="using:AvaloniaEdit"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:controls="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
+        xmlns:converters="using:KitX.Dashboard.Converters"
+        xmlns:viewModels="using:KitX.Dashboard.ViewModels"
+        mc:Ignorable="d"
+        d:DesignHeight="700"
+        d:DesignWidth="1200"
+        Title="KitX Workflow Editor (v6)"
+        Width="1200"
+        Height="800">
+
+    <Window.Resources>
+        <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
+
+        <!-- V6 Input connector template -->
+        <DataTemplate x:Key="V6InputConnectorTemplate" DataType="{x:Type viewModels:BlueprintConnectorVMV6}">
+            <controls:NodeInput IsConnected="{Binding IsConnected}"
+                                IsVisible="{Binding !IsDefinitionPin}"
+                                Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <ToolTip.Tip>
+                    <MultiBinding StringFormat="{}{0} ({1}){2}">
+                        <Binding Path="Title" />
+                        <Binding Path="PinTypeText" />
+                        <Binding Path="RuntimeValue" TargetNullValue="" />
+                    </MultiBinding>
+                </ToolTip.Tip>
+                <controls:NodeInput.BorderBrush>
+                    <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
+                </controls:NodeInput.BorderBrush>
+                <controls:NodeInput.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="11" />
+                        <TextBox Text="{Binding DefaultValue, Mode=TwoWay}"
+                                 IsVisible="{Binding ShowDefaultValue}"
+                                 Watermark="默认值"
+                                 FontSize="10"
+                                 Width="60"
+                                 Padding="2,0"
+                                 VerticalAlignment="Center"
+                                 ToolTip.Tip="未连接数据端点值，可在运行时作为字面量使用" />
+                    </StackPanel>
+                </controls:NodeInput.Header>
+            </controls:NodeInput>
+        </DataTemplate>
+
+        <!-- V6 Output connector template -->
+        <DataTemplate x:Key="V6OutputConnectorTemplate" DataType="{x:Type viewModels:BlueprintConnectorVMV6}">
+            <controls:NodeOutput IsConnected="{Binding IsConnected}"
+                                 IsVisible="{Binding !IsDefinitionPin}"
+                                 Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <ToolTip.Tip>
+                    <MultiBinding StringFormat="{}{0} ({1}){2}">
+                        <Binding Path="Title" />
+                        <Binding Path="PinTypeText" />
+                        <Binding Path="RuntimeValue" TargetNullValue="" />
+                    </MultiBinding>
+                </ToolTip.Tip>
+                <controls:NodeOutput.BorderBrush>
+                    <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
+                </controls:NodeOutput.BorderBrush>
+                <controls:NodeOutput.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="11" />
+                        <!-- Dangling exec-out: sub-scope tail naturally ends here, or loops
+                             back to the loop head inside a While/Each body (hover to reveal). -->
+                        <StackPanel IsVisible="{Binding IsPointerOver, RelativeSource={RelativeSource AncestorType=controls:NodeOutput}}">
+                            <TextBlock Text="⎍"
+                                       IsVisible="{Binding IsDanglingExecNatural}"
+                                       Foreground="#666666"
+                                       FontSize="11"
+                                       VerticalAlignment="Center"
+                                       ToolTip.Tip="body 自然结束，回到控制流节点 End" />
+                            <TextBlock Text="↺"
+                                       IsVisible="{Binding IsLoopBodyDangling}"
+                                       Foreground="#FF9800"
+                                       FontSize="11"
+                                       VerticalAlignment="Center"
+                                       ToolTip.Tip="循环 body 自然结束：回到循环头重新求值条件" />
+                        </StackPanel>
+                    </StackPanel>
+                </controls:NodeOutput.Header>
+            </controls:NodeOutput>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel LastChildFill="True">
+
+        <!-- Unified Toolbar -->
+        <Border DockPanel.Dock="Top"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="10,8">
+            <DockPanel>
+                <!-- Left: Back to Dashboard -->
+                <Button DockPanel.Dock="Left"
+                        Command="{Binding ShowDashboardCommand}"
+                        ToolTip.Tip="Back to Dashboard"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="ArrowLeft" />
+                        <TextBlock Text="Dashboard" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Right: Run/Stop/Debug -->
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                    <Button Name="RunButton"
+                            ToolTip.Tip="Run"
+                            Command="{Binding RunCommand}"
+                            IsEnabled="{Binding !IsExecuting}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="Play" />
+                            <TextBlock Text="Run" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Name="DebugButton"
+                            ToolTip.Tip="Debug Mode"
+                            Command="{Binding DebugRunCommand}"
+                            IsEnabled="{Binding !IsExecuting}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="BugOutline" />
+                            <TextBlock Text="Debug" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Name="StopButton"
+                            ToolTip.Tip="Stop"
+                            Command="{Binding StopCommand}"
+                            IsEnabled="{Binding IsExecuting}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <icon:MaterialIcon Width="18" Height="18" Kind="Stop" />
+                            <TextBlock Text="Stop" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Debug step controls (visible only during active debugging) -->
+                    <Button Name="DebugPauseButton"
+                            ToolTip.Tip="Pause"
+                            Command="{Binding DebugPauseCommand}"
+                            IsVisible="{Binding IsDebugging}"
+                            IsEnabled="{Binding !IsPaused}">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Pause" />
+                    </Button>
+                    <Button Name="DebugStepButton"
+                            ToolTip.Tip="Step Over"
+                            Command="{Binding DebugStepCommand}"
+                            IsVisible="{Binding IsDebugging}"
+                            IsEnabled="{Binding IsPaused}">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="DebugStepOver" />
+                    </Button>
+                    <Button Name="DebugContinueButton"
+                            ToolTip.Tip="Continue"
+                            Command="{Binding DebugContinueCommand}"
+                            IsVisible="{Binding IsDebugging}"
+                            IsEnabled="{Binding IsPaused}">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="PlaySpeed" />
+                    </Button>
+                </StackPanel>
+
+                <!-- Center: Mode toggle + metadata -->
+                <StackPanel HorizontalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <TextBox Text="{Binding WorkflowName, Mode=TwoWay}"
+                             FontSize="16"
+                             FontWeight="SemiBold"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             MinWidth="150"
+                             MaxWidth="300"
+                             VerticalAlignment="Center" />
+
+                    <!-- Metadata toggle -->
+                    <ToggleButton Name="MetadataToggleButton"
+                                  VerticalAlignment="Center"
+                                  Padding="4"
+                                  ToolTip.Tip="Show metadata">
+                        <icon:MaterialIcon Width="16" Height="16" Kind="InformationOutline" />
+                    </ToggleButton>
+
+                    <!-- Scope frames toggle (BP mode) -->
+                    <ToggleButton VerticalAlignment="Center"
+                                  Padding="4"
+                                  IsVisible="{Binding IsBlueprintMode}"
+                                  IsChecked="{Binding BlueprintVM.ShowScopeFrames}"
+                                  ToolTip.Tip="显示/隐藏作用域背景框">
+                        <icon:MaterialIcon Width="16" Height="16" Kind="BorderAllVariant" />
+                    </ToggleButton>
+
+                    <Border Width="1" Height="24" Background="{DynamicResource ControlStrokeColorSecondaryBrush}" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
+                        <Button Padding="12,6"
+                                CornerRadius="4,0,0,4"
+                                Command="{Binding SwitchToBlockScriptCommand}"
+                                IsEnabled="{Binding !IsBlockScriptMode}">
+                            <TextBlock Text="KScript" />
+                        </Button>
+                        <Button Padding="12,6"
+                                CornerRadius="0,4,4,0"
+                                Command="{Binding SwitchToBlueprintCommand}"
+                                IsEnabled="{Binding !IsBlueprintMode}">
+                            <TextBlock Text="Blueprint" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Collapsible metadata panel (Description + Author) -->
+        <Border DockPanel.Dock="Top"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="15,6"
+                IsVisible="{Binding #MetadataToggleButton.IsChecked, Mode=OneWay}">
+            <Grid ColumnDefinitions="Auto,*,Auto,*" Margin="10,0,10,0">
+                <TextBlock Text="Description: " VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                <TextBox Grid.Column="1"
+                         Text="{Binding WorkflowDescription, Mode=TwoWay}"
+                         Watermark="Workflow description..."
+                         Background="Transparent"
+                         BorderThickness="0,0,0,1"
+                         Margin="0,0,20,0" />
+                <TextBlock Grid.Column="2" Text="Author: " VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                <TextBox Grid.Column="3"
+                         Text="{Binding WorkflowAuthor, Mode=TwoWay}"
+                         Watermark="Author name..."
+                         Background="Transparent"
+                         BorderThickness="0,0,0,1" />
+            </Grid>
+        </Border>
+
+        <!-- Conversion error bar -->
+        <Border DockPanel.Dock="Top"
+                IsVisible="{Binding ConversionError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                Padding="10,4">
+            <TextBlock Text="{Binding ConversionError}"
+                       FontSize="11"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextWrapping="Wrap" />
+        </Border>
+
+        <!-- Bottom status bar -->
+        <Border DockPanel.Dock="Bottom"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="10,4">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left"
+                           Text="{Binding StatusText}"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                <TextBlock DockPanel.Dock="Right"
+                           Text="{Binding Mode, StringFormat='Mode: {0}'}"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           HorizontalAlignment="Right" />
+            </DockPanel>
+        </Border>
+
+        <!-- Main Content Area: Three columns -->
+        <Grid ColumnDefinitions="200,5,*,5,250">
+
+            <!-- ==================== Left Panel ==================== -->
+            <!-- BS Mode: Trigger + Helper Functions -->
+            <DockPanel Grid.Column="0"
+                       IsVisible="{Binding IsBlockScriptMode}"
+                       Margin="5">
+
+                <!-- Code Sections -->
+                <TextBlock DockPanel.Dock="Top"
+                           Text="Code Sections"
+                           FontWeight="Bold"
+                           Margin="5,5,5,10" />
+                <Button DockPanel.Dock="Top"
+                        Name="AddHelperFunctionListButton"
+                        Content="Add Helper Function"
+                        HorizontalAlignment="Stretch"
+                        Margin="5" Padding="5,2" />
+                <Button DockPanel.Dock="Top"
+                        Name="BackToMainProgramButton"
+                        Content="Main Program"
+                        HorizontalAlignment="Stretch"
+                        Margin="5" Padding="5,2" />
+                <ListBox Name="HelperFunctionsListBox">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding Name, Mode=TwoWay}"
+                                         VerticalAlignment="Center"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         MinWidth="80" />
+                                <Button Grid.Column="1"
+                                        Content="X"
+                                        Tag="{Binding}"
+                                        Padding="5,2"
+                                        Margin="5,0,0,0" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <!-- BP Mode: Node Palette -->
+            <Border Grid.Column="0"
+                    IsVisible="{Binding IsBlueprintMode}"
+                    Background="{DynamicResource LayerFillColorDefaultBrush}"
+                    Margin="5" CornerRadius="5">
+                <DockPanel Margin="10">
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Node Palette"
+                               FontWeight="Bold"
+                               Margin="0,0,0,6" />
+                    <TextBox DockPanel.Dock="Top"
+                             Text="{Binding BlueprintVM.SearchText, Mode=TwoWay}"
+                             Watermark="搜索节点…"
+                             FontSize="11"
+                             Margin="0,0,0,8"
+                             Padding="4,2" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="控制流"
+                                       FontWeight="SemiBold"
+                                       FontSize="10"
+                                       Opacity="0.7"
+                                       Margin="0,0,0,3" />
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.FilteredControlFlowItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                        <Button Content="{Binding DisplayName}"
+                                                Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Padding="8,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="定义"
+                                       FontWeight="SemiBold"
+                                       FontSize="10"
+                                       Opacity="0.7"
+                                       Margin="0,10,0,3" />
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.FilteredDefinitionItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                        <Button Content="{Binding DisplayName}"
+                                                Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Padding="8,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="使用"
+                                       FontWeight="SemiBold"
+                                       FontSize="10"
+                                       Opacity="0.7"
+                                       Margin="0,10,0,3" />
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.FilteredUsageItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                        <Button Content="{Binding DisplayName}"
+                                                Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Padding="8,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="内置函数"
+                                       FontWeight="SemiBold"
+                                       FontSize="10"
+                                       Opacity="0.7"
+                                       Margin="0,10,0,3" />
+                            <ItemsControl ItemsSource="{Binding BlueprintVM.FilteredBuiltinItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                        <Button Content="{Binding DisplayName}"
+                                                Command="{Binding DataContext.BlueprintVM.AddPaletteNodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Padding="8,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <GridSplitter Grid.Column="1"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                          Width="5" />
+
+            <!-- ==================== Column 2: Main Editor Area ==================== -->
+            <Grid Grid.Column="2">
+
+                <!-- BS Mode: Code Editor + Constants Panel -->
+                <Grid IsVisible="{Binding IsBlockScriptMode}"
+                      RowDefinitions="*,5,200">
+
+                    <!-- Code Editor -->
+                    <DockPanel Grid.Row="0" Margin="5">
+                        <StackPanel DockPanel.Dock="Top"
+                                    Orientation="Horizontal"
+                                    Margin="5">
+                            <TextBlock Name="CodeEditorTitle"
+                                       Text="Main Program"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <avalonedit:TextEditor Name="CodeEditor"
+                                               FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                                               FontSize="12"
+                                               ShowLineNumbers="True"
+                                               IsReadOnly="False"
+                                               HorizontalScrollBarVisibility="Auto"
+                                               VerticalScrollBarVisibility="Auto" />
+                    </DockPanel>
+
+                    <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
+
+                    <!-- Variable Constants / Helper Function Settings Panel -->
+                    <DockPanel Grid.Row="2" Margin="5">
+                        <!-- Header: Variable Constants -->
+                        <StackPanel DockPanel.Dock="Top"
+                                    Orientation="Horizontal"
+                                    Margin="5"
+                                    IsVisible="{Binding !IsEditingHelperFunction}">
+                            <TextBlock Text="Variable Constants"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center" />
+                            <Button Name="ResetAllConstantsButton"
+                                    Content="Reset All"
+                                    Command="{Binding ResetAllConstantsCommand}"
+                                    Margin="10,0,0,0" Padding="5,2" />
+                        </StackPanel>
+
+                        <!-- Header: Helper Function Settings -->
+                        <StackPanel DockPanel.Dock="Top"
+                                    Orientation="Horizontal"
+                                    Margin="5"
+                                    IsVisible="{Binding IsEditingHelperFunction}">
+                            <TextBlock Text="Helper Function Settings"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <!-- Content: Variable Constants -->
+                        <ScrollViewer IsVisible="{Binding !IsEditingHelperFunction}">
+                            <ItemsControl Name="ConstantsItemsControl">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Orientation="Vertical">
+                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                                                <TextBlock Text="{Binding Type}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="10" />
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding UserValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     Margin="5,0" />
+                                            <Button Grid.Column="2"
+                                                    Content="R"
+                                                    Command="{Binding DataContext.ResetConstantCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip.Tip="Reset to default"
+                                                    Padding="5,2" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <!-- Content: Helper Function Settings -->
+                        <ScrollViewer IsVisible="{Binding IsEditingHelperFunction}">
+                            <StackPanel Spacing="5" Margin="5">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="Return" VerticalAlignment="Center" Width="60" />
+                                    <TextBox Text="{Binding SelectedHelperFunction.ReturnType, Mode=TwoWay}"
+                                             Width="120" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
+                                    <TextBlock Text="Params:" VerticalAlignment="Center" Width="60" />
+                                    <Button Name="AddParameterButton"
+                                            Content="Add Parameter" Padding="5,2"
+                                            Command="{Binding AddParameterCommand}"
+                                            ToolTip.Tip="Add a new parameter" />
+                                </StackPanel>
+                                <ItemsControl Name="ParametersItemsControl" Margin="0,5,0,0"
+                                              ItemsSource="{Binding Parameters}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2">
+                                                <TextBox Text="{Binding Type, Mode=TwoWay}"
+                                                         Width="50" ToolTip.Tip="Parameter type" />
+                                                <TextBox Text="{Binding Name, Mode=TwoWay}"
+                                                         Width="70" ToolTip.Tip="Parameter name" />
+                                                <Button Content="X" Padding="5,2"
+                                                        Command="{Binding DataContext.RemoveParameterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}" ToolTip.Tip="Remove parameter" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Grid>
+
+                <!-- BP Mode: NodifyM Blueprint Canvas -->
+                <Border IsVisible="{Binding IsBlueprintMode}"
+                        Background="{DynamicResource LayerFillColorDefaultBrush}"
+                        Margin="5" CornerRadius="5">
+
+                    <Grid>
+                        <!-- Error bar: active constraint violation + fix suggestion (A2) -->
+                        <Border IsVisible="{Binding BlueprintVM.HasError}"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Stretch"
+                                Background="{Binding BlueprintVM.ErrorInfo.EffectiveBadgeColorHex, Converter={StaticResource HexToBrushConverter}}"
+                                Padding="10,6"
+                                Margin="5"
+                                CornerRadius="4"
+                                ZIndex="100">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <icon:MaterialIcon Kind="AlertCircle" Foreground="White" VerticalAlignment="Center" />
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Foreground="White" FontSize="12" TextWrapping="Wrap"
+                                               Text="{Binding BlueprintVM.ErrorInfo.Message}" />
+                                    <TextBlock Foreground="#F0FFFFFF" FontSize="11" TextWrapping="Wrap"
+                                               Text="{Binding BlueprintVM.ErrorInfo.FixSuggestion}"
+                                               IsVisible="{Binding BlueprintVM.ErrorInfo.FixSuggestion, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Hover-preview rejection hint -->
+                        <Border IsVisible="{Binding BlueprintVM.HasHoverError}"
+                                VerticalAlignment="Bottom"
+                                HorizontalAlignment="Center"
+                                Background="#CC000000"
+                                Padding="10,4"
+                                CornerRadius="4"
+                                Margin="5"
+                                ZIndex="100">
+                            <TextBlock Foreground="#FFCCCC" FontSize="11"
+                                       Text="{Binding BlueprintVM.HoverErrorText}" />
+                        </Border>
+
+                        <!-- Empty-state banner -->
+                        <StackPanel IsVisible="{Binding !BlueprintVM.HasContent}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="10"
+                                    Margin="40">
+                            <icon:MaterialIcon Width="48" Height="48" Kind="Sitemap"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <TextBlock Text="{Binding BlueprintVM.EmptyBanner}"
+                                       FontSize="13"
+                                       TextWrapping="Wrap"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                        </StackPanel>
+
+                        <!-- NodifyEditor canvas -->
+                        <controls:NodifyEditor x:Name="EditorControl"
+                                               IsVisible="{Binding BlueprintVM.HasContent}"
+                                               DataContext="{Binding BlueprintVM}"
+                                               ItemsSource="{Binding Nodes}"
+                                               Connections="{Binding Connections}"
+                                               PendingConnection="{Binding PendingConnection}"
+                                                SelectedItems="{Binding SelectedNodes}"
+                                                DisconnectConnectorCommand="{Binding DisconnectConnectorCommand}"
+                                                RemoveConnectionCommand="{Binding RemoveConnectionCommand}"
+                                               Background="Transparent">
+
+                            <controls:NodifyEditor.GridLineTemplate>
+                                <DataTemplate>
+                                    <controls:LargeGridLine Width="{Binding $parent[controls:NodifyEditor].Bounds.Width}"
+                                                            Height="{Binding $parent[controls:NodifyEditor].Bounds.Height}"
+                                                            OffsetX="{Binding $parent[controls:NodifyEditor].OffsetX}"
+                                                            OffsetY="{Binding $parent[controls:NodifyEditor].OffsetY}"
+                                                            Zoom="{Binding $parent[controls:NodifyEditor].Zoom}"
+                                                            Spacing="15"
+                                                            Thickness="0.5"
+                                                            Brush="{DynamicResource ControlStrokeColorSecondaryBrush}" />
+                                </DataTemplate>
+                            </controls:NodifyEditor.GridLineTemplate>
+
+                            <controls:NodifyEditor.ConnectionTemplate>
+                                <DataTemplate>
+                                    <controls:Connection Source="{Binding Source.Anchor}"
+                                                         Target="{Binding Target.Anchor}"
+                                                         StrokeThickness="2.5"
+                                                         Spacing="20"
+                                                         Direction="Forward"
+                                                         DisconnectCommand="{Binding $parent[controls:NodifyEditor].RemoveConnectionCommand}">
+                                        <controls:Connection.Stroke>
+                                            <Binding Path="StrokeColorHex"
+                                                     Converter="{StaticResource HexToBrushConverter}" />
+                                        </controls:Connection.Stroke>
+                                        <ToolTip.Tip>Alt+点击连接或端点可断开连线；右键可断开</ToolTip.Tip>
+                                    </controls:Connection>
+                                </DataTemplate>
+                            </controls:NodifyEditor.ConnectionTemplate>
+
+                            <controls:NodifyEditor.PendingConnectionTemplate>
+                                <DataTemplate>
+                                    <controls:PendingConnection StartedCommand="{Binding StartCommand}"
+                                                                CompletedCommand="{Binding FinishCommand}"
+                                                                Direction="Forward">
+                                        <controls:PendingConnection.Stroke>
+                                            <SolidColorBrush Color="White" Opacity="0.5" />
+                                        </controls:PendingConnection.Stroke>
+                                    </controls:PendingConnection>
+                                </DataTemplate>
+                            </controls:NodifyEditor.PendingConnectionTemplate>
+
+                            <controls:NodifyEditor.ItemTemplate>
+                                <controls:NodeTemplateSelector>
+                                    <!-- Scope frame: decorative background (sub-scope body frames
+                                         solid; condition/source frames dashed). Right angles, thin
+                                         grid-aligned borders — reads as background selection, not a
+                                         draggable container. -->
+                                    <DataTemplate DataType="{x:Type viewModels:ScopeFrameVM}">
+                                        <Grid Width="{Binding FrameWidth}"
+                                              Height="{Binding FrameHeight}"
+                                              IsHitTestVisible="False"
+                                              IsVisible="{Binding DataContext.BlueprintVM.ShowScopeFrames, RelativeSource={RelativeSource AncestorType=Window}}">
+                                            <Rectangle Fill="{Binding BackgroundColorHex, Converter={StaticResource HexToBrushConverter}}" />
+                                            <Rectangle Stroke="{Binding BorderColorHex, Converter={StaticResource HexToBrushConverter}}"
+                                                       StrokeDashArray="{Binding BorderDashArray}"
+                                                       StrokeThickness="1" />
+                                            <TextBlock Text="{Binding Title}"
+                                                       FontSize="9"
+                                                       FontWeight="SemiBold"
+                                                       Opacity="0.5"
+                                                       HorizontalAlignment="Left"
+                                                       VerticalAlignment="Top"
+                                                       Margin="4,2" />
+                                        </Grid>
+                                    </DataTemplate>
+
+                                    <!-- Group-comment NOTE: the only interactive part of a group
+                                         comment. Top Z-order, no frame/bounding-box grid — a note can
+                                         never steal another control's hit-test area. -->
+                                    <DataTemplate DataType="{x:Type viewModels:GroupCommentVM}">
+                                        <Border Width="{Binding Width}"
+                                                Height="{Binding EffectiveHeight}"
+                                                CornerRadius="6"
+                                                Padding="6,3"
+                                                Background="#FFF8E1"
+                                                BorderBrush="#FFB300"
+                                                BorderThickness="1"
+                                                Cursor="Hand"
+                                                ToolTip.Tip="数据子图注释（拖动吸附 / 点击折叠 / 双击编辑）"
+                                                PointerPressed="OnGroupCommentPointerPressed"
+                                                PointerMoved="OnGroupCommentPointerMoved"
+                                                PointerReleased="OnGroupCommentPointerReleased"
+                                                PointerEntered="OnGroupCommentPointerEntered"
+                                                PointerExited="OnGroupCommentPointerExited">
+                                            <Grid>
+                                                <TextBlock Text="{Binding BubbleText}"
+                                                           IsVisible="{Binding !IsEditing}"
+                                                           FontSize="10"
+                                                           FontStyle="Italic"
+                                                           Foreground="#6D4C00"
+                                                           TextWrapping="Wrap"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
+                                                         IsVisible="{Binding IsEditing}"
+                                                         FontSize="10"
+                                                         Background="White"
+                                                         Foreground="Black"
+                                                         Padding="2,0"
+                                                         KeyDown="OnGroupCommentEditKeyDown"
+                                                         LostFocus="OnGroupCommentEditLostFocus" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+
+                                    <!-- Shared dashed-frame overlay (single instance, top Z-order,
+                                         pure decoration; zero size when no note is hovered). -->
+                                    <DataTemplate DataType="{x:Type viewModels:GroupCommentHighlightVM}">
+                                        <Rectangle Width="{Binding Width}"
+                                                   Height="{Binding Height}"
+                                                   Stroke="#FFB300"
+                                                   StrokeDashArray="4,3"
+                                                   StrokeThickness="1.5"
+                                                   IsHitTestVisible="False">
+                                            <Rectangle.Fill>
+                                                <SolidColorBrush Color="#14FFB300" />
+                                            </Rectangle.Fill>
+                                        </Rectangle>
+                                    </DataTemplate>
+
+                                    <!-- Blueprint node -->
+                                    <DataTemplate DataType="{x:Type viewModels:BlueprintNodeVMV6}">
+                                        <controls:Node Location="{Binding Location, Mode=TwoWay}"
+                                                       Input="{Binding Input}"
+                                                       Output="{Binding Output}"
+                                                       InputConnectorTemplate="{StaticResource V6InputConnectorTemplate}"
+                                                       OutputConnectorTemplate="{StaticResource V6OutputConnectorTemplate}"
+                                                       IsResize="False">
+                                            <controls:Node.Header>
+                                                <Border CornerRadius="4,4,0,0"
+                                                        Padding="10,4"
+                                                        HorizontalAlignment="Stretch"
+                                                        BorderBrush="{Binding DebugBorderBrushHex, Converter={StaticResource HexToBrushConverter}}"
+                                                        BorderThickness="2">
+                                                    <Border.Background>
+                                                        <Binding Path="EffectiveHeaderColorHex"
+                                                                 Converter="{StaticResource HexToBrushConverter}" />
+                                                    </Border.Background>
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                                            <Ellipse Width="8" Height="8"
+                                                                     VerticalAlignment="Center"
+                                                                     Fill="#F44336"
+                                                                     IsVisible="{Binding IsBreakpoint}" />
+                                                            <TextBlock Text="{Binding DefinitionTitle}"
+                                                                       Foreground="White"
+                                                                       FontWeight="SemiBold"
+                                                                       FontSize="12" />
+                                                            <TextBlock Text="{Binding TerminatorGlyph}"
+                                                                       IsVisible="{Binding IsTerminator}"
+                                                                       Foreground="{Binding TerminatorColorHex, Converter={StaticResource HexToBrushConverter}}"
+                                                                       FontSize="12"
+                                                                       VerticalAlignment="Center"
+                                                                       ToolTip.Tip="终结符：exec 路径在此终止" />
+                                                            <!-- Comment indicator + inline editor -->
+                                                            <TextBlock Text="&#x1F4AC;"
+                                                                       FontSize="10"
+                                                                       Opacity="0.7"
+                                                                       VerticalAlignment="Center"
+                                                                       Cursor="Hand"
+                                                                       ToolTip.Tip="{Binding Comment}"
+                                                                       PointerPressed="OnCommentIndicatorPressed" />
+                                                            <TextBox Text="{Binding CommentEditText, Mode=TwoWay}"
+                                                                     IsVisible="{Binding IsEditingComment}"
+                                                                     FontSize="10"
+                                                                     MinWidth="80"
+                                                                     MaxWidth="160"
+                                                                     Padding="2,0"
+                                                                     VerticalAlignment="Center"
+                                                                     Background="White"
+                                                                     Foreground="Black"
+                                                                     KeyDown="OnCommentEditKeyDown"
+                                                                     LostFocus="OnCommentEditLostFocus" />
+                                                        </StackPanel>
+                                                        <!-- Comment bubble: visible default display of the trailing comment -->
+                                                        <TextBlock Text="{Binding CommentBubbleText}"
+                                                                   IsVisible="{Binding ShowCommentBubble}"
+                                                                   Foreground="White"
+                                                                   Opacity="0.92"
+                                                                   FontSize="10"
+                                                                   FontStyle="Italic"
+                                                                   Margin="0,3,0,0"
+                                                                   Cursor="Hand"
+                                                                   TextWrapping="Wrap"
+                                                                   PointerPressed="OnCommentIndicatorPressed" />
+                                                        <!-- Definition node declaration editor (R8) — const/var only;
+                                                             DictNew shows its own key/value pair editor below. -->
+                                                        <StackPanel IsVisible="{Binding ShowDefinitionEditor}"
+                                                                    Margin="0,5,0,0"
+                                                                    Spacing="3">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Type"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBlock Text="{Binding DefinitionType}"
+                                                                           FontSize="10"
+                                                                           VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Name"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                 <TextBox Text="{Binding DefinitionName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                          FontSize="10"
+                                                                          Background="White"
+                                                                          Foreground="Black"
+                                                                          Width="110"
+                                                                          Padding="2,0"
+                                                                          VerticalAlignment="Center"
+                                                                          ToolTip.Tip="重命名会同步所有同名使用节点" />
+                                                             </StackPanel>
+                                                             <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                 <TextBlock Text="Value"
+                                                                            FontSize="9"
+                                                                            Opacity="0.8"
+                                                                            Width="34"
+                                                                            VerticalAlignment="Center" />
+                                                                 <TextBox Text="{Binding DefinitionValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                         FontSize="10"
+                                                                         Background="White"
+                                                                         Foreground="Black"
+                                                                         Width="110"
+                                                                         Padding="2,0"
+                                                                         VerticalAlignment="Center"
+                                                                          ToolTip.Tip="用户值（留空 = 使用脚本默认值；对应 Variable Constants 栏 UserValue）" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <!-- Usage VariableNode: referenced name selector (2026-08-03).
+                                                             COMPLETELY pointer-driven interaction: the Pencil button is
+                                                             the ONLY control. Fixed three-column Grid keeps the button
+                                                             glued to the right edge in both states (idle name view and
+                                                             editing AutoCompleteBox overlap in the same middle cell, so
+                                                             the row never changes size or jumps). No focus events drive
+                                                             any logic: idle→Pencil = start editing; editing→Pencil /
+                                                             Enter = commit; Esc = cancel. The dropdown only opens
+                                                             when the box is focused with empty text (a keyboard/typing
+                                                             convenience, never a state driver). Invalid names are
+                                                             rejected by the VM and rolled back. -->
+                                                        <StackPanel IsVisible="{Binding IsUsageVariableNode}"
+                                                                    Margin="0,5,0,0"
+                                                                    Spacing="3">
+                                                            <Grid ColumnDefinitions="34,110,24">
+                                                                <TextBlock Text="Name"
+                                                                           Grid.Column="0"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           VerticalAlignment="Center" />
+                                                                <!-- Middle cell: idle text / placeholder / editor overlap.
+                                                                     All three share the same cell so switching states never
+                                                                     reflows the row or moves the Pencil. -->
+                                                                <TextBlock Text="{Binding UsageName}"
+                                                                           Grid.Column="1"
+                                                                           IsVisible="{Binding ShowUsageNameText}"
+                                                                           FontSize="10"
+                                                                           VerticalAlignment="Center"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           ToolTip.Tip="引用的变量/常量/dict 名（点击右侧铅笔按钮修改）" />
+                                                                <TextBlock Text="选择变量…"
+                                                                           Grid.Column="1"
+                                                                           IsVisible="{Binding ShowUsageNamePlaceholder}"
+                                                                           FontSize="10"
+                                                                           Opacity="0.5"
+                                                                           VerticalAlignment="Center" />
+                                                                <AutoCompleteBox Text="{Binding UsageEditText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                 Grid.Column="1"
+                                                                                 ItemsSource="{Binding DataContext.BlueprintVM.DefinitionNames, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                                 IsVisible="{Binding IsEditingUsageName}"
+                                                                                 FilterMode="Contains"
+                                                                                 MaxDropDownHeight="160"
+                                                                                 FontSize="10"
+                                                                                 Padding="2,0"
+                                                                                 VerticalAlignment="Center"
+                                                                                 KeyDown="OnUsageNameEditKeyDown"
+                                                                                 ToolTip.Tip="选择或输入引用的变量/常量/dict 名" />
+                                                                <!-- The ONLY interaction entry: toggle start/commit. Fixed in
+                                                                     the right column — it never moves between states. A Border
+                                                                     wraps the icon so the whole 24px column is clickable
+                                                                     (the raw icon hit-test is only its painted glyphs). -->
+                                                                <Border Grid.Column="2"
+                                                                        Width="24"
+                                                                        Height="22"
+                                                                        VerticalAlignment="Center"
+                                                                        HorizontalAlignment="Stretch"
+                                                                        Cursor="Hand"
+                                                                        Background="Transparent"
+                                                                        ToolTip.Tip="编辑引用的名称（编辑中再次点击 = 确认）"
+                                                                        PointerPressed="OnUsageNameEditButtonPressed">
+                                                                    <icon:MaterialIcon Width="14"
+                                                                                       Height="14"
+                                                                                       Kind="Pencil"
+                                                                                       HorizontalAlignment="Center"
+                                                                                       VerticalAlignment="Center"
+                                                                                       Opacity="0.8" />
+                                                                </Border>
+                                                            </Grid>
+                                                            <!-- Usage-kind label: const references are read-only (no Value
+                                                                 input pin), var references are read/write. The kind is FIXED
+                                                                 by the palette node type — two distinct usage node types,
+                                                                 mirroring the definition nodes (no runtime switch). -->
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Kind"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBlock Text="const"
+                                                                           IsVisible="{Binding IsConstUsageRefNode}"
+                                                                           FontSize="10"
+                                                                           Foreground="#4FC3F7"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBlock Text="var"
+                                                                           IsVisible="{Binding IsVarUsageRefNode}"
+                                                                           FontSize="10"
+                                                                           Foreground="#81C784"
+                                                                           VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <!-- Usage ConstNode: literal value editor (2026-08-03) -->
+                                                        <StackPanel IsVisible="{Binding IsUsageConstNode}"
+                                                                    Margin="0,5,0,0"
+                                                                    Spacing="3">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBlock Text="Value"
+                                                                           FontSize="9"
+                                                                           Opacity="0.8"
+                                                                           Width="34"
+                                                                           VerticalAlignment="Center" />
+                                                                <TextBox Text="{Binding UsageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                         FontSize="10"
+                                                                         Background="White"
+                                                                         Foreground="Black"
+                                                                         Width="110"
+                                                                         Padding="2,0"
+                                                                         VerticalAlignment="Center"
+                                                                         Watermark="字面量值"
+                                                                         ToolTip.Tip="管道源字面量值（Reverse 时写回 KS 文本）" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <!-- DictNew definition node: key/value pair editor (T8).
+                                                             Each row edits one Key{i}/Value{i} input pin pair; the
+                                                             value textbox follows the inline DefaultValue literal
+                                                             semantics (backend Reverse parses per the pin type). -->
+                                                        <StackPanel IsVisible="{Binding IsDictNewNode}"
+                                                                    Margin="0,5,0,0"
+                                                                    Spacing="3">
+                                                            <ItemsControl ItemsSource="{Binding DictPairs}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate DataType="{x:Type viewModels:DictPairRowVM}">
+                                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                            <TextBox Text="{Binding KeyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                     Width="64"
+                                                                                     FontSize="10"
+                                                                                     Background="White"
+                                                                                     Foreground="Black"
+                                                                                     Padding="2,0"
+                                                                                     VerticalAlignment="Center"
+                                                                                     Watermark="Key"
+                                                                                     ToolTip.Tip="键字面量（写入 Key pin 的 DefaultValue）" />
+                                                                            <TextBox Text="{Binding ValueText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                     Width="64"
+                                                                                     FontSize="10"
+                                                                                     Background="White"
+                                                                                     Foreground="Black"
+                                                                                     Padding="2,0"
+                                                                                     VerticalAlignment="Center"
+                                                                                     Watermark="Value"
+                                                                                     ToolTip.Tip="值字面量（bool/int/double/string/char/null 文本，写入 Value pin 的 DefaultValue）" />
+                                                                            <Button Content="×"
+                                                                                    Padding="5,0"
+                                                                                    FontSize="10"
+                                                                                    VerticalAlignment="Center"
+                                                                                    ToolTip.Tip="删除该键值对"
+                                                                                    Command="{Binding DataContext.RemoveDictPairCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                                    CommandParameter="{Binding}" />
+                                                                        </StackPanel>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                            <Button Content="添加键值对"
+                                                                    Command="{Binding AddDictPairCommand}"
+                                                                    FontSize="10"
+                                                                    Padding="6,1"
+                                                                    HorizontalAlignment="Stretch" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                            </controls:Node.Header>
+                                        </controls:Node>
+                                    </DataTemplate>
+                                </controls:NodeTemplateSelector>
+                            </controls:NodifyEditor.ItemTemplate>
+                        </controls:NodifyEditor>
+
+                        <!-- In-place node selector: drag from an output port onto blank
+                             canvas → pick a node → created at the drop point and wired
+                             (exec chain insertion + data edge). -->
+                        <Popup Name="NodeSelectorPopup"
+                               IsOpen="{Binding BlueprintVM.IsNodeSelectorOpen, Mode=TwoWay}"
+                               Placement="Pointer"
+                               IsLightDismissEnabled="True"
+                               HorizontalOffset="10"
+                               VerticalOffset="10"
+                               Opened="OnNodeSelectorPopupOpened">
+                            <Border Background="{DynamicResource LayerFillColorDefaultBrush}"
+                                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    BoxShadow="0 4 12 0 #66000000"
+                                    Padding="6">
+                                <StackPanel MinWidth="220" MaxHeight="340">
+                                    <TextBox Name="NodeSelectorSearchBox"
+                                             Text="{Binding BlueprintVM.NodeSelectorSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="搜索节点…（Enter 选择 / Esc 关闭）"
+                                             FontSize="11"
+                                             Padding="6,4"
+                                             Margin="0,0,0,6"
+                                             KeyDown="OnNodeSelectorSearchKeyDown" />
+                                    <ScrollViewer MaxHeight="280" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding BlueprintVM.NodeSelectorItems}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type viewModels:PaletteItemV6}">
+                                                    <Button Content="{Binding DisplayName}"
+                                                            Command="{Binding DataContext.BlueprintVM.SelectNodeSelectorItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Margin="0,1"
+                                                            HorizontalAlignment="Stretch"
+                                                            HorizontalContentAlignment="Left"
+                                                            Padding="8,4"
+                                                            FontSize="12" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <GridSplitter Grid.Column="3"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                          Width="5" />
+
+            <!-- ==================== Column 4: Output Panel ==================== -->
+            <Border Grid.Column="4" Background="{DynamicResource LayerFillColorDefaultBrush}" Margin="5" CornerRadius="5">
+                <DockPanel Margin="10">
+                    <!-- Debug variable watch panel (P4-β-3, visible only during debugging) -->
+                    <Expander DockPanel.Dock="Top"
+                              Header="Variables"
+                              IsVisible="{Binding IsDebugging}"
+                              IsExpanded="True"
+                              Margin="0,0,0,5">
+                        <ItemsControl ItemsSource="{Binding RuntimeVariables}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2" ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="11"
+                                                   FontFamily="Cascadia Mono,Consolas,Menlo,monospace" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Expander>
+
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <TextBlock Text="Output"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <Button Name="ClearOutputButton"
+                                DockPanel.Dock="Right"
+                                Command="{Binding ClearOutputCommand}"
+                                ToolTip.Tip="Clear output"
+                                Padding="8,2"
+                                HorizontalAlignment="Right">
+                            <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
+                        </Button>
+                    </DockPanel>
+                    <ScrollViewer Name="OutputScrollViewer"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto">
+                        <TextBox Name="OutputTextBox"
+                                 Text="{Binding ExecutionOutput}"
+                                 IsReadOnly="True"
+                                 FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                                 FontSize="11"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Background="Transparent"
+                                 BorderThickness="0" />
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

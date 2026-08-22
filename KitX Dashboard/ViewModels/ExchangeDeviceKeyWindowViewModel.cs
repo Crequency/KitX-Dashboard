@@ -34,7 +34,7 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
 
     public string[] VerificationCode => verificationCode;
 
-    public bool IsVerifing => updatingIndex == VerificationCode.Length;
+    public bool IsVerifying => updatingIndex == VerificationCode.Length;
 
     private bool isEditable = true;
 
@@ -57,7 +57,7 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
         set
         {
             if (value.Length != verificationCode.Length)
-                throw new InvalidCastException();
+                throw new ArgumentException($"Verification code must be exactly {verificationCode.Length} characters.");
 
             for (var i = 0; i < verificationCode.Length; ++i)
                 verificationCode[i] = value[i].ToString();
@@ -91,7 +91,7 @@ internal class ExchangeDeviceKeyWindowViewModel : ViewModelBase
         this.RaisePropertyChanged(nameof(VerificationCode));
         this.RaisePropertyChanged(nameof(CurrentCodeIndex));
         this.RaisePropertyChanged(nameof(VerificationCodeString));
-        this.RaisePropertyChanged(nameof(IsVerifing));
+        this.RaisePropertyChanged(nameof(IsVerifying));
         this.RaisePropertyChanged(nameof(IsDisplayingVerificationCode));
     }
 

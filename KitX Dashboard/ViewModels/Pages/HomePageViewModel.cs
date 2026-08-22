@@ -1,78 +1,21 @@
-﻿using System.Reactive;
-using Avalonia;
-using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Managers;
-using ReactiveUI;
+﻿using KitX.Core.Contract.Configuration;
+using ContractPaneDisplayMode = KitX.Core.Contract.Configuration.NavigationViewPaneDisplayMode;
 
 namespace KitX.Dashboard.ViewModels.Pages;
 
-internal class HomePageViewModel : ViewModelBase
+internal class HomePageViewModel : NavigationPaneViewModelBase
 {
-    public HomePageViewModel()
+    public HomePageViewModel(IConfigService configService) : base(configService) { }
+
+    protected override ContractPaneDisplayMode ConfigPaneDisplayMode
     {
-        InitCommands();
+        get => _configService.AppConfig.Pages.Home.NavigationViewPaneDisplayMode;
+        set => _configService.AppConfig.Pages.Home.NavigationViewPaneDisplayMode = value;
     }
 
-    public sealed override void InitCommands()
+    protected override bool ConfigPaneOpened
     {
-        ResetToAutoCommand = ReactiveCommand.Create(() =>
-        {
-            NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Auto;
-        });
-
-        MoveToLeftCommand = ReactiveCommand.Create(() =>
-        {
-            NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Left;
-        });
-
-        MoveToTopCommand = ReactiveCommand.Create(() =>
-        {
-            NavigationViewPaneDisplayMode = NavigationViewPaneDisplayMode.Top;
-        });
+        get => _configService.AppConfig.Pages.Home.IsNavigationViewPaneOpened;
+        set => _configService.AppConfig.Pages.Home.IsNavigationViewPaneOpened = value;
     }
-
-    public override void InitEvents() => throw new System.NotImplementedException();
-
-    internal static bool IsPaneOpen
-    {
-        get => ConfigManager.Instance.AppConfig.Pages.Home.IsNavigationViewPaneOpened;
-        set
-        {
-            ConfigManager.Instance.AppConfig.Pages.Home.IsNavigationViewPaneOpened = value;
-
-            SaveAppConfigChanges();
-        }
-    }
-
-    internal Thickness FirstItemMargin =>
-        NavigationViewPaneDisplayMode switch
-        {
-            NavigationViewPaneDisplayMode.Auto => new(0, 5, 0, 0),
-            NavigationViewPaneDisplayMode.Left => new(0, 5, 0, 0),
-            NavigationViewPaneDisplayMode.LeftCompact => new(0, 5, 0, 0),
-            NavigationViewPaneDisplayMode.LeftMinimal => new(0, 5, 0, 0),
-            NavigationViewPaneDisplayMode.Top => new(0, 0, 0, 0),
-            _ => new(0, 0, 0, 0),
-        };
-
-    internal NavigationViewPaneDisplayMode NavigationViewPaneDisplayMode
-    {
-        get => ConfigManager.Instance.AppConfig.Pages.Home.NavigationViewPaneDisplayMode;
-        set
-        {
-            ConfigManager.Instance.AppConfig.Pages.Home.NavigationViewPaneDisplayMode = value;
-
-            this.RaisePropertyChanged(nameof(NavigationViewPaneDisplayMode));
-
-            this.RaisePropertyChanged(nameof(FirstItemMargin));
-
-            SaveAppConfigChanges();
-        }
-    }
-
-    internal ReactiveCommand<Unit, Unit>? ResetToAutoCommand { get; set; }
-
-    internal ReactiveCommand<Unit, Unit>? MoveToLeftCommand { get; set; }
-
-    internal ReactiveCommand<Unit, Unit>? MoveToTopCommand { get; set; }
 }

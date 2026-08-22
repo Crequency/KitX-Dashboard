@@ -2,7 +2,8 @@
 using System.Reflection;
 using System.Threading.Tasks;
 using Common.BasicHelper.IO;
-using KitX.Dashboard.Managers;
+using KitX.Core.Configuration;
+using KitX.Core.Contract.Configuration;
 using KitX.Dashboard.Views.Pages.Controls;
 using ReactiveUI;
 
@@ -10,10 +11,14 @@ namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
 internal class Settings_AboutViewModel : ViewModelBase
 {
+    private readonly IConfigService _configService;
+
     internal AppLogo? AppLogo { get; set; }
 
-    internal Settings_AboutViewModel()
+    public Settings_AboutViewModel(IConfigService configService)
     {
+        _configService = configService;
+
         InitCommands();
     }
 
@@ -38,9 +43,9 @@ internal class Settings_AboutViewModel : ViewModelBase
         });
     }
 
-    public override void InitEvents() => throw new System.NotImplementedException();
+    public override void InitEvents() { }
 
-    internal static string VersionText => $"v{Assembly.GetEntryAssembly()?.GetName().Version}";
+    internal string VersionText => $"v{Assembly.GetEntryAssembly()?.GetName().Version}";
 
     private string _thirdPartyLicenseString = string.Empty;
 
@@ -50,43 +55,43 @@ internal class Settings_AboutViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _thirdPartyLicenseString, value);
     }
 
-    public static bool AboutAreaExpanded
+    public bool AboutAreaExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Settings.AboutAreaExpanded;
+        get => _configService.AppConfig.Pages.Settings.AboutAreaExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Settings.AboutAreaExpanded = value;
-            SaveAppConfigChanges();
+            _configService.AppConfig.Pages.Settings.AboutAreaExpanded = value;
+            _configService.SaveAll();
         }
     }
 
-    public static bool AuthorsAreaExpanded
+    public bool AuthorsAreaExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Settings.AuthorsAreaExpanded;
+        get => _configService.AppConfig.Pages.Settings.AuthorsAreaExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Settings.AuthorsAreaExpanded = value;
-            SaveAppConfigChanges();
+            _configService.AppConfig.Pages.Settings.AuthorsAreaExpanded = value;
+            _configService.SaveAll();
         }
     }
 
-    public static bool LinksAreaExpanded
+    public bool LinksAreaExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Settings.LinksAreaExpanded;
+        get => _configService.AppConfig.Pages.Settings.LinksAreaExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Settings.LinksAreaExpanded = value;
-            SaveAppConfigChanges();
+            _configService.AppConfig.Pages.Settings.LinksAreaExpanded = value;
+            _configService.SaveAll();
         }
     }
 
-    public static bool ThirdPartyLicensesAreaExpanded
+    public bool ThirdPartyLicensesAreaExpanded
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded;
+        get => _configService.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded = value;
-            SaveAppConfigChanges();
+            _configService.AppConfig.Pages.Settings.ThirdPartyLicensesAreaExpanded = value;
+            _configService.SaveAll();
         }
     }
 

@@ -5,7 +5,7 @@ namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class Developing : UserControl
 {
-    private static readonly DevelopingViewModel viewModel = new();
+    private static readonly DevelopingViewModel viewModel = App.GetService<DevelopingViewModel>();
 
     public Developing()
     {

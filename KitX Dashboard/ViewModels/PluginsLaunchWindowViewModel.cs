@@ -1,32 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text.Json;
 using Avalonia;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Network.PluginsNetwork;
-using KitX.Dashboard.Views;
+using KitX.Core.Contract.Plugin;
+using KitX.Core.Device;
+using KitX.Dashboard.Services;
 using KitX.Shared.CSharp.Plugin;
 using KitX.Shared.CSharp.WebCommand;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 
-internal class PluginsLaunchWindowViewModel : ViewModelBase
+internal class PluginsLaunchWindowViewModel : ViewModelBase, IDisposable
 {
-    public PluginsLaunchWindowViewModel()
+    private readonly IPluginServer _pluginServer;
+    private readonly IGlobalDataStore _dataStore;
+
+    /// <summary>Named handler so <see cref="Dispose"/> can unsubscribe it (D11).</summary>
+    private readonly NotifyCollectionChangedEventHandler _pluginInfosChangedHandler;
+
+    public PluginsLaunchWindowViewModel(IPluginServer pluginServer, IGlobalDataStore dataStore)
     {
-        InitCommands();
+        _pluginServer = pluginServer;
+        _dataStore = dataStore;
 
-        InitEvents();
-    }
-
-    public sealed override void InitCommands() { }
-
-    public sealed override void InitEvents()
-    {
-        PluginInfos.CollectionChanged += (_, _) =>
+        _pluginInfosChangedHandler = (_, _) =>
         {
             PluginsCount = $"{PluginInfos.Count}";
 
@@ -36,6 +38,30 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
             this.RaisePropertyChanged(nameof(SelectedPluginInfo));
             this.RaisePropertyChanged(nameof(SelectedFunction));
         };
+
+        InitCommands();
+
+        InitEvents();
+
+        // Plugins may already be connected when the window opens — the count must
+        // reflect the CURRENT state, not wait for the next collection change.
+        PluginsCount = $"{PluginInfos.Count}";
+    }
+
+    public sealed override void InitCommands() { }
+
+    public sealed override void InitEvents()
+    {
+        PluginInfos.CollectionChanged += _pluginInfosChangedHandler;
+    }
+
+    /// <summary>
+    /// Unsubscribes every subscription made in <see cref="InitEvents"/>. The window is a
+    /// persistent singleton, but Dispose keeps the pattern uniform (D11).
+    /// </summary>
+    public void Dispose()
+    {
+        PluginInfos.CollectionChanged -= _pluginInfosChangedHandler;
     }
 
     public string pluginsCount = "0";
@@ -51,7 +77,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    public static double NoPlugins_TipHeight => PluginInfos.Count == 0 ? 40 : 0;
+    public double NoPlugins_TipHeight => PluginInfos.Count == 0 ? 40 : 0;
 
     private int selectedPluginIndex = 0;
 
@@ -98,7 +124,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    public static ObservableCollection<PluginInfo> PluginInfos => ViewInstances.PluginInfos;
+    private ObservableCollection<PluginInfo> PluginInfos => _dataStore.PluginInfos;
 
     private bool isSelectingPlugin = true;
 
@@ -202,11 +228,11 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
         var lineIndex = SelectedPluginIndex / perLineButtonsCount;
 
-        var up = lineIndex * 80;
+        var up = lineIndex * PluginCardHeight;
 
-        var down = up + 80;
+        var down = up + PluginCardHeight;
 
-        var targetY = lineIndex * 80;
+        var targetY = lineIndex * PluginCardHeight;
 
         var condition = (up >= viewerOffsetY && down <= viewerOffsetY + viewerHeight);
 
@@ -216,7 +242,10 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
         }
     }
 
-    private static bool PluginIndexInRange(int index) => index >= 0 && index < PluginInfos.Count;
+    /// <summary>Grid cell height (px) of the plugin launch grid (D13.11).</summary>
+    private const double PluginCardHeight = 80;
+
+    private bool PluginIndexInRange(int index) => index >= 0 && index < PluginInfos.Count;
 
     private void CheckPluginIndex()
     {
@@ -341,7 +370,7 @@ internal class PluginsLaunchWindowViewModel : ViewModelBase
 
             if (SelectedPluginInfo is not null && SelectedFunction is not null && (HavingParameters == false))
             {
-                var plugConnector = PluginsServer.Instance.FindConnector(SelectedPluginInfo);
+                var plugConnector = _pluginServer.FindConnector(SelectedPluginInfo);
 
                 if (plugConnector is not null)
                 {

@@ -1,0 +1,32 @@
+<Window x:Class="KitX.Dashboard.Views.MermaidExportWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        Title="{DynamicResource Text_Mermaid_Title}"
+        Width="720"
+        Height="520"
+        WindowStartupLocation="CenterOwner">
+    <Grid RowDefinitions="*, Auto" Margin="16">
+        <TextBox Grid.Row="0"
+                 Text="{Binding MermaidText}"
+                 AcceptsReturn="True"
+                 TextWrapping="NoWrap"
+                 IsReadOnly="True"
+                 FontFamily="Consolas, monospace"
+                 FontSize="12"/>
+        <StackPanel Grid.Row="1" Margin="0,12,0,0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Click="OnCopyClick">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <icon:MaterialIcon Width="16" Height="16" Kind="ContentCopy"/>
+                    <TextBlock Text="{DynamicResource Text_Mermaid_Copy}"/>
+                </StackPanel>
+            </Button>
+            <Button Click="OnCloseClick">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <icon:MaterialIcon Width="16" Height="16" Kind="Close"/>
+                    <TextBlock Text="{DynamicResource Text_Mermaid_Close}"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

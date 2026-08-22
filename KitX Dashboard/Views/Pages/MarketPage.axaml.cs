@@ -5,7 +5,7 @@ namespace KitX.Dashboard.Views.Pages;
 
 public partial class MarketPage : UserControl
 {
-    private readonly MarketPageViewModel viewModel = new();
+    private readonly MarketPageViewModel viewModel = App.GetService<MarketPageViewModel>();
 
     public MarketPage()
     {

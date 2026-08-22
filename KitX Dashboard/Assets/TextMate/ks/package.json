@@ -1,0 +1,21 @@
+{
+  "name": "kscript",
+  "version": "1.0.0",
+  "description": "KScript v6 grammar (indented DSL with pipe operator)",
+  "contributes": {
+    "languages": [
+      {
+        "id": "ks",
+        "aliases": [ "KScript" ],
+        "extensions": [ ".ks" ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ks",
+        "scopeName": "source.ks",
+        "path": "./ks.tmLanguage.json"
+      }
+    ]
+  }
+}

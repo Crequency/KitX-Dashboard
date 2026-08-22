@@ -48,7 +48,7 @@
             </Border>
             <ScrollViewer>
                 <StackPanel Margin="0,0,10,0" Orientation="Vertical">
-                    <ItemsControl ItemsSource="{Binding PluginBars}">
+                    <ItemsControl ItemsSource="{Binding DisplayedPluginBars}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <StackPanel/>

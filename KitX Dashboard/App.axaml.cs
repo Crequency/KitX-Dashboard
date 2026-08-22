@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -10,28 +10,216 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Managers;
+using KitX.Core.Announcement;
+using KitX.Core.Contract.Announcement;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Device;
+using KitX.Core.Contract.Event;
+using KitX.Core.DI;
 using KitX.Dashboard.Services;
+using KitX.Dashboard.Utils;
+using KitX.WorkflowV6.Hosting;
+using KitX.ToolKit.Hosting;
+using KitX.ToolKit.Instances;
 using KitX.Dashboard.ViewModels;
+using KitX.Dashboard.ViewModels.Maintain;
+using KitX.Dashboard.ViewModels.Pages;
+using KitX.Dashboard.ViewModels.Pages.Controls;
 using KitX.Dashboard.Views;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+
+using ServiceHost = KitX.Core.DI.ServiceHost;
 
 namespace KitX.Dashboard;
 
 public partial class App : Application
 {
+    /// <summary>
+    /// Initialize DI container before UI framework starts
+    /// This should be called from AppFramework.RunFramework() before any UI code runs
+    /// Note: This is now called BEFORE Logger initialization (Phase 2 refactoring).
+    /// Log.Debug() calls in service constructors (e.g., ConfigManager) are no-ops
+    /// until Serilog Logger is configured later in RunFramework().
+    /// </summary>
+    internal static void InitializeServiceProvider()
+    {
+        if (ServiceHost.IsInitialized)
+            return;
+
+        Log.Information("Initializing service provider...");
+
+        // Initialize service provider with Core services
+        var services = new ServiceCollection();
+
+        // Register Core services from KitX.Core
+        services.AddCoreServices();
+
+        // V6 workflow services — the only workflow backend since v5.1 was archived.
+        // Shared interface registrations (ILens<>, IExecutionBackend) now resolve to V6.
+        services.AddKitXWorkflowV6();
+
+        // ToolKit / Bench orchestration layer — unified Trigger system + DataStore +
+        // workflow meta-orchestration. Registers the DataStore built-in plugin (routed by
+        // PluginHostAdapter for the reserved "KitX.DataStore" name); trigger registration is
+        // handled by the unified ToolkitInstanceManager-based trigger system (WorkflowV6
+        // hosts the trigger runtime, ToolKit owns the instance lifecycle).
+        services.AddKitXToolKit();
+
+        // Startup-only performance knobs. Both extensions register a default
+        // options singleton with AddSingleton (Add, not TryAdd — last registration
+        // wins), so the config-backed factories below are registered AFTER the Add
+        // calls to reliably override those defaults. IConfigService is resolved
+        // lazily per service first use (not at registration time), so no temporary
+        // provider / duplicate BuildServiceProvider is needed.
+        services.AddSingleton(sp => new WorkflowV6Options
+        {
+            ScriptCompilerCacheCapacity = sp.GetRequiredService<IConfigService>()
+                .AppConfig.Performance.ScriptCompilerCacheCapacity,
+        });
+        services.AddSingleton(sp => new ToolkitInstanceManagerOptions
+        {
+            CompletedInstanceCap = sp.GetRequiredService<IConfigService>()
+                .AppConfig.Performance.CompletedInstanceCap,
+        });
+
+        // Register Dashboard-specific services
+        services.AddSingleton<IFileDialogService, FileDialogService>();
+
+        // Shared cross-window observable data collections (replaces the retired
+        // static UI-state collections). Singleton so all pages/VM subscriptions
+        // observe the same collections.
+        services.AddSingleton<IGlobalDataStore, GlobalDataStore>();
+
+        // Window orchestration (replaces the retired static UI-state window members).
+        // Singleton coordinator only — constructor-injects no ViewModel (a VM dependency
+        // here would create a DI cycle that surfaces as a frozen UI).
+        services.AddSingleton<IWindowService, WindowService>();
+
+        // Device key-exchange UI coordinator (initiator password display + receive-side
+        // prompt). Registered as a singleton so it can subscribe to OnReceiveExchangeDeviceKey.
+        services.AddSingleton<IDeviceKeyExchangeUi, DeviceKeyExchangeUiService>();
+
+        // The legacy standalone-workflow storage service (S2 WorkflowStorageService /
+        // IWorkflowStorageService) was retired in the D2 cleanup — workflows are now
+        // created/edited only through the ToolKit workbench. The former S4
+        // (WorkflowSessionManager) and S6 (TriggerManager) services were retired as part
+        // of the v5 lifecycle cleanup.
+
+        // Register SignalTasksManager for signal-based coordination
+        services.AddSingleton<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
+
+        // Register Dashboard ViewModels (for DI auto-resolution without ActivatorUtilities fallback)
+        // S5: WorkflowScriptEditorWindowViewModel retired — functionality merged into WorkflowEditorViewModel.
+        services.AddTransient<DebugWindowViewModel>();
+        services.AddTransient<Settings_GeneralViewModel>();
+        services.AddTransient<Settings_PerformanceViewModel>();
+
+        // S0: page/window ViewModels resolved via App.GetService at their View creation points
+        // (Avalonia constructs Views directly — no container injection into View constructors).
+        services.AddTransient<WorkflowEditorViewModelV6>();
+        services.AddTransient<PluginsLaunchWindowViewModel>();
+        services.AddTransient<DevicesPageViewModel>();
+        // ToolKit / Bench scaffold — ToolKit management page (future replacement for the
+        // workflow page) + the Bench orchestration window + the panel host (use surface).
+        services.AddTransient<ToolkitPageViewModel>();
+        services.AddTransient<BenchViewModel>();
+        services.AddTransient<PanelHostViewModel>();
+
+        // C3 convergence: all remaining ViewModels — constructor-injected services,
+        // resolved via App.GetService at their View creation points.
+        services.AddTransient<AppViewModel>();
+        services.AddTransient<MainWindowViewModel>();
+        services.AddTransient<DebugOptionsWindowViewModel>();
+        services.AddTransient<AnnouncementsWindowViewModel>();
+        services.AddTransient<ExchangeDeviceKeyWindowViewModel>();
+        services.AddTransient<PluginDetailWindowViewModel>();
+        services.AddTransient<HomePageViewModel>();
+        services.AddTransient<LibPageViewModel>();
+        services.AddTransient<RepoPageViewModel>();
+        services.AddTransient<MarketPageViewModel>();
+        services.AddTransient<AccountPageViewModel>();
+        services.AddTransient<DevelopingViewModel>();
+        services.AddTransient<Home_ActivityLogViewModel>();
+        services.AddTransient<Home_CountViewModel>();
+        services.AddTransient<Home_RecentUseViewModel>();
+        services.AddTransient<PluginBarViewModel>();
+        services.AddTransient<Settings_AboutViewModel>();
+        services.AddTransient<Settings_PersonaliseViewModel>();
+        services.AddTransient<Settings_UpdateViewModel>();
+        services.AddTransient<SettingsPageViewModel>();
+
+        // Build the SINGLE IServiceProvider — no duplicate BuildServiceProvider calls
+        var provider = services.BuildServiceProvider();
+
+        // Initialize ServiceHost with the single provider (centralized service access)
+        ServiceHost.Initialize(provider);
+
+        // Eagerly resolve the key-exchange UI coordinator so it subscribes to
+        // OnReceiveExchangeDeviceKey before any exchange request can arrive.
+        _ = provider.GetRequiredService<IDeviceKeyExchangeUi>();
+
+        // NOTE: no startup trigger re-subscription — a workflow is armed ONLY while the
+        // user keeps it Running (Run=register, Stop=unregister). The old
+        // InitializeFromPersistedWorkflows silently armed every saved PluginEvent
+        // workflow at launch without touching the card's mounted indicator (and without
+        // checking plugin connectivity), desyncing the UI from actual trigger routing.
+
+        Log.Information("Service provider initialized.");
+    }
+
+    /// <summary>
+    /// Gets service from DI container.
+    /// Throws if the service is not registered — all types must be explicitly registered.
+    /// </summary>
+    public static T GetService<T>() where T : class
+    {
+        Log.Debug($"Getting service: {typeof(T).Name}");
+
+        if (!ServiceHost.IsInitialized)
+        {
+            Log.Warning("ServiceHost not initialized, initializing now (this should not happen in normal flow)...");
+            InitializeServiceProvider();
+        }
+
+        var service = ServiceHost.ServiceProvider.GetService(typeof(T));
+        if (service != null)
+            return (T)service;
+
+        // Service not registered — throw to make missing registrations visible at runtime
+        throw new InvalidOperationException(
+            $"Service '{typeof(T).Name}' is not registered in the DI container. " +
+            "Ensure it is added via services.AddSingleton/AddTransient/AddScoped in InitializeServiceProvider()."
+        );
+    }
+
+    /// <summary>
+    /// Cached default icon (D4). Previously re-decoded from disk on every access.
+    /// Owned by this static cache for process lifetime — one small bitmap, bounded.
+    /// </summary>
+    private static Bitmap? _defaultIconCache;
+
+    private static string? _defaultIconCacheKey;
+
     public static Bitmap? DefaultIcon
     {
         get
         {
-            var path = Path.Combine(ConstantTable.AssetsPath, ConfigManager.Instance.AppConfig.App.CoverIconFileName).GetFullPath();
+            var configService = GetService<IConfigService>();
+            var path = Path.Combine(ConstantTable.AssetsPath, configService.AppConfig.App.CoverIconFileName).GetFullPath();
 
             if (Design.IsDesignMode)
                 return null;
 
-            return new(path);
+            if (_defaultIconCacheKey == path && _defaultIconCache is not null)
+                return _defaultIconCache;
+
+            _defaultIconCache = new(path);
+            _defaultIconCacheKey = path;
+
+            return _defaultIconCache;
         }
     }
 
@@ -50,14 +238,15 @@ public partial class App : Application
         InitializeLiveCharts();
 
         // Must construct after `LoadLanguage()` function.
-        viewModel = new();
+        viewModel = GetService<AppViewModel>();
 
         DataContext = viewModel;
     }
 
     private void LoadTheme()
     {
-        RequestedThemeVariant = ConfigManager.Instance.AppConfig.App.Theme switch
+        var configService = GetService<IConfigService>();
+        RequestedThemeVariant = configService.AppConfig.App.Theme switch
         {
             "Light" => ThemeVariant.Light,
             "Dark" => ThemeVariant.Dark,
@@ -66,75 +255,15 @@ public partial class App : Application
         };
     }
 
-    private void LoadLanguage()
-    {
-        var config = ConfigManager.Instance.AppConfig;
-        var lang = config.App.AppLanguage;
-        var backup_lang = config.App.SurpportLanguages.Keys.First();
-        var path = $"{ConstantTable.LanguageFilePath}/{lang}.axaml".GetFullPath();
-        var backup_langPath = $"{ConstantTable.LanguageFilePath}/{backup_lang}.axaml".GetFullPath();
-
-        try
-        {
-            Resources.MergedDictionaries.Clear();
-
-            Resources.MergedDictionaries.Add(AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(path)) as ResourceDictionary ?? []);
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, $"Language File {lang}.axaml not found.");
-
-            Resources.MergedDictionaries.Clear();
-
-            try
-            {
-                Resources.MergedDictionaries.Add(
-                    AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(backup_langPath)) as ResourceDictionary ?? []
-                );
-
-                config.App.AppLanguage = backup_lang;
-            }
-            catch (Exception e)
-            {
-                Log.Warning(e, $"Suspected absence of language files on record.");
-            }
-            finally
-            {
-                Log.Warning($"No surpport language file loaded.");
-            }
-        }
-
-        try
-        {
-            EventService.Invoke(nameof(EventService.LanguageChanged));
-        }
-        catch (Exception e)
-        {
-            Log.Warning(e, $"Failed to invoke language changed event.");
-        }
-    }
+    private static void LoadLanguage() => LanguageLoader.LoadLanguage();
 
     private static void CalculateThemeColor()
     {
-        Color c = Color.Parse(ConfigManager.Instance.AppConfig.App.ThemeColor);
+        var configService = GetService<IConfigService>();
+        Color c = Color.Parse(configService.AppConfig.App.ThemeColor);
 
         if (Current is not null)
-        {
-            Current.Resources["ThemePrimaryAccent"] = new SolidColorBrush(new Color(c.A, c.R, c.G, c.B));
-
-            for (char i = 'A'; i <= 'E'; ++i)
-            {
-                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
-                    new Color((byte)(170 + (i - 'A') * 17), c.R, c.G, c.B)
-                );
-            }
-            for (int i = 1; i <= 9; ++i)
-            {
-                Current.Resources[$"ThemePrimaryAccentTransparent{i}{i}"] = new SolidColorBrush(
-                    new Color((byte)(i * 10 + i), c.R, c.G, c.B)
-                );
-            }
-        }
+            ThemeColorPalette.ApplyTo(Current, c);
     }
 
     private static void InitializeLiveCharts()
@@ -147,7 +276,8 @@ public partial class App : Application
             );
         }
 
-        EventService.ThemeConfigChanged += () =>
+        var eventService = GetService<IEventService>();
+        eventService.Subscribe(EventNames.ThemeConfigChanged, (s, e) =>
         {
             var usingLightTheme = Current?.ActualThemeVariant == ThemeVariant.Light;
 
@@ -155,7 +285,7 @@ public partial class App : Application
             {
                 config = usingLightTheme ? config.AddLightTheme() : config.AddDarkTheme();
             });
-        };
+        });
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -164,11 +294,15 @@ public partial class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel() };
+            desktop.MainWindow = new MainWindow { DataContext = GetService<MainWindowViewModel>() };
         }
 
-        if (ConfigManager.Instance.AppConfig.App.ShowAnnouncementWhenStart)
-            new Thread(async () => await AnnouncementManager.CheckNewAnnouncements()).Start();
+        var configService = GetService<IConfigService>();
+        if (configService.AppConfig.App.ShowAnnouncementWhenStart)
+        {
+            var announcementService = GetService<IAnnouncementService>();
+            new Thread(async () => await announcementService.CheckNewAnnouncementsAsync()).Start();
+        }
 
         base.OnFrameworkInitializationCompleted();
     }

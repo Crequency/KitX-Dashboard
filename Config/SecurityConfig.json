@@ -1,0 +1,17 @@
+{
+  "DeviceKeys": [
+    {
+      "Device": {
+        "DeviceName": "STARINK",
+        "IPv4": "192.168.10.27",
+        "IPv6": "fe80::7fda:603f:c3f3:86c8%24",
+        "MacAddress": "505A654FBFDD"
+      },
+      "RsaPublicKeyPem": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEA0dxniubnaJC/9LRVhdwIJg9OIKbl1QXqNOuVMWG/ukcq63PSpiTG\nBodO\u002BrdL6p0Tu4t3RgXSRl\u002BpUsZNGIL0Gyb2B1CuTeuvUg0sK7H2hiIz0Nvu2ARA\niWwPjWOoGwqChlfy6Q6tn952VXdLUGMzqOZVS02uBK887sjtmKpYomnv3OwmAjwE\nFr6Uxp7acSJpbVLI58l\u002BLe6cwGgmmQ8X0ZB6Nq8fUwNNtQM\u002BXnYcAp12MWzE2fMh\nujB8tZrK8\u002Bn8zVxIV7ZtZzXw69lKpOVw7uxC6Qc\u002BJfb8TPF2qzVc9nrzurpg\u002B7UP\nTH6FKKuBI5jmkY0rbfXF51yYDz8EJN7OOQIDAQAB\n-----END RSA PUBLIC KEY-----",
+      "MacAddress": "505A654FBFDD",
+      "DeviceName": "STARINK",
+      "PublicKey": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEA0dxniubnaJC/9LRVhdwIJg9OIKbl1QXqNOuVMWG/ukcq63PSpiTG\nBodO\u002BrdL6p0Tu4t3RgXSRl\u002BpUsZNGIL0Gyb2B1CuTeuvUg0sK7H2hiIz0Nvu2ARA\niWwPjWOoGwqChlfy6Q6tn952VXdLUGMzqOZVS02uBK887sjtmKpYomnv3OwmAjwE\nFr6Uxp7acSJpbVLI58l\u002BLe6cwGgmmQ8X0ZB6Nq8fUwNNtQM\u002BXnYcAp12MWzE2fMh\nujB8tZrK8\u002Bn8zVxIV7ZtZzXw69lKpOVw7uxC6Qc\u002BJfb8TPF2qzVc9nrzurpg\u002B7UP\nTH6FKKuBI5jmkY0rbfXF51yYDz8EJN7OOQIDAQAB\n-----END RSA PUBLIC KEY-----",
+      "AddedAt": "2026-08-15T20:41:47.9706707+08:00"
+    }
+  ]
+}

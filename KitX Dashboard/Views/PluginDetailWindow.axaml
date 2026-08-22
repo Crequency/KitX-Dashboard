@@ -104,7 +104,7 @@
                                     <ExperimentalAcrylicBorder.Material>
                                         <ExperimentalAcrylicMaterial BackgroundSource="Digger"
                                                                      MaterialOpacity="0.1"
-                                                                     TintColor="{DynamicResource ThemePrimaryAccentTransparent44}"
+                                                                     TintColor="#443873D9"
                                                                      TintOpacity="1"/>
                                     </ExperimentalAcrylicBorder.Material>
                                 </ExperimentalAcrylicBorder>
