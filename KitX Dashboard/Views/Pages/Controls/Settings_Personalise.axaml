@@ -84,16 +84,8 @@
                 </Expander.Header>
 
                 <DockPanel Margin="10">
-                    <ui:FAColorPicker ColorTextType="HexAlpha"
-                                      DockPanel.Dock="Top"
-                                      IsAlphaEnabled="True"
-                                      IsCompact="False"
-                                      IsMoreButtonVisible="True"
-                                      UseColorPalette="False"
-                                      UseColorTriangle="True"
-                                      UseColorWheel="True"
-                                      UseSpectrum="True"
-                                      Color="{Binding ThemeColor}"/>
+                    <ColorView DockPanel.Dock="Top"
+                               Color="{Binding ThemeColor}"/>
                     <Grid Margin="0,15,0,0" DockPanel.Dock="Bottom">
                         <Border Width="100"
                                 Height="30"

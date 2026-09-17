@@ -6,8 +6,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitX.Dashboard", "KitX Dash
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitX.Dashboard.Assets", "KitX Dashboard Assets\KitX.Dashboard.Assets.csproj", "{94E3107B-C511-4670-D38C-3C972A40AC54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitX.Dashboard.Core", "KitX Dashboard Core\KitX.Dashboard.Core.csproj", "{D9F573AC-8763-DC08-3D1D-CA5B6D13FE15}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitX.Dashboard.Fonts", "KitX Dashboard Fonts\KitX.Dashboard.Fonts.csproj", "{EA9CAB3D-507E-6336-650D-5B755AB90700}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitX.Dashboard.RepairTool", "KitX Dashboard Repair Tool\KitX.Dashboard.RepairTool.csproj", "{B9A7F9C1-9D9B-799E-71C0-A3630B9A2B74}"
@@ -28,10 +26,6 @@ Global
 		{94E3107B-C511-4670-D38C-3C972A40AC54}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94E3107B-C511-4670-D38C-3C972A40AC54}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94E3107B-C511-4670-D38C-3C972A40AC54}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D9F573AC-8763-DC08-3D1D-CA5B6D13FE15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D9F573AC-8763-DC08-3D1D-CA5B6D13FE15}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D9F573AC-8763-DC08-3D1D-CA5B6D13FE15}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D9F573AC-8763-DC08-3D1D-CA5B6D13FE15}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EA9CAB3D-507E-6336-650D-5B755AB90700}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EA9CAB3D-507E-6336-650D-5B755AB90700}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA9CAB3D-507E-6336-650D-5B755AB90700}.Release|Any CPU.ActiveCfg = Release|Any CPU

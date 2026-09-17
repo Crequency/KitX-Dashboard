@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Avalonia.Controls;
-using Common.BasicHelper.Graphics.Screen;
-using KitX.Dashboard.Configuration;
+using KitX.Core.Contract.Configuration;
 using KitX.Dashboard.Converters;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Utils;
 using KitX.Dashboard.ViewModels;
 
@@ -12,9 +10,9 @@ namespace KitX.Dashboard.Views;
 
 public partial class AnnouncementsWindow : Window, IView
 {
-    private readonly AnnouncementsWindowViewModel _viewModel = new();
+    private readonly AnnouncementsWindowViewModel _viewModel = App.GetService<AnnouncementsWindowViewModel>();
 
-    private static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
+    private static IAppConfig AppConfig => App.GetService<IConfigService>().AppConfig;
 
     public AnnouncementsWindow()
     {
@@ -44,13 +42,13 @@ public partial class AnnouncementsWindow : Window, IView
 
         SizeChanged += (_, _) =>
         {
-            if (WindowState != WindowState.Maximized)
+            if (WindowState != Avalonia.Controls.WindowState.Maximized)
                 config.Size = new(Width, Height);
         };
 
         PositionChanged += (_, _) =>
         {
-            if (WindowState == WindowState.Normal)
+            if (WindowState == Avalonia.Controls.WindowState.Normal)
                 config.Location = new(left: Position.X, top: Position.Y);
         };
 

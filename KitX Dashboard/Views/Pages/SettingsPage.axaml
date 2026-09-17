@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.SettingsPage"
+<UserControl x:Class="KitX.Dashboard.Views.Pages.SettingsPage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:KitX.Dashboard.Views.Pages.Controls"
@@ -64,9 +64,9 @@
                     </StackPanel>
                 </ui:NavigationViewItem.Content>
             </ui:NavigationViewItem>
-            <ui:NavigationViewItem x:Name="View_Performence"
-                                   Tag="View_Performence"
-                                   ToolTip.Tip="{DynamicResource Text_Settings_Performence}">
+            <ui:NavigationViewItem x:Name="View_Performance"
+                                   Tag="View_Performance"
+                                   ToolTip.Tip="{DynamicResource Text_Settings_Performance}">
                 <ui:NavigationViewItem.Content>
                     <StackPanel Margin="-3,0,0,0"
                                 HorizontalAlignment="Left"
@@ -74,7 +74,7 @@
                         <icon:MaterialIcon VerticalAlignment="Center" Kind="Speedometer"/>
                         <TextBlock Margin="15,0,0,0"
                                    VerticalAlignment="Center"
-                                   Text="{DynamicResource Text_Settings_Performence}"/>
+                                   Text="{DynamicResource Text_Settings_Performance}"/>
                     </StackPanel>
                 </ui:NavigationViewItem.Content>
             </ui:NavigationViewItem>

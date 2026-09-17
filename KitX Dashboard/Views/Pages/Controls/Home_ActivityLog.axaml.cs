@@ -5,12 +5,16 @@ namespace KitX.Dashboard.Views.Pages.Controls;
 
 public partial class Home_ActivityLog : UserControl
 {
-    private readonly Home_ActivityLogViewModel viewModel = new();
+    private readonly Home_ActivityLogViewModel viewModel = App.GetService<Home_ActivityLogViewModel>();
 
     public Home_ActivityLog()
     {
         InitializeComponent();
 
         DataContext = viewModel;
+
+        // D11: the VM is recreated on each navigation — dispose its subscriptions
+        // when the page leaves the visual tree.
+        Unloaded += (_, _) => viewModel.Dispose();
     }
 }

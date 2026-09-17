@@ -1,8 +1,31 @@
-﻿namespace KitX.Dashboard.Models;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
-internal class SupportedLanguage
+namespace KitX.Dashboard.Models;
+
+internal class SupportedLanguage : INotifyPropertyChanged
 {
-    internal string LanguageName { get; set; } = string.Empty;
+    private string languageName = string.Empty;
+
+    internal string LanguageName
+    {
+        get => languageName;
+        set
+        {
+            if (languageName != value)
+            {
+                languageName = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     internal string LanguageCode { get; set; } = string.Empty;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 }

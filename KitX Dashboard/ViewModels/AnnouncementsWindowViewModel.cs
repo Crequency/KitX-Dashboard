@@ -2,7 +2,8 @@
 using System.Linq;
 using System.Reactive;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Configuration;
+using KitX.Core.Contract.Announcement;
+using KitX.Core.Contract.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 
@@ -10,8 +11,16 @@ namespace KitX.Dashboard.ViewModels;
 
 internal class AnnouncementsWindowViewModel : ViewModelBase
 {
-    public AnnouncementsWindowViewModel()
+    private readonly IAnnouncementService _announcementService;
+    private readonly IConfigService _configService;
+
+    public AnnouncementsWindowViewModel(
+        IAnnouncementService announcementService,
+        IConfigService configService)
     {
+        _announcementService = announcementService;
+        _configService = configService;
+
         InitCommands();
 
         InitEvents();
@@ -21,7 +30,7 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
     {
         ConfirmReceivedCommand = ReactiveCommand.Create(() =>
         {
-            var config = AnnouncementConfig;
+            var config = _announcementService.AnnouncementConfig;
 
             var accepted = config.Accepted;
 
@@ -36,7 +45,7 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
             if (!accepted.Contains(key))
                 accepted.Add(key);
 
-            config.Save(config.ConfigFileLocation!);
+            _announcementService.SaveAnnouncementConfig();
 
             var found = false;
 
@@ -60,7 +69,7 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
 
         ConfirmReceivedAllCommand = ReactiveCommand.Create(() =>
         {
-            var config = AnnouncementConfig;
+            var config = _announcementService.AnnouncementConfig;
 
             var accepted = config.Accepted;
 
@@ -80,7 +89,7 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
                     accepted.Add(key);
             }
 
-            config.Save(config.ConfigFileLocation!);
+            _announcementService.SaveAnnouncementConfig();
 
             Window?.Close();
         });
@@ -88,16 +97,16 @@ internal class AnnouncementsWindowViewModel : ViewModelBase
 
     public sealed override void InitEvents() { }
 
-    internal static double Window_Width
+    internal double Window_Width
     {
-        get => AppConfig.Windows.AnnouncementWindow.Size.Width!.Value;
-        set => AppConfig.Windows.AnnouncementWindow.Size.Width = value;
+        get => _configService.AppConfig.Windows.AnnouncementWindow.Size.Width!.Value;
+        set => _configService.AppConfig.Windows.AnnouncementWindow.Size.Width = value;
     }
 
-    internal static double Window_Height
+    internal double Window_Height
     {
-        get => AppConfig.Windows.AnnouncementWindow.Size.Height!.Value;
-        set => AppConfig.Windows.AnnouncementWindow.Size.Height = value;
+        get => _configService.AppConfig.Windows.AnnouncementWindow.Size.Height!.Value;
+        set => _configService.AppConfig.Windows.AnnouncementWindow.Size.Height = value;
     }
 
     private NavigationViewItem? _selectedMenuItem;

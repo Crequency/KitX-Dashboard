@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Csharpell.Core;
+using KitX.Core.Contract.Configuration;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 
@@ -12,7 +13,11 @@ namespace KitX.Dashboard.Services;
 
 public static class DebugService
 {
-    private static CSharpScriptEngine Engine => new();
+    /// <summary>
+    /// Single reusable engine instance (D13.4 — the property previously allocated a
+    /// new <c>CSharpScriptEngine</c> per execution).
+    /// </summary>
+    private static readonly CSharpScriptEngine Engine = new();
 
     public static async Task<string?> ExecuteCodesAsync(
         string code,
@@ -20,6 +25,15 @@ public static class DebugService
         CancellationToken cancellationToken = default
     )
     {
+        // D13.4: developer gate — arbitrary C# execution is refused unless the
+        // Developer Setting is enabled (second confirmation happens at the command
+        // sites, which refuse to open the tool window when it is off).
+        var configService = App.GetService<IConfigService>();
+        if (!configService.AppConfig.App.DeveloperSetting)
+            return includeTimestamp
+                ? $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [E] Debug execution disabled — enable Developer Setting first."
+                : null;
+
         var sw = new Stopwatch();
 
         var begin = DateTime.Now;

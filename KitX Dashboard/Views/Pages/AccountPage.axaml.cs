@@ -5,7 +5,7 @@ namespace KitX.Dashboard.Views.Pages;
 
 public partial class AccountPage : UserControl
 {
-    private static readonly AccountPageViewModel viewModel = new();
+    private static readonly AccountPageViewModel viewModel = App.GetService<AccountPageViewModel>();
 
     public AccountPage()
     {

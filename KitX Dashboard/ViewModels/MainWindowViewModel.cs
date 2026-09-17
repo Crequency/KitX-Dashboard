@@ -1,5 +1,4 @@
 ﻿using System.Reactive;
-using KitX.Dashboard.Configuration;
 using KitX.Dashboard.Views;
 using ReactiveUI;
 

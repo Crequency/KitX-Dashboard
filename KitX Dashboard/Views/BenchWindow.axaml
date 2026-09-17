@@ -1,0 +1,859 @@
+<Window x:Class="KitX.Dashboard.Views.BenchWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:nd="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
+        xmlns:converters="using:KitX.Dashboard.Converters"
+        xmlns:viewModels="using:KitX.Dashboard.ViewModels"
+        xmlns:views="using:KitX.Dashboard.Views"
+        Title="{DynamicResource Text_Bench_Title}"
+        Width="1360"
+        Height="820"
+        d:DesignHeight="820"
+        d:DesignWidth="1360"
+        Icon="avares://KitX.Dashboard.Assets/KitX-Icon-32x32.png"
+        TransparencyLevelHint="Mica"
+        WindowStartupLocation="CenterOwner"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
+
+        <DataTemplate x:Key="BenchInputTemplate" DataType="{x:Type viewModels:BenchConnectorVM}">
+            <nd:NodeInput IsConnected="{Binding IsConnected}" Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <nd:NodeInput.BorderBrush>
+                    <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
+                </nd:NodeInput.BorderBrush>
+                <nd:NodeInput.Header>
+                    <TextBlock Text="{Binding Title}" FontSize="11"/>
+                </nd:NodeInput.Header>
+            </nd:NodeInput>
+        </DataTemplate>
+        <DataTemplate x:Key="BenchOutputTemplate" DataType="{x:Type viewModels:BenchConnectorVM}">
+            <nd:NodeOutput IsConnected="{Binding IsConnected}" Anchor="{Binding Anchor, Mode=OneWayToSource}">
+                <nd:NodeOutput.BorderBrush>
+                    <Binding Path="EffectiveBorderColorHex" Converter="{StaticResource HexToBrushConverter}" />
+                </nd:NodeOutput.BorderBrush>
+                <nd:NodeOutput.Header>
+                    <TextBlock Text="{Binding Title}" FontSize="11"/>
+                </nd:NodeOutput.Header>
+            </nd:NodeOutput>
+        </DataTemplate>
+
+        <DataTemplate x:Key="UiTextPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        </DataTemplate>
+        <DataTemplate x:Key="UiIconPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <icon:MaterialIcon Width="16" Height="16" Kind="Image"/>
+                <TextBlock Text="{DynamicResource Text_Bench_UiIconPreview}" FontSize="11" Opacity="0.6"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="UiButtonPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <Button Content="{Binding Text}" IsEnabled="False" HorizontalAlignment="Stretch" FontSize="12"
+                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1"/>
+        </DataTemplate>
+        <DataTemplate x:Key="UiInputPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <TextBox Text="{Binding Text}" IsEnabled="False" Watermark="{DynamicResource Text_Bench_UiInputPreview}" FontSize="12"
+                     BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1"/>
+        </DataTemplate>
+        <DataTemplate x:Key="UiNumberPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <NumericUpDown IsEnabled="False" HorizontalAlignment="Stretch"
+                           BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1"/>
+        </DataTemplate>
+        <DataTemplate x:Key="UiSelectPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <ComboBox IsEnabled="False" HorizontalAlignment="Stretch"
+                      BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1"/>
+        </DataTemplate>
+        <DataTemplate x:Key="UiSwitchPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <ToggleSwitch IsEnabled="False"/>
+        </DataTemplate>
+        <DataTemplate x:Key="UiLogPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <Border Padding="6" CornerRadius="4"
+                    Background="{DynamicResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                <TextBlock Text="{DynamicResource Text_Bench_UiLogPreview}" FontSize="11" Opacity="0.6"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="UiProgressPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <ProgressBar Value="0" Maximum="100" Height="8"/>
+        </DataTemplate>
+        <DataTemplate x:Key="UiDialogPreview" DataType="{x:Type viewModels:BenchUiControlVM}">
+            <Border Padding="8" CornerRadius="4" BorderBrush="{DynamicResource ThemePrimaryAccent}" BorderThickness="1">
+                <TextBlock Text="{DynamicResource Text_Bench_UiDialogPreview}" FontSize="11" Opacity="0.7"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+            </Border>
+        </DataTemplate>
+
+        <views:UiControlPreviewTemplateSelector x:Key="UiControlPreviewSelector"
+                                                TextTemplate="{StaticResource UiTextPreview}"
+                                                IconTemplate="{StaticResource UiIconPreview}"
+                                                ButtonTemplate="{StaticResource UiButtonPreview}"
+                                                InputTemplate="{StaticResource UiInputPreview}"
+                                                NumberTemplate="{StaticResource UiNumberPreview}"
+                                                SelectTemplate="{StaticResource UiSelectPreview}"
+                                                SwitchTemplate="{StaticResource UiSwitchPreview}"
+                                                LogTemplate="{StaticResource UiLogPreview}"
+                                                ProgressTemplate="{StaticResource UiProgressPreview}"
+                                                DialogTemplate="{StaticResource UiDialogPreview}"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Button.palette">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Opacity" Value="0.6"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="60, Auto, *, Auto" Margin="16">
+        <DockPanel Grid.Row="0">
+            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center" Orientation="Horizontal" Spacing="10">
+                <icon:MaterialIcon Width="26" Height="26" Kind="Toolbox"/>
+                <StackPanel Spacing="2">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding ActiveToolkit.Meta.Name}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock FontSize="12" Opacity="0.6" Text="{Binding TriggerSummary}"/>
+                        <TextBlock FontSize="12" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                   Text="{Binding Canvas.ValidationBadgeText}"
+                                   IsVisible="{Binding Canvas.HasValidationErrors}"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal" Spacing="10">
+                <Button Command="{Binding ExportMermaidCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="ShareVariant"/>
+                        <TextBlock Text="{DynamicResource Text_Bench_ExportMermaid}"/>
+                    </StackPanel>
+                </Button>
+                <ComboBox ItemsSource="{Binding ManualTriggers}"
+                          SelectedItem="{Binding SelectedManualTrigger}"
+                          MinWidth="160"
+                          IsVisible="{Binding HasManualTriggers}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:MaterialIcon Width="14" Height="14" Kind="Hand"/>
+                                <TextBlock Text="{Binding Id}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock VerticalAlignment="Center" FontSize="11" Opacity="0.7"
+                           Text="{DynamicResource Text_Bench_NoManualTrigger}"
+                           IsVisible="{Binding !HasManualTriggers}"/>
+                <Button Command="{Binding FireManualCommand}" IsEnabled="{Binding HasManualTriggers}"
+                        ToolTip.Tip="{Binding FireDisabledHint}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Play"/>
+                        <TextBlock Text="{DynamicResource Text_Bench_TrialRun}"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding SaveCommand}" IsVisible="{Binding Canvas.HasContent}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="ContentSave"/>
+                        <TextBlock Text="{DynamicResource Text_Bench_Save}"/>
+                    </StackPanel>
+                </Button>
+                <Button Click="OnCloseClick">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="18" Height="18" Kind="Close"/>
+                        <TextBlock Text="{DynamicResource Text_Bench_Close}"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </DockPanel>
+
+        <Border Grid.Row="1" Margin="0,8,0,0" Padding="12,8" CornerRadius="8"
+                Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                BorderBrush="{DynamicResource SystemFillColorCautionBrush}"
+                BorderThickness="1" IsVisible="{Binding IsMounted}">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <icon:MaterialIcon Width="18" Height="18" Kind="Lock"/>
+                    <TextBlock VerticalAlignment="Center" Text="{DynamicResource Text_Bench_MountedBanner}"/>
+                </StackPanel>
+                <Button DockPanel.Dock="Right" Command="{Binding UnmountAndEditCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="16" Height="16" Kind="LockOpen"/>
+                        <TextBlock Text="{DynamicResource Text_Bench_UnmountAndEdit}"/>
+                    </StackPanel>
+                </Button>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnDefinitions="230, 4, *, 4, 340" Margin="0,8,0,0">
+            <Grid Grid.Column="0" RowDefinitions="Auto, Auto, *">
+                <TextBox Grid.Row="0" Margin="0,0,0,8" Watermark="{DynamicResource Text_Bench_PaletteSearch}" Text="{Binding Canvas.PaletteSearchText}"/>
+                <DockPanel Grid.Row="1" Margin="0,0,0,8">
+                    <Button DockPanel.Dock="Right" Margin="4,0,0,0" Content="{DynamicResource Text_Bench_NewWorkflow}"
+                            Command="{Binding Canvas.AddWorkflowCommand}"/>
+                    <TextBox Text="{Binding Canvas.NewWorkflowName}" Watermark="{DynamicResource Text_Bench_WorkflowNameWatermark}"/>
+                </DockPanel>
+                <ScrollViewer Grid.Row="2" IsEnabled="{Binding !IsMounted}">
+                    <ItemsControl ItemsSource="{Binding Canvas.PaletteGroups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,12">
+                                    <TextBlock Classes="section" Text="{Binding Title}"/>
+                                    <ItemsControl ItemsSource="{Binding Items}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Classes="palette"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.RunPaletteItemCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        IsEnabled="{Binding IsEnabled}"
+                                                        ToolTip.Tip="{Binding Hint}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <icon:MaterialIcon Width="16" Height="16" Kind="{Binding Icon}"/>
+                                                        <TextBlock Text="{Binding Title}"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns"/>
+
+            <Grid Grid.Column="2">
+                <Border BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1" CornerRadius="{DynamicResource KitXRadiusCard}">
+                    <Grid>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                                    IsVisible="{Binding IsEmpty}">
+                            <icon:MaterialIcon Width="48" Height="48" HorizontalAlignment="Center" Kind="Network"/>
+                            <TextBlock HorizontalAlignment="Center" FontSize="16" Text="{DynamicResource Text_Bench_NoToolkit}"/>
+                            <TextBlock HorizontalAlignment="Center" FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_NoToolkitHint}"/>
+                        </StackPanel>
+
+                        <nd:NodifyEditor x:Name="BenchEditor"
+                                         ItemsSource="{Binding Canvas.Nodes}"
+                                         Connections="{Binding Canvas.Connections}"
+                                         PendingConnection="{Binding Canvas.PendingConnection}"
+                                         SelectedItems="{Binding Canvas.SelectedNodes, Mode=TwoWay}"
+                                         DisconnectConnectorCommand="{Binding Canvas.DisconnectConnectorCommand}"
+                                         RemoveConnectionCommand="{Binding Canvas.RemoveConnectionCommand}"
+                                         Background="Transparent"
+                                         IsEnabled="{Binding !IsMounted}">
+                            <nd:NodifyEditor.GridLineTemplate>
+                                <DataTemplate>
+                                    <nd:LargeGridLine Width="{Binding $parent[nd:NodifyEditor].Bounds.Width}"
+                                                      Height="{Binding $parent[nd:NodifyEditor].Bounds.Height}"
+                                                      OffsetX="{Binding $parent[nd:NodifyEditor].OffsetX}"
+                                                      OffsetY="{Binding $parent[nd:NodifyEditor].OffsetY}"
+                                                      Zoom="{Binding $parent[nd:NodifyEditor].Zoom}"
+                                                      Spacing="15"
+                                                      Thickness="0.5"
+                                                      Brush="{DynamicResource ControlStrokeColorSecondaryBrush}"/>
+                                </DataTemplate>
+                            </nd:NodifyEditor.GridLineTemplate>
+
+                            <nd:NodifyEditor.ConnectionTemplate>
+                                <DataTemplate>
+                                    <nd:Connection Source="{Binding Source.Anchor}"
+                                                   Target="{Binding Target.Anchor}"
+                                                   StrokeThickness="{Binding EdgeThickness}"
+                                                   StrokeDashArray="{Binding EdgeDash}"
+                                                   Spacing="20"
+                                                   Direction="Forward"
+                                                   PointerPressed="OnConnectionPointerPressed"
+                                                   DisconnectCommand="{Binding $parent[nd:NodifyEditor].RemoveConnectionCommand}">
+                                        <ToolTip.Tip>
+                                            <TextBlock Text="{Binding EdgeToolTip}" TextWrapping="Wrap"/>
+                                        </ToolTip.Tip>
+                                        <nd:Connection.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="{DynamicResource Text_Bench_SelectEdge}"
+                                                          Command="{Binding $parent[Window].DataContext.Canvas.SelectConnectionCommand}"
+                                                          CommandParameter="{Binding}"/>
+                                                <MenuItem Header="{DynamicResource Text_Bench_DeleteEdge}"
+                                                          Command="{Binding $parent[Window].DataContext.Canvas.RemoveConnectionCommand}"
+                                                          CommandParameter="{Binding}"/>
+                                            </ContextMenu>
+                                        </nd:Connection.ContextMenu>
+                                    </nd:Connection>
+                                </DataTemplate>
+                            </nd:NodifyEditor.ConnectionTemplate>
+
+                            <nd:NodifyEditor.PendingConnectionTemplate>
+                                <DataTemplate>
+                                    <nd:PendingConnection StartedCommand="{Binding StartCommand}"
+                                                          CompletedCommand="{Binding FinishCommand}"
+                                                          Direction="Forward">
+                                        <nd:PendingConnection.Stroke>
+                                            <SolidColorBrush Color="White" Opacity="0.5"/>
+                                        </nd:PendingConnection.Stroke>
+                                    </nd:PendingConnection>
+                                </DataTemplate>
+                            </nd:NodifyEditor.PendingConnectionTemplate>
+
+                            <nd:NodifyEditor.ItemTemplate>
+                                <nd:NodeTemplateSelector>
+                                    <DataTemplate DataType="{x:Type viewModels:BenchNodeVM}">
+                                        <nd:Node Location="{Binding Location, Mode=TwoWay}"
+                                                 Input="{Binding Input}"
+                                                 Output="{Binding Output}"
+                                                 InputConnectorTemplate="{StaticResource BenchInputTemplate}"
+                                                 OutputConnectorTemplate="{StaticResource BenchOutputTemplate}"
+                                                 IsResize="False"
+                                                 DoubleTapped="OnNodeDoubleTapped">
+                                            <nd:Node.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="{DynamicResource Text_Bench_DeleteNode}"
+                                                              Command="{Binding $parent[Window].DataContext.Canvas.DeleteNodeCommand}"
+                                                              CommandParameter="{Binding}"/>
+                                                </ContextMenu>
+                                            </nd:Node.ContextMenu>
+                                            <nd:Node.Header>
+                                                <Border Padding="10,5" Background="{Binding HeaderBrush}">
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding KindLabel}"
+                                                                   Foreground="{Binding HeaderForeground}"
+                                                                   Opacity="0.8" FontSize="10" VerticalAlignment="Center"/>
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <icon:MaterialIcon Width="16" Height="16" Kind="{Binding NodeIcon}"
+                                                                               Foreground="{Binding HeaderForeground}"/>
+                                                            <TextBlock Text="{Binding Title}" Foreground="{Binding HeaderForeground}"
+                                                                       FontWeight="SemiBold" FontSize="13"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <Border Background="#33FFFFFF" CornerRadius="6" Padding="4,0"
+                                                                    IsVisible="{Binding HasAffinity}">
+                                                                <TextBlock Text="{Binding AffinityLabel}" Foreground="White" FontSize="9"/>
+                                                            </Border>
+                                                            <Border Background="#33FFFFFF" CornerRadius="6" Padding="4,0"
+                                                                    IsVisible="{Binding HasInDegreeBadge}">
+                                                                <TextBlock Text="{Binding InDegreeText}" Foreground="White" FontSize="9"/>
+                                                            </Border>
+                                                            <Border Background="#33FFFFFF" CornerRadius="6" Padding="4,0"
+                                                                    IsVisible="{Binding HasOutDegreeBadge}">
+                                                                <TextBlock Text="{Binding OutDegreeText}" Foreground="White" FontSize="9"/>
+                                                            </Border>
+                                                            <Border BorderBrush="Red" BorderThickness="2" CornerRadius="3"
+                                                                    IsVisible="{Binding HasDiagnostic}" Padding="3,0">
+                                                                <TextBlock Text="⚠" Foreground="White" FontSize="10"/>
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                </Border>
+                                            </nd:Node.Header>
+                                            <nd:Node.Content>
+                                                <StackPanel>
+                                                    <Border Padding="10" Background="{DynamicResource LayerFillColorDefaultBrush}"
+                                                            IsVisible="{Binding IsPanel}">
+                                                        <StackPanel Spacing="8">
+                                                            <ItemsControl ItemsSource="{Binding ControlVMs}"
+                                                                          ItemTemplate="{StaticResource UiControlPreviewSelector}">
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <StackPanel Spacing="8"/>
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                            </ItemsControl>
+                                                            <Border Height="1" Margin="0,2" Background="{DynamicResource ControlStrokeColorSecondaryBrush}"/>
+                                                            <TextBlock Classes="hint" MaxWidth="220"
+                                                                       Text="{DynamicResource Text_Bench_PanelNodeHint}"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <Border Padding="10" Background="{DynamicResource LayerFillColorDefaultBrush}"
+                                                            IsVisible="{Binding IsComment}" MinWidth="160" MaxWidth="260">
+                                                        <TextBlock Text="{Binding CommentText}" TextWrapping="Wrap" FontSize="12"
+                                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </nd:Node.Content>
+                                        </nd:Node>
+                                    </DataTemplate>
+                                </nd:NodeTemplateSelector>
+                            </nd:NodifyEditor.ItemTemplate>
+                        </nd:NodifyEditor>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <GridSplitter Grid.Column="3" ResizeDirection="Columns"/>
+
+            <!-- Inspector -->
+            <ScrollViewer Grid.Column="4" IsVisible="{Binding Canvas.HasContent}">
+                <StackPanel Margin="8" Spacing="12">
+                    <StackPanel Spacing="10" IsVisible="{Binding Canvas.IsToolkitInspectorVisible}">
+                        <TextBlock Classes="section" Text="{DynamicResource Text_Bench_ToolboxInspector}"/>
+                        <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_ToolboxHint}"/>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_MetaName}"/>
+                            <TextBox Text="{Binding Canvas.ToolkitInspector.Name}"/>
+                        </StackPanel>
+                        <Grid ColumnDefinitions="*, 12, *">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_MetaVersion}"/>
+                                <TextBox Text="{Binding Canvas.ToolkitInspector.Version}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_MetaAuthor}"/>
+                                <TextBox Text="{Binding Canvas.ToolkitInspector.Author}"/>
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_MetaIcon}"/>
+                            <ComboBox ItemsSource="{Binding Canvas.ToolkitInspector.IconOptions}"
+                                      SelectedItem="{Binding Canvas.ToolkitInspector.Icon}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_MetaDescription}"/>
+                            <TextBox Text="{Binding Canvas.ToolkitInspector.Description}" AcceptsReturn="True" MinHeight="56" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_MetaMinKitX}"/>
+                            <TextBox Text="{Binding Canvas.ToolkitInspector.MinKitXVersion}"/>
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_MetaTags}"/>
+                            <ItemsControl ItemsSource="{Binding Canvas.ToolkitInspector.Tags}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,2" Padding="8,2" CornerRadius="10"
+                                                Background="{DynamicResource LayerFillColorDefaultBrush}">
+                                            <DockPanel>
+                                                <TextBlock FontSize="12" Text="{Binding Text}"/>
+                                                <Button DockPanel.Dock="Right" Padding="4,0" Content="×"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.ToolkitInspector.RemoveTagCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="{DynamicResource Text_Bench_AddTag}"
+                                        Command="{Binding Canvas.ToolkitInspector.AddTagCommand}"/>
+                                <TextBox Margin="0,0,8,0" Text="{Binding Canvas.ToolkitInspector.NewTag}" Watermark="{DynamicResource Text_Bench_NewTag}"/>
+                            </DockPanel>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_PluginRequirements}"/>
+                            <ItemsControl ItemsSource="{Binding Canvas.ToolkitInspector.Plugins}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,2" Padding="8" CornerRadius="6"
+                                                BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                                            <DockPanel>
+                                                <Button DockPanel.Dock="Right" Content="×" Padding="6,2" Margin="8,0,0,0"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.ToolkitInspector.RemovePluginCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                                <StackPanel Spacing="4">
+                                                    <Grid ColumnDefinitions="2*, *, Auto">
+                                                        <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="{DynamicResource Text_Bench_PluginNameWatermark}"/>
+                                                        <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Version}" Watermark="{DynamicResource Text_Bench_PluginVersionWatermark}"/>
+                                                        <TextBox Grid.Column="2" Margin="4,0,0,0" MinWidth="90" Text="{Binding Source}" Watermark="local"/>
+                                                    </Grid>
+                                                    <TextBlock Classes="hint" Text="{Binding InstallStatus}"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Grid ColumnDefinitions="2*, *, *, Auto">
+                                <TextBox Grid.Column="0" Text="{Binding Canvas.ToolkitInspector.NewPluginName}" Watermark="{DynamicResource Text_Bench_PluginNameWatermark}"/>
+                                <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Canvas.ToolkitInspector.NewPluginVersion}" Watermark="{DynamicResource Text_Bench_PluginVersionWatermark}"/>
+                                <TextBox Grid.Column="2" Margin="4,0,0,0" Text="{Binding Canvas.ToolkitInspector.NewPluginSource}" Watermark="local"/>
+                                <Button Grid.Column="3" Margin="4,0,0,0" Content="{DynamicResource Text_Bench_AddTag}"
+                                        Command="{Binding Canvas.ToolkitInspector.AddPluginCommand}"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_RunParameters}"/>
+                            <ToggleSwitch IsChecked="{Binding Canvas.ToolkitInspector.MaxInstancesEnabled}" Content="{DynamicResource Text_Bench_MaxInstancesLimit}"/>
+                            <NumericUpDown Minimum="1" Value="{Binding Canvas.ToolkitInspector.MaxInstancesValue}"
+                                           IsVisible="{Binding Canvas.ToolkitInspector.MaxInstancesEnabled}"/>
+                            <TextBlock Classes="hint" Text="{Binding Canvas.ToolkitInspector.MaxInstancesHint}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Source (trigger) inspector -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsSourceSelected}">
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Id}"/>
+                            <TextBox Text="{Binding Canvas.SelectedTriggerId}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Type}"/>
+                            <TextBlock FontSize="13" FontWeight="Medium" Text="{Binding Canvas.SelectedTrigger.Type}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Surface}"/>
+                            <ComboBox ItemsSource="{Binding Canvas.SurfaceOptions}"
+                                      SelectedItem="{Binding Canvas.SelectedTriggerSurface}"/>
+                            <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_SurfaceHint}"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsTimerSelected}">
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_TimerMode}"/>
+                                <ComboBox ItemsSource="{Binding Canvas.TimerModes}"
+                                          SelectedIndex="{Binding Canvas.SelectedTriggerTimerMode}"/>
+                                <TextBlock Classes="hint" Text="{Binding Canvas.TimerModeHint}"/>
+                            </StackPanel>
+                            <StackPanel IsVisible="{Binding Canvas.IsIntervalTimerMode}">
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_IntervalMs}"/>
+                                <NumericUpDown Minimum="1" Value="{Binding Canvas.SelectedTriggerIntervalMs}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_DueTimeMs}"/>
+                                <NumericUpDown Minimum="0" Value="{Binding Canvas.SelectedTriggerDueTimeMs}"/>
+                            </StackPanel>
+                            <StackPanel IsVisible="{Binding Canvas.IsCronTimerMode}">
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_CronBuilder}"/>
+                                <Grid ColumnDefinitions="*,*,*,*,*">
+                                    <TextBox Grid.Column="0" Text="{Binding Canvas.CronMinute}" Watermark="{DynamicResource Text_Bench_CronMinute}"/>
+                                    <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Canvas.CronHour}" Watermark="{DynamicResource Text_Bench_CronHour}"/>
+                                    <TextBox Grid.Column="2" Margin="4,0,0,0" Text="{Binding Canvas.CronDay}" Watermark="{DynamicResource Text_Bench_CronDay}"/>
+                                    <TextBox Grid.Column="3" Margin="4,0,0,0" Text="{Binding Canvas.CronMonth}" Watermark="{DynamicResource Text_Bench_CronMonth}"/>
+                                    <TextBox Grid.Column="4" Margin="4,0,0,0" Text="{Binding Canvas.CronDow}" Watermark="{DynamicResource Text_Bench_CronDow}"/>
+                                </Grid>
+                                <TextBlock Classes="hint" Text="{Binding Canvas.CronPreview, StringFormat='{}{0}'}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsPluginEventSelected}">
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Plugin}"/>
+                                <AutoCompleteBox ItemsSource="{Binding Canvas.PluginOptions}"
+                                                 Text="{Binding Canvas.SelectedTriggerPluginName}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_TriggerName}"/>
+                                <TextBox Text="{Binding Canvas.SelectedTriggerTriggerName}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsUIEventSelected}">
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_ControlId}"/>
+                                <ComboBox ItemsSource="{Binding Canvas.PanelControlIds}"
+                                          SelectedItem="{Binding Canvas.SelectedTriggerControl}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Event}"/>
+                                <ComboBox ItemsSource="{Binding Canvas.EventOptions}"
+                                          SelectedItem="{Binding Canvas.SelectedTriggerEvent}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_PanelReserved}"/>
+                                <TextBox Text="{Binding Canvas.SelectedTriggerPanel}"/>
+                                <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_PanelReservedHint}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_Bindings}"/>
+                            <ItemsControl ItemsSource="{Binding Canvas.SelectedBindings}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,2" Padding="8" CornerRadius="6"
+                                                BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                                            <StackPanel Spacing="4">
+                                                <DockPanel>
+                                                    <ComboBox ItemsSource="{Binding WorkflowOptions}"
+                                                              SelectedItem="{Binding SelectedWorkflow}" MinWidth="120"/>
+                                                    <Button DockPanel.Dock="Right" Content="×"
+                                                            Command="{Binding $parent[Window].DataContext.Canvas.RemoveBindingCommand}"
+                                                            CommandParameter="{Binding}"/>
+                                                </DockPanel>
+                                                <ItemsControl ItemsSource="{Binding ParamRows}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Margin="0,2" Padding="6" CornerRadius="4"
+                                                                    Background="{DynamicResource LayerFillColorDefaultBrush}">
+                                                                <StackPanel Spacing="2">
+                                                                    <Grid ColumnDefinitions="*, *, Auto">
+                                                                        <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="{DynamicResource Text_Bench_ParamName}"/>
+                                                                        <ComboBox Grid.Column="1" Margin="4,0,0,0"
+                                                                                  ItemsSource="{Binding SourceOptions}"
+                                                                                  SelectedIndex="{Binding SourceIndex}"/>
+                                                                        <Button Grid.Column="2" Content="×" Padding="5,0"
+                                                                                Command="{Binding $parent[Window].DataContext.Canvas.RemoveParamRowCommand}"
+                                                                                CommandParameter="{Binding}"/>
+                                                                    </Grid>
+                                                                    <TextBox Text="{Binding Path}" Watermark="{DynamicResource Text_Bench_PathWatermarkInput}" IsVisible="{Binding IsPayload}"/>
+                                                                    <TextBox Text="{Binding Path}" Watermark="{DynamicResource Text_Bench_PathWatermarkOutput}" IsVisible="{Binding IsOutput}"/>
+                                                                    <TextBox Text="{Binding LiteralValue}" Watermark="{DynamicResource Text_Bench_LiteralWatermark}" IsVisible="{Binding IsLiteral}"/>
+                                                                    <TextBlock Foreground="Red" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                                                    <TextBlock Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="{Binding Warning}" IsVisible="{Binding HasWarning}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <Button Content="{DynamicResource Text_Bench_AddParam}"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.AddParamRowCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <DockPanel>
+                                <ComboBox ItemsSource="{Binding Canvas.WorkflowIdOptions}"
+                                          SelectedItem="{Binding Canvas.AddWorkflowId}" MinWidth="120"/>
+                                <Button DockPanel.Dock="Right" Content="{DynamicResource Text_Bench_AddBinding}"
+                                        Command="{Binding Canvas.AddBindingCommand}"
+                                        CommandParameter="{Binding Canvas.AddWorkflowId}"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Workflow inspector -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsWorkflowSelected}">
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Id}"/>
+                            <TextBox Text="{Binding Canvas.SelectedWorkflowId}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_MetaName}"/>
+                            <TextBox Text="{Binding Canvas.SelectedWorkflowName}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_WorkflowFile}"/>
+                            <TextBox Text="{Binding Canvas.SelectedWorkflowFile}"/>
+                        </StackPanel>
+                        <Button Command="{Binding Canvas.EditWorkflowCommand}"
+                                CommandParameter="{Binding Canvas.SelectedWorkflow}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:MaterialIcon Width="16" Height="16" Kind="Pencil"/>
+                                <TextBlock Text="{DynamicResource Text_Bench_EditWorkflowContent}"/>
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_WorkflowDoubleClickHint}"/>
+                    </StackPanel>
+
+                    <!-- Panel inspector -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsPanelSelected}">
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Layout}"/>
+                            <ComboBox ItemsSource="{Binding Canvas.LayoutOptions}"
+                                      SelectedItem="{Binding Canvas.SelectedPanelLayout}"/>
+                        </StackPanel>
+                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_ControlList}"/>
+                        <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_PanelNodeHint}"/>
+                        <ItemsControl ItemsSource="{Binding Canvas.SelectedControlVMs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,2" Padding="8" CornerRadius="6"
+                                            BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                                        <DockPanel>
+                                            <StackPanel>
+                                                <TextBlock FontSize="13" Text="{Binding Type}"/>
+                                                <TextBlock Classes="hint" Text="{Binding Id}"/>
+                                            </StackPanel>
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="2">
+                                                <Button Padding="5,0" Content="↑"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.MoveControlUpCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Padding="5,0" Content="↓"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.MoveControlDownCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Padding="5,0" Content="{DynamicResource Text_Bench_Edit}"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.SelectControlCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Padding="5,0" Content="×"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.RemoveControlCommand}"
+                                                        CommandParameter="{Binding Model}"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <DockPanel>
+                            <ComboBox ItemsSource="{Binding Canvas.PanelControlTypes}"
+                                      SelectedItem="{Binding Canvas.AddControlType}" MinWidth="120"/>
+                            <Button DockPanel.Dock="Right" Content="{DynamicResource Text_Bench_AddControl}"
+                                    Command="{Binding Canvas.AddControlCommand}"
+                                    CommandParameter="{Binding Canvas.AddControlType}"/>
+                        </DockPanel>
+
+                        <StackPanel Spacing="6" IsVisible="{Binding Canvas.SelectedControlVM, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_ControlProperties}"/>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Id}"/>
+                                <TextBox Text="{Binding Canvas.SelectedControlVM.Id}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_StaticText}"/>
+                                <TextBox Text="{Binding Canvas.SelectedControlVM.Text}"/>
+                            </StackPanel>
+                            <StackPanel IsVisible="{Binding Canvas.SelectedControlVM.IsSelect}">
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_OptionsItems}"/>
+                                <ItemsControl ItemsSource="{Binding Canvas.SelectedControlVM.SelectItems}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="0,2">
+                                                <TextBlock Text="{Binding}"/>
+                                                <Button DockPanel.Dock="Right" Padding="5,0" Content="×"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.RemoveSelectItemCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Content="{DynamicResource Text_Bench_AddOption}"
+                                        Command="{Binding Canvas.AddSelectItemCommand}"
+                                        CommandParameter="{Binding Canvas.SelectedControlVM}"/>
+                            </StackPanel>
+                            <StackPanel IsVisible="{Binding Canvas.SelectedControlVM.IsProgress}">
+                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_OptionsMax}"/>
+                                <NumericUpDown Minimum="1" Value="{Binding Canvas.SelectedControlVM.ProgressMax}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="Bind"/>
+                                <TextBox Text="{Binding Canvas.SelectedControlVM.Bind}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="BindEnabled"/>
+                                <TextBox Text="{Binding Canvas.SelectedControlVM.BindEnabled}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Opacity="0.6" Text="BindVisible"/>
+                                <TextBox Text="{Binding Canvas.SelectedControlVM.BindVisible}"/>
+                            </StackPanel>
+                            <TextBlock Classes="hint" Text="{Binding Canvas.SelectedControlVM.BindHint}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Comment inspector -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsCommentSelected}">
+                        <TextBlock Classes="section" Text="{DynamicResource Text_Bench_PaletteGroupComments}"/>
+                        <TextBox Text="{Binding Canvas.SelectedCommentText}" AcceptsReturn="True" MinHeight="120" TextWrapping="Wrap"/>
+                        <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_CommentTextHint}"/>
+                    </StackPanel>
+
+                    <!-- Completion-edge inspector -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsCompletionEdgeSelected}">
+                        <TextBlock Classes="section" Text="{DynamicResource Text_Bench_EdgeInspector}"/>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Id}"/>
+                            <TextBox Text="{Binding Canvas.CompletionInspectorTrigger.Id}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Type}"/>
+                            <TextBlock Text="WorkflowCompletion"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_FromReadonly}"/>
+                            <TextBlock Text="{Binding Canvas.CompletionFromNode.Title}"/>
+                        </StackPanel>
+                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_CompletionBindings}"/>
+                        <ItemsControl ItemsSource="{Binding Canvas.CompletionInspectorBindings}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,2" Padding="8" CornerRadius="6"
+                                            BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                                        <StackPanel Spacing="4">
+                                            <DockPanel>
+                                                <ComboBox ItemsSource="{Binding WorkflowOptions}"
+                                                          SelectedItem="{Binding SelectedWorkflow}" MinWidth="120"/>
+                                                <Button DockPanel.Dock="Right" Content="×"
+                                                        Command="{Binding $parent[Window].DataContext.Canvas.RemoveBindingCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                            </DockPanel>
+                                            <ItemsControl ItemsSource="{Binding ParamRows}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Spacing="2">
+                                                            <Grid ColumnDefinitions="*, *, Auto">
+                                                                <TextBox Grid.Column="0" Text="{Binding Name}" Watermark="{DynamicResource Text_Bench_ParamName}"/>
+                                                                <ComboBox Grid.Column="1" Margin="4,0,0,0" ItemsSource="{Binding SourceOptions}"
+                                                                          SelectedIndex="{Binding SourceIndex}"/>
+                                                                <Button Grid.Column="2" Content="×" Padding="5,0"
+                                                                        Command="{Binding $parent[Window].DataContext.Canvas.RemoveParamRowCommand}"
+                                                                        CommandParameter="{Binding}"/>
+                                                            </Grid>
+                                                            <TextBox Text="{Binding Path}" IsVisible="{Binding IsOutput}"/>
+                                                            <TextBox Text="{Binding LiteralValue}" IsVisible="{Binding IsLiteral}"/>
+                                                            <TextBlock Foreground="Red" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <Button Content="{DynamicResource Text_Bench_AddParam}"
+                                                    Command="{Binding $parent[Window].DataContext.Canvas.AddParamRowCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <DockPanel>
+                            <ComboBox ItemsSource="{Binding Canvas.WorkflowIdOptions}"
+                                      SelectedItem="{Binding Canvas.AddWorkflowId}" MinWidth="120"/>
+                            <Button DockPanel.Dock="Right" Content="{DynamicResource Text_Bench_AddBinding}"
+                                    Command="{Binding Canvas.AddBindingCommand}"
+                                    CommandParameter="{Binding Canvas.AddWorkflowId}"/>
+                        </DockPanel>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Diagnostic bar -->
+        <StackPanel Grid.Row="3" Margin="0,8,0,0" Spacing="4">
+            <Border Padding="10,6" CornerRadius="8"
+                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10">
+                        <Button Content="{Binding Canvas.Diagnostics.Count, StringFormat='{}{0} ▾'}"
+                                Command="{Binding Canvas.ToggleDiagnosticsCommand}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="16">
+                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding SaveMessage}"
+                                   Foreground="{DynamicResource ThemePrimaryAccent}"/>
+                        <TextBlock FontSize="12" Text="{Binding Canvas.LastError}"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                        <TextBlock FontSize="12" Opacity="0.5" Text="{DynamicResource Text_Bench_ConfigTruth}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+            <Border Padding="8" CornerRadius="8"
+                    Background="{DynamicResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource ThemeControlBorderBrushDefault}" BorderThickness="1"
+                    IsVisible="{Binding Canvas.IsDiagnosticsExpanded}">
+                <ItemsControl ItemsSource="{Binding Canvas.Diagnostics}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="0,2">
+                                <Button DockPanel.Dock="Right" Content="{DynamicResource Text_Bench_Locate}"
+                                        Command="{Binding $parent[Window].DataContext.Canvas.LocateDiagnosticCommand}"
+                                        CommandParameter="{Binding}"
+                                        IsVisible="{Binding CanLocate}"/>
+                                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="12"/>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,13 +1,15 @@
-﻿using System;
+using System;
+using System.Threading.Tasks;
 using System.Timers;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Common.BasicHelper.Core.TaskSystem;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Configuration;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Event;
 using KitX.Dashboard.Converters;
 using KitX.Dashboard.Generators;
-using KitX.Dashboard.Managers;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
@@ -18,9 +20,24 @@ namespace KitX.Dashboard.Views;
 
 public partial class MainWindow : Window, IView
 {
-    private readonly MainWindowViewModel viewModel = new();
+    private readonly MainWindowViewModel viewModel = App.GetService<MainWindowViewModel>();
+    private readonly SignalTasksManager _signalTasksManager;
 
-    private static AppConfig AppConfig => ConfigManager.Instance.AppConfig;
+    /// <summary>Greeting-text refresh timer — stopped/disposed on window close (D13).</summary>
+    private readonly Timer _greetingTimer = new() { AutoReset = true };
+
+    /// <summary>Debounces window geometry writes to the config (D13).</summary>
+    private readonly System.Threading.CancellationTokenSource _geometrySaveCts = new();
+
+    /// <summary>
+    /// Suppresses <see cref="MainNavigationView_SelectionChanged"/> while the initial page
+    /// selection is deferred to the dispatcher (see <see cref="InitMainWindow"/>). Without
+    /// this, FluentAvalonia's NavigationView falls back to the first menu item on realize,
+    /// overriding the restored page (e.g. Page_Lib) with Home a second after startup.
+    /// </summary>
+    private bool _suppressSelectionChanged = true;
+
+    private static IAppConfig AppConfig => App.GetService<IConfigService>().AppConfig;
 
     public MainWindow()
     {
@@ -28,11 +45,13 @@ public partial class MainWindow : Window, IView
 
         InitializeComponent();
 
-        ViewInstances.MainWindow = this;
+        App.GetService<IWindowService>().MainWindow = this;
 
         DataContext = viewModel;
 
-        Instances.SignalTasksManager?.SignalRun(
+        _signalTasksManager = App.GetService<SignalTasksManager>();
+
+        _signalTasksManager.SignalRun(
             nameof(SignalsNames.MainWindowOpenedSignal),
             () =>
             {
@@ -46,13 +65,13 @@ public partial class MainWindow : Window, IView
 
                 try
                 {
-                    Instances.SignalTasksManager.SignalRun(
+                    _signalTasksManager.SignalRun(
                         nameof(SignalsNames.MainWindowOpenedSignal),
-                        () => WindowState = config.WindowState
+                        () => WindowState = config.WindowState.ToAvalonia()
                     );
 
                     if (config.IsHidden)
-                        Instances.SignalTasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal), Hide);
+                        _signalTasksManager.SignalRun(nameof(SignalsNames.MainWindowOpenedSignal), Hide);
                 }
                 catch (Exception e)
                 {
@@ -61,32 +80,27 @@ public partial class MainWindow : Window, IView
 
                 SizeChanged += (_, _) =>
                 {
-                    if (WindowState == WindowState.Maximized)
+                    if (WindowState == Avalonia.Controls.WindowState.Maximized)
                         return;
 
                     config.Size.Width = ClientSize.Width;
                     config.Size.Height = ClientSize.Height;
+
+                    ScheduleGeometrySave();
                 };
-
-                //ClientSizeProperty.Changed.Subscribe(_ =>
-                //{
-                //    if (WindowState == WindowState.Maximized)
-                //        return;
-
-                //    config.Size.Width = ClientSize.Width;
-                //    config.Size.Height = ClientSize.Height;
-                //});
 
                 PositionChanged += (_, _) =>
                 {
-                    if (WindowState != WindowState.Normal)
+                    if (WindowState != Avalonia.Controls.WindowState.Normal)
                         return;
 
                     config.Location.Left = Position.X;
                     config.Location.Top = Position.Y;
+
+                    ScheduleGeometrySave();
                 };
 
-                if (WindowState != WindowState.Normal)
+                if (WindowState != Avalonia.Controls.WindowState.Normal)
                     return;
 
                 ClientSize = new(config.Size.Width!.Value, config.Size.Height!.Value);
@@ -100,21 +114,50 @@ public partial class MainWindow : Window, IView
 
     private void InitMainWindow()
     {
-        MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
+        // Defer the initial page selection until the NavigationView has realized. Setting
+        // SelectedItem in the constructor — before the control is attached — lets
+        // FluentAvalonia's NavigationView fall back to the first menu item on realize,
+        // which would override the restored page (e.g. Page_Lib) with Home a second later.
+        // SelectionChanged is suppressed until this deferred selection runs.
+        Dispatcher.UIThread.Post(() =>
+        {
+            _suppressSelectionChanged = false;
+            MainNavigationView.SelectedItem = this.FindControl<NavigationViewItem>(SelectedPageName);
+        });
 
         UpdateGreetingText();
 
-        EventService.LanguageChanged += UpdateGreetingText;
+        var eventService = App.GetService<IEventService>();
+        eventService.Subscribe(EventNames.LanguageChanged, (s, e) => UpdateGreetingText());
 
-        EventService.GreetingTextIntervalUpdated += UpdateGreetingText;
+        eventService.Subscribe(EventNames.GreetingTextIntervalUpdated, (s, e) => UpdateGreetingText());
 
-        var timer = new Timer() { AutoReset = true, Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval };
+        _greetingTimer.Interval = 1000 * 60 * AppConfig.Windows.MainWindow.GreetingUpdateInterval;
 
-        timer.Elapsed += (_, _) => UpdateGreetingText();
+        _greetingTimer.Elapsed += (_, _) => UpdateGreetingText();
 
-        timer.Start();
+        _greetingTimer.Start();
 
-        Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
+        _signalTasksManager.RaiseSignal(nameof(SignalsNames.MainWindowInitSignal));
+    }
+
+    /// <summary>
+    /// Debounced geometry persistence (D13): resize/move events fire continuously
+    /// during a drag — wait 500ms of quiescence before writing the config file.
+    /// </summary>
+    private void ScheduleGeometrySave()
+    {
+        _geometrySaveCts.Cancel();
+        var token = _geometrySaveCts.Token;
+        _ = Task.Delay(500, token).ContinueWith(t =>
+        {
+            if (t.IsCanceled) return;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (token.IsCancellationRequested) return;
+                IView.SaveAppConfigChanges();
+            });
+        }, token);
     }
 
     internal void UpdateGreetingText()
@@ -155,7 +198,7 @@ public partial class MainWindow : Window, IView
             "Page_Settings" => typeof(Pages.SettingsPage),
             "Page_Market" => typeof(Pages.MarketPage),
             "Page_Device" => typeof(Pages.DevicesPage),
-            "Page_Workflow" => typeof(Pages.WorkflowPage),
+            "Page_ToolKit" => typeof(Pages.ToolkitPage),
             _ => typeof(Pages.HomePage),
         };
 
@@ -175,6 +218,12 @@ public partial class MainWindow : Window, IView
         try
         {
             if (sender is null)
+                return;
+
+            // Ignore selection changes while the initial page selection is deferred to the
+            // dispatcher (see InitMainWindow) — otherwise the NavigationView's realize-time
+            // fallback to the first menu item would navigate away from the restored page.
+            if (_suppressSelectionChanged)
                 return;
 
             var navView = sender as NavigationView;
@@ -201,13 +250,23 @@ public partial class MainWindow : Window, IView
     {
         base.OnOpened(e);
 
-        Instances.SignalTasksManager?.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
+        _signalTasksManager.RaiseSignal(nameof(SignalsNames.MainWindowOpenedSignal));
     }
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         if (ConstantTable.Exiting)
+        {
+            // D13: the main window never fully closes during normal operation (hide),
+            // but when the app IS exiting, release the per-minute timer + debounce token.
+            _greetingTimer.Stop();
+            _greetingTimer.Dispose();
+            _geometrySaveCts.Cancel();
+            _geometrySaveCts.Dispose();
+
+            base.OnClosing(e);
             return;
+        }
 
         e.Cancel = true;
 

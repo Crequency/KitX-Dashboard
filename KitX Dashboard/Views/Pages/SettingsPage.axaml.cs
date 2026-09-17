@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using Avalonia.Controls;
 using FluentAvalonia.UI.Controls;
-using KitX.Dashboard.Managers;
+using KitX.Core.Contract.Configuration;
 using KitX.Dashboard.ViewModels.Pages;
 using KitX.Dashboard.Views.Pages.Controls;
 using Serilog;
@@ -10,7 +10,7 @@ namespace KitX.Dashboard.Views.Pages;
 
 public partial class SettingsPage : UserControl, IView
 {
-    private readonly SettingsPageViewModel viewModel = new();
+    private readonly SettingsPageViewModel viewModel = App.GetService<SettingsPageViewModel>();
 
     public SettingsPage()
     {
@@ -50,10 +50,10 @@ public partial class SettingsPage : UserControl, IView
 
     private static string SelectedViewName
     {
-        get => ConfigManager.Instance.AppConfig.Pages.Settings.SelectedViewName;
+        get => App.GetService<IConfigService>().AppConfig.Pages.Settings.SelectedViewName;
         set
         {
-            ConfigManager.Instance.AppConfig.Pages.Settings.SelectedViewName = value;
+            App.GetService<IConfigService>().AppConfig.Pages.Settings.SelectedViewName = value;
 
             IView.SaveAppConfigChanges();
         }
@@ -64,7 +64,8 @@ public partial class SettingsPage : UserControl, IView
         {
             "View_General" => typeof(Settings_General),
             "View_Personalise" => typeof(Settings_Personalise),
-            "View_Performence" => typeof(Settings_Performence),
+            // D15: "View_Performence" kept for JSON-compat with saved configs.
+            "View_Performence" or "View_Performance" => typeof(Settings_Performance),
             "View_Update" => typeof(Settings_Update),
             "View_About" => typeof(Settings_About),
             _ => typeof(Settings_General),

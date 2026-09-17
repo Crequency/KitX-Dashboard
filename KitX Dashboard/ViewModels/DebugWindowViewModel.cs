@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
+using KitX.Core.Contract.Tasks;
+using KitX.Core.Tasks;
 using KitX.Dashboard.Services;
 using ReactiveUI;
 
@@ -12,8 +14,12 @@ internal class DebugWindowViewModel : ViewModelBase
 {
     private CancellationTokenSource? _cancellationTokenSource;
 
-    public DebugWindowViewModel()
+    private readonly ITasksService _tasksService;
+
+    public DebugWindowViewModel(ITasksService tasksService)
     {
+        _tasksService = tasksService;
+
         InitCommands();
 
         InitEvents();
@@ -38,7 +44,7 @@ internal class DebugWindowViewModel : ViewModelBase
 
         _cancellationTokenSource = tokenSource;
 
-        Task.Run(
+        _tasksService.RunTaskAsync(
             async () =>
             {
                 var result = await DebugService.ExecuteCodesAsync(code, cancellationToken: tokenSource.Token);
@@ -54,7 +60,8 @@ internal class DebugWindowViewModel : ViewModelBase
                     IsExecuting = false;
                 });
             },
-            tokenSource.Token
+            tokenSource.Token,
+            nameof(SubmitCodes)
         );
     }
 

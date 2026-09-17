@@ -12,9 +12,11 @@ using Avalonia.Metadata;
 using Avalonia.Threading;
 using Common.BasicHelper.Utils.Extensions;
 using Common.Update.Checker;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Device;
+using KitX.Core.Device;
 using KitX.Dashboard.Converters;
 using KitX.Dashboard.Models;
-using KitX.Dashboard.Network.DevicesNetwork;
 using KitX.Shared.CSharp.Device;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -24,11 +26,16 @@ using Timer = System.Timers.Timer;
 
 namespace KitX.Dashboard.ViewModels.Pages.Controls;
 
+// NOTE (ServiceLocator convergence): this ViewModel's body (Update() / busy-wait loops /
+// Components logic) is frozen during the server-side refactor and must not be modified,
+// so its remaining App.GetService/ViewModelBase.ConfigService accessors are intentionally
+// retained (documented exception to the constructor-injection convergence). The instance
+// itself is resolved via DI at the View creation point.
 internal class Settings_UpdateViewModel : ViewModelBase
 {
     private bool _canUpdateDataGridView = true;
 
-    internal Settings_UpdateViewModel()
+    public Settings_UpdateViewModel()
     {
         InitCommands();
 
@@ -89,7 +96,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
     public static int UpdateChannel
     {
         get =>
-            AppConfig.Web.UpdateChannel switch
+            ConfigService.AppConfig.Web.UpdateChannel switch
             {
                 "stable" => 0,
                 "beta" => 1,
@@ -98,7 +105,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
             };
         set
         {
-            AppConfig.Web.UpdateChannel = value switch
+            ConfigService.AppConfig.Web.UpdateChannel = value switch
             {
                 0 => "stable",
                 1 => "beta",
@@ -106,7 +113,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
                 _ => "stable",
             };
 
-            SaveAppConfigChanges();
+            ConfigService.SaveAll();
         }
     }
 
@@ -146,7 +153,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
 
         var checker = new Checker()
             .SetRootDirectory(wd)
-            .SetPerThreadFilesCount(AppConfig.IO.UpdatingCheckPerThreadFilesCount)
+            .SetPerThreadFilesCount(ConfigService.AppConfig.IO.UpdatingCheckPerThreadFilesCount)
             .SetTransHash2String(true)
             .AppendIgnoreFolder("Config")
             .AppendIgnoreFolder("Core")
@@ -156,10 +163,10 @@ internal class Settings_UpdateViewModel : ViewModelBase
             .AppendIgnoreFolder("Update")
             .AppendIgnoreFolder("Loaders")
             .AppendIgnoreFolder("Plugins")
-            .AppendIgnoreFolder(AppConfig.App.LocalPluginsFileFolder)
-            .AppendIgnoreFolder(AppConfig.App.LocalPluginsDataFolder);
+            .AppendIgnoreFolder(ConfigService.AppConfig.App.LocalPluginsFileFolder)
+            .AppendIgnoreFolder(ConfigService.AppConfig.App.LocalPluginsDataFolder);
 
-        foreach (var item in AppConfig.App.SurpportLanguages)
+        foreach (var item in ConfigService.AppConfig.App.SurpportLanguages)
             _ = checker.AppendIncludeFile($"{ld}/{item.Key}.axaml");
 
         Tip = GetUpdateTip("Scan");
@@ -210,12 +217,15 @@ internal class Settings_UpdateViewModel : ViewModelBase
     {
         client.DefaultRequestHeaders.Accept.Clear(); //  清除请求头部
 
+        var deviceService = App.GetService<IDeviceDiscoveryService>();
+        var deviceOSType = deviceService.DefaultDeviceInfo.DeviceOSType;
+
         var link =
             "https://"
-            + AppConfig.Web.UpdateServer
-            + AppConfig.Web.UpdatePath.Replace(
+            + ConfigService.AppConfig.Web.UpdateServer
+            + ConfigService.AppConfig.Web.UpdatePath.Replace(
                 "%platform%",
-                DevicesDiscoveryServer.Instance.DefaultDeviceInfo.DeviceOSType switch
+                deviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",
@@ -223,8 +233,8 @@ internal class Settings_UpdateViewModel : ViewModelBase
                     _ => "",
                 }
             )
-            + $"{AppConfig.Web.UpdateChannel}/"
-            + AppConfig.Web.UpdateSource;
+            + $"{ConfigService.AppConfig.Web.UpdateChannel}/"
+            + ConfigService.AppConfig.Web.UpdateSource;
 
         var json = await client.GetStringAsync(link);
 
@@ -391,13 +401,22 @@ internal class Settings_UpdateViewModel : ViewModelBase
     {
         Tip = GetUpdateTip("Download");
 
-        //TODO: 下载有变更的文件
+        // 文件级哈希增量下载已实现：CompareDifferentComponents 对比本地文件哈希与
+        // latest-components.json 清单哈希，此处仅下载 updatedComponents（有变更的文件）。
+        // 已知缺口（记录，暂不修复）：
+        //   ① 清单新增文件（new2addComponents）未下载；
+        //   ② 清单已删除的文件本地不清理；
+        //   ③ Update() 应用流程未实现，Common.Update.Replacer 未接入。
+        // 搁置原因：上游更新服务重构未完成未上线，更新功能暂停开发（负责人 2026-08-20 决策）。
+        var deviceService = App.GetService<IDeviceDiscoveryService>();
+        var deviceOSType = deviceService.DefaultDeviceInfo.DeviceOSType;
+
         var downloadLinkBase =
             "https://"
-            + AppConfig.Web.UpdateServer
-            + AppConfig.Web.UpdateDownloadPath.Replace(
+            + ConfigService.AppConfig.Web.UpdateServer
+            + ConfigService.AppConfig.Web.UpdateDownloadPath.Replace(
                 "%platform%",
-                DevicesDiscoveryServer.Instance.DefaultDeviceInfo.DeviceOSType switch
+                deviceOSType switch
                 {
                     OperatingSystems.Windows => "win",
                     OperatingSystems.Linux => "linux",
@@ -405,7 +424,7 @@ internal class Settings_UpdateViewModel : ViewModelBase
                     _ => "",
                 }
             )
-            + $"{AppConfig.Web.UpdateChannel}/";
+            + $"{ConfigService.AppConfig.Web.UpdateChannel}/";
 
         if (!Directory.Exists(ConstantTable.UpdateSavePath.GetFullPath()))
             Directory.CreateDirectory(ConstantTable.UpdateSavePath.GetFullPath());

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using Avalonia;
-using Avalonia.ReactiveUI;
 using Common.BasicHelper.Utils.Extensions;
+using ReactiveUI.Avalonia;
 
 namespace KitX.Dashboard;
 

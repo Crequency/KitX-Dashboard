@@ -1,65 +1,117 @@
-﻿using System;
+using System;
 using Common.BasicHelper.Utils.Extensions;
 
 namespace KitX.Dashboard;
 
+/// <summary>
+/// Dashboard-specific constants.
+/// General constants are delegated to <see cref="KitX.Core.ConstantTable"/>.
+/// </summary>
 internal static class ConstantTable
 {
-    internal const string AppName = "KitX";
+    // ──────────────────────────────────────────────
+    //  Delegated to KitX.Core.ConstantTable
+    // ──────────────────────────────────────────────
 
-    internal const string AppFullName = "KitX Dashboard";
+    internal const string AppName = KitX.Core.ConstantTable.AppName;
 
-    internal const string DataPath = "./Data/";
+    internal const string AppFullName = KitX.Core.ConstantTable.AppFullName;
 
-    internal const string LanguageFilePath = "./Languages/";
+    internal const string DataPath = KitX.Core.ConstantTable.DataPath;
 
-    internal const string AssetsPath = "./Assets/";
+    internal const string LanguageFilePath = KitX.Core.ConstantTable.LanguageFilePath;
 
-    internal const string UpdateSavePath = "./Update/";
+    internal const string AssetsPath = KitX.Core.ConstantTable.AssetsPath;
 
-    internal const string IconBase64FileName = "KitX.Base64.txt";
+    internal const string UpdateSavePath = KitX.Core.ConstantTable.UpdateSavePath;
 
-    private const string activitiesDataBaseFilePath = $"{DataPath}Activities.db";
+    internal const string IconBase64FileName = KitX.Core.ConstantTable.IconBase64FileName;
 
-    private const string thirdPartyLicenseFilePath = $"{AssetsPath}ThirdPartyLicense.md";
+    internal static string ActivitiesDataBaseFilePath => KitX.Core.ConstantTable.ActivitiesDataBaseFilePath;
 
-    internal static string ActivitiesDataBaseFilePath => activitiesDataBaseFilePath.GetFullPath();
+    internal static string ThirdPartyLicenseFilePath => KitX.Core.ConstantTable.ThirdPartyLicenseFilePath;
 
-    internal static string ThirdPartyLicenseFilePath => thirdPartyLicenseFilePath.GetFullPath();
+    internal static int DevicesServerPort
+    {
+        get => KitX.Core.ConstantTable.DevicesServerPort;
+        set => KitX.Core.ConstantTable.DevicesServerPort = value;
+    }
 
-    internal static bool IsExchangingDeviceKey = false;
+    internal static int PluginsServerPort
+    {
+        get => KitX.Core.ConstantTable.PluginsServerPort;
+        set => KitX.Core.ConstantTable.PluginsServerPort = value;
+    }
 
-    internal static string? ExchangeDeviceKeyCode;
+    internal static bool Running
+    {
+        get => KitX.Core.ConstantTable.Running;
+        set => KitX.Core.ConstantTable.Running = value;
+    }
 
-    internal static int DevicesServerPort = -1;
+    internal static bool Exiting
+    {
+        get => KitX.Core.ConstantTable.Exiting;
+        set => KitX.Core.ConstantTable.Exiting = value;
+    }
 
-    internal static int PluginsServerPort = -1;
+    internal static bool Restarting
+    {
+        get => KitX.Core.ConstantTable.Restarting;
+        set => KitX.Core.ConstantTable.Restarting = value;
+    }
 
-    internal static bool Running = true;
+    internal static bool EnsureExiting
+    {
+        get => KitX.Core.ConstantTable.EnsureExiting;
+        set => KitX.Core.ConstantTable.EnsureExiting = value;
+    }
 
-    internal static bool Exiting = false;
+    internal static bool IsMainMachine
+    {
+        get => KitX.Core.ConstantTable.IsMainMachine;
+        set => KitX.Core.ConstantTable.IsMainMachine = value;
+    }
 
-    internal static bool Restarting = false;
+    internal static string? MainMachineAddress
+    {
+        get => KitX.Core.ConstantTable.MainMachineAddress;
+        set => KitX.Core.ConstantTable.MainMachineAddress = value;
+    }
 
-    internal static bool EnsureExiting = false;
+    internal static int MainMachinePort
+    {
+        get => KitX.Core.ConstantTable.MainMachinePort;
+        set => KitX.Core.ConstantTable.MainMachinePort = value;
+    }
 
-    internal static bool IsMainMachine = false;
+    internal static bool SkipNetworkSystemOnStartup
+    {
+        get => KitX.Core.ConstantTable.SkipNetworkSystemOnStartup;
+        set => KitX.Core.ConstantTable.SkipNetworkSystemOnStartup = value;
+    }
 
-    internal static string? MainMachineAddress;
+    internal static DateTime ServerBuildTime
+    {
+        get => KitX.Core.ConstantTable.ServerBuildTime;
+        set => KitX.Core.ConstantTable.ServerBuildTime = value;
+    }
 
-    internal static int MainMachinePort = -1;
+    internal static string KitXIconBase64
+    {
+        get => KitX.Core.ConstantTable.KitXIconBase64;
+        set => KitX.Core.ConstantTable.KitXIconBase64 = value;
+    }
 
-    internal static bool SkipNetworkSystemOnStartup = false;
+    internal static bool IsSingleProcessStartMode
+    {
+        get => KitX.Core.ConstantTable.IsSingleProcessStartMode;
+        set => KitX.Core.ConstantTable.IsSingleProcessStartMode = value;
+    }
 
-    internal static DateTime ServerBuildTime = new();
-
-    internal const string ApiGetAnnouncements = "get-announcements.php";
-
-    internal const string ApiGetAnnouncement = "get-announcement.php";
-
-    internal static string KitXIconBase64 = string.Empty;
-
-    internal static bool IsSingleProcessStartMode = true;
-
-    internal static bool EnabledConfigFileHotReload = true;
+    internal static bool EnabledConfigFileHotReload
+    {
+        get => KitX.Core.ConstantTable.EnabledConfigFileHotReload;
+        set => KitX.Core.ConstantTable.EnabledConfigFileHotReload = value;
+    }
 }

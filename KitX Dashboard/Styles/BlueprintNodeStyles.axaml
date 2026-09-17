@@ -1,0 +1,31 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:NodifyM.Avalonia.Controls;assembly=NodifyM.Avalonia"
+        xmlns:localControls="clr-namespace:KitX.Dashboard.Controls;assembly=KitX.Dashboard">
+
+    <!-- Global Node styling for Blueprint Editor -->
+    <Style Selector="controls|Node">
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
+    <Style Selector="controls|Node:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+    </Style>
+
+    <Style Selector="controls|Node[IsSelected=True]">
+        <Setter Property="BorderBrush" Value="{DynamicResource ThemePrimaryAccent}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <!-- Stretch header content to full width -->
+    <Style Selector="controls|Node /template/ ContentPresenter#HeaderContentPresenter">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    </Style>
+
+    <!-- Connection styling -->
+    <Style Selector="controls|Connection">
+        <Setter Property="StrokeThickness" Value="2.5"/>
+    </Style>
+
+</Styles>

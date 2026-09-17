@@ -36,9 +36,7 @@ internal static class WindowsUtils
             suggest = suggest.Integerization();
         }
 
-        if (OperatingSystem.IsMacOS()) { }
-
-        if (OperatingSystem.IsLinux()) { }
+        // macOS / Linux: no per-platform adjustment currently needed (D13.7).
 
         return suggest;
     }

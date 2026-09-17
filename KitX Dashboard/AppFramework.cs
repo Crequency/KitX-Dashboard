@@ -11,19 +11,33 @@ using Avalonia.Threading;
 using CommandLine;
 using Common.BasicHelper.IO;
 using Common.BasicHelper.Utils.Extensions;
-using KitX.Dashboard.Managers;
+using KitX.Core.Configuration;
+using KitX.Core.Contract.Activity;
+using KitX.Core.Contract.Configuration;
+using KitX.Core.Contract.Device;
+using KitX.Core.Contract.Plugin;
+using KitX.Core.Contract.Statistics;
+using KitX.Core.Plugin;
+using KitX.Core.Statistics;
+using KitX.Core.Contract.Tasks;
 using KitX.Dashboard.Names;
 using KitX.Dashboard.Options;
-using KitX.Dashboard.Views;
-using LiteDB;
+using KitX.Dashboard.Services;
 using ReactiveUI;
 using Serilog;
+using Serilog.Events;
+using System.Text.Json;
 
 namespace KitX.Dashboard;
 
 public static class AppFramework
 {
     private static readonly Queue<Action> actionsInInitialization = [];
+
+    /// <summary>
+    /// Signal event for graceful exit — replaces busy-wait loop in EnsureExit.
+    /// </summary>
+    private static readonly ManualResetEventSlim _exitCompleteEvent = new(false);
 
     public static void ProcessStartupArguments()
     {
@@ -35,14 +49,13 @@ public static class AppFramework
                 ConstantTable.EnabledConfigFileHotReload = !opt.DisableConfigHotReload;
                 ConstantTable.SkipNetworkSystemOnStartup = opt.DisableNetworkSystemOnStartup;
 
-                TasksManager.RunTask(
+                App.GetService<ITasksService>().RunTask(
                     () =>
                     {
                         if (opt.PluginPath is not null)
                             ImportPlugin(opt.PluginPath);
                     },
-                    $"{nameof(ImportPlugin)}",
-                    catchException: true
+                    taskName: $"{nameof(ImportPlugin)}"
                 );
             });
     }
@@ -51,6 +64,56 @@ public static class AppFramework
     {
         if (Design.IsDesignMode)
             return;
+
+        // Step 1: Initialize DI container first
+        App.InitializeServiceProvider();
+
+        // Step 2: Read LogLevel directly from config file (before full load,
+        // so the logger can capture any deserialization errors during Load).
+        var logLevel = LogEventLevel.Information;
+        try
+        {
+            var cfgPath = Path.GetFullPath(Path.Combine("./Config/", "AppConfig.json"));
+            if (File.Exists(cfgPath))
+            {
+                using var doc = JsonDocument.Parse(File.ReadAllText(cfgPath));
+                if (doc.RootElement.TryGetProperty("Log", out var log) &&
+                    log.TryGetProperty("LogLevel", out var level))
+                    logLevel = (LogEventLevel)level.GetInt32();
+            }
+        }
+        catch { }
+
+        // Step 3: Configure logger before Load() so Load errors are visible
+        var logdir = "./Log/".GetFullPath();
+        if (!Directory.Exists(logdir)) Directory.CreateDirectory(logdir);
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Is(logLevel)
+            .WriteTo.File(
+                $"{logdir}Log_.log",
+                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Hour,
+                fileSizeLimitBytes: 10 * 1024 * 1024,
+                buffered: true,
+                flushToDiskInterval: new(0, 0, 30),
+                restrictedToMinimumLevel: logLevel,
+                rollOnFileSizeLimit: true,
+                retainedFileCountLimit: 50
+            )
+            .CreateLogger();
+
+        // Step 4: Full config load (with logger now active — errors are visible)
+        Log.Information($"[AppFramework] About to call configService.Load(), temp LogLevel={logLevel}");
+        var configService = App.GetService<IConfigService>();
+        configService.Load();
+        var config = configService.AppConfig;
+        Log.Information($"[AppFramework] Load complete, LogLevel={config.Log.LogLevel}");
+
+        // Step 5: Reconfigure logger with full settings from loaded config
+        LoggerConfigurator.Configure(config.Log, writeToConsole: true);
+
+        Log.Information("KitX Dashboard Started.");
 
         // If dump file exists, delete it.
         if (File.Exists("./dump.log".GetFullPath()))
@@ -73,9 +136,7 @@ public static class AppFramework
             File.Delete("restart.lock");
         }
 
-        ConfigManager.Instance.AppConfig.App.RanTime++;
-
-        var config = ConfigManager.Instance.AppConfig;
+        configService.AppConfig.App.RanTime++;
 
         ProcessStartupArguments();
 
@@ -89,34 +150,6 @@ public static class AppFramework
                 );
 
         LoadResource();
-
-        #region Initialize log system
-
-        var logdir = config.Log.LogFilePath.GetFullPath();
-
-        if (!Directory.Exists(logdir))
-            Directory.CreateDirectory(logdir);
-
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .WriteTo.File(
-                $"{logdir}Log_.log",
-                outputTemplate: config.Log.LogTemplate,
-                rollingInterval: RollingInterval.Hour,
-                fileSizeLimitBytes: config.Log.LogFileSingleMaxSize,
-                buffered: true,
-                flushToDiskInterval: new(0, 0, config.Log.LogFileFlushInterval),
-                restrictedToMinimumLevel: config.Log.LogLevel,
-                rollOnFileSizeLimit: true,
-                retainedFileCountLimit: config.Log.LogFileMaxCount
-            )
-            .CreateLogger();
-
-        Log.Information("KitX Dashboard Started.");
-
-        #endregion
-
-        Instances.Initialize();
 
         #region Initialize global exception catching
 
@@ -138,26 +171,38 @@ public static class AppFramework
 
         #endregion
 
-        #region Initialize DataBase
-
-        InitDataBase();
-
-        #endregion
+        // Database initialization now happens inside the Core ActivityManager constructor:
+        // the DI singleton opens the LiteDB file on first IActivityService resolution, so no
+        // Dashboard-side init is needed. Record the app start here.
+        try
+        {
+            App.GetService<IActivityService>().RecordAppStart();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"In {nameof(AppFramework)}.RecordAppStart: {ex.Message}");
+        }
 
         #region Initialize WebManager
 
-        Instances.SignalTasksManager!.SignalRun(
+        // Network startup is orchestrated by the Core-level INetworkService
+        // (startup ordering, DelayStartSeconds, SkipNetworkSystemOnStartup and
+        // port configuration all live in KitX.Core).
+        var signalTasksManager = App.GetService<Common.BasicHelper.Core.TaskSystem.SignalTasksManager>();
+        signalTasksManager.SignalRun(
             nameof(SignalsNames.MainWindowInitSignal),
             () =>
             {
                 new Thread(async () =>
                 {
-                    Thread.Sleep(Convert.ToInt32(config.Web.DelayStartSeconds * 1000));
-
-                    if (ConstantTable.SkipNetworkSystemOnStartup)
-                        Instances.WebManager = new();
-                    else
-                        Instances.WebManager = await new WebManager().RunAsync(new());
+                    try
+                    {
+                        await App.GetService<INetworkService>().StartAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, $"In {nameof(AppFramework)}.NetworkStartup: {ex.Message}");
+                    }
                 }).Start();
             }
         );
@@ -166,19 +211,19 @@ public static class AppFramework
 
         #region Initialize StatisticsManager
 
-        StatisticsManager.Start();
+        App.GetService<IStatisticsService>().Start();
 
         #endregion
 
         #region Initialize persistent windows
 
-        Instances.SignalTasksManager.SignalRun(
+        signalTasksManager.SignalRun(
             nameof(SignalsNames.MainWindowInitSignal),
             () =>
             {
                 Dispatcher.UIThread.Post(() =>
                 {
-                    ViewInstances.PluginsLaunchWindow = new();
+                    App.GetService<IWindowService>().PluginsLaunchWindow = new();
                 });
             }
         );
@@ -186,31 +231,6 @@ public static class AppFramework
         #endregion
 
         actionsInInitialization.ForEach(x => x.Invoke());
-    }
-
-    private static void InitDataBase()
-    {
-        const string location = $"{nameof(AppFramework)}.{nameof(InitDataBase)}";
-
-        try
-        {
-            var dir = ConstantTable.DataPath.GetFullPath();
-
-            if (!Directory.Exists(dir))
-                _ = Directory.CreateDirectory(dir);
-
-            var dbfile = ConstantTable.ActivitiesDataBaseFilePath.GetFullPath();
-
-            var db = new LiteDatabase(dbfile);
-
-            Instances.ActivitiesDataBase = db;
-
-            ActivityManager.RecordAppStart();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, $"In {location}: {ex.Message}");
-        }
     }
 
     private static async void LoadResource()
@@ -229,9 +249,9 @@ public static class AppFramework
         }
     }
 
-    public static void AfterInitailization(Action action) => actionsInInitialization.Enqueue(action);
+    public static void AfterInitialization(Action action) => actionsInInitialization.Enqueue(action);
 
-    private static void ImportPlugin(string kxpPath)
+    private static async void ImportPlugin(string kxpPath)
     {
         const string location = $"{nameof(AppFramework)}.{nameof(ImportPlugin)}";
 
@@ -245,7 +265,7 @@ public static class AppFramework
             }
             else
             {
-                PluginsManager.ImportPlugin([kxpPath]);
+                await App.GetService<IPluginService>().ImportPluginAsync(kxpPath);
             }
         }
         catch (Exception ex)
@@ -262,24 +282,22 @@ public static class AppFramework
         const string location = $"{nameof(AppFramework)}.{nameof(EnsureExit)}";
 
         ConstantTable.EnsureExiting = true;
+        _exitCompleteEvent.Reset();
 
         new Thread(async () =>
         {
             try
             {
-                ActivityManager.RecordAppExit();
+                App.GetService<IActivityService>().RecordAppExit();
 
-                Instances.FileWatcherManager?.Clear();
+                App.GetService<KitX.Core.Contract.FileWatcher.IFileWatcherService>()?.Clear();
 
-                ConfigManager.Instance.SaveAll();
+                App.GetService<IConfigService>().SaveAll();
 
                 Log.CloseAndFlush();
 
-                if (Instances.WebManager is not null)
-                    await Instances.WebManager.CloseAsync(new());
-
-                Instances.ActivitiesDataBase?.Commit();
-                Instances.ActivitiesDataBase?.Dispose();
+                // Network shutdown is orchestrated by the Core-level INetworkService.
+                await App.GetService<INetworkService>().StopAsync();
 
                 ConstantTable.Running = false;
 
@@ -293,18 +311,19 @@ public static class AppFramework
                         Process.Start(path);
                 }
 
-                Thread.Sleep(ConfigManager.Instance.AppConfig.App.LastBreakAfterExit);
+                Thread.Sleep(App.GetService<IConfigService>().AppConfig.App.LastBreakAfterExit);
 
                 ConstantTable.EnsureExiting = false;
+                _exitCompleteEvent.Set();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, $"In {location}: {ex.Message}");
+                _exitCompleteEvent.Set();
             }
         }).Start();
 
-        while (ConstantTable.EnsureExiting)
-            ;
+        _exitCompleteEvent.Wait();
 
         Environment.Exit(0);
     }
