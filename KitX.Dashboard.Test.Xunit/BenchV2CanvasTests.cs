@@ -266,34 +266,6 @@ public class BenchV2CanvasTests
     }
 
     [Fact]
-    public void PanelControlEdit_RefreshesCanvasNodePreview()
-    {
-        var toolkit = new Toolkit
-        {
-            UiPanel = new UiPanel
-            {
-                Layout = "stack",
-                Controls =
-                {
-                    new UiControl { Type = "Text", Id = "text_1", Text = "old text" },
-                },
-            },
-        };
-        var canvas = new BenchCanvasViewModel(toolkit);
-        canvas.SelectedNode = canvas.Nodes.OfType<BenchNodeVM>().Single(n => n.Kind == BenchCanvasViewModel.BenchNodeKind.Panel);
-
-        var panelNode = canvas.Nodes.OfType<BenchNodeVM>().Single(n => n.Kind == BenchCanvasViewModel.BenchNodeKind.Panel);
-        var preview = Assert.Single(panelNode.ControlVMs);
-        Assert.Equal("old text", preview.Text);
-
-        var inspectorRow = Assert.Single(canvas.SelectedControlVMs);
-        inspectorRow.Text = "new text";
-
-        Assert.Equal("new text", preview.Text);
-        Assert.Equal("new text", panelNode.ControlVMs[0].Text);
-    }
-
-    [Fact]
     public void CompletionEdge_AddBinding_FromInspector()
     {
         var toolkit = new Toolkit

@@ -26,7 +26,7 @@ namespace KitX.Dashboard.ViewModels;
 public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 {
     /// <summary>Node discriminant.</summary>
-    public enum BenchNodeKind { Source, Workflow, Panel, Comment }
+    public enum BenchNodeKind { Source, Workflow, Comment }
 
     private readonly Toolkit _toolkit;
     private readonly IPluginService? _pluginService;
@@ -35,10 +35,8 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     private readonly Dictionary<BenchConnectorVM, (BenchNodeVM node, string pin)> _connectorInfo = new();
     private int _sourceCount;
     private int _workflowCount;
-    private bool _hasPanel;
     private bool _isCommentMode;
     private bool _isEdgeMode;
-    private readonly Dictionary<UiControl, BenchUiControlVM> _panelControlPreviewVMs = new();
 
     // ── External-save fingerprint / rebuild short-circuit (G5) ──
     // The window re-projects the canvas on every activation (BenchWindow.axaml Activated →
@@ -102,7 +100,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         // canvas reveals the inspector and the save action as soon as the first node
         // is added.
         OnPropertyChanged(nameof(HasContent));
-        RefreshPanelNodePreview();
         ScheduleValidation();
         ConfigEdited?.Invoke();
     }
@@ -144,22 +141,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     private ToolkitWorkflow? _selectedWorkflow;
 
     [ObservableProperty]
-    private UiPanel? _selectedPanel;
-
-    [ObservableProperty]
-    private UiControl? _selectedControl;
-
-    [ObservableProperty]
-    private BenchUiControlVM? _selectedControlVM;
-
-    [ObservableProperty]
     private ObservableCollection<BenchBindingRowVM> _selectedBindings = new();
-
-    [ObservableProperty]
-    private ObservableCollection<UiControl> _selectedControls = new();
-
-    /// <summary>Observable control-inspector rows (supports per-control editing + reorder).</summary>
-    public ObservableCollection<BenchUiControlVM> SelectedControlVMs { get; } = [];
 
     [ObservableProperty]
     private BenchConnectionVM? _selectedConnection;
@@ -194,7 +176,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         UpdateInspector();
         OnPropertyChanged(nameof(IsSourceSelected));
         OnPropertyChanged(nameof(IsWorkflowSelected));
-        OnPropertyChanged(nameof(IsPanelSelected));
         OnPropertyChanged(nameof(IsCommentSelected));
         OnPropertyChanged(nameof(IsNothingSelected));
         OnPropertyChanged(nameof(IsTimerSelected));
@@ -246,17 +227,14 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         OnPropertyChanged(nameof(SelectedTriggerControl));
         OnPropertyChanged(nameof(SelectedTriggerEvent));
         OnPropertyChanged(nameof(SelectedTriggerPanel));
-        OnPropertyChanged(nameof(PanelControlIds));
         OnPropertyChanged(nameof(SelectedWorkflowId));
         OnPropertyChanged(nameof(SelectedWorkflowName));
         OnPropertyChanged(nameof(SelectedWorkflowFile));
-        OnPropertyChanged(nameof(SelectedPanelLayout));
         OnPropertyChanged(nameof(SelectedCommentText));
         OnPropertyChanged(nameof(CompletionInspectorTrigger));
         OnPropertyChanged(nameof(CompletionFromNode));
     }
 
-    /// <summary>Inspector panels visibility (driven by the selected node kind).</summary>
     /// <summary>The WorkflowCompletion trigger shown by the completion-edge inspector.</summary>
     public Trigger? CompletionInspectorTrigger { get; private set; }
 
@@ -267,7 +245,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     public bool IsSourceSelected => SelectedNode is { Kind: BenchNodeKind.Source };
     public bool IsWorkflowSelected => SelectedNode is { Kind: BenchNodeKind.Workflow };
-    public bool IsPanelSelected => SelectedNode is { Kind: BenchNodeKind.Panel };
     public bool IsNothingSelected => SelectedNode is null;
     public bool IsTimerSelected => SelectedTrigger is { Type: TriggerType.Timer };
     public bool IsPluginEventSelected => SelectedTrigger is { Type: TriggerType.PluginEvent };
@@ -277,7 +254,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     public bool IsToolkitInspectorVisible => SelectedNode is null && SelectedConnection is null;
     public bool IsBindingEdgeSelected => SelectedConnection is { Kind: BenchEdgeKind.Binding };
     public bool IsCompletionEdgeSelected => SelectedConnection is { Kind: BenchEdgeKind.Completion };
-    public bool HasPanel => _toolkit.UiPanel is not null;
     public bool HasValidationErrors => ValidationErrors.Count > 0;
     public string ValidationBadgeText => HasValidationErrors
         ? string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "ValidationBadge") ?? "⚠ {0} 项", ValidationErrors.Count)
@@ -503,20 +479,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         }
     }
 
-    /// <summary>Edits the selected panel's <see cref="UiPanel.Layout"/> (write-through + re-validate).</summary>
-    public string? SelectedPanelLayout
-    {
-        get => SelectedPanel?.Layout;
-        set
-        {
-            if (SelectedPanel is null)
-                return;
-            SelectedPanel.Layout = value ?? string.Empty;
-            LastError = null;
-            NotifyEdited();
-        }
-    }
-
     /// <summary>Edits the selected trigger's <see cref="TriggerConfig.DueTimeMs"/>.</summary>
     public double? SelectedTriggerDueTimeMs
     {
@@ -651,9 +613,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         }
     }
 
-    /// <summary>Panel control ids for UIEvent control picker (C9; refreshes with panel edits).</summary>
-    public IReadOnlyList<string> PanelControlIds => _toolkit.UiPanel?.Controls.Select(c => c.Id).ToList() ?? [];
-
     /// <summary>Comment text of the selected comment node (write-through to Toolkit.Comments).</summary>
     public string SelectedCommentText
     {
@@ -699,14 +658,11 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         Connections.Clear();
         _sourceCount = 0;
         _workflowCount = 0;
-        _hasPanel = false;
 
         foreach (var t in _toolkit.Triggers.Where(x => x.Type != TriggerType.WorkflowCompletion))
             AddSourceNode(t, _sourceCount++);
         foreach (var wf in _toolkit.Workflows)
             AddWorkflowNode(wf, _workflowCount++);
-        if (_toolkit.UiPanel is not null)
-            AddPanelNode(_toolkit.UiPanel);
         var commentIndex = 0;
         foreach (var comment in _toolkit.Comments)
             AddCommentNode(comment, commentIndex++);
@@ -834,7 +790,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     /// <summary>
     /// Exact signature of the canvas-relevant config content (everything <see cref="BuildGraph"/>
-    /// and <see cref="RefreshValidation"/> read: triggers + bindings, workflows, panel, comments).
+    /// and <see cref="RefreshValidation"/> read: triggers + bindings, workflows, comments).
     /// Positions are intentionally excluded (node locations are VM state, never config). The
     /// signature is compared for equality only — no hash — so two equal signatures mean the
     /// config content is byte-identical and a rebuild can be skipped without any stale-canvas risk.
@@ -861,14 +817,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
         foreach (var w in _toolkit.Workflows)
             sb.Append(w.Id).Append('\u001e').Append(w.Name).Append('\u001e').Append(w.File).Append('\u001f');
-
-        if (_toolkit.UiPanel is { } panel)
-        {
-            sb.Append(panel.Layout).Append('\u001e');
-            foreach (var c in panel.Controls)
-                sb.Append(c.Type).Append('\u001e').Append(c.Id).Append('\u001e').Append(c.Text).Append('\u001d');
-            sb.Append('\u001f');
-        }
 
         foreach (var cm in _toolkit.Comments)
             sb.Append(cm.Id).Append('\u001e').Append(cm.Text).Append('\u001f');
@@ -908,16 +856,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         _connectorInfo[inPin] = (node, "in");
         _connectorInfo[outPin] = (node, "out");
         Nodes.Add(node);
-    }
-
-    private void AddPanelNode(UiPanel panel)
-    {
-        var node = new BenchNodeVM(ViewModelBase.TranslateTextWithSuffix("Bench", "NodeKindPanel") ?? "GUI 面板", BenchNodeKind.Panel,
-            string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "ControlCount") ?? "控件 {0}", panel.Controls.Count), "panel",
-            new Point(460, 40 + _workflowCount * 100 + 60));
-        _nodeConfig[node] = panel;
-        Nodes.Add(node);
-        RefreshPanelNodePreview();
     }
 
     private void AddCommentNode(ToolkitComment comment, int index)
@@ -984,8 +922,10 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             trigger.Bindings.Add(new TriggerBinding { Workflow = inNode.ConfigId });
             Connections.Add(new BenchConnectionVM(this, outCon, inCon, BenchEdgeKind.Binding));
         }
-        else if (outNode.Kind == BenchNodeKind.Workflow)
+        else
         {
+            // Only Source and Workflow nodes carry pins (comment nodes have none), so a
+            // connector-based connection always lands here as a completion edge.
             if (!IsCompletionTargetValid(inNode))
             {
                 SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorCompletionOnlyWorkflow") ?? "完成边只能连接到工作流节点");
@@ -994,11 +934,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
             if (!AddCompletionEdge(outNode.ConfigId, inNode.ConfigId, outCon, inCon))
                 return;
-        }
-        else
-        {
-            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorPanelCannotBeSource") ?? "面板节点不能作为连线源");
-            return;
         }
 
         outCon.IsConnected = true;
@@ -1255,11 +1190,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
                     t.Bindings.RemoveAll(b => b.Workflow == node.ConfigId);
                 _toolkit.Triggers.RemoveAll(t => t.Type == TriggerType.WorkflowCompletion && t.Config?.From == node.ConfigId);
                 break;
-            case BenchNodeKind.Panel:
-                _toolkit.UiPanel = null;
-                _hasPanel = false;
-                RefreshPalette();
-                break;
             case BenchNodeKind.Comment:
                 _toolkit.Comments.RemoveAll(c => c.Id == node.ConfigId);
                 break;
@@ -1323,53 +1253,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         _toolkit.Triggers.Add(trigger);
         AddSourceNode(trigger, _sourceCount++);
         LastError = null;
-        NotifyEdited();
-    }
-
-    [RelayCommand]
-    private void AddPanel()
-    {
-        if (_toolkit.UiPanel is not null)
-        {
-            SetError(ViewModelBase.TranslateTextWithSuffix("Bench", "ErrorPanelAlreadyExists") ?? "该工具箱已有一个 GUI 面板");
-            return;
-        }
-
-        _toolkit.UiPanel = new UiPanel { Layout = "stack" };
-        AddPanelNode(_toolkit.UiPanel);
-        _hasPanel = true;
-        RefreshPalette();
-        LastError = null;
-        NotifyEdited();
-    }
-
-    [RelayCommand]
-    private void AddControl(string? type)
-    {
-        if (SelectedPanel is null || string.IsNullOrWhiteSpace(type))
-            return;
-        var control = new UiControl { Type = type, Id = NewControlId(type) };
-        SelectedPanel.Controls.Add(control);
-        RefreshSelectedControls();
-        RefreshPanelNodeSummary();
-        SelectedControl = control;
-        SelectedControlVM = SelectedControlVMs.FirstOrDefault(c => c.Model == control);
-        NotifyEdited();
-    }
-
-    [RelayCommand]
-    private void RemoveControl(UiControl? control)
-    {
-        if (SelectedPanel is null || control is null)
-            return;
-        SelectedPanel.Controls.Remove(control);
-        RefreshSelectedControls();
-        RefreshPanelNodeSummary();
-        if (SelectedControl == control)
-        {
-            SelectedControl = null;
-            SelectedControlVM = null;
-        }
         NotifyEdited();
     }
 
@@ -1483,33 +1366,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         NotifyEdited();
     }
 
-    [RelayCommand]
-    private void SelectControl(BenchUiControlVM? control)
-    {
-        if (control is null)
-            return;
-        SelectedControlVM = control;
-        SelectedControl = control.Model;
-    }
-
-    [RelayCommand]
-    private void MoveControlUp(BenchUiControlVM? control) => control?.MoveUp();
-
-    [RelayCommand]
-    private void MoveControlDown(BenchUiControlVM? control) => control?.MoveDown();
-
-    [RelayCommand]
-    private void AddSelectItem(BenchUiControlVM? control) => control?.AddSelectItem();
-
-    [RelayCommand]
-    private void RemoveSelectItem(string? item)
-    {
-        if (SelectedControlVM is null)
-            return;
-        SelectedControlVM.RemoveSelectItem(item);
-        NotifyEdited();
-    }
-
     // ── Palette dispatch / new workflow / comments ──
 
     /// <summary>Raised when the user asks to open the v6 editor for a workflow.</summary>
@@ -1528,9 +1384,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
                 break;
             case "Workflow":
                 AddWorkflow();
-                break;
-            case "Panel":
-                AddPanel();
                 break;
             case "Comment":
                 AddComment();
@@ -1661,27 +1514,18 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             CompletionInspectorBindings.Add(CreateBindingRow(binding, WorkflowIdOptions, true));
     }
 
-    /// <summary>The fixed ten-control palette offered by the panel designer.</summary>
-    public static IReadOnlyList<string> PanelControlTypes { get; } =
-        ["Text", "Icon", "Button", "Input", "Number", "Select", "Switch", "Log", "Progress", "Dialog"];
-
     /// <summary>Spawn presentation modes (D3).</summary>
     public static IReadOnlyList<string> SurfaceOptions { get; } = ["auto", "silent"];
 
     /// <summary>UIEvent event names.</summary>
     public static IReadOnlyList<string> EventOptions { get; } = ["Click", "Submit", "Confirm", "Change"];
 
-    /// <summary>Panel layout strategies.</summary>
-    public static IReadOnlyList<string> LayoutOptions { get; } = ["stack", "grid"];
     /// <summary>Timer tri-state labels (single / interval / cron).</summary>
     public static IReadOnlyList<string> TimerModes => [
         ViewModelBase.TranslateTextWithSuffix("Bench", "TimerModeOnce") ?? "单次",
         ViewModelBase.TranslateTextWithSuffix("Bench", "TimerModeInterval") ?? "周期",
         "Cron",
     ];
-
-    [ObservableProperty]
-    private string _addControlType = "Text";
 
     // ── Palette construction / filtering ──
 
@@ -1695,26 +1539,16 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
             new BenchPaletteItemVM("Manual", ViewModelBase.TranslateTextWithSuffix("Bench", "ManualTrigger") ?? "手动触发", "触发器", Material.Icons.MaterialIconKind.Hand),
             new BenchPaletteItemVM("Timer", ViewModelBase.TranslateTextWithSuffix("Bench", "TimerTrigger") ?? "定时", "触发器", Material.Icons.MaterialIconKind.Clock),
             new BenchPaletteItemVM("PluginEvent", ViewModelBase.TranslateTextWithSuffix("Bench", "PluginEventTrigger") ?? "插件事件", "触发器", Material.Icons.MaterialIconKind.Puzzle),
-            new BenchPaletteItemVM("UIEvent", ViewModelBase.TranslateTextWithSuffix("Bench", "UIEventTrigger") ?? "UI 控件事件", "触发器", Material.Icons.MaterialIconKind.ViewList,
-                HasPanel ? null : ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteUIEventHint") ?? "请先添加 GUI 面板"));
+            new BenchPaletteItemVM("UIEvent", ViewModelBase.TranslateTextWithSuffix("Bench", "UIEventTrigger") ?? "UI 控件事件", "触发器", Material.Icons.MaterialIconKind.ViewList));
         var workflows = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupWorkflows") ?? "工作流",
             new BenchPaletteItemVM("Workflow", ViewModelBase.TranslateTextWithSuffix("Bench", "NewWorkflow") ?? "新建工作流", "工作流", Material.Icons.MaterialIconKind.Plus));
-        var panel = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupPanel") ?? "GUI 面板",
-            new BenchPaletteItemVM("Panel", ViewModelBase.TranslateTextWithSuffix("Bench", "AddPanel") ?? "添加面板", "GUI 面板", Material.Icons.MaterialIconKind.ViewDashboard,
-                HasPanel ? ViewModelBase.TranslateTextWithSuffix("Bench", "PalettePanelHint") ?? "至多 1 个（已添加）" : null));
         var comments = new BenchPaletteGroupVM(ViewModelBase.TranslateTextWithSuffix("Bench", "PaletteGroupComments") ?? "注释",
             new BenchPaletteItemVM("Comment", ViewModelBase.TranslateTextWithSuffix("Bench", "CommentNode") ?? "注释节点", "注释", Material.Icons.MaterialIconKind.CommentOutline));
 
-        foreach (var group in new[] { triggers, workflows, panel, comments })
+        foreach (var group in new[] { triggers, workflows, comments })
         {
             foreach (var item in group.Items)
-            {
                 item.IsVisible = match(group.Title) || match(item.Title) || match(item.Key);
-                if (item.Key == "UIEvent")
-                    item.IsEnabled = HasPanel;
-                if (item.Key == "Panel")
-                    item.IsEnabled = !HasPanel;
-            }
 
             var visible = group.Items.Where(i => i.IsVisible).ToList();
             if (visible.Count == 0)
@@ -1740,8 +1574,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
         var nodeId = diagnostic.NodeId!;
         var node = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.ConfigId == nodeId);
-        if (node is null && diagnostic.NodeKind == "panel")
-            node = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.Kind == BenchNodeKind.Panel);
 
         if (node is null)
             return;
@@ -1757,10 +1589,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         var cycle = Regex.Match(message, @"cycle detected:\s*([^\s]+)");
         if (cycle.Success)
             return new BenchDiagnosticVM(message, cycle.Groups[1].Value, "workflow");
-
-        var control = Regex.Match(message, @"Control '([^']+)'");
-        if (control.Success)
-            return new BenchDiagnosticVM(message, "panel", "panel");
 
         var predecessor = Regex.Match(message, @"predecessor '([^']+)'");
         if (predecessor.Success)
@@ -1791,19 +1619,14 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     {
         SelectedTrigger = null;
         SelectedWorkflow = null;
-        SelectedPanel = null;
-        SelectedControl = null;
-        SelectedControlVM = null;
         SelectedComment = null;
         SelectedBindings.Clear();
-        SelectedControls.Clear();
 
         if (SelectedNode is null || !_nodeConfig.TryGetValue(SelectedNode, out var cfg))
             return;
 
         OnPropertyChanged(nameof(WorkflowIdOptions));
         OnPropertyChanged(nameof(PluginOptions));
-        OnPropertyChanged(nameof(PanelControlIds));
 
         switch (SelectedNode.Kind)
         {
@@ -1817,10 +1640,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
                 break;
             case BenchNodeKind.Workflow:
                 SelectedWorkflow = cfg as ToolkitWorkflow;
-                break;
-            case BenchNodeKind.Panel:
-                SelectedPanel = cfg as UiPanel;
-                RefreshSelectedControls();
                 break;
             case BenchNodeKind.Comment:
                 SelectedComment = cfg as ToolkitComment;
@@ -1889,71 +1708,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         RefreshIsConnected();
         RefreshDegreeBadges();
         NotifyEdited();
-    }
-
-    private void RefreshSelectedControls()
-    {
-        SelectedControls.Clear();
-        SelectedControlVMs.Clear();
-        if (SelectedPanel is not null)
-        {
-            foreach (var c in SelectedPanel.Controls)
-            {
-                SelectedControls.Add(c);
-                SelectedControlVMs.Add(new BenchUiControlVM(c, NotifyEdited, MoveControl));
-            }
-        }
-
-        OnPropertyChanged(nameof(PanelControlIds));
-    }
-
-    /// <summary>Moves a control in the panel declaration (delta -1 up / +1 down).</summary>
-    private void MoveControl(BenchUiControlVM control, int delta)
-    {
-        if (SelectedPanel is null)
-            return;
-        var index = SelectedPanel.Controls.IndexOf(control.Model);
-        var target = index + delta;
-        if (index < 0 || target < 0 || target >= SelectedPanel.Controls.Count)
-            return;
-        SelectedPanel.Controls.RemoveAt(index);
-        SelectedPanel.Controls.Insert(target, control.Model);
-        RefreshSelectedControls();
-        RefreshPanelNodeSummary();
-        NotifyEdited();
-    }
-
-    /// <summary>
-    /// Keeps the panel node's on-canvas control preview in sync with the config. The
-    /// preview rows are observable <see cref="BenchUiControlVM"/>s (not raw POCOs), so
-    /// editing Id/Text/Options in the inspector re-renders the node immediately.
-    /// </summary>
-    private void RefreshPanelNodePreview()
-    {
-        var panelNode = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.Kind == BenchNodeKind.Panel);
-        if (panelNode is null)
-            return;
-
-        panelNode.ControlVMs.Clear();
-        foreach (var control in _toolkit.UiPanel?.Controls ?? [])
-        {
-            if (!_panelControlPreviewVMs.TryGetValue(control, out var preview))
-            {
-                preview = new BenchUiControlVM(control, () => { }, (_, _) => { });
-                _panelControlPreviewVMs[control] = preview;
-            }
-
-            preview.RefreshFromModel();
-            panelNode.ControlVMs.Add(preview);
-        }
-    }
-
-    /// <summary>Keeps the canvas panel node's "控件 N" subtitle in sync with the config.</summary>
-    private void RefreshPanelNodeSummary()
-    {
-        var panelNode = Nodes.OfType<BenchNodeVM>().FirstOrDefault(n => n.Kind == BenchNodeKind.Panel);
-        if (panelNode is not null && SelectedPanel is not null)
-            panelNode.KindLabel = string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "ControlCount") ?? "控件 {0}", SelectedPanel.Controls.Count);
     }
 
     /// <summary>fan-out / AND-join degree badges (only shown when degree > 1).</summary>
@@ -2069,7 +1823,4 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
 
     private static string NewTriggerId()
         => "trg_" + Guid.NewGuid().ToString("N")[..8];
-
-    private static string NewControlId(string type)
-        => type.ToLowerInvariant() + "_" + Guid.NewGuid().ToString("N")[..6];
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Media;
@@ -37,12 +36,11 @@ public sealed class BenchNodeVM : NodeViewModelBase
         {
             BenchCanvasViewModel.BenchNodeKind.Source => (MaterialIconKind.Hand, "#4CAF50", "White", "Spawn"),
             BenchCanvasViewModel.BenchNodeKind.Workflow => (MaterialIconKind.Sitemap, "#9C27B0", "White", null),
-            BenchCanvasViewModel.BenchNodeKind.Panel => (MaterialIconKind.ViewDashboard, "#3873D9", "White", null),
             _ => (MaterialIconKind.CommentOutline, "#8A8A8A", "White", null),
         };
     }
 
-    /// <summary>Discriminant: <c>Source</c> (Spawn trigger), <c>Workflow</c>, <c>Panel</c>, or <c>Comment</c>.</summary>
+    /// <summary>Discriminant: <c>Source</c> (Spawn trigger), <c>Workflow</c>, or <c>Comment</c>.</summary>
     public BenchCanvasViewModel.BenchNodeKind Kind { get; }
 
     /// <summary>True for comment nodes (no pins, text-only body).</summary>
@@ -50,7 +48,7 @@ public sealed class BenchNodeVM : NodeViewModelBase
 
     private string _kindLabel = string.Empty;
 
-    /// <summary>Human-readable kind label (trigger type / 工作流 / 面板). Mutable so the
+    /// <summary>Human-readable kind label (trigger type / 工作流). Mutable so the
     /// inspector can refresh it live when the underlying trigger config changes.</summary>
     public string KindLabel
     {
@@ -60,21 +58,13 @@ public sealed class BenchNodeVM : NodeViewModelBase
 
     private string _configId = string.Empty;
 
-    /// <summary>Key of the underlying config object (trigger id / workflow id / "panel" /
+    /// <summary>Key of the underlying config object (trigger id / workflow id /
     /// comment id). Mutable so a workflow-id cascade can re-key the node.</summary>
     public string ConfigId
     {
         get => _configId;
         set => SetProperty(ref _configId, value);
     }
-
-    /// <summary>Live preview rows for the panel node body. Rebuilt/refreshed by the canvas
-    /// whenever the panel's control definitions change, so inspector edits appear on the
-    /// canvas node in real time.</summary>
-    public ObservableCollection<BenchUiControlVM> ControlVMs { get; } = [];
-
-    /// <summary>True for the GUI panel node (renders the control-list body).</summary>
-    public bool IsPanel => Kind == BenchCanvasViewModel.BenchNodeKind.Panel;
 
     /// <summary>Material icon name for the node header (category visual system).</summary>
     public MaterialIconKind NodeIcon { get; set; }

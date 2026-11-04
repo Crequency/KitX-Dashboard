@@ -283,7 +283,6 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_ToolKit_Subtitle">Preview — will replace the workflow management page</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">Mount</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">Unmount</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">Panel Board</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Open Bench</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">New ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Delete</sys:String>
@@ -326,14 +325,11 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_PaletteSearch">Search components</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupTriggers">Triggers</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupWorkflows">Workflows</sys:String>
-    <sys:String x:Key="Text_Bench_PaletteGroupPanel">GUI Panel</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupComments">Comments</sys:String>
     <sys:String x:Key="Text_Bench_TimerTrigger">Timer</sys:String>
     <sys:String x:Key="Text_Bench_PluginEventTrigger">Plugin event</sys:String>
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI control event</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">New workflow</sys:String>
-    <sys:String x:Key="Text_Bench_AddPanel">Add panel</sys:String>
-    <sys:String x:Key="Text_Bench_PanelNodeHint">Wire control events to workflows through a "UI control event" trigger; the panel node itself is a declaration and has no connectors.</sys:String>
     <sys:String x:Key="Text_Bench_NoManualTrigger">Trial run requires a Manual trigger — add one from the palette on the left.</sys:String>
     <sys:String x:Key="Text_Bench_Close">Close</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">Comment node</sys:String>
@@ -358,7 +354,7 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_MaxInstancesLimit">Limit max instances</sys:String>
     <sys:String x:Key="Text_Bench_Type">Type</sys:String>
     <sys:String x:Key="Text_Bench_Surface">Surface</sys:String>
-    <sys:String x:Key="Text_Bench_SurfaceHint">auto = present panel; silent = background with badge</sys:String>
+    <sys:String x:Key="Text_Bench_SurfaceHint">auto = run in foreground; silent = background with badge only</sys:String>
     <sys:String x:Key="Text_Bench_TimerMode">Timer mode</sys:String>
     <sys:String x:Key="Text_Bench_IntervalMs">Interval (ms)</sys:String>
     <sys:String x:Key="Text_Bench_DueTimeMs">Initial delay DueTimeMs</sys:String>
@@ -366,9 +362,9 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_CronPreview">Expression: {0}</sys:String>
     <sys:String x:Key="Text_Bench_Plugin">Plugin</sys:String>
     <sys:String x:Key="Text_Bench_TriggerName">Trigger name (empty = any)</sys:String>
-    <sys:String x:Key="Text_Bench_ControlId">Panel control id</sys:String>
+    <sys:String x:Key="Text_Bench_ControlId">Control id reported by the event</sys:String>
+    <sys:String x:Key="Text_Bench_ControlIdHint">Control id reported by the event; leave empty to match any.</sys:String>
     <sys:String x:Key="Text_Bench_Event">Event</sys:String>
-    <sys:String x:Key="Text_Bench_PanelReserved">Panel (reserved)</sys:String>
     <sys:String x:Key="Text_Bench_Bindings">Bindings (structured param injection)</sys:String>
     <sys:String x:Key="Text_Bench_AddParam">+ Add parameter</sys:String>
     <sys:String x:Key="Text_Bench_AddBinding">Add binding</sys:String>
@@ -376,14 +372,6 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowFile">File</sys:String>
     <sys:String x:Key="Text_Bench_EditWorkflowContent">Edit workflow content</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowDoubleClickHint">Double-click a workflow node to open the v6 editor</sys:String>
-    <sys:String x:Key="Text_Bench_Layout">Layout</sys:String>
-    <sys:String x:Key="Text_Bench_ControlList">Controls (sortable)</sys:String>
-    <sys:String x:Key="Text_Bench_AddControl">Add control</sys:String>
-    <sys:String x:Key="Text_Bench_ControlProperties">Control properties</sys:String>
-    <sys:String x:Key="Text_Bench_StaticText">Static text</sys:String>
-    <sys:String x:Key="Text_Bench_OptionsItems">Options.Items</sys:String>
-    <sys:String x:Key="Text_Bench_OptionsMax">Options.Max</sys:String>
-    <sys:String x:Key="Text_Bench_AddOption">+ Add option</sys:String>
     <sys:String x:Key="Text_Bench_CommentTextHint">Comment text is saved to toolkit.json; canvas position is not persisted</sys:String>
     <sys:String x:Key="Text_Bench_EdgeInspector">Completion edge (WorkflowCompletion trigger)</sys:String>
     <sys:String x:Key="Text_Bench_FromReadonly">From (read-only predecessor)</sys:String>
@@ -400,10 +388,6 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_PanelHost_From">From: {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummary">{0} instances · {1} running</sys:String>
     <!-- G26: Bench / PanelHost / Mermaid i18n additions -->
-    <sys:String x:Key="Text_Bench_UiIconPreview">Icon</sys:String>
-    <sys:String x:Key="Text_Bench_UiInputPreview">Input</sys:String>
-    <sys:String x:Key="Text_Bench_UiLogPreview">Log</sys:String>
-    <sys:String x:Key="Text_Bench_UiDialogPreview">Dialog</sys:String>
     <sys:String x:Key="Text_Bench_SelectEdge">Select this edge</sys:String>
     <sys:String x:Key="Text_Bench_DeleteEdge">Delete this edge</sys:String>
     <sys:String x:Key="Text_Bench_DeleteNode">Delete node</sys:String>
@@ -417,11 +401,9 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_CronDay">day</sys:String>
     <sys:String x:Key="Text_Bench_CronMonth">month</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">dow</sys:String>
-    <sys:String x:Key="Text_Bench_PanelReservedHint">Panel field is reserved for the GUI RFC; the current panel id is fixed to the toolbox main panel</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">dot path, e.g. input.name</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkOutput">dot path, e.g. model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">literal</sys:String>
-    <sys:String x:Key="Text_Bench_Edit">Edit</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">The toolbox is mounted — unmount before saving</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">Config validation failed ({0} issues), save rejected</sys:String>
     <sys:String x:Key="Text_Bench_Saved">Saved</sys:String>
@@ -436,10 +418,8 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_ErrorBindingOnlyWorkflow">Binding edges can only connect to workflow nodes</sys:String>
     <sys:String x:Key="Text_Bench_ErrorTriggerAlreadyBound">This trigger is already bound to this workflow</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCompletionOnlyWorkflow">Completion edges can only connect to workflow nodes</sys:String>
-    <sys:String x:Key="Text_Bench_ErrorPanelCannotBeSource">A panel node cannot be a connection source</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCompletionEdgeExists">This completion edge already exists</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCycleDetected">Cycle detected: completion edges must not form a loop</sys:String>
-    <sys:String x:Key="Text_Bench_ErrorPanelAlreadyExists">This toolbox already has a GUI panel</sys:String>
     <sys:String x:Key="Text_Bench_ErrorWorkflowAlreadyBound">This workflow is already bound to this trigger</sys:String>
     <sys:String x:Key="Text_Bench_ErrorWorkflowNameRequired">Enter a new workflow name first</sys:String>
     <sys:String x:Key="Text_Bench_ErrorFileServiceNotInjected">File store service not injected, cannot create workflow file</sys:String>
@@ -451,8 +431,6 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_NodeKindWorkflow">Workflow</sys:String>
     <sys:String x:Key="Text_Bench_ConnectorInput">Input</sys:String>
     <sys:String x:Key="Text_Bench_ConnectorOutput">Output</sys:String>
-    <sys:String x:Key="Text_Bench_NodeKindPanel">GUI Panel</sys:String>
-    <sys:String x:Key="Text_Bench_ControlCount">{0} controls</sys:String>
     <sys:String x:Key="Text_Bench_NodeKindComment">Comment</sys:String>
     <sys:String x:Key="Text_Bench_CommentDefaultText">Double-click the text on the right to edit the comment</sys:String>
     <sys:String x:Key="Text_Bench_TimerModeOnce">One-shot</sys:String>
@@ -460,8 +438,6 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindManual">Manual</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindPlugin">Plugin: {0}</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_PaletteUIEventHint">Add a GUI panel first</sys:String>
-    <sys:String x:Key="Text_Bench_PalettePanelHint">At most 1 (already added)</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">Parameter name cannot be empty</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">Parameter name already exists</sys:String>
     <sys:String x:Key="Text_Bench_ParamWarning">$output can only be injected on completion edges; this parameter will not resolve in Spawn bindings</sys:String>
@@ -475,7 +451,6 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_NotInstalled">Not installed</sys:String>
     <sys:String x:Key="Text_Bench_RemoteSource">Remote source</sys:String>
     <sys:String x:Key="Text_Bench_MaxInstancesHint">Off = null (unlimited); when on, the same toolbox runs at most this many instances at once</sys:String>
-    <sys:String x:Key="Text_Bench_BindHint">Empty = auto-derived {toolkitId}/panel/{Id}/{main property}; when set, must stay within the panel/ namespace</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Completion edge (harness): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Binding: {0} → {1}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} completed · {1} failed</sys:String>

@@ -225,18 +225,13 @@ internal class BenchViewModel : ViewModelBase, IDisposable
             if (manual is null || ActiveToolkit is null)
                 return;
 
-            var instanceId = _benchService.Spawn(ActiveToolkit.GetId(), manual.Id, new { source = "bench-window" });
-            if (instanceId is null)
+            if (_benchService.Spawn(ActiveToolkit.GetId(), manual.Id, new { source = "bench-window" }) is null)
             {
                 SaveMessage = TranslateTextWithSuffix("Bench", "SpawnRejected") ?? "试运行失败：工具箱未挂载或已达最大实例数";
                 return;
             }
 
             SaveMessage = null;
-            _windowService.ShowPanelHostWindow();
-            // auto = present the instance panel; silent = only select the new instance (C19).
-            var openPanel = manual.Config?.Surface is null or "auto";
-            _windowService.FocusPanelInstance(instanceId, openPanel);
         });
 
         SaveCommand = ReactiveCommand.CreateFromTask(SaveWithFeedbackAsync);

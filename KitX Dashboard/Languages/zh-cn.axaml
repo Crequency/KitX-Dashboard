@@ -283,7 +283,6 @@
     <sys:String x:Key="Text_ToolKit_Subtitle">预览 — 未来将替代工作流管理界面</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">挂载</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">卸载</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">面板台</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">打开 Bench</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">新建 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">删除</sys:String>
@@ -326,14 +325,11 @@
     <sys:String x:Key="Text_Bench_PaletteSearch">搜索组件</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupTriggers">触发器</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupWorkflows">工作流</sys:String>
-    <sys:String x:Key="Text_Bench_PaletteGroupPanel">GUI 面板</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupComments">注释</sys:String>
     <sys:String x:Key="Text_Bench_TimerTrigger">定时</sys:String>
     <sys:String x:Key="Text_Bench_PluginEventTrigger">插件事件</sys:String>
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI 控件事件</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">新建工作流</sys:String>
-    <sys:String x:Key="Text_Bench_AddPanel">添加面板</sys:String>
-    <sys:String x:Key="Text_Bench_PanelNodeHint">控件事件经「UI 控件事件」触发器接入工作流；面板节点本身是声明节点，无连线口。</sys:String>
     <sys:String x:Key="Text_Bench_NoManualTrigger">试运行需要一个「手动触发」触发器——请从左侧原料库添加。</sys:String>
     <sys:String x:Key="Text_Bench_Close">关闭</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">注释节点</sys:String>
@@ -358,7 +354,7 @@
     <sys:String x:Key="Text_Bench_MaxInstancesLimit">限制最大实例数</sys:String>
     <sys:String x:Key="Text_Bench_Type">类型</sys:String>
     <sys:String x:Key="Text_Bench_Surface">呈现（Surface）</sys:String>
-    <sys:String x:Key="Text_Bench_SurfaceHint">auto = 自动呈现面板；silent = 后台运行并仅显示徽章</sys:String>
+    <sys:String x:Key="Text_Bench_SurfaceHint">auto = 前台运行；silent = 后台运行并仅显示徽章</sys:String>
     <sys:String x:Key="Text_Bench_TimerMode">定时模式</sys:String>
     <sys:String x:Key="Text_Bench_IntervalMs">周期（毫秒）</sys:String>
     <sys:String x:Key="Text_Bench_DueTimeMs">首次延迟 DueTimeMs</sys:String>
@@ -366,9 +362,9 @@
     <sys:String x:Key="Text_Bench_CronPreview">表达式：{0}</sys:String>
     <sys:String x:Key="Text_Bench_Plugin">插件</sys:String>
     <sys:String x:Key="Text_Bench_TriggerName">触发名（可空=任意）</sys:String>
-    <sys:String x:Key="Text_Bench_ControlId">面板控件 id</sys:String>
+    <sys:String x:Key="Text_Bench_ControlId">事件上报的控件 ID</sys:String>
+    <sys:String x:Key="Text_Bench_ControlIdHint">事件上报的控件 ID；留空表示匹配任意控件。</sys:String>
     <sys:String x:Key="Text_Bench_Event">事件</sys:String>
-    <sys:String x:Key="Text_Bench_PanelReserved">Panel（预留）</sys:String>
     <sys:String x:Key="Text_Bench_Bindings">绑定（结构化参数注入）</sys:String>
     <sys:String x:Key="Text_Bench_AddParam">+ 添加参数</sys:String>
     <sys:String x:Key="Text_Bench_AddBinding">添加绑定</sys:String>
@@ -376,14 +372,6 @@
     <sys:String x:Key="Text_Bench_WorkflowFile">文件</sys:String>
     <sys:String x:Key="Text_Bench_EditWorkflowContent">编辑工作流内容</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowDoubleClickHint">双击画布上的工作流节点也可打开 Workflow v6 编辑器</sys:String>
-    <sys:String x:Key="Text_Bench_Layout">布局</sys:String>
-    <sys:String x:Key="Text_Bench_ControlList">控件清单（可排序）</sys:String>
-    <sys:String x:Key="Text_Bench_AddControl">添加控件</sys:String>
-    <sys:String x:Key="Text_Bench_ControlProperties">控件属性</sys:String>
-    <sys:String x:Key="Text_Bench_StaticText">静态文本</sys:String>
-    <sys:String x:Key="Text_Bench_OptionsItems">Options.Items</sys:String>
-    <sys:String x:Key="Text_Bench_OptionsMax">Options.Max</sys:String>
-    <sys:String x:Key="Text_Bench_AddOption">+ 添加选项</sys:String>
     <sys:String x:Key="Text_Bench_CommentTextHint">注释文本保存到 toolkit.json；画布位置不持久化</sys:String>
     <sys:String x:Key="Text_Bench_EdgeInspector">完成边（WorkflowCompletion 触发器）</sys:String>
     <sys:String x:Key="Text_Bench_FromReadonly">From（只读前驱）</sys:String>
@@ -400,10 +388,6 @@
     <sys:String x:Key="Text_PanelHost_From">来自: {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummary">{0} 个实例 · {1} 运行中</sys:String>
     <!-- G26: Bench / PanelHost / Mermaid i18n additions -->
-    <sys:String x:Key="Text_Bench_UiIconPreview">图标</sys:String>
-    <sys:String x:Key="Text_Bench_UiInputPreview">输入</sys:String>
-    <sys:String x:Key="Text_Bench_UiLogPreview">日志</sys:String>
-    <sys:String x:Key="Text_Bench_UiDialogPreview">弹窗</sys:String>
     <sys:String x:Key="Text_Bench_SelectEdge">选择此边</sys:String>
     <sys:String x:Key="Text_Bench_DeleteEdge">删除此边</sys:String>
     <sys:String x:Key="Text_Bench_DeleteNode">删除节点</sys:String>
@@ -417,11 +401,9 @@
     <sys:String x:Key="Text_Bench_CronDay">日</sys:String>
     <sys:String x:Key="Text_Bench_CronMonth">月</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">周</sys:String>
-    <sys:String x:Key="Text_Bench_PanelReservedHint">Panel 字段为 GUI RFC 预留；当前面板 id 固定为工具箱主面板</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">点路径，如 input.name</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkOutput">点路径，如 model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">字面量</sys:String>
-    <sys:String x:Key="Text_Bench_Edit">编辑</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">工具箱已挂载，请先卸载后再保存配置</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">配置校验失败（{0} 项），保存被拒绝</sys:String>
     <sys:String x:Key="Text_Bench_Saved">已保存</sys:String>
@@ -436,10 +418,8 @@
     <sys:String x:Key="Text_Bench_ErrorBindingOnlyWorkflow">绑定连线只能连接到工作流节点</sys:String>
     <sys:String x:Key="Text_Bench_ErrorTriggerAlreadyBound">该触发器已绑定此工作流</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCompletionOnlyWorkflow">完成边只能连接到工作流节点</sys:String>
-    <sys:String x:Key="Text_Bench_ErrorPanelCannotBeSource">面板节点不能作为连线源</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCompletionEdgeExists">该完成边已存在</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCycleDetected">检测到环：完成边不得形成循环</sys:String>
-    <sys:String x:Key="Text_Bench_ErrorPanelAlreadyExists">该工具箱已有一个 GUI 面板</sys:String>
     <sys:String x:Key="Text_Bench_ErrorWorkflowAlreadyBound">该工作流已被此触发器绑定</sys:String>
     <sys:String x:Key="Text_Bench_ErrorWorkflowNameRequired">请先输入新工作流名称</sys:String>
     <sys:String x:Key="Text_Bench_ErrorFileServiceNotInjected">文件存储服务未注入，无法创建工作流文件</sys:String>
@@ -451,8 +431,6 @@
     <sys:String x:Key="Text_Bench_NodeKindWorkflow">工作流</sys:String>
     <sys:String x:Key="Text_Bench_ConnectorInput">输入</sys:String>
     <sys:String x:Key="Text_Bench_ConnectorOutput">输出</sys:String>
-    <sys:String x:Key="Text_Bench_NodeKindPanel">GUI 面板</sys:String>
-    <sys:String x:Key="Text_Bench_ControlCount">控件 {0}</sys:String>
     <sys:String x:Key="Text_Bench_NodeKindComment">注释</sys:String>
     <sys:String x:Key="Text_Bench_CommentDefaultText">双击右侧文本编辑注释</sys:String>
     <sys:String x:Key="Text_Bench_TimerModeOnce">单次</sys:String>
@@ -460,8 +438,6 @@
     <sys:String x:Key="Text_Bench_TriggerKindManual">手动</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindPlugin">插件: {0}</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_PaletteUIEventHint">请先添加 GUI 面板</sys:String>
-    <sys:String x:Key="Text_Bench_PalettePanelHint">至多 1 个（已添加）</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">形参名不能为空</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">形参名已存在</sys:String>
     <sys:String x:Key="Text_Bench_ParamWarning">完成边才可注入 $output；Spawn 绑定中此参数将不会解析</sys:String>
@@ -475,7 +451,6 @@
     <sys:String x:Key="Text_Bench_NotInstalled">未安装</sys:String>
     <sys:String x:Key="Text_Bench_RemoteSource">远程来源</sys:String>
     <sys:String x:Key="Text_Bench_MaxInstancesHint">关闭 = null（不限制）；开启后同一工具箱最多同时运行该数量的实例</sys:String>
-    <sys:String x:Key="Text_Bench_BindHint">留空 = 自动派生 {toolkitId}/panel/{Id}/{主属性}；填写时必须保持在 panel/ 命名空间内</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完成边（线束）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">绑定：{0} → {1}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完成 {0} · 失败 {1}</sys:String>

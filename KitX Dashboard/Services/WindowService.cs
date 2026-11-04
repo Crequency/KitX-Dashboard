@@ -23,9 +23,6 @@ public class WindowService : IWindowService
     public MainWindow? MainWindow { get; set; }
 
     public PluginsLaunchWindow? PluginsLaunchWindow { get; set; }
-
-    public PanelHostWindow? PanelHostWindow { get; set; }
-
     public Toolkit? BenchToolkit { get; set; }
 
     public List<Window> Windows { get; } = [];
@@ -50,7 +47,7 @@ public class WindowService : IWindowService
 
         Serilog.Log.Information(
             $"[WindowService] OpenBenchWindow: new window for '{toolkit.Meta?.Name}' ({id}) — " +
-            $"triggers:{toolkit.Triggers.Count} workflows:{toolkit.Workflows.Count} panel:{toolkit.UiPanel is not null}");
+            $"triggers:{toolkit.Triggers.Count} workflows:{toolkit.Workflows.Count} keys:{toolkit.Keys.Count}");
         BenchToolkit = toolkit;
         var window = new BenchWindow();
         BenchWindows[id] = window;
@@ -61,25 +58,6 @@ public class WindowService : IWindowService
         ShowWindow(window);
     }
 
-    /// <summary>Shows (and activates) the singleton Panel host window, creating it lazily.</summary>
-    public void ShowPanelHostWindow()
-    {
-        PanelHostWindow ??= new PanelHostWindow();
-        var win = PanelHostWindow;
-        if (win.IsVisible)
-        {
-            if (win.WindowState == WindowState.Minimized)
-                win.WindowState = WindowState.Normal;
-            win.Activate();
-            return;
-        }
-
-        // Workbench trial-run and other manual entries activate the panel host; auto
-        // surface requests have already set ShowActivated=false on their code path.
-        win.ShowActivated = true;
-        ShowWindow(win, MainWindow);
-        win.Activate();
-    }
 
     /// <summary>
     /// Opens (or reuses) the workflow editor for a workflow id, loading the given file.
@@ -155,19 +133,4 @@ public class WindowService : IWindowService
         where T : Window
         => ShowWindow(window, owner, showDialog: true);
 
-    /// <summary>Cross-window focus request routed to the Panel host's ViewModel (if shown).</summary>
-    public void FocusPanelInstance(string instanceId, bool openPanel)
-        => FocusPanelDataContext(PanelHostWindow?.DataContext, instanceId, openPanel);
-
-    /// <summary>
-    /// Testable routing seam: a focus request lands on whatever <see cref="PanelHostViewModel"/>
-    /// is exposed as the given DataContext. Kept static so a headless test can drive the routing
-    /// with a real <see cref="PanelHostViewModel"/> without constructing the <see cref="PanelHostWindow"/>
-    /// (which resolves its own DataContext via the DI container).
-    /// </summary>
-    internal static void FocusPanelDataContext(object? dataContext, string instanceId, bool openPanel)
-    {
-        if (dataContext is PanelHostViewModel ph)
-            ph.FocusInstance(instanceId, openPanel);
-    }
 }

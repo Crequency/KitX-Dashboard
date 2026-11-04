@@ -283,7 +283,6 @@
     <sys:String x:Key="Text_ToolKit_Subtitle">Предпросмотр — заменит страницу управления рабочими процессами</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">Монтировать</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">Размонтировать</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">Панель</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Открыть Bench</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">Новый ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Удалить</sys:String>
@@ -326,14 +325,11 @@
     <sys:String x:Key="Text_Bench_PaletteSearch">Search components</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupTriggers">Triggers</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupWorkflows">Workflows</sys:String>
-    <sys:String x:Key="Text_Bench_PaletteGroupPanel">GUI Panel</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupComments">Comments</sys:String>
     <sys:String x:Key="Text_Bench_TimerTrigger">Timer</sys:String>
     <sys:String x:Key="Text_Bench_PluginEventTrigger">Plugin event</sys:String>
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI control event</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">New workflow</sys:String>
-    <sys:String x:Key="Text_Bench_AddPanel">Add panel</sys:String>
-    <sys:String x:Key="Text_Bench_PanelNodeHint">События элементов подключаются к рабочим процессам через триггер «UI control event»; узел панели — это декларация, разъёмов у него нет.</sys:String>
     <sys:String x:Key="Text_Bench_NoManualTrigger">Для пробного запуска нужен триггер «Manual» — добавьте его из палитры слева.</sys:String>
     <sys:String x:Key="Text_Bench_Close">Закрыть</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">Comment node</sys:String>
@@ -358,7 +354,7 @@
     <sys:String x:Key="Text_Bench_MaxInstancesLimit">Limit max instances</sys:String>
     <sys:String x:Key="Text_Bench_Type">Type</sys:String>
     <sys:String x:Key="Text_Bench_Surface">Surface</sys:String>
-    <sys:String x:Key="Text_Bench_SurfaceHint">auto = present panel; silent = background with badge</sys:String>
+    <sys:String x:Key="Text_Bench_SurfaceHint">auto = запуск на переднем плане; silent = в фоне только со значком</sys:String>
     <sys:String x:Key="Text_Bench_TimerMode">Timer mode</sys:String>
     <sys:String x:Key="Text_Bench_IntervalMs">Interval (ms)</sys:String>
     <sys:String x:Key="Text_Bench_DueTimeMs">Initial delay DueTimeMs</sys:String>
@@ -366,9 +362,9 @@
     <sys:String x:Key="Text_Bench_CronPreview">Expression: {0}</sys:String>
     <sys:String x:Key="Text_Bench_Plugin">Plugin</sys:String>
     <sys:String x:Key="Text_Bench_TriggerName">Trigger name (empty = any)</sys:String>
-    <sys:String x:Key="Text_Bench_ControlId">Panel control id</sys:String>
+    <sys:String x:Key="Text_Bench_ControlId">Идентификатор элемента управления из события</sys:String>
+    <sys:String x:Key="Text_Bench_ControlIdHint">Идентификатор элемента управления из события; оставьте пустым для любого.</sys:String>
     <sys:String x:Key="Text_Bench_Event">Event</sys:String>
-    <sys:String x:Key="Text_Bench_PanelReserved">Panel (reserved)</sys:String>
     <sys:String x:Key="Text_Bench_Bindings">Bindings (structured param injection)</sys:String>
     <sys:String x:Key="Text_Bench_AddParam">+ Add parameter</sys:String>
     <sys:String x:Key="Text_Bench_AddBinding">Add binding</sys:String>
@@ -376,14 +372,6 @@
     <sys:String x:Key="Text_Bench_WorkflowFile">File</sys:String>
     <sys:String x:Key="Text_Bench_EditWorkflowContent">Edit workflow content</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowDoubleClickHint">Double-click a workflow node to open the v6 editor</sys:String>
-    <sys:String x:Key="Text_Bench_Layout">Layout</sys:String>
-    <sys:String x:Key="Text_Bench_ControlList">Controls (sortable)</sys:String>
-    <sys:String x:Key="Text_Bench_AddControl">Add control</sys:String>
-    <sys:String x:Key="Text_Bench_ControlProperties">Control properties</sys:String>
-    <sys:String x:Key="Text_Bench_StaticText">Static text</sys:String>
-    <sys:String x:Key="Text_Bench_OptionsItems">Options.Items</sys:String>
-    <sys:String x:Key="Text_Bench_OptionsMax">Options.Max</sys:String>
-    <sys:String x:Key="Text_Bench_AddOption">+ Add option</sys:String>
     <sys:String x:Key="Text_Bench_CommentTextHint">Comment text is saved to toolkit.json; canvas position is not persisted</sys:String>
     <sys:String x:Key="Text_Bench_EdgeInspector">Completion edge (WorkflowCompletion trigger)</sys:String>
     <sys:String x:Key="Text_Bench_FromReadonly">From (read-only predecessor)</sys:String>
@@ -400,10 +388,6 @@
     <sys:String x:Key="Text_PanelHost_From">From: {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummary">{0} instances · {1} running</sys:String>
     <!-- G26: Bench / PanelHost / Mermaid i18n additions -->
-    <sys:String x:Key="Text_Bench_UiIconPreview">Иконка</sys:String>
-    <sys:String x:Key="Text_Bench_UiInputPreview">Ввод</sys:String>
-    <sys:String x:Key="Text_Bench_UiLogPreview">Журнал</sys:String>
-    <sys:String x:Key="Text_Bench_UiDialogPreview">Диалог</sys:String>
     <sys:String x:Key="Text_Bench_SelectEdge">Выбрать это ребро</sys:String>
     <sys:String x:Key="Text_Bench_DeleteEdge">Удалить это ребро</sys:String>
     <sys:String x:Key="Text_Bench_DeleteNode">Удалить узел</sys:String>
@@ -417,11 +401,9 @@
     <sys:String x:Key="Text_Bench_CronDay">день</sys:String>
     <sys:String x:Key="Text_Bench_CronMonth">мес</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">дн.нед</sys:String>
-    <sys:String x:Key="Text_Bench_PanelReservedHint">Поле Panel зарезервировано для GUI RFC; текущий id панели зафиксирован на главной панели инструментов</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">точечный путь, напр. input.name</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkOutput">точечный путь, напр. model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">литерал</sys:String>
-    <sys:String x:Key="Text_Bench_Edit">Изменить</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">Инструмент смонтирован — отмонтируйте перед сохранением</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">Ошибка проверки конфигурации ({0} проблем), сохранение отклонено</sys:String>
     <sys:String x:Key="Text_Bench_Saved">Сохранено</sys:String>
@@ -436,10 +418,8 @@
     <sys:String x:Key="Text_Bench_ErrorBindingOnlyWorkflow">Рёбра привязки могут соединяться только с узлами рабочих процессов</sys:String>
     <sys:String x:Key="Text_Bench_ErrorTriggerAlreadyBound">Этот триггер уже привязан к этому рабочему процессу</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCompletionOnlyWorkflow">Рёбра завершения могут соединяться только с узлами рабочих процессов</sys:String>
-    <sys:String x:Key="Text_Bench_ErrorPanelCannotBeSource">Узел панели не может быть источником соединения</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCompletionEdgeExists">Это ребро завершения уже существует</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCycleDetected">Обнаружен цикл: рёбра завершения не должны образовывать петлю</sys:String>
-    <sys:String x:Key="Text_Bench_ErrorPanelAlreadyExists">У этого инструмента уже есть GUI-панель</sys:String>
     <sys:String x:Key="Text_Bench_ErrorWorkflowAlreadyBound">Этот рабочий процесс уже привязан к этому триггеру</sys:String>
     <sys:String x:Key="Text_Bench_ErrorWorkflowNameRequired">Сначала введите новое имя рабочего процесса</sys:String>
     <sys:String x:Key="Text_Bench_ErrorFileServiceNotInjected">Служба хранилища не внедрена, невозможно создать файл рабочего процесса</sys:String>
@@ -451,8 +431,6 @@
     <sys:String x:Key="Text_Bench_NodeKindWorkflow">Рабочий процесс</sys:String>
     <sys:String x:Key="Text_Bench_ConnectorInput">Вход</sys:String>
     <sys:String x:Key="Text_Bench_ConnectorOutput">Выход</sys:String>
-    <sys:String x:Key="Text_Bench_NodeKindPanel">GUI-панель</sys:String>
-    <sys:String x:Key="Text_Bench_ControlCount">{0} элементов</sys:String>
     <sys:String x:Key="Text_Bench_NodeKindComment">Комментарий</sys:String>
     <sys:String x:Key="Text_Bench_CommentDefaultText">Дважды щёлкните текст справа, чтобы изменить комментарий</sys:String>
     <sys:String x:Key="Text_Bench_TimerModeOnce">Одноразово</sys:String>
@@ -460,8 +438,6 @@
     <sys:String x:Key="Text_Bench_TriggerKindManual">Вручную</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindPlugin">Плагин: {0}</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_PaletteUIEventHint">Сначала добавьте GUI-панель</sys:String>
-    <sys:String x:Key="Text_Bench_PalettePanelHint">Не более 1 (уже добавлено)</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">Имя параметра не может быть пустым</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">Имя параметра уже существует</sys:String>
     <sys:String x:Key="Text_Bench_ParamWarning">$output можно внедрять только на рёбрах завершения; этот параметр не будет разрешён в привязках Spawn</sys:String>
@@ -475,7 +451,6 @@
     <sys:String x:Key="Text_Bench_NotInstalled">Не установлено</sys:String>
     <sys:String x:Key="Text_Bench_RemoteSource">Удалённый источник</sys:String>
     <sys:String x:Key="Text_Bench_MaxInstancesHint">Выкл = null (без ограничений); при включении тот же инструмент запускает не более этого числа экземпляров одновременно</sys:String>
-    <sys:String x:Key="Text_Bench_BindHint">Пусто = автоматически {toolkitId}/panel/{Id}/{основное свойство}; при заполнении должно оставаться в пространстве имён panel/</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Ребро завершения (жгут): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Привязка: {0} → {1}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">Завершено {0} · Сбоев {1}</sys:String>

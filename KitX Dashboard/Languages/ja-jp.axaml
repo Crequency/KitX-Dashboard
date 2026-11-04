@@ -283,7 +283,6 @@
     <sys:String x:Key="Text_ToolKit_Subtitle">プレビュー — 将来はワークフロー管理画面を置き換えます</sys:String>
     <sys:String x:Key="Text_ToolKit_Mount">マウント</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">アンマウント</sys:String>
-    <sys:String x:Key="Text_ToolKit_OpenPanelHost">パネル台</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Bench を開く</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">新規 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">削除</sys:String>
@@ -326,14 +325,11 @@
     <sys:String x:Key="Text_Bench_PaletteSearch">Search components</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupTriggers">Triggers</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupWorkflows">Workflows</sys:String>
-    <sys:String x:Key="Text_Bench_PaletteGroupPanel">GUI Panel</sys:String>
     <sys:String x:Key="Text_Bench_PaletteGroupComments">Comments</sys:String>
     <sys:String x:Key="Text_Bench_TimerTrigger">Timer</sys:String>
     <sys:String x:Key="Text_Bench_PluginEventTrigger">Plugin event</sys:String>
     <sys:String x:Key="Text_Bench_UIEventTrigger">UI control event</sys:String>
     <sys:String x:Key="Text_Bench_NewWorkflow">New workflow</sys:String>
-    <sys:String x:Key="Text_Bench_AddPanel">Add panel</sys:String>
-    <sys:String x:Key="Text_Bench_PanelNodeHint">コントロールイベントは「UI コントロールイベント」トリガーでワークフローに接続します。パネルノードは宣言でありコネクタはありません。</sys:String>
     <sys:String x:Key="Text_Bench_NoManualTrigger">試運転には「手動トリガー」が必要です。左のパレットから追加してください。</sys:String>
     <sys:String x:Key="Text_Bench_Close">閉じる</sys:String>
     <sys:String x:Key="Text_Bench_CommentNode">Comment node</sys:String>
@@ -358,7 +354,7 @@
     <sys:String x:Key="Text_Bench_MaxInstancesLimit">Limit max instances</sys:String>
     <sys:String x:Key="Text_Bench_Type">Type</sys:String>
     <sys:String x:Key="Text_Bench_Surface">Surface</sys:String>
-    <sys:String x:Key="Text_Bench_SurfaceHint">auto = present panel; silent = background with badge</sys:String>
+    <sys:String x:Key="Text_Bench_SurfaceHint">auto = 前面で実行、silent = バックグラウンド実行とバッジのみ</sys:String>
     <sys:String x:Key="Text_Bench_TimerMode">Timer mode</sys:String>
     <sys:String x:Key="Text_Bench_IntervalMs">Interval (ms)</sys:String>
     <sys:String x:Key="Text_Bench_DueTimeMs">Initial delay DueTimeMs</sys:String>
@@ -366,9 +362,9 @@
     <sys:String x:Key="Text_Bench_CronPreview">Expression: {0}</sys:String>
     <sys:String x:Key="Text_Bench_Plugin">Plugin</sys:String>
     <sys:String x:Key="Text_Bench_TriggerName">Trigger name (empty = any)</sys:String>
-    <sys:String x:Key="Text_Bench_ControlId">Panel control id</sys:String>
+    <sys:String x:Key="Text_Bench_ControlId">イベントが報告するコントロール ID</sys:String>
+    <sys:String x:Key="Text_Bench_ControlIdHint">イベントが報告するコントロール ID。空欄ならすべてに一致します。</sys:String>
     <sys:String x:Key="Text_Bench_Event">Event</sys:String>
-    <sys:String x:Key="Text_Bench_PanelReserved">Panel (reserved)</sys:String>
     <sys:String x:Key="Text_Bench_Bindings">Bindings (structured param injection)</sys:String>
     <sys:String x:Key="Text_Bench_AddParam">+ Add parameter</sys:String>
     <sys:String x:Key="Text_Bench_AddBinding">Add binding</sys:String>
@@ -376,14 +372,6 @@
     <sys:String x:Key="Text_Bench_WorkflowFile">File</sys:String>
     <sys:String x:Key="Text_Bench_EditWorkflowContent">Edit workflow content</sys:String>
     <sys:String x:Key="Text_Bench_WorkflowDoubleClickHint">Double-click a workflow node to open the v6 editor</sys:String>
-    <sys:String x:Key="Text_Bench_Layout">Layout</sys:String>
-    <sys:String x:Key="Text_Bench_ControlList">Controls (sortable)</sys:String>
-    <sys:String x:Key="Text_Bench_AddControl">Add control</sys:String>
-    <sys:String x:Key="Text_Bench_ControlProperties">Control properties</sys:String>
-    <sys:String x:Key="Text_Bench_StaticText">Static text</sys:String>
-    <sys:String x:Key="Text_Bench_OptionsItems">Options.Items</sys:String>
-    <sys:String x:Key="Text_Bench_OptionsMax">Options.Max</sys:String>
-    <sys:String x:Key="Text_Bench_AddOption">+ Add option</sys:String>
     <sys:String x:Key="Text_Bench_CommentTextHint">Comment text is saved to toolkit.json; canvas position is not persisted</sys:String>
     <sys:String x:Key="Text_Bench_EdgeInspector">Completion edge (WorkflowCompletion trigger)</sys:String>
     <sys:String x:Key="Text_Bench_FromReadonly">From (read-only predecessor)</sys:String>
@@ -400,10 +388,6 @@
     <sys:String x:Key="Text_PanelHost_From">From: {0}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummary">{0} instances · {1} running</sys:String>
     <!-- G26: Bench / PanelHost / Mermaid i18n additions -->
-    <sys:String x:Key="Text_Bench_UiIconPreview">アイコン</sys:String>
-    <sys:String x:Key="Text_Bench_UiInputPreview">入力</sys:String>
-    <sys:String x:Key="Text_Bench_UiLogPreview">ログ</sys:String>
-    <sys:String x:Key="Text_Bench_UiDialogPreview">ダイアログ</sys:String>
     <sys:String x:Key="Text_Bench_SelectEdge">このエッジを選択</sys:String>
     <sys:String x:Key="Text_Bench_DeleteEdge">このエッジを削除</sys:String>
     <sys:String x:Key="Text_Bench_DeleteNode">ノードを削除</sys:String>
@@ -417,11 +401,9 @@
     <sys:String x:Key="Text_Bench_CronDay">日</sys:String>
     <sys:String x:Key="Text_Bench_CronMonth">月</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">曜日</sys:String>
-    <sys:String x:Key="Text_Bench_PanelReservedHint">Panel フィールドは GUI RFC 用に予約されています。現在のパネル id はツールボックスのメインパネルに固定されています</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">ドットパス、例 input.name</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkOutput">ドットパス、例 model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">リテラル</sys:String>
-    <sys:String x:Key="Text_Bench_Edit">編集</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">ツールボックスはマウントされています。保存前にアンマウントしてください</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">設定検証に失敗（{0} 件）、保存は拒否されました</sys:String>
     <sys:String x:Key="Text_Bench_Saved">保存しました</sys:String>
@@ -436,10 +418,8 @@
     <sys:String x:Key="Text_Bench_ErrorBindingOnlyWorkflow">バインドエッジはワークフローノードにのみ接続できます</sys:String>
     <sys:String x:Key="Text_Bench_ErrorTriggerAlreadyBound">このトリガーは既にこのワークフローにバインドされています</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCompletionOnlyWorkflow">完了エッジはワークフローノードにのみ接続できます</sys:String>
-    <sys:String x:Key="Text_Bench_ErrorPanelCannotBeSource">パネルノードは接続元にできません</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCompletionEdgeExists">この完了エッジは既に存在します</sys:String>
     <sys:String x:Key="Text_Bench_ErrorCycleDetected">循環を検出：完了エッジはループを形成してはいけません</sys:String>
-    <sys:String x:Key="Text_Bench_ErrorPanelAlreadyExists">このツールボックスには既に GUI パネルがあります</sys:String>
     <sys:String x:Key="Text_Bench_ErrorWorkflowAlreadyBound">このワークフローは既にこのトリガーにバインドされています</sys:String>
     <sys:String x:Key="Text_Bench_ErrorWorkflowNameRequired">先に新しいワークフロー名を入力してください</sys:String>
     <sys:String x:Key="Text_Bench_ErrorFileServiceNotInjected">ファイルストアサービスが注入されていないため、ワークフローファイルを作成できません</sys:String>
@@ -451,8 +431,6 @@
     <sys:String x:Key="Text_Bench_NodeKindWorkflow">ワークフロー</sys:String>
     <sys:String x:Key="Text_Bench_ConnectorInput">入力</sys:String>
     <sys:String x:Key="Text_Bench_ConnectorOutput">出力</sys:String>
-    <sys:String x:Key="Text_Bench_NodeKindPanel">GUI パネル</sys:String>
-    <sys:String x:Key="Text_Bench_ControlCount">{0} コントロール</sys:String>
     <sys:String x:Key="Text_Bench_NodeKindComment">コメント</sys:String>
     <sys:String x:Key="Text_Bench_CommentDefaultText">右側のテキストをダブルクリックしてコメントを編集</sys:String>
     <sys:String x:Key="Text_Bench_TimerModeOnce">単発</sys:String>
@@ -460,8 +438,6 @@
     <sys:String x:Key="Text_Bench_TriggerKindManual">手動</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindPlugin">プラグイン: {0}</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_PaletteUIEventHint">先に GUI パネルを追加してください</sys:String>
-    <sys:String x:Key="Text_Bench_PalettePanelHint">最大 1 個（追加済み）</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">パラメータ名は空にできません</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">パラメータ名は既に存在します</sys:String>
     <sys:String x:Key="Text_Bench_ParamWarning">$output は完了エッジでのみ注入できます。Spawn バインドではこのパラメータは解決されません</sys:String>
@@ -475,7 +451,6 @@
     <sys:String x:Key="Text_Bench_NotInstalled">未インストール</sys:String>
     <sys:String x:Key="Text_Bench_RemoteSource">リモートソース</sys:String>
     <sys:String x:Key="Text_Bench_MaxInstancesHint">オフ = null（無制限）；オンにすると同じツールボックスは同時にこの数のインスタンスまで実行します</sys:String>
-    <sys:String x:Key="Text_Bench_BindHint">空 = 自動派生 {toolkitId}/panel/{Id}/{主プロパティ}；設定時は panel/ 名前空間内に保つ必要があります</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完了エッジ（ハーネス）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">バインド：{0} → {1}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完了 {0} · 失敗 {1}</sys:String>

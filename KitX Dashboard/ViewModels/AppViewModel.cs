@@ -97,26 +97,6 @@ internal class AppViewModel : ViewModelBase
             win.Activate();
         });
 
-        OpenPanelHostCommand = ReactiveCommand.Create(() =>
-        {
-            _windowService.PanelHostWindow ??= new();
-
-            var win = _windowService.PanelHostWindow;
-
-            if (win.IsVisible)
-            {
-                win.Hide();
-
-                return;
-            }
-
-            // Manual tray entry may activate; auto panel-open requests set this to false.
-            win.ShowActivated = true;
-            win.Show();
-
-            win.Activate();
-        });
-
         RestartCommand = ReactiveCommand.Create(() =>
         {
             ConstantTable.Restarting = true;
@@ -272,6 +252,4 @@ internal class AppViewModel : ViewModelBase
     internal ReactiveCommand<Unit, Unit>? ExitCommand { get; set; }
 
     internal ReactiveCommand<Unit, Unit>? PluginLauncherCommand { get; set; }
-
-    internal ReactiveCommand<Unit, Unit>? OpenPanelHostCommand { get; set; }
 }
