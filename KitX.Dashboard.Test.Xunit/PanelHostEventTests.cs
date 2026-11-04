@@ -12,7 +12,7 @@ using KitX.ToolKit.Contract;
 using KitX.ToolKit.Contract.Events;
 using KitX.ToolKit.Instances;
 using KitX.ToolKit.Contract.Declaration;
-using KitX.ToolKit.Validation;
+using KitX.ToolKit.Contract;
 using Xunit;
 
 namespace KitX.Dashboard.Test.Xunit;

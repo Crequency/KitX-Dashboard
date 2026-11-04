@@ -10,6 +10,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Common.BasicHelper.Utils.Extensions;
+using KitX.Core;
 using KitX.Core.Announcement;
 using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Configuration;
@@ -20,7 +21,7 @@ using KitX.Dashboard.Services;
 using KitX.Dashboard.Utils;
 using KitX.WorkflowV6.Hosting;
 using KitX.ToolKit.Hosting;
-using KitX.ToolKit.Instances;
+using KitX.ToolKit.Contract;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.ViewModels.Maintain;
 using KitX.Dashboard.ViewModels.Pages;
@@ -66,7 +67,12 @@ public partial class App : Application
         // PluginHostAdapter for the reserved "KitX.DataStore" name); trigger registration is
         // handled by the unified ToolkitInstanceManager-based trigger system (WorkflowV6
         // hosts the trigger runtime, ToolKit owns the instance lifecycle).
-        services.AddKitXToolKit();
+        //
+        // The storage root is passed explicitly (ADR-0010 D2): AddKitXToolKit has no default
+        // because a path derived from the assembly location moves with the deployment layout.
+        // Here it is the Dashboard's own Data directory, resolved from ConstantTable so the
+        // single place that knows where the app keeps its data stays the single place.
+        services.AddKitXToolKit(Path.Combine(ConstantTable.DataPath.GetFullPath(), "Toolkits"));
 
         // Startup-only performance knobs. Both extensions register a default
         // options singleton with AddSingleton (Add, not TryAdd — last registration

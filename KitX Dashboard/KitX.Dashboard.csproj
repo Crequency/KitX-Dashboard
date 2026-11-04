@@ -126,7 +126,7 @@
         <ProjectReference Include="..\..\..\KitX Standard\KitX Core Contracts\KitX.Core.Contract\KitX.Core.Contract.csproj" />
         <ProjectReference Include="..\..\KitX Core\KitX.Core\KitX.Core.csproj" />
         <ProjectReference Include="..\..\KitX Workflow\KitX.WorkflowV6\KitX.WorkflowV6.csproj" />
-        <ProjectReference Include="..\..\KitX Workflow\KitX.ToolKit\KitX.ToolKit.csproj" />
+        <ProjectReference Include="..\..\KitX Workflow\KitX.ToolKit.Hosting\KitX.ToolKit.Hosting.csproj" />
     <ProjectReference Include="..\..\KitX Workflow\KitX.ToolKit.Contract\KitX.ToolKit.Contract.csproj" />
         <ProjectReference Include="..\KitX Dashboard Assets\KitX.Dashboard.Assets.csproj" />
         <ProjectReference Include="..\KitX Dashboard Fonts\KitX.Dashboard.Fonts.csproj" />

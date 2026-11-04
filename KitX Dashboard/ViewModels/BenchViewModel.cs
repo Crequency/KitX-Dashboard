@@ -8,7 +8,6 @@ using KitX.Core.Contract.Plugin;
 using KitX.Dashboard.Services;
 using KitX.ToolKit.Contract;
 using KitX.ToolKit.Contract.Declaration;
-using KitX.ToolKit.Visualization;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
