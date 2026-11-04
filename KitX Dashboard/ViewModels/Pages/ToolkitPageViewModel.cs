@@ -25,7 +25,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
 
     private readonly ObservableCollection<ToolkitCardVM> _cards = [];
 
-    public ToolkitPageViewModel(IToolkitService toolkitService, IBenchService benchService, IEventService eventService, IWindowService windowService)
+    public ToolkitPageViewModel(IToolkitService toolkitService, IRunService runService, IEventService eventService, IWindowService windowService)
     {
         _toolkitService = toolkitService;
         _eventService = eventService;
@@ -86,7 +86,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     public override void InitEvents()
     {
         _toolkitService.ToolkitListChanged += OnToolkitListChanged;
-        _toolkitService.BenchEvent += OnBenchEventDispatch;
+        _toolkitService.ToolkitEvent += OnToolkitEventDispatch;
         _eventService.Subscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 
@@ -101,16 +101,16 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     /// Bench events can arrive on Timer/workflow background threads; marshal to the UI
     /// thread before touching card VMs/observable state (design invariant).
     /// </summary>
-    private void OnBenchEventDispatch(object? sender, KitX.ToolKit.Contract.Events.BenchEvent e)
+    private void OnToolkitEventDispatch(object? sender, KitX.ToolKit.Contract.Events.ToolkitEvent e)
     {
         var dispatcher = Avalonia.Threading.Dispatcher.UIThread;
         if (dispatcher.CheckAccess())
-            OnBenchEvent(sender, e);
+            OnToolkitEvent(sender, e);
         else
-            dispatcher.Post(() => OnBenchEvent(sender, e));
+            dispatcher.Post(() => OnToolkitEvent(sender, e));
     }
 
-    private void OnBenchEvent(object? sender, KitX.ToolKit.Contract.Events.BenchEvent e)
+    private void OnToolkitEvent(object? sender, KitX.ToolKit.Contract.Events.ToolkitEvent e)
     {
         foreach (var card in _cards)
             card.RunningInstances = _toolkitService.Instances.Count(i =>
@@ -130,7 +130,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         _toolkitService.ToolkitListChanged -= OnToolkitListChanged;
-        _toolkitService.BenchEvent -= OnBenchEventDispatch;
+        _toolkitService.ToolkitEvent -= OnToolkitEventDispatch;
         _eventService.Unsubscribe(EventNames.LanguageChanged, OnLanguageChanged);
     }
 }

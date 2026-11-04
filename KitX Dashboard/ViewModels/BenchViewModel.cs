@@ -19,12 +19,12 @@ namespace KitX.Dashboard.ViewModels;
 /// Shows the config of the ToolKit selected on the management page (read from
 /// <see cref="IWindowService.BenchToolkit"/>), hosts the editable canvas
 /// (<see cref="BenchCanvasViewModel"/>), saves via <see cref="IToolkitService.UpdateToolkit"/>
-/// (hard validation), and spawns a manual run via <see cref="IBenchService"/>.
+/// (hard validation), and spawns a manual run via <see cref="IRunService"/>.
 /// </summary>
 internal class BenchViewModel : ViewModelBase, IDisposable
 {
     private readonly IToolkitService _toolkitService;
-    private readonly IBenchService _benchService;
+    private readonly IRunService _runService;
     private readonly IEventService _eventService;
     private readonly IToolkitWorkflowFileStore _fileStore;
     private readonly IWindowService _windowService;
@@ -36,14 +36,14 @@ internal class BenchViewModel : ViewModelBase, IDisposable
 
     public BenchViewModel(
         IToolkitService toolkitService,
-        IBenchService benchService,
+        IRunService runService,
         IEventService eventService,
         IPluginService pluginService,
         IToolkitWorkflowFileStore fileStore,
         IWindowService windowService)
     {
         _toolkitService = toolkitService;
-        _benchService = benchService;
+        _runService = runService;
         _eventService = eventService;
         _fileStore = fileStore;
         _windowService = windowService;
@@ -225,7 +225,7 @@ internal class BenchViewModel : ViewModelBase, IDisposable
             if (manual is null || ActiveToolkit is null)
                 return;
 
-            if (_benchService.Spawn(ActiveToolkit.GetId(), manual.Id, new { source = "bench-window" }) is null)
+            if (_runService.Spawn(ActiveToolkit.GetId(), manual.Id, new { source = "bench-window" }) is null)
             {
                 SaveMessage = TranslateTextWithSuffix("Bench", "SpawnRejected") ?? "试运行失败：工具箱未挂载或已达最大实例数";
                 return;
