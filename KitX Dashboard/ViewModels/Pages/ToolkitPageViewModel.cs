@@ -114,7 +114,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     {
         foreach (var card in _cards)
             card.RunningInstances = _toolkitService.Instances.Count(i =>
-                i.ToolkitId == card.Model.GetId() && i.Status == KitX.ToolKit.Contract.InstanceStatus.Running);
+                i.ToolkitId == card.Model.GetId() && i.IsRunning);
     }
 
     private void RefreshCards()

@@ -478,6 +478,12 @@
     <sys:String x:Key="Text_Bench_BindHint">空 = 自動派生 {toolkitId}/panel/{Id}/{主プロパティ}；設定時は panel/ 名前空間内に保つ必要があります</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完了エッジ（ハーネス）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">バインド：{0} → {1}</sys:String>
+    <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完了 {0} · 失敗 {1}</sys:String>
+
+    <sys:String x:Key="Text_PanelHost_InstanceRunning">実行中</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceSucceeded">成功</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceFailed">失敗</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceCancelled">キャンセル</sys:String>
     <sys:String x:Key="Text_PanelHost_RunningCount">{0} 実行中</sys:String>
     <sys:String x:Key="Text_PanelHost_Ok">OK</sys:String>
     <sys:String x:Key="Text_PanelHost_PickerSelectRequired">ツールボックスと手動トリガーを選択してください</sys:String>

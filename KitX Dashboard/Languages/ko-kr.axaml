@@ -478,6 +478,12 @@
     <sys:String x:Key="Text_Bench_BindHint">비움 = 자동 파생 {toolkitId}/panel/{Id}/{주 속성}; 설정 시 panel/ 네임스페이스 내에 유지해야 합니다</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">완료 엣지(하네스): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">바인딩: {0} → {1}</sys:String>
+    <sys:String x:Key="Text_PanelHost_RunSummaryDetail">완료 {0} · 실패 {1}</sys:String>
+
+    <sys:String x:Key="Text_PanelHost_InstanceRunning">실행 중</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceSucceeded">성공</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceFailed">실패</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceCancelled">취소됨</sys:String>
     <sys:String x:Key="Text_PanelHost_RunningCount">{0} 실행 중</sys:String>
     <sys:String x:Key="Text_PanelHost_Ok">확인</sys:String>
     <sys:String x:Key="Text_PanelHost_PickerSelectRequired">도구 상자와 수동 트리거를 선택하세요</sys:String>

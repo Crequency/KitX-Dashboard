@@ -478,6 +478,12 @@
     <sys:String x:Key="Text_Bench_BindHint">留空 = 自动派生 {toolkitId}/panel/{Id}/{主属性}；填写时必须保持在 panel/ 命名空间内</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完成边（线束）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">绑定：{0} → {1}</sys:String>
+    <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完成 {0} · 失败 {1}</sys:String>
+
+    <sys:String x:Key="Text_PanelHost_InstanceRunning">运行中</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceSucceeded">成功</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceFailed">失败</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceCancelled">已取消</sys:String>
     <sys:String x:Key="Text_PanelHost_RunningCount">{0} 运行中</sys:String>
     <sys:String x:Key="Text_PanelHost_Ok">确定</sys:String>
     <sys:String x:Key="Text_PanelHost_PickerSelectRequired">请选择工具箱与手动触发器</sys:String>

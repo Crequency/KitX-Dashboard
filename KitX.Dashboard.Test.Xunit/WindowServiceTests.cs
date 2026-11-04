@@ -78,7 +78,7 @@ public class WindowServiceTests
     // ── helpers ──
 
     private static InstanceSnapshot Snapshot(string instanceId)
-        => new(instanceId, "tk", "manual", Initiator.Unknown, InstanceStatus.Running, DateTimeOffset.UtcNow, null, 0, 0, 0);
+        => new(instanceId, "tk", "manual", Initiator.Unknown, DateTimeOffset.UtcNow, null, 0, 0, 0);
 
     private static Toolkit Toolkit() => new()
     {
@@ -100,6 +100,10 @@ public class WindowServiceTests
         public bool DeleteToolkit(string toolkitId) => false;
         public void Mount(string toolkitId) { }
         public void Unmount(string toolkitId) { }
+        public void Disable(string toolkitId) { }
+        public void Enable(string toolkitId) { }
+        public int Uninstall(string toolkitId) => 0;
+        public LifecycleState? GetLifecycleState(string toolkitId) => null;
         public IReadOnlyList<string> MountedToolkitIds { get; } = [];
         public bool IsMounted(string toolkitId) => false;
         public IReadOnlyList<InstanceSnapshot> Instances => instances;

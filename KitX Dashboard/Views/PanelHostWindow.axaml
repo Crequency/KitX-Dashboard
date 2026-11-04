@@ -36,7 +36,9 @@
         </Style>
     </Window.Styles>
     <Window.Resources>
-        <converters:InstanceStatusToBrushConverter x:Key="InstanceStatusToBrushConverter"/>
+        <converters:InstanceOutcomeToBrushConverter x:Key="InstanceOutcomeToBrushConverter"/>
+        <converters:InstanceOutcomeToTextConverter x:Key="InstanceOutcomeToTextConverter"/>
+        <converters:InstanceRunsSummaryConverter x:Key="InstanceRunsSummaryConverter"/>
         <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter"/>
         <converters:TakeFirstCharactersConverter x:Key="TakeFirstCharactersConverter"/>
         <converters:LocalizedFormatConverter x:Key="LocalizedFormatConverter"/>
@@ -232,18 +234,20 @@
                                                         <DockPanel>
                                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                                 <Ellipse Width="9" Height="9" VerticalAlignment="Center"
-                                                                         Fill="{Binding Status, Converter={StaticResource InstanceStatusToBrushConverter}}"/>
+                                                                         Fill="{Binding Outcome, Converter={StaticResource InstanceOutcomeToBrushConverter}}"/>
                                                                 <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding InstanceId}"
                                                                            TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding InstanceId}"/>
                                                                 <Border Padding="4,0" CornerRadius="6" Background="#338A8A8A"
-                                                                        IsVisible="{Binding IsSilent}">
+                                                                        IsVisible="{Binding Surface, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                                                                     <TextBlock FontSize="9" Text="silent" Foreground="White"/>
                                                                 </Border>
                                                             </StackPanel>
-                                                            <TextBlock DockPanel.Dock="Right" FontSize="10" Text="{Binding Status}"
-                                                                       Foreground="{Binding Status, Converter={StaticResource InstanceStatusToBrushConverter}}"/>
+                                                            <TextBlock DockPanel.Dock="Right" FontSize="10"
+                                                                       Text="{Binding Outcome, Converter={StaticResource InstanceOutcomeToTextConverter}}"
+                                                                       Foreground="{Binding Outcome, Converter={StaticResource InstanceOutcomeToBrushConverter}}"/>
                                                         </DockPanel>
-                                                        <TextBlock FontSize="11" Opacity="0.7" Text="{Binding RunSummary}"/>
+                                                        <TextBlock FontSize="11" Opacity="0.7"
+                                                                   Text="{Binding Converter={StaticResource InstanceRunsSummaryConverter}}"/>
                                                         <TextBlock FontSize="11" Opacity="0.7"
                                                                    Text="{Binding Initiator.DeviceName, Converter={StaticResource LocalizedFormatConverter}, ConverterParameter=Text_PanelHost_From}"
                                                                    IsVisible="{Binding Initiator.DeviceName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"

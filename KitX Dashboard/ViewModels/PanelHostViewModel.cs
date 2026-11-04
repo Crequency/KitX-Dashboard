@@ -250,7 +250,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
 
     internal string Summary => string.Format(
         TranslateTextWithSuffix("PanelHost", "RunSummary") ?? "{0} 个实例 · {1} 运行中",
-        Instances.Count, Instances.Count(i => i.Status == KitX.ToolKit.Contract.InstanceStatus.Running));
+        Instances.Count, Instances.Count(i => i.IsRunning));
 
     internal ReactiveCommand<InstanceSnapshot, Unit>? EndInstanceCommand { get; set; }
     internal ReactiveCommand<Unit, Unit>? EndAllCommand { get; set; }
@@ -266,7 +266,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         {
             if (snapshot is null)
                 return Unit.Default;
-            if (snapshot.Status == KitX.ToolKit.Contract.InstanceStatus.Running)
+            if (snapshot.IsRunning)
             {
                 var result = await MessageBoxManager.GetMessageBoxStandard(
                     TranslateTextWithSuffix("PanelHost", "EndInstanceTitle") ?? "结束实例",
@@ -579,7 +579,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             var vm = new InstanceGroupVM(group.Key, toolkit?.Meta.Name ?? group.Key);
             foreach (var snapshot in group)
                 vm.Instances.Add(snapshot);
-            vm.RunningCount = group.Count(i => i.Status == KitX.ToolKit.Contract.InstanceStatus.Running);
+            vm.RunningCount = group.Count(i => i.IsRunning);
             vm.RaisePropertyChanged(nameof(InstanceGroupVM.HasRunning));
             InstanceGroups.Add(vm);
         }
@@ -607,8 +607,15 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         UpsertInstance(snapshot);
     }
 
-    /// <summary>Transition one row to <see cref="KitX.ToolKit.Contract.InstanceStatus.Completed"/>
-    /// in place (retained for later review, never removed).</summary>
+    /// <summary>Marks one row as no longer running, in place (retained for later review, never
+    /// removed).</summary>
+    /// <remarks>
+    /// The service is re-read first because the snapshot that triggered
+    /// <c>InstanceCompletedEvent</c> may already carry a verdict. If it does not — the service
+    /// list has not caught up — the row is given <see cref="RunOutcome.Succeeded"/>, which is what
+    /// "the completion event fired and the service still says running" means in practice. The
+    /// previous version hard-coded a <c>Status</c> for the same reason.
+    /// </remarks>
     private void MarkInstanceCompleted(string instanceId)
     {
         var snapshot = _toolkitService.Instances.FirstOrDefault(i => i.InstanceId == instanceId);
@@ -617,8 +624,8 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             RefreshInstances();
             return;
         }
-        if (snapshot.Status != KitX.ToolKit.Contract.InstanceStatus.Completed)
-            snapshot = snapshot with { Status = KitX.ToolKit.Contract.InstanceStatus.Completed };
+        if (snapshot.IsRunning)
+            snapshot = snapshot with { Outcome = RunOutcome.Succeeded };
         UpsertInstance(snapshot);
     }
 
@@ -697,7 +704,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
 
     private void RecomputeGroupRunning(InstanceGroupVM group)
     {
-        group.RunningCount = group.Instances.Count(i => i.Status == KitX.ToolKit.Contract.InstanceStatus.Running);
+        group.RunningCount = group.Instances.Count(i => i.IsRunning);
         group.RaisePropertyChanged(nameof(InstanceGroupVM.HasRunning));
     }
 

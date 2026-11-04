@@ -478,6 +478,12 @@
     <sys:String x:Key="Text_Bench_BindHint">Пусто = автоматически {toolkitId}/panel/{Id}/{основное свойство}; при заполнении должно оставаться в пространстве имён panel/</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Ребро завершения (жгут): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Привязка: {0} → {1}</sys:String>
+    <sys:String x:Key="Text_PanelHost_RunSummaryDetail">Завершено {0} · Сбоев {1}</sys:String>
+
+    <sys:String x:Key="Text_PanelHost_InstanceRunning">Выполняется</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceSucceeded">Успешно</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceFailed">Сбой</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceCancelled">Отменено</sys:String>
     <sys:String x:Key="Text_PanelHost_RunningCount">{0} выполняется</sys:String>
     <sys:String x:Key="Text_PanelHost_Ok">ОК</sys:String>
     <sys:String x:Key="Text_PanelHost_PickerSelectRequired">Выберите инструмент и ручной триггер</sys:String>

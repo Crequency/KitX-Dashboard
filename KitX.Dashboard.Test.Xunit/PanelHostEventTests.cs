@@ -27,12 +27,15 @@ public class PanelHostEventTests
     private static InstanceSnapshot Snapshot(
         string instanceId,
         string toolkitId = "tk",
-        InstanceStatus status = InstanceStatus.Running,
+        RunOutcome? outcome = null,
         int activeRuns = 0,
         int completedRuns = 0,
         int failedRuns = 0)
-        => new(instanceId, toolkitId, "manual", Initiator.Unknown, status, DateTimeOffset.UtcNow, null,
-            activeRuns, completedRuns, failedRuns);
+        => new(instanceId, toolkitId, "manual", Initiator.Unknown, DateTimeOffset.UtcNow, null,
+            activeRuns, completedRuns, failedRuns)
+        {
+            Outcome = outcome,
+        };
 
     private static Toolkit Toolkit() => new()
     {
@@ -247,7 +250,7 @@ public class PanelHostEventTests
         service.Raise(RunCompleted("b-1", "run-x", true, null));
 
         // Instance completed → row retained with Completed status.
-        service.Replace(Snapshot("a-2", toolkitId: "tk", status: InstanceStatus.Completed, completedRuns: 2));
+        service.Replace(Snapshot("a-2", toolkitId: "tk", outcome: RunOutcome.Succeeded, completedRuns: 2));
         service.Raise(Completed("tk", "a-2"));
 
         // Instance cancelled → row removed; its group deleted when empty.
@@ -266,8 +269,8 @@ public class PanelHostEventTests
     private static void AssertEquivalentTree(PanelHostViewModel a, PanelHostViewModel b)
     {
         Assert.Equal(
-            a.Instances.Select(i => (i.InstanceId, i.ToolkitId, i.Status, i.ActiveRuns, i.CompletedRuns, i.FailedRuns)),
-            b.Instances.Select(i => (i.InstanceId, i.ToolkitId, i.Status, i.ActiveRuns, i.CompletedRuns, i.FailedRuns)));
+            a.Instances.Select(i => (i.InstanceId, i.ToolkitId, i.Outcome, i.ActiveRuns, i.CompletedRuns, i.FailedRuns)),
+            b.Instances.Select(i => (i.InstanceId, i.ToolkitId, i.Outcome, i.ActiveRuns, i.CompletedRuns, i.FailedRuns)));
 
         Assert.Equal(
             a.InstanceGroups.Select(g => (g.ToolkitId, g.Name, g.RunningCount, string.Join(",", g.Instances.Select(i => i.InstanceId)))),
@@ -303,6 +306,10 @@ public class PanelHostEventTests
         public bool DeleteToolkit(string toolkitId) => false;
         public void Mount(string toolkitId) { }
         public void Unmount(string toolkitId) { }
+        public void Disable(string toolkitId) { }
+        public void Enable(string toolkitId) { }
+        public int Uninstall(string toolkitId) => 0;
+        public LifecycleState? GetLifecycleState(string toolkitId) => null;
         public IReadOnlyList<string> MountedToolkitIds { get; } = [];
         public bool IsMounted(string toolkitId) => false;
         public IReadOnlyList<InstanceSnapshot> Instances => instances;

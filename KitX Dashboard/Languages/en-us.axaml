@@ -478,6 +478,12 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_BindHint">Empty = auto-derived {toolkitId}/panel/{Id}/{main property}; when set, must stay within the panel/ namespace</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Completion edge (harness): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Binding: {0} → {1}</sys:String>
+    <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} completed · {1} failed</sys:String>
+
+    <sys:String x:Key="Text_PanelHost_InstanceRunning">Running</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceSucceeded">Succeeded</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceFailed">Failed</sys:String>
+    <sys:String x:Key="Text_PanelHost_InstanceCancelled">Cancelled</sys:String>
     <sys:String x:Key="Text_PanelHost_RunningCount">{0} running</sys:String>
     <sys:String x:Key="Text_PanelHost_Ok">OK</sys:String>
     <sys:String x:Key="Text_PanelHost_PickerSelectRequired">Select a toolbox and a manual trigger</sys:String>
