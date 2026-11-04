@@ -2,8 +2,8 @@ using System;
 using System.Linq;
 using System.Reactive;
 using KitX.Dashboard.Services;
-using KitX.ToolKit.Contracts;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract;
+using KitX.ToolKit.Contract.Declaration;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages;
@@ -27,7 +27,7 @@ public sealed class ToolkitCardVM : ReactiveObject
         _toolkitService = toolkitService;
         _windowService = windowService;
         _isMounted = toolkitService.IsMounted(model.GetId());
-        _runningInstances = toolkitService.Instances.Count(i => i.ToolkitId == model.GetId() && i.Status == KitX.ToolKit.Instances.InstanceStatus.Running);
+        _runningInstances = toolkitService.Instances.Count(i => i.ToolkitId == model.GetId() && i.Status == KitX.ToolKit.Contract.InstanceStatus.Running);
         ToggleMountCommand = ReactiveCommand.Create(ToggleMount);
         OpenBenchCommand = ReactiveCommand.Create(OpenBench);
     }

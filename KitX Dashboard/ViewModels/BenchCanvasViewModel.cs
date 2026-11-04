@@ -11,8 +11,8 @@ using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KitX.Core.Contract.Plugin;
-using KitX.ToolKit.Contracts;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract;
+using KitX.ToolKit.Contract.Declaration;
 using KitX.ToolKit.Validation;
 using NodifyM.Avalonia.ViewModelBase;
 

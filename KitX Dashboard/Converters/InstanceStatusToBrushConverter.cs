@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
-using KitX.ToolKit.Instances;
+using KitX.ToolKit.Contract;
 
 namespace KitX.Dashboard.Converters;
 

@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using KitX.Core.Contract.Device;
 using KitX.Shared.CSharp.Plugin;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract.Declaration;
 
 namespace KitX.Dashboard.Services;
 

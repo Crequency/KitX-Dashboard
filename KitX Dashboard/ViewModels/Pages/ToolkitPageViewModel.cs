@@ -4,9 +4,9 @@ using System.Linq;
 using System.Reactive;
 using KitX.Core.Contract.Event;
 using KitX.Dashboard.Services;
-using KitX.ToolKit.Contracts;
-using KitX.ToolKit.Contracts.Events;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract;
+using KitX.ToolKit.Contract.Events;
+using KitX.ToolKit.Contract.Declaration;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels.Pages;
@@ -101,7 +101,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
     /// Bench events can arrive on Timer/workflow background threads; marshal to the UI
     /// thread before touching card VMs/observable state (design invariant).
     /// </summary>
-    private void OnBenchEventDispatch(object? sender, KitX.ToolKit.Contracts.Events.BenchEvent e)
+    private void OnBenchEventDispatch(object? sender, KitX.ToolKit.Contract.Events.BenchEvent e)
     {
         var dispatcher = Avalonia.Threading.Dispatcher.UIThread;
         if (dispatcher.CheckAccess())
@@ -110,11 +110,11 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
             dispatcher.Post(() => OnBenchEvent(sender, e));
     }
 
-    private void OnBenchEvent(object? sender, KitX.ToolKit.Contracts.Events.BenchEvent e)
+    private void OnBenchEvent(object? sender, KitX.ToolKit.Contract.Events.BenchEvent e)
     {
         foreach (var card in _cards)
             card.RunningInstances = _toolkitService.Instances.Count(i =>
-                i.ToolkitId == card.Model.GetId() && i.Status == KitX.ToolKit.Instances.InstanceStatus.Running);
+                i.ToolkitId == card.Model.GetId() && i.Status == KitX.ToolKit.Contract.InstanceStatus.Running);
     }
 
     private void RefreshCards()

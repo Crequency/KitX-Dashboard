@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using KitX.ToolKit.Contracts.Events;
+using KitX.ToolKit.Contract.Events;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;

@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using KitX.Core.Contract.Plugin;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract.Declaration;
 using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;

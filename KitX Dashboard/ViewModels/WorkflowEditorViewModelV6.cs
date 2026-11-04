@@ -13,7 +13,7 @@ using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Plugin;
 using KitX.Core.Contract.Workflow;
 using KitX.Dashboard.Services;
-using KitX.ToolKit.Contracts;
+using KitX.ToolKit.Contract;
 using KitX.WorkflowV6.Backend.Debugging;
 using KitX.WorkflowV6.Builtin;
 using KitX.WorkflowV6.Ir;

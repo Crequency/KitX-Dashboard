@@ -1,8 +1,8 @@
 using System;
 using System.Text.Json;
 using KitX.Dashboard.ViewModels;
-using KitX.ToolKit.Contracts;
-using KitX.ToolKit.Contracts.Events;
+using KitX.ToolKit.Contract;
+using KitX.ToolKit.Contract.Events;
 using Xunit;
 
 namespace KitX.Dashboard.Test.Xunit;

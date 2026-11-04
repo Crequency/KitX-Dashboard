@@ -5,7 +5,7 @@ using Avalonia.Controls;
 using KitX.Core.Contract.Event;
 using KitX.Dashboard.ViewModels;
 using KitX.Dashboard.Views;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract.Declaration;
 
 namespace KitX.Dashboard.Services;
 

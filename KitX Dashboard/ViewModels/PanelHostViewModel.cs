@@ -7,9 +7,9 @@ using System.Text.Json;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Event;
 using KitX.Dashboard.Services;
-using KitX.ToolKit.Contracts;
-using KitX.ToolKit.Contracts.Events;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract;
+using KitX.ToolKit.Contract.Events;
+using KitX.ToolKit.Contract.Declaration;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using ReactiveUI;
@@ -250,7 +250,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
 
     internal string Summary => string.Format(
         TranslateTextWithSuffix("PanelHost", "RunSummary") ?? "{0} 个实例 · {1} 运行中",
-        Instances.Count, Instances.Count(i => i.Status == KitX.ToolKit.Instances.InstanceStatus.Running));
+        Instances.Count, Instances.Count(i => i.Status == KitX.ToolKit.Contract.InstanceStatus.Running));
 
     internal ReactiveCommand<InstanceSnapshot, Unit>? EndInstanceCommand { get; set; }
     internal ReactiveCommand<Unit, Unit>? EndAllCommand { get; set; }
@@ -266,7 +266,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         {
             if (snapshot is null)
                 return Unit.Default;
-            if (snapshot.Status == KitX.ToolKit.Instances.InstanceStatus.Running)
+            if (snapshot.Status == KitX.ToolKit.Contract.InstanceStatus.Running)
             {
                 var result = await MessageBoxManager.GetMessageBoxStandard(
                     TranslateTextWithSuffix("PanelHost", "EndInstanceTitle") ?? "结束实例",
@@ -579,7 +579,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             var vm = new InstanceGroupVM(group.Key, toolkit?.Meta.Name ?? group.Key);
             foreach (var snapshot in group)
                 vm.Instances.Add(snapshot);
-            vm.RunningCount = group.Count(i => i.Status == KitX.ToolKit.Instances.InstanceStatus.Running);
+            vm.RunningCount = group.Count(i => i.Status == KitX.ToolKit.Contract.InstanceStatus.Running);
             vm.RaisePropertyChanged(nameof(InstanceGroupVM.HasRunning));
             InstanceGroups.Add(vm);
         }
@@ -607,7 +607,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
         UpsertInstance(snapshot);
     }
 
-    /// <summary>Transition one row to <see cref="KitX.ToolKit.Instances.InstanceStatus.Completed"/>
+    /// <summary>Transition one row to <see cref="KitX.ToolKit.Contract.InstanceStatus.Completed"/>
     /// in place (retained for later review, never removed).</summary>
     private void MarkInstanceCompleted(string instanceId)
     {
@@ -617,8 +617,8 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
             RefreshInstances();
             return;
         }
-        if (snapshot.Status != KitX.ToolKit.Instances.InstanceStatus.Completed)
-            snapshot = snapshot with { Status = KitX.ToolKit.Instances.InstanceStatus.Completed };
+        if (snapshot.Status != KitX.ToolKit.Contract.InstanceStatus.Completed)
+            snapshot = snapshot with { Status = KitX.ToolKit.Contract.InstanceStatus.Completed };
         UpsertInstance(snapshot);
     }
 
@@ -697,7 +697,7 @@ internal class PanelHostViewModel : ViewModelBase, IDisposable
 
     private void RecomputeGroupRunning(InstanceGroupVM group)
     {
-        group.RunningCount = group.Instances.Count(i => i.Status == KitX.ToolKit.Instances.InstanceStatus.Running);
+        group.RunningCount = group.Instances.Count(i => i.Status == KitX.ToolKit.Contract.InstanceStatus.Running);
         group.RaisePropertyChanged(nameof(InstanceGroupVM.HasRunning));
     }
 

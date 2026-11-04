@@ -4,8 +4,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Text.Json;
-using KitX.ToolKit.Contracts;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract;
+using KitX.ToolKit.Contract.Declaration;
 using Material.Icons;
 using ReactiveUI;
 

@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Avalonia;
 using KitX.Dashboard.ViewModels;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract.Declaration;
 using Xunit;
 
 namespace KitX.Dashboard.Test.Xunit;

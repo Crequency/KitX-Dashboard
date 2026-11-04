@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Avalonia.Controls;
 using KitX.Dashboard.Views;
-using KitX.ToolKit.Models;
+using KitX.ToolKit.Contract.Declaration;
 
 namespace KitX.Dashboard.Services;
 
