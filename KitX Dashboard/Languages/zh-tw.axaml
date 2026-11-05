@@ -402,7 +402,6 @@
     <sys:String x:Key="Text_Bench_CronMonth">月</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">週</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">點路徑，如 input.name</sys:String>
-    <sys:String x:Key="Text_Bench_PathWatermarkOutput">點路徑，如 model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">字面量</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">工具箱已掛載，請先解除安裝後再儲存設定</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">設定校驗失敗（{0} 項），儲存被拒絕</sys:String>
@@ -440,9 +439,8 @@
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI: {0}</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">形參名不能為空</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">形參名已存在</sys:String>
-    <sys:String x:Key="Text_Bench_ParamWarning">完成邊才可注入 $output；Spawn 綁定中此參數將不會解析</sys:String>
+    <sys:String x:Key="Text_Bench_ParamWarning">$output 已廢棄：完成邊只表達拓撲，此參數將被忽略。請改為 $payload 或刪除</sys:String>
     <sys:String x:Key="Text_Bench_SourcePayloadPath">$payload 路徑</sys:String>
-    <sys:String x:Key="Text_Bench_SourceOutputPath">$output 路徑</sys:String>
     <sys:String x:Key="Text_Bench_SourceLiteral">字面量</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathEmpty">路徑不能為空</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathDotDot">路徑不能包含 ..</sys:String>

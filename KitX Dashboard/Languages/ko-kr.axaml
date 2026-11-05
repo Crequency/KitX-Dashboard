@@ -402,7 +402,6 @@
     <sys:String x:Key="Text_Bench_CronMonth">월</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">요일</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">점 경로, 예: input.name</sys:String>
-    <sys:String x:Key="Text_Bench_PathWatermarkOutput">점 경로, 예: model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">리터럴</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">도구 상자가 마운트되어 있습니다. 저장 전에 마운트를 해제하세요</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">구성 검증 실패({0}개), 저장이 거부되었습니다</sys:String>
@@ -440,9 +439,8 @@
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI: {0}</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">매개변수 이름은 비워둘 수 없습니다</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">매개변수 이름이 이미 존재합니다</sys:String>
-    <sys:String x:Key="Text_Bench_ParamWarning">$output은 완료 엣지에서만 주입할 수 있습니다. Spawn 바인딩에서는 이 매개변수가 해석되지 않습니다</sys:String>
+    <sys:String x:Key="Text_Bench_ParamWarning">$output은 폐기되었습니다. 완료 엣지는 토폴로지만 전달하므로 이 매개변수는 무시됩니다. $payload로 바꾸거나 삭제하세요</sys:String>
     <sys:String x:Key="Text_Bench_SourcePayloadPath">$payload 경로</sys:String>
-    <sys:String x:Key="Text_Bench_SourceOutputPath">$output 경로</sys:String>
     <sys:String x:Key="Text_Bench_SourceLiteral">리터럴</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathEmpty">경로는 비워둘 수 없습니다</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathDotDot">경로에 ..을 포함할 수 없습니다</sys:String>

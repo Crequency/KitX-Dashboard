@@ -9,35 +9,39 @@ using ReactiveUI;
 
 namespace KitX.Dashboard.ViewModels;
 
-/// <summary>The three structured parameter-injection source forms (Bench UX v2 §4.4).</summary>
+/// <summary>The two structured parameter-injection source forms a trigger binding can use.</summary>
+/// <remarks>
+/// There is no <c>$output</c> form. A completion edge carries topology only (design Q44): the
+/// node it starts reads the predecessor's whole output packet, and the scheduler hands that
+/// binding no parameters at all. Keeping an <c>$output</c> option in the editor would offer a
+/// choice the compiler now rejects (<c>trigger.binding.params-on-completion</c>).
+/// </remarks>
 public enum BenchParamSourceKind
 {
     Payload,
-    Output,
     Literal,
 }
 
 /// <summary>
 /// One row of the structured parameter-injection map. It is an observable façade over a
-/// <see cref="TriggerBinding.Params"/> entry; the persisted wire format stays
-/// <c>$payload.x</c> / <c>$output.x</c> / literal — only the interaction shape changes.
+/// <see cref="TriggerBinding.Params"/> entry; the persisted wire format is
+/// <c>$payload.x</c> or a literal — only the interaction shape changes.
 /// </summary>
 public sealed class BenchParamRowVM : ReactiveObject
 {
     private readonly TriggerBinding _binding;
     private readonly Action _onEdit;
-    private readonly bool _completionBinding;
+    private bool _legacyOutputReference;
     private string _name = string.Empty;
     private BenchParamSourceKind _sourceKind;
     private string _path = string.Empty;
     private string _literalValue = string.Empty;
     private string? _error;
 
-    public BenchParamRowVM(TriggerBinding binding, string name, string? rawValue, bool completionBinding, Action onEdit)
+    public BenchParamRowVM(TriggerBinding binding, string name, string? rawValue, Action onEdit)
     {
         _binding = binding;
         _name = name;
-        _completionBinding = completionBinding;
         _onEdit = onEdit;
         (_sourceKind, _path, _literalValue) = Split(rawValue);
     }
@@ -80,6 +84,8 @@ public sealed class BenchParamRowVM : ReactiveObject
             if (_sourceKind == value)
                 return;
             _sourceKind = value;
+            // Choosing a form replaces whatever was stored, so the legacy flag stops applying.
+            _legacyOutputReference = false;
             Persist();
             this.RaisePropertyChanged();
             NotifyKindChanged();
@@ -124,7 +130,6 @@ public sealed class BenchParamRowVM : ReactiveObject
     public string RawValue => SourceKind switch
     {
         BenchParamSourceKind.Payload => "$payload." + _path,
-        BenchParamSourceKind.Output => "$output." + _path,
         _ => _literalValue,
     };
 
@@ -135,16 +140,21 @@ public sealed class BenchParamRowVM : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _error, value);
     }
 
-    /// <summary><c>$output</c> is only valid on WorkflowCompletion bindings (Bench UX v2 §4.4).</summary>
-    public bool HasWarning => SourceKind == BenchParamSourceKind.Output && !_completionBinding;
+    /// <summary>
+    /// A legacy <c>$output.x</c> param survives only long enough to be reported: the compiler
+    /// rejects it outright (<c>trigger.binding.output-retired</c>), so the editor must not
+    /// quietly rewrite it into something else either. It becomes a literal row that keeps the
+    /// original text, and <see cref="ValidatePath"/> is not consulted for literals — the error
+    /// surfaces from the toolkit's own diagnostic instead.
+    /// </summary>
+    public bool HasLegacyOutputReference => _legacyOutputReference;
 
-    public string? Warning => HasWarning
-        ? ViewModelBase.TranslateTextWithSuffix("Bench", "ParamWarning") ?? "完成边才可注入 $output；Spawn 绑定中此参数将不会解析"
+    public string? Warning => HasLegacyOutputReference
+        ? ViewModelBase.TranslateTextWithSuffix("Bench", "ParamWarning") ?? "完成边不再带参数；$output 已废弃，请改用 $payload 或删除该参数"
         : null;
 
     public static IReadOnlyList<string> SourceOptions => [
         ViewModelBase.TranslateTextWithSuffix("Bench", "SourcePayloadPath") ?? "$payload 路径",
-        ViewModelBase.TranslateTextWithSuffix("Bench", "SourceOutputPath") ?? "$output 路径",
         ViewModelBase.TranslateTextWithSuffix("Bench", "SourceLiteral") ?? "字面量",
     ];
 
@@ -155,15 +165,12 @@ public sealed class BenchParamRowVM : ReactiveObject
     }
 
     public bool IsPayload => SourceKind == BenchParamSourceKind.Payload;
-    public bool IsOutput => SourceKind == BenchParamSourceKind.Output;
     public bool IsLiteral => SourceKind == BenchParamSourceKind.Literal;
 
     public void NotifyKindChanged()
     {
         this.RaisePropertyChanged(nameof(IsPayload));
-        this.RaisePropertyChanged(nameof(IsOutput));
         this.RaisePropertyChanged(nameof(IsLiteral));
-        this.RaisePropertyChanged(nameof(HasWarning));
         this.RaisePropertyChanged(nameof(Warning));
     }
 
@@ -175,14 +182,20 @@ public sealed class BenchParamRowVM : ReactiveObject
         _binding.Params[key] = RawValue;
     }
 
-    private static (BenchParamSourceKind, string, string) Split(string? raw)
+    private (BenchParamSourceKind, string, string) Split(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
             return (BenchParamSourceKind.Literal, string.Empty, string.Empty);
         if (raw.StartsWith("$payload.", StringComparison.Ordinal))
             return (BenchParamSourceKind.Payload, raw["$payload.".Length..], string.Empty);
         if (raw.StartsWith("$output.", StringComparison.Ordinal))
-            return (BenchParamSourceKind.Output, raw["$output.".Length..], string.Empty);
+        {
+            // Pre-Q44 configs can still contain these. Keep the text verbatim so the row shows
+            // what is actually stored and the compiler's rejection can be fixed by hand — a
+            // silent rewrite would change the user's data behind their back.
+            _legacyOutputReference = true;
+            return (BenchParamSourceKind.Literal, string.Empty, raw);
+        }
         return (BenchParamSourceKind.Literal, string.Empty, raw);
     }
 
@@ -210,10 +223,10 @@ public sealed class BenchBindingRowVM : ReactiveObject
     {
         Model = model;
         WorkflowOptions = workflowOptions;
-        IsCompletionBinding = completionBinding;
+        ShowParams = !completionBinding;
         _onEdit = onEdit;
         ParamRows = new ObservableCollection<BenchParamRowVM>(
-            model.Params.Select(kv => new BenchParamRowVM(model, kv.Key, kv.Value, completionBinding, onEdit)));
+            model.Params.Select(kv => new BenchParamRowVM(model, kv.Key, kv.Value, onEdit)));
     }
 
     public TriggerBinding Model { get; }
@@ -222,6 +235,14 @@ public sealed class BenchBindingRowVM : ReactiveObject
     public ObservableCollection<string> WorkflowOptions { get; }
 
     public ObservableCollection<BenchParamRowVM> ParamRows { get; }
+
+    /// <summary>
+    /// False on a completion binding: the scheduler hands it no parameters at all, so the
+    /// inspector offers no param editor there. Any params already in a legacy config still
+    /// appear in <see cref="ParamRows"/> — they are shown so the operator can see and delete
+    /// them, and the compiler reports them as <c>trigger.binding.params-on-completion</c>.
+    /// </summary>
+    public bool ShowParams { get; }
 
     public string SelectedWorkflow
     {
@@ -251,11 +272,13 @@ public sealed class BenchBindingRowVM : ReactiveObject
     /// <summary>Adds one empty literal parameter row (the inspector may pre-fill it).</summary>
     public void AddParamRow()
     {
+        if (!ShowParams)
+            return;
         var name = "param" + (Model.Params.Count + 1);
         while (Model.Params.ContainsKey(name))
             name += "_";
         Model.Params[name] = string.Empty;
-        ParamRows.Add(new BenchParamRowVM(Model, name, string.Empty, IsCompletionBinding, _onEdit));
+        ParamRows.Add(new BenchParamRowVM(Model, name, string.Empty, _onEdit));
         _onEdit();
     }
 
@@ -268,7 +291,6 @@ public sealed class BenchBindingRowVM : ReactiveObject
         _onEdit();
     }
 
-    private bool IsCompletionBinding { get; set; }
 }
 
 /// <summary>A free-form tag chip editor façade.</summary>

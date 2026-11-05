@@ -402,7 +402,6 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_CronMonth">month</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">dow</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">dot path, e.g. input.name</sys:String>
-    <sys:String x:Key="Text_Bench_PathWatermarkOutput">dot path, e.g. model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">literal</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">The toolbox is mounted — unmount before saving</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">Config validation failed ({0} issues), save rejected</sys:String>
@@ -440,9 +439,8 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI: {0}</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">Parameter name cannot be empty</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">Parameter name already exists</sys:String>
-    <sys:String x:Key="Text_Bench_ParamWarning">$output can only be injected on completion edges; this parameter will not resolve in Spawn bindings</sys:String>
+    <sys:String x:Key="Text_Bench_ParamWarning">$output is retired: a completion edge carries topology only, so this parameter will be ignored. Switch it to $payload or delete it</sys:String>
     <sys:String x:Key="Text_Bench_SourcePayloadPath">$payload path</sys:String>
-    <sys:String x:Key="Text_Bench_SourceOutputPath">$output path</sys:String>
     <sys:String x:Key="Text_Bench_SourceLiteral">Literal</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathEmpty">Path cannot be empty</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathDotDot">Path cannot contain ..</sys:String>

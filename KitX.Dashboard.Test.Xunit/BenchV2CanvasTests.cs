@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia;
 using KitX.Dashboard.ViewModels;
@@ -23,7 +24,7 @@ public class BenchV2CanvasTests
     }
 
     [Fact]
-    public void StructuredParamRows_ParseAndPersist_AllThreeSources()
+    public void StructuredParamRows_ParseAndPersist_TheTwoLiveSources()
     {
         var binding = new TriggerBinding
         {
@@ -36,39 +37,67 @@ public class BenchV2CanvasTests
             },
         };
 
-        var rows = binding.Params.Select(kv => new BenchParamRowVM(binding, kv.Key, kv.Value, true, () => { })).ToList();
+        var rows = binding.Params.Select(kv => new BenchParamRowVM(binding, kv.Key, kv.Value, () => { })).ToList();
 
         Assert.Equal(3, rows.Count);
         Assert.Equal(BenchParamSourceKind.Payload, rows[0].SourceKind);
         Assert.Equal("input", rows[0].Path);
-        Assert.Equal(BenchParamSourceKind.Output, rows[1].SourceKind);
-        Assert.Equal("model", rows[1].Path);
         Assert.Equal(BenchParamSourceKind.Literal, rows[2].SourceKind);
         Assert.Equal("zh-CN", rows[2].LiteralValue);
 
+        // A legacy $output.x param is not silently rewritten: it is shown verbatim as a literal
+        // (so the operator sees what is really stored) and flagged so it can be fixed by hand.
+        Assert.Equal(BenchParamSourceKind.Literal, rows[1].SourceKind);
+        Assert.Equal("$output.model", rows[1].LiteralValue);
+        Assert.True(rows[1].HasLegacyOutputReference);
+
         rows[0].Path = "payload.name";
-        rows[1].Path = "result.score";
         rows[2].LiteralValue = "zh-TW";
 
         Assert.Equal("$payload.payload.name", binding.Params["text"]);
-        Assert.Equal("$output.result.score", binding.Params["model"]);
+        Assert.Equal("$output.model", binding.Params["model"]);
         Assert.Equal("zh-TW", binding.Params["lang"]);
     }
 
     [Fact]
-    public void StructuredParamRows_RejectInvalidPath_AndWarnForOutputOnSpawnBinding()
+    public void StructuredParamRows_RejectInvalidPath_AndFlagLegacyOutputReference()
     {
         var binding = new TriggerBinding { Workflow = "wf1" };
-        var output = new BenchParamRowVM(binding, "x", "$output.a", false, () => { });
-        Assert.True(output.HasWarning);
+        var legacy = new BenchParamRowVM(binding, "x", "$output.a", () => { });
+        Assert.True(legacy.HasLegacyOutputReference);
+        Assert.NotNull(legacy.Warning);
 
-        output.SourceKind = BenchParamSourceKind.Payload;
-        output.Path = "a..b";
-        Assert.NotNull(output.Error);
+        // Switching the row to a payload path clears the legacy flag and starts validating.
+        legacy.SourceKind = BenchParamSourceKind.Payload;
+        Assert.False(legacy.HasLegacyOutputReference);
+        Assert.Null(legacy.Warning);
 
-        output.Path = "ok.name";
-        Assert.Null(output.Error);
+        legacy.Path = "a..b";
+        Assert.NotNull(legacy.Error);
+
+        legacy.Path = "ok.name";
+        Assert.Null(legacy.Error);
         Assert.Equal("$payload.ok.name", binding.Params["x"]);
+    }
+
+    /// <summary>
+    /// The inspector offers no <c>$output</c> form at all, and the completion-binding editor
+    /// hides its "add param" button — a completion edge carries topology only (design Q44).
+    /// </summary>
+    [Fact]
+    public void SourceOptions_HaveNoOutputForm_AndCompletionBindingsHideTheParamEditor()
+    {
+        Assert.DoesNotContain(
+            BenchParamRowVM.SourceOptions,
+            option => option.Contains("$output", StringComparison.Ordinal));
+
+        var binding = new TriggerBinding { Workflow = "wf1" };
+        var completion = new BenchBindingRowVM(binding, new ObservableCollection<string>(), true, () => { });
+        Assert.False(completion.ShowParams);
+
+        var triggerTime = new BenchBindingRowVM(new TriggerBinding { Workflow = "wf2" },
+            new ObservableCollection<string>(), false, () => { });
+        Assert.True(triggerTime.ShowParams);
     }
 
     [Fact]

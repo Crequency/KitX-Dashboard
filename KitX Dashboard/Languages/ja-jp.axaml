@@ -402,7 +402,6 @@
     <sys:String x:Key="Text_Bench_CronMonth">月</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">曜日</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">ドットパス、例 input.name</sys:String>
-    <sys:String x:Key="Text_Bench_PathWatermarkOutput">ドットパス、例 model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">リテラル</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">ツールボックスはマウントされています。保存前にアンマウントしてください</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">設定検証に失敗（{0} 件）、保存は拒否されました</sys:String>
@@ -440,9 +439,8 @@
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI: {0}</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">パラメータ名は空にできません</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">パラメータ名は既に存在します</sys:String>
-    <sys:String x:Key="Text_Bench_ParamWarning">$output は完了エッジでのみ注入できます。Spawn バインドではこのパラメータは解決されません</sys:String>
+    <sys:String x:Key="Text_Bench_ParamWarning">$output は廃止されました。完了エッジはトポロジのみを運ぶため、このパラメータは無視されます。$payload に変更するか削除してください</sys:String>
     <sys:String x:Key="Text_Bench_SourcePayloadPath">$payload パス</sys:String>
-    <sys:String x:Key="Text_Bench_SourceOutputPath">$output パス</sys:String>
     <sys:String x:Key="Text_Bench_SourceLiteral">リテラル</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathEmpty">パスは空にできません</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathDotDot">パスに .. は含められません</sys:String>

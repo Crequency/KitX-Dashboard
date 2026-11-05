@@ -402,7 +402,6 @@
     <sys:String x:Key="Text_Bench_CronMonth">мес</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">дн.нед</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">точечный путь, напр. input.name</sys:String>
-    <sys:String x:Key="Text_Bench_PathWatermarkOutput">точечный путь, напр. model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">литерал</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">Инструмент смонтирован — отмонтируйте перед сохранением</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">Ошибка проверки конфигурации ({0} проблем), сохранение отклонено</sys:String>
@@ -440,9 +439,8 @@
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI: {0}</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">Имя параметра не может быть пустым</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">Имя параметра уже существует</sys:String>
-    <sys:String x:Key="Text_Bench_ParamWarning">$output можно внедрять только на рёбрах завершения; этот параметр не будет разрешён в привязках Spawn</sys:String>
+    <sys:String x:Key="Text_Bench_ParamWarning">$output устарел: ребро завершения передаёт только топологию, поэтому этот параметр будет проигнорирован. Переключите на $payload или удалите его</sys:String>
     <sys:String x:Key="Text_Bench_SourcePayloadPath">путь $payload</sys:String>
-    <sys:String x:Key="Text_Bench_SourceOutputPath">путь $output</sys:String>
     <sys:String x:Key="Text_Bench_SourceLiteral">Литерал</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathEmpty">Путь не может быть пустым</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathDotDot">Путь не может содержать ..</sys:String>

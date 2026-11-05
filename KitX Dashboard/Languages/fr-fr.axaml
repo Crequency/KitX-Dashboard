@@ -402,7 +402,6 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_CronMonth">mois</sys:String>
     <sys:String x:Key="Text_Bench_CronDow">jsem</sys:String>
     <sys:String x:Key="Text_Bench_PathWatermarkInput">chemin pointé, ex. input.name</sys:String>
-    <sys:String x:Key="Text_Bench_PathWatermarkOutput">chemin pointé, ex. model</sys:String>
     <sys:String x:Key="Text_Bench_LiteralWatermark">littéral</sys:String>
     <sys:String x:Key="Text_Bench_SaveMountedRejected">La boîte à outils est montée — démontez-la avant d'enregistrer</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">Échec de la validation ({0} problèmes), enregistrement refusé</sys:String>
@@ -440,9 +439,8 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_TriggerKindUI">UI : {0}</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameEmpty">Le nom du paramètre ne peut pas être vide</sys:String>
     <sys:String x:Key="Text_Bench_ErrorParamNameExists">Le nom du paramètre existe déjà</sys:String>
-    <sys:String x:Key="Text_Bench_ParamWarning">$output ne peut être injecté que sur les arêtes de complétion ; ce paramètre ne sera pas résolu dans les liaisons Spawn</sys:String>
+    <sys:String x:Key="Text_Bench_ParamWarning">$output est obsolète : une arête de complétion ne porte que la topologie, donc ce paramètre sera ignoré. Passez-le en $payload ou supprimez-le</sys:String>
     <sys:String x:Key="Text_Bench_SourcePayloadPath">chemin $payload</sys:String>
-    <sys:String x:Key="Text_Bench_SourceOutputPath">chemin $output</sys:String>
     <sys:String x:Key="Text_Bench_SourceLiteral">Littéral</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathEmpty">Le chemin ne peut pas être vide</sys:String>
     <sys:String x:Key="Text_Bench_ErrorPathDotDot">Le chemin ne peut pas contenir ..</sys:String>

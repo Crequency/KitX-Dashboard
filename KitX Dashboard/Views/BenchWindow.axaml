@@ -517,10 +517,9 @@
                                                                                 CommandParameter="{Binding}"/>
                                                                     </Grid>
                                                                     <TextBox Text="{Binding Path}" Watermark="{DynamicResource Text_Bench_PathWatermarkInput}" IsVisible="{Binding IsPayload}"/>
-                                                                    <TextBox Text="{Binding Path}" Watermark="{DynamicResource Text_Bench_PathWatermarkOutput}" IsVisible="{Binding IsOutput}"/>
                                                                     <TextBox Text="{Binding LiteralValue}" Watermark="{DynamicResource Text_Bench_LiteralWatermark}" IsVisible="{Binding IsLiteral}"/>
                                                                     <TextBlock Foreground="Red" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                                                                    <TextBlock Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="{Binding Warning}" IsVisible="{Binding HasWarning}"/>
+                                                                    <TextBlock Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="{Binding Warning}" IsVisible="{Binding HasLegacyOutputReference}"/>
                                                                 </StackPanel>
                                                             </Border>
                                                         </DataTemplate>
@@ -604,6 +603,11 @@
                                                         Command="{Binding $parent[Window].DataContext.Canvas.RemoveBindingCommand}"
                                                         CommandParameter="{Binding}"/>
                                             </DockPanel>
+                                            <!-- A completion edge carries topology only (design Q44):
+                                                 the started node reads the predecessor's whole
+                                                 output packet, so this binding takes no params.
+                                                 Legacy params still render below so they can be
+                                                 seen and deleted; the compiler rejects them. -->
                                             <ItemsControl ItemsSource="{Binding ParamRows}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
@@ -616,14 +620,16 @@
                                                                         Command="{Binding $parent[Window].DataContext.Canvas.RemoveParamRowCommand}"
                                                                         CommandParameter="{Binding}"/>
                                                             </Grid>
-                                                            <TextBox Text="{Binding Path}" IsVisible="{Binding IsOutput}"/>
+                                                            <TextBox Text="{Binding Path}" IsVisible="{Binding IsPayload}"/>
                                                             <TextBox Text="{Binding LiteralValue}" IsVisible="{Binding IsLiteral}"/>
                                                             <TextBlock Foreground="Red" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                                            <TextBlock Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="{Binding Warning}" IsVisible="{Binding HasLegacyOutputReference}"/>
                                                         </StackPanel>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                             <Button Content="{DynamicResource Text_Bench_AddParam}"
+                                                    IsVisible="{Binding ShowParams}"
                                                     Command="{Binding $parent[Window].DataContext.Canvas.AddParamRowCommand}"
                                                     CommandParameter="{Binding}"/>
                                         </StackPanel>
