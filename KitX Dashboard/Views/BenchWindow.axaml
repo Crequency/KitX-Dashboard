@@ -409,10 +409,7 @@
 
                         <StackPanel Spacing="4">
                             <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Text_Bench_RunParameters}"/>
-                            <ToggleSwitch IsChecked="{Binding Canvas.ToolkitInspector.MaxInstancesEnabled}" Content="{DynamicResource Text_Bench_MaxInstancesLimit}"/>
-                            <NumericUpDown Minimum="1" Value="{Binding Canvas.ToolkitInspector.MaxInstancesValue}"
-                                           IsVisible="{Binding Canvas.ToolkitInspector.MaxInstancesEnabled}"/>
-                            <TextBlock Classes="hint" Text="{Binding Canvas.ToolkitInspector.MaxInstancesHint}"/>
+                            <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_MaxConcurrentFlowsHint}"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -425,12 +422,6 @@
                         <StackPanel>
                             <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Type}"/>
                             <TextBlock FontSize="13" FontWeight="Medium" Text="{Binding Canvas.SelectedTrigger.Type}"/>
-                        </StackPanel>
-                        <StackPanel>
-                            <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Surface}"/>
-                            <ComboBox ItemsSource="{Binding Canvas.SurfaceOptions}"
-                                      SelectedItem="{Binding Canvas.SelectedTriggerSurface}"/>
-                            <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_SurfaceHint}"/>
                         </StackPanel>
 
                         <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsTimerSelected}">
@@ -474,11 +465,6 @@
                         </StackPanel>
 
                         <StackPanel Spacing="8" IsVisible="{Binding Canvas.IsUIEventSelected}">
-                            <StackPanel>
-                                <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_ControlId}"/>
-                                <TextBox Text="{Binding Canvas.SelectedTriggerControl}"/>
-                                <TextBlock Classes="hint" Text="{DynamicResource Text_Bench_ControlIdHint}"/>
-                            </StackPanel>
                             <StackPanel>
                                 <TextBlock FontSize="12" Opacity="0.6" Text="{DynamicResource Text_Bench_Event}"/>
                                 <ComboBox ItemsSource="{Binding Canvas.EventOptions}"

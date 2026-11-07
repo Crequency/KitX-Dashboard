@@ -33,7 +33,7 @@ public class BenchClosedLoopTests
             },
             Triggers =
             {
-                new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig { Surface = "auto" } },
+                new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig() },
                 new Trigger { Id = "trg2", Type = TriggerType.WorkflowCompletion, Config = new TriggerConfig { From = "wf1" } },
             },
         };
@@ -59,7 +59,7 @@ public class BenchClosedLoopTests
         var toolkit = new Toolkit
         {
             Workflows = { new ToolkitWorkflow { Id = "wf1", Name = "W1", File = "w1.kcs" } },
-            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig { Surface = "auto" } } },
+            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig() } },
         };
 
         var canvas = new BenchCanvasViewModel(toolkit);
@@ -121,7 +121,7 @@ public class BenchClosedLoopTests
     {
         var toolkit = new Toolkit
         {
-            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig { Surface = "auto" } } },
+            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig() } },
         };
 
         var canvas = new BenchCanvasViewModel(toolkit);

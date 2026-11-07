@@ -230,6 +230,7 @@
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">更新は、スレッドごとに処理されるファイルの数をチェックします</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow">ワークフロー関連設定</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">スクリプトコンパイラのキャッシュ容量</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_MaxConcurrentFlows">同時実行フロー上限（マシン全体）</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">完了インスタンスの保持上限</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_PanelLogLimit">パネルログ保持上限</sys:String>
     <sys:String x:Key="Text_Settings_Update">更新する</sys:String>
@@ -351,7 +352,6 @@
     <sys:String x:Key="Text_Bench_AddTag">Add</sys:String>
     <sys:String x:Key="Text_Bench_PluginRequirements">Plugin requirements</sys:String>
     <sys:String x:Key="Text_Bench_RunParameters">Run parameters</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesLimit">Limit max instances</sys:String>
     <sys:String x:Key="Text_Bench_Type">Type</sys:String>
     <sys:String x:Key="Text_Bench_Surface">Surface</sys:String>
     <sys:String x:Key="Text_Bench_SurfaceHint">auto = 前面で実行、silent = バックグラウンド実行とバッジのみ</sys:String>
@@ -448,7 +448,7 @@
     <sys:String x:Key="Text_Bench_Installed">インストール済み</sys:String>
     <sys:String x:Key="Text_Bench_NotInstalled">未インストール</sys:String>
     <sys:String x:Key="Text_Bench_RemoteSource">リモートソース</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesHint">オフ = null（無制限）；オンにすると同じツールボックスは同時にこの数のインスタンスまで実行します</sys:String>
+    <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">同時実行フロー上限はマシン全体の設定です（設定 → パフォーマンス）。拒否が増えたらそこで増やしてください。</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完了エッジ（ハーネス）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">バインド：{0} → {1}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完了 {0} · 失敗 {1}</sys:String>

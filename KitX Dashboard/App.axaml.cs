@@ -89,6 +89,8 @@ public partial class App : Application
         {
             CompletedInstanceCap = sp.GetRequiredService<IConfigService>()
                 .AppConfig.Performance.CompletedInstanceCap,
+            MaxConcurrentFlows = sp.GetRequiredService<IConfigService>()
+                .AppConfig.Performance.MaxConcurrentFlows,
         });
 
         // Register Dashboard-specific services

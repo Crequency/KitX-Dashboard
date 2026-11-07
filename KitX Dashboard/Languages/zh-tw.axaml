@@ -230,6 +230,7 @@
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">更新檢查每綫程處理文件數量</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow">工作流相關設置</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">腳本編譯緩存上限</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_MaxConcurrentFlows">並行流程上限（全域）</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">已完成實例保留上限</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_PanelLogLimit">面板日誌保留上限</sys:String>
     <sys:String x:Key="Text_Settings_Update">更新</sys:String>
@@ -351,7 +352,6 @@
     <sys:String x:Key="Text_Bench_AddTag">新增</sys:String>
     <sys:String x:Key="Text_Bench_PluginRequirements">外掛程式需求</sys:String>
     <sys:String x:Key="Text_Bench_RunParameters">執行參數</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesLimit">限制最大執行個體數</sys:String>
     <sys:String x:Key="Text_Bench_Type">類型</sys:String>
     <sys:String x:Key="Text_Bench_Surface">呈現（Surface）</sys:String>
     <sys:String x:Key="Text_Bench_SurfaceHint">auto = 前景執行；silent = 背景執行並僅顯示徽章</sys:String>
@@ -448,7 +448,7 @@
     <sys:String x:Key="Text_Bench_Installed">已安裝</sys:String>
     <sys:String x:Key="Text_Bench_NotInstalled">未安裝</sys:String>
     <sys:String x:Key="Text_Bench_RemoteSource">遠端來源</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesHint">關閉 = null（不限制）；開啟後同一工具箱最多同時執行該數量的執行個體</sys:String>
+    <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">並行流程上限是全域設定（設定 → 效能），此處唯讀；調大可緩解拒絕</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完成邊（線束）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">綁定：{0} → {1}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完成 {0} · 失敗 {1}</sys:String>

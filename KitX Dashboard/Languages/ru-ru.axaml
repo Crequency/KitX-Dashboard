@@ -230,6 +230,7 @@
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">Обновление проверяет количество файлов, обрабатываемых за поток</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow">Настройки, связанные с рабочим процессом</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">Вместимость кэша компилятора скриптов</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_MaxConcurrentFlows">Предел одновременных потоков (общий)</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">Лимит хранения завершённых экземпляров</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_PanelLogLimit">Лимит хранения логов панели</sys:String>
     <sys:String x:Key="Text_Settings_Update">возобновить</sys:String>
@@ -351,7 +352,6 @@
     <sys:String x:Key="Text_Bench_AddTag">Add</sys:String>
     <sys:String x:Key="Text_Bench_PluginRequirements">Plugin requirements</sys:String>
     <sys:String x:Key="Text_Bench_RunParameters">Run parameters</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesLimit">Limit max instances</sys:String>
     <sys:String x:Key="Text_Bench_Type">Type</sys:String>
     <sys:String x:Key="Text_Bench_Surface">Surface</sys:String>
     <sys:String x:Key="Text_Bench_SurfaceHint">auto = запуск на переднем плане; silent = в фоне только со значком</sys:String>
@@ -448,7 +448,7 @@
     <sys:String x:Key="Text_Bench_Installed">Установлено</sys:String>
     <sys:String x:Key="Text_Bench_NotInstalled">Не установлено</sys:String>
     <sys:String x:Key="Text_Bench_RemoteSource">Удалённый источник</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesHint">Выкл = null (без ограничений); при включении тот же инструмент запускает не более этого числа экземпляров одновременно</sys:String>
+    <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">Предел одновременных потоков — общая настройка (Настройки → Производительность); увеличьте его там, если триггеры отклоняются.</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Ребро завершения (жгут): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Привязка: {0} → {1}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">Завершено {0} · Сбоев {1}</sys:String>

@@ -230,6 +230,7 @@
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">Checker Per Threads Handled Files Count Limit</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow">Workflow Related Settings</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">Script Compiler Cache Capacity</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_MaxConcurrentFlows">Max concurrent flows (machine-wide)</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">Completed Instance Retention Cap</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_PanelLogLimit">Panel Log Retention Cap</sys:String>
     <sys:String x:Key="Text_Settings_Update">Update</sys:String>
@@ -351,7 +352,6 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_AddTag">Add</sys:String>
     <sys:String x:Key="Text_Bench_PluginRequirements">Plugin requirements</sys:String>
     <sys:String x:Key="Text_Bench_RunParameters">Run parameters</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesLimit">Limit max instances</sys:String>
     <sys:String x:Key="Text_Bench_Type">Type</sys:String>
     <sys:String x:Key="Text_Bench_Surface">Surface</sys:String>
     <sys:String x:Key="Text_Bench_SurfaceHint">auto = run in foreground; silent = background with badge only</sys:String>
@@ -448,7 +448,7 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_Installed">Installed</sys:String>
     <sys:String x:Key="Text_Bench_NotInstalled">Not installed</sys:String>
     <sys:String x:Key="Text_Bench_RemoteSource">Remote source</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesHint">Off = null (unlimited); when on, the same toolbox runs at most this many instances at once</sys:String>
+    <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">The concurrent-flow cap is a machine-wide setting (Settings → Performance); raise it there if triggers start getting rejected.</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Completion edge (harness): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Binding: {0} → {1}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} completed · {1} failed</sys:String>

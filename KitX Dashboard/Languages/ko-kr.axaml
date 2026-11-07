@@ -230,6 +230,7 @@
     <sys:String x:Key="Text_Settings_Performance_CheckerPerThreadFilesCountLimit">업데이트는 스레드당 처리된 파일 수를 확인합니다.</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow">워크플로 관련 설정</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_ScriptCompilerCacheCapacity">스크립트 컴파일러 캐시 용량</sys:String>
+    <sys:String x:Key="Text_Settings_Performance_Workflow_MaxConcurrentFlows">동시 실행 흐름 상한 (시스템 전체)</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_CompletedInstanceCap">완료된 인스턴스 보존 상한</sys:String>
     <sys:String x:Key="Text_Settings_Performance_Workflow_PanelLogLimit">패널 로그 보존 상한</sys:String>
     <sys:String x:Key="Text_Settings_Update">고쳐 쓰다</sys:String>
@@ -351,7 +352,6 @@
     <sys:String x:Key="Text_Bench_AddTag">Add</sys:String>
     <sys:String x:Key="Text_Bench_PluginRequirements">Plugin requirements</sys:String>
     <sys:String x:Key="Text_Bench_RunParameters">Run parameters</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesLimit">Limit max instances</sys:String>
     <sys:String x:Key="Text_Bench_Type">Type</sys:String>
     <sys:String x:Key="Text_Bench_Surface">Surface</sys:String>
     <sys:String x:Key="Text_Bench_SurfaceHint">auto = 포그라운드 실행, silent = 백그라운드 실행 및 배지만</sys:String>
@@ -448,7 +448,7 @@
     <sys:String x:Key="Text_Bench_Installed">설치됨</sys:String>
     <sys:String x:Key="Text_Bench_NotInstalled">설치되지 않음</sys:String>
     <sys:String x:Key="Text_Bench_RemoteSource">원격 소스</sys:String>
-    <sys:String x:Key="Text_Bench_MaxInstancesHint">끔 = null(무제한); 켜면 같은 도구 상자가 동시에 이 수만큼의 인스턴스를 실행합니다</sys:String>
+    <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">동시 실행 흐름 상한은 시스템 전체 설정입니다(설정 → 성능). 거부가 늘면 거기서 늘리세요.</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">완료 엣지(하네스): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">바인딩: {0} → {1}</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">완료 {0} · 실패 {1}</sys:String>

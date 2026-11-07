@@ -485,6 +485,24 @@ internal class Settings_PerformanceViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Machine-wide cap on concurrently-running ToolKit flows, summed across every mounted
+    /// ToolKit. Consumed at startup (not hot-reloaded), so no EventNames is published.
+    /// </summary>
+    internal int MaxConcurrentFlows
+    {
+        get => _configService.AppConfig.Performance.MaxConcurrentFlows;
+        set
+        {
+            // Floor of 1, not 0: zero means "unlimited" in the manager, and an operator who
+            // typed 0 into a box labelled "maximum" almost certainly wanted 1, not no ceiling.
+            // Removing the cap entirely is a deliberate act, not a typo away.
+            _configService.AppConfig.Performance.MaxConcurrentFlows = value < 1 ? 1 : value;
+
+            _configService.SaveAll();
+        }
+    }
+
     private static string GetLogLevelDisplayText(string key) => Translate(key, prefix: "Text_Log_") ?? string.Empty;
 
     internal List<SupportedLogLevel> SupportedLogLevels { get; } =

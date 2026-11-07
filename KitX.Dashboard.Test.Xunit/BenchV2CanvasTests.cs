@@ -229,7 +229,7 @@ public class BenchV2CanvasTests
                 {
                     Id = "trg1",
                     Type = TriggerType.Manual,
-                    Config = new TriggerConfig { Surface = "auto" },
+                    Config = new TriggerConfig(),
                     Bindings = { new TriggerBinding { Workflow = "wf1" } },
                 },
             },
@@ -291,7 +291,6 @@ public class BenchV2CanvasTests
         Assert.Equal("on-data", canvas.SelectedTriggerTriggerName);
         Assert.Contains(nameof(BenchCanvasViewModel.SelectedTriggerPluginName), raised);
         Assert.Contains(nameof(BenchCanvasViewModel.SelectedTriggerTriggerName), raised);
-        Assert.Contains(nameof(BenchCanvasViewModel.SelectedTriggerSurface), raised);
     }
 
     [Fact]
@@ -342,7 +341,7 @@ public class BenchV2CanvasTests
                 {
                     Id = "trg1",
                     Type = TriggerType.Manual,
-                    Config = new TriggerConfig { Surface = "auto" },
+                    Config = new TriggerConfig(),
                     Bindings = { new TriggerBinding { Workflow = "wf1" } },
                 },
             },

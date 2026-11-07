@@ -35,8 +35,8 @@ public class BenchHoverPreviewTests
         {
             Triggers =
             {
-                new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig { Surface = "auto" } },
-                new Trigger { Id = "trg2", Type = TriggerType.Manual, Config = new TriggerConfig { Surface = "auto" } },
+                new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig() },
+                new Trigger { Id = "trg2", Type = TriggerType.Manual, Config = new TriggerConfig() },
             },
         });
 
@@ -54,7 +54,7 @@ public class BenchHoverPreviewTests
     {
         var canvas = new BenchCanvasViewModel(new Toolkit
         {
-            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig { Surface = "auto" } } },
+            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig() } },
         });
 
         var src = Connector(canvas, "src:trg1");
@@ -76,7 +76,7 @@ public class BenchHoverPreviewTests
                 {
                     Id = "trg1",
                     Type = TriggerType.Manual,
-                    Config = new TriggerConfig { Surface = "auto" },
+                    Config = new TriggerConfig(),
                     Bindings = { new TriggerBinding { Workflow = "wf1" } },
                 },
             },
@@ -98,7 +98,7 @@ public class BenchHoverPreviewTests
         var canvas = new BenchCanvasViewModel(new Toolkit
         {
             Workflows = { new ToolkitWorkflow { Id = "wf1", Name = "W1", File = "w1.kcs" } },
-            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig { Surface = "auto" } } },
+            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig() } },
         });
 
         var srcOut = Connector(canvas, "out:wf1");
@@ -179,7 +179,7 @@ public class BenchHoverPreviewTests
         var canvas = new BenchCanvasViewModel(new Toolkit
         {
             Workflows = { new ToolkitWorkflow { Id = "wf1", Name = "W1", File = "w1.kcs" } },
-            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig { Surface = "auto" } } },
+            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig() } },
         });
 
         var src = Connector(canvas, "src:trg1");
@@ -218,7 +218,7 @@ public class BenchHoverPreviewTests
         var canvas = new BenchCanvasViewModel(new Toolkit
         {
             Workflows = { new ToolkitWorkflow { Id = "wf1", Name = "W1", File = "w1.kcs" } },
-            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig { Surface = "auto" } } },
+            Triggers = { new Trigger { Id = "trg1", Type = TriggerType.Manual, Config = new TriggerConfig() } },
         });
 
         var src = Connector(canvas, "src:trg1");

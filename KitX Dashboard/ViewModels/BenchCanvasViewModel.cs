@@ -210,7 +210,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     private void RaiseInspectorPropertyChanges()
     {
         OnPropertyChanged(nameof(SelectedTriggerId));
-        OnPropertyChanged(nameof(SelectedTriggerSurface));
         OnPropertyChanged(nameof(SelectedTriggerTimerMode));
         OnPropertyChanged(nameof(IsCronTimerMode));
         OnPropertyChanged(nameof(IsIntervalTimerMode));
@@ -224,9 +223,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         OnPropertyChanged(nameof(CronPreview));
         OnPropertyChanged(nameof(SelectedTriggerPluginName));
         OnPropertyChanged(nameof(SelectedTriggerTriggerName));
-        OnPropertyChanged(nameof(SelectedTriggerControl));
         OnPropertyChanged(nameof(SelectedTriggerEvent));
-        OnPropertyChanged(nameof(SelectedTriggerPanel));
         OnPropertyChanged(nameof(SelectedWorkflowId));
         OnPropertyChanged(nameof(SelectedWorkflowName));
         OnPropertyChanged(nameof(SelectedWorkflowFile));
@@ -294,19 +291,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         }
     }
 
-    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Surface"/> (write-through + re-validate).</summary>
-    public string? SelectedTriggerSurface
-    {
-        get => SelectedTrigger?.Config?.Surface;
-        set
-        {
-            if (SelectedTrigger?.Config is null)
-                return;
-            SelectedTrigger.Config.Surface = value;
-            LastError = null;
-            NotifyEdited();
-        }
-    }
 
     /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Cron"/> (write-through + re-validate).</summary>
     public string? SelectedTriggerCron
@@ -379,20 +363,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         }
     }
 
-    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Control"/> (write-through + source KindLabel refresh).</summary>
-    public string? SelectedTriggerControl
-    {
-        get => SelectedTrigger?.Config?.Control;
-        set
-        {
-            if (SelectedTrigger?.Config is null)
-                return;
-            SelectedTrigger.Config.Control = value;
-            RefreshSourceKindLabel();
-            LastError = null;
-            NotifyEdited();
-        }
-    }
 
     /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Event"/> (write-through + re-validate).</summary>
     public string? SelectedTriggerEvent
@@ -631,18 +601,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         }
     }
 
-    /// <summary>Edits the selected trigger's <see cref="TriggerConfig.Panel"/> (reserved UIEvent field).</summary>
-    public string? SelectedTriggerPanel
-    {
-        get => SelectedTrigger?.Config?.Panel;
-        set
-        {
-            if (SelectedTrigger?.Config is null)
-                return;
-            SelectedTrigger.Config.Panel = value;
-            NotifyEdited();
-        }
-    }
 
     private void RefreshSourceKindLabel()
     {
@@ -808,8 +766,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
               .Append(c.IntervalMs.HasValue ? c.IntervalMs.Value.ToString(CultureInfo.InvariantCulture) : null).Append('\u001e')
               .Append(c.OneShot?.ToString()).Append('\u001e')
               .Append(c.DueTimeMs.HasValue ? c.DueTimeMs.Value.ToString(CultureInfo.InvariantCulture) : null).Append('\u001e')
-              .Append(c.Panel).Append('\u001e').Append(c.Control).Append('\u001e')
-              .Append(c.Event).Append('\u001e').Append(c.Surface).Append('\u001e');
+              .Append(c.Event).Append('\u001e');
             foreach (var b in t.Bindings)
                 sb.Append(b.Workflow).Append('\u001d');
             sb.Append('\u001f');
@@ -1241,7 +1198,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         {
             Id = NewTriggerId(),
             Type = type,
-            Config = new TriggerConfig { Surface = "auto" },
+            Config = new TriggerConfig(),
         };
         if (type == TriggerType.Timer)
         {
@@ -1513,9 +1470,6 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
         foreach (var binding in trigger.Bindings)
             CompletionInspectorBindings.Add(CreateBindingRow(binding, WorkflowIdOptions, true));
     }
-
-    /// <summary>Spawn presentation modes (D3).</summary>
-    public static IReadOnlyList<string> SurfaceOptions { get; } = ["auto", "silent"];
 
     /// <summary>UIEvent event names.</summary>
     public static IReadOnlyList<string> EventOptions { get; } = ["Click", "Submit", "Confirm", "Change"];
@@ -1816,7 +1770,7 @@ public sealed partial class BenchCanvasViewModel : NodifyEditorViewModelBase
     {
         TriggerType.Manual => ViewModelBase.TranslateTextWithSuffix("Bench", "TriggerKindManual") ?? "手动",
         TriggerType.PluginEvent => string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "TriggerKindPlugin") ?? "插件: {0}", trigger.Config?.PluginName),
-        TriggerType.UIEvent => string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "TriggerKindUI") ?? "UI: {0}", trigger.Config?.Control),
+        TriggerType.UIEvent => string.Format(ViewModelBase.TranslateTextWithSuffix("Bench", "TriggerKindUI") ?? "事件: {0}", trigger.Config?.Event),
         TriggerType.Timer => ViewModelBase.TranslateTextWithSuffix("Bench", "TimerTrigger") ?? "定时",
         _ => trigger.Type.ToString(),
     };

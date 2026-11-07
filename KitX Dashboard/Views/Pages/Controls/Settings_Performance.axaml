@@ -464,6 +464,25 @@
                                 IsOpen="True">
                         <DockPanel Margin="0,10,10,10">
                             <StackPanel Classes="TitleBar">
+                                <icon:MaterialIcon Margin="5,0" Kind="DirectionsFork"/>
+                                <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performance_Workflow_MaxConcurrentFlows}"/>
+                            </StackPanel>
+
+                            <ui:NumberBox Classes="Enabled"
+                                          Minimum="1"
+                                          SpinButtonPlacementMode="Compact"
+                                          Value="{Binding MaxConcurrentFlows}"/>
+
+                            <Border/>
+                        </DockPanel>
+                    </ui:InfoBar>
+
+                    <ui:InfoBar Margin="0,5"
+                                IsClosable="False"
+                                IsIconVisible="False"
+                                IsOpen="True">
+                        <DockPanel Margin="0,10,10,10">
+                            <StackPanel Classes="TitleBar">
                                 <icon:MaterialIcon Margin="5,0" Kind="FileDocument"/>
                                 <TextBlock Classes="Normal" Text="{DynamicResource Text_Settings_Performance_Workflow_PanelLogLimit}"/>
                             </StackPanel>

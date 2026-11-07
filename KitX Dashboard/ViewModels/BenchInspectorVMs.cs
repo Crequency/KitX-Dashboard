@@ -407,8 +407,6 @@ public sealed class BenchToolkitInspectorVM : ReactiveObject
     private readonly Toolkit _toolkit;
     private readonly Action _onEdit;
     private readonly Func<string, bool> _isPluginInstalled;
-    private bool _maxInstancesEnabled;
-    private double? _maxInstancesValue;
     private string _newTag = string.Empty;
     private string _newPluginName = string.Empty;
     private string _newPluginVersion = string.Empty;
@@ -435,8 +433,6 @@ public sealed class BenchToolkitInspectorVM : ReactiveObject
             toolkit.Meta.Tags.Select(t => new BenchTagVM(t, onEdit)));
         Plugins = new ObservableCollection<BenchPluginRequirementVM>(
             toolkit.Plugins.Select(p => new BenchPluginRequirementVM(p, _isPluginInstalled, onEdit)));
-        _maxInstancesEnabled = toolkit.MaxInstances.HasValue;
-        _maxInstancesValue = toolkit.MaxInstances;
         AddTagCommand = ReactiveCommand.Create(AddTag);
         RemoveTagCommand = ReactiveCommand.Create<BenchTagVM>(RemoveTag);
         AddPluginCommand = ReactiveCommand.Create(AddPlugin);
@@ -571,42 +567,6 @@ public sealed class BenchToolkitInspectorVM : ReactiveObject
     public ReactiveCommand<Unit, Unit> AddPluginCommand { get; }
     public ReactiveCommand<BenchPluginRequirementVM, Unit> RemovePluginCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshInstallStatusCommand { get; }
-
-    public bool MaxInstancesEnabled
-    {
-        get => _maxInstancesEnabled;
-        set
-        {
-            if (_maxInstancesEnabled != value)
-            {
-                _maxInstancesEnabled = value;
-                _toolkit.MaxInstances = value ? (int)(_maxInstancesValue ?? 1) : null;
-                this.RaisePropertyChanged();
-                this.RaisePropertyChanged(nameof(MaxInstancesValue));
-                _onEdit();
-            }
-        }
-    }
-
-    public double? MaxInstancesValue
-    {
-        get => _maxInstancesValue;
-        set
-        {
-            var normal = value is { } d && d > 0 ? d : 1;
-            if (_maxInstancesValue != normal)
-            {
-                _maxInstancesValue = normal;
-                if (_maxInstancesEnabled)
-                    _toolkit.MaxInstances = (int)normal;
-                this.RaisePropertyChanged();
-                _onEdit();
-            }
-        }
-    }
-
-    public string MaxInstancesHint => ViewModelBase.TranslateTextWithSuffix("Bench", "MaxInstancesHint")
-        ?? "关闭 = null（不限制）；开启后同一工具箱最多同时运行该数量的实例";
 
     private void AddTag()
     {
