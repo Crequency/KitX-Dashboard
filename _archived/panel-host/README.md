@@ -25,7 +25,7 @@ Dashboard 不再有面板窗口。代码保留下来作为未来 View 层的参�
 
 | 文件 | 会报什么 |
 |---|---|
-| `PanelHostWindow.axaml` | 绑定的 `PanelHostViewModel` 成员一个都不存在 |
+| `PanelHostWindow.axaml` | 绑定的 `PanelHostViewModel` 成员一个都不存在；`:39-41` 引用的三个转换器已被删除 |
 | `PanelHostViewModel.cs` | 引用已删除的 `IPanelRuntime` / `UiPanel` / `UiControl` |
 | `PanelControlViewModel.cs` | 同上 |
 | `PanelControlTemplateSelector.cs` | 同上 |
@@ -53,3 +53,16 @@ Dashboard 不再有面板窗口。代码保留下来作为未来 View 层的参�
 
 不要直接移回来。先把它依赖的契约（`IPanelRuntime`、`UiPanel`、`UiControl`、`InstanceStatus`）
 按当前版本重新设计一遍 —— 这些类型在重构里是被**有意**删掉的，不是改名了。
+
+## 归档文件不会被更新
+
+这些文件是**移出时的快照**，不跟着当前代码演进。已知的过期点（截至 2026-11-07）：
+
+| 过期点 | 今天的现状 |
+|---|---|
+| `PanelHostWindow.axaml:39-41` 引用的 `InstanceOutcomeToBrushConverter` / `InstanceOutcomeToTextConverter` / `InstanceRunsSummaryConverter` | **三个都已删除**（随 `InstanceSnapshot` 退场，它们唯一的输入没了） |
+| `PanelRunTimelineVMs.cs` 依赖的 `InstanceStatus` | 已拆成 `RunOutcome`（S4） |
+| 面板本身 | S5.5 整体归档，Dashboard 没有面板窗口 |
+
+**这不是疏漏。** 归档的价值在于「当时是怎么写的」，跟着改就失去了这个价值。
+它需要被读的时候，读者应该知道**每一处引用都可能已经过期**，而不是以为它还能跑。
