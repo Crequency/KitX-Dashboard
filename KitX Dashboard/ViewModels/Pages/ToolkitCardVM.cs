@@ -27,7 +27,7 @@ public sealed class ToolkitCardVM : ReactiveObject
         _toolkitService = toolkitService;
         _windowService = windowService;
         _isMounted = toolkitService.IsMounted(model.GetId());
-        _runningInstances = toolkitService.Instances.Count(i => i.ToolkitId == model.GetId() && i.IsRunning);
+        _runningInstances = toolkitService.ActiveFlowCounts().TryGetValue(model.GetId(), out var active) ? active : 0;
         ToggleMountCommand = ReactiveCommand.Create(ToggleMount);
         OpenBenchCommand = ReactiveCommand.Create(OpenBench);
     }

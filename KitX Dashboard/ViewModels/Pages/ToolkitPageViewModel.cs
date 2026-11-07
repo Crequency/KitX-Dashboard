@@ -112,9 +112,12 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
 
     private void OnToolkitEvent(object? sender, KitX.ToolKit.Contract.Events.ToolkitEvent e)
     {
+        // Re-read the snapshot on every event rather than interpreting `e`. The count has an
+        // authority (the runtime's scheduler), so an event is a nudge, not a data source
+        // (ADR-0015 D5.1). That also keeps this correct for events it cannot interpret.
+        var counts = _toolkitService.ActiveFlowCounts();
         foreach (var card in _cards)
-            card.RunningInstances = _toolkitService.Instances.Count(i =>
-                i.ToolkitId == card.Model.GetId() && i.IsRunning);
+            card.RunningInstances = counts.TryGetValue(card.Model.GetId(), out var active) ? active : 0;
     }
 
     private void RefreshCards()
