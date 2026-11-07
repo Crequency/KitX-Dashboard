@@ -135,6 +135,17 @@ public partial class App : Application
         services.AddTransient<ToolkitPageViewModel>();
         services.AddTransient<BenchViewModel>();
 
+        // P5 card orchestrator. Transient, not singleton: it holds one ToolKit's layout for as long
+        // as its window is open, and a singleton would carry one ToolKit's unsaved edits into the
+        // next window opened on another.
+        services.AddTransient<SurfaceEditorViewModel>(sp => new SurfaceEditorViewModel(
+            sp.GetRequiredService<KitX.ToolKit.Contract.ISurfaceStore>(),
+            toolkitId =>
+            {
+                var toolkit = sp.GetRequiredService<KitX.ToolKit.Contract.IToolkitService>().GetToolkit(toolkitId);
+                return toolkit?.Keys ?? [];
+            }));
+
         // C3 convergence: all remaining ViewModels — constructor-injected services,
         // resolved via App.GetService at their View creation points.
         services.AddTransient<AppViewModel>();

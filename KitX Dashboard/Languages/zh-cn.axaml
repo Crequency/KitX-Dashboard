@@ -451,6 +451,14 @@
     <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">并发流程上限是全局设置（设置 → 性能），此处只读；调大可缓解拒绝</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完成边（线束）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">绑定：{0} → {1}</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Title">卡片排版</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">还没放到卡片上</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_PaletteHint">这个工具包声明了、但画布上还没有的键。选一个放上去。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Save">保存并检查</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Clear">清空画布</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Check">检查</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_NoValuesHint">画布故意不显示任何值。围着「今天恰好存着什么」排版，排出来的卡片只适合今天。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">固定 390 × 845、四列。这是手机上的样子，不是桌面布局预览。</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完成 {0} · 失败 {1}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">运行中</sys:String>

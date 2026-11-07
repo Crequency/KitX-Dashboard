@@ -451,6 +451,14 @@
     <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">並行流程上限是全域設定（設定 → 效能），此處唯讀；調大可緩解拒絕</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完成邊（線束）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">綁定：{0} → {1}</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Title">卡片排版</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">還沒放到卡片上</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_PaletteHint">這個工具包宣告了、但畫布上還沒有的鍵。選一個放上去。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Save">儲存並檢查</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Clear">清空畫布</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Check">檢查</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_NoValuesHint">畫布刻意不顯示任何值。圍著「今天恰好存著什麼」排版，排出來的卡片只適合今天。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">固定 390 × 845、四欄。這是手機上的樣子，不是桌面版面預覽。</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完成 {0} · 失敗 {1}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">執行中</sys:String>

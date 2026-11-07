@@ -451,6 +451,14 @@
     <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">동시 실행 흐름 상한은 시스템 전체 설정입니다(설정 → 성능). 거부가 늘면 거기서 늘리세요.</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">완료 엣지(하네스): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">바인딩: {0} → {1}</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Title">카드 레이아웃</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">아직 배치되지 않음</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_PaletteHint">이 툴킷이 선언했지만 아직 카드에 놓이지 않은 키입니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Save">저장하고 확인</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Clear">카드 비우기</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Check">확인</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_NoValuesHint">캔버스는 의도적으로 값을 표시하지 않습니다. 지금 우연히 저장된 값에 맞춰 배치하면 오늘에만 맞는 카드가 됩니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 고정, 4열. 휴대폰에서 보이는 모습이며 데스크톱 레이아웃 미리보기가 아닙니다.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">완료 {0} · 실패 {1}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">실행 중</sys:String>

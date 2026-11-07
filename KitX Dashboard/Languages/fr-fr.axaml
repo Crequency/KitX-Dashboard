@@ -451,6 +451,14 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">Le plafond de flux simultanés est un réglage global (Paramètres → Performance) ; augmentez-le là si des déclencheurs sont rejetés.</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Arête de complétion (faisceau) : {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Liaison : {0} → {1}</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Title">Disposition de la carte</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">Pas encore placé</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_PaletteHint">Toutes les clés déclarées par ce kit et encore absentes de la carte.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Save">Enregistrer et vérifier</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Clear">Vider la carte</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Check">Vérification</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_NoValuesHint">Le canevas n&apos;affiche aucune valeur, volontairement. Disposer autour de ce qui est stocké aujourd&apos;hui donne une carte qui ne convient qu&apos;à aujourd&apos;hui.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 fixe, quatre colonnes. C&apos;est ce qu&apos;affiche un téléphone, pas un aperçu de disposition pour bureau.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} terminés · {1} échoués</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">En cours</sys:String>

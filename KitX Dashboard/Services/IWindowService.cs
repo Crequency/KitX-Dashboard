@@ -48,6 +48,17 @@ public interface IWindowService
     void ShowMermaidExportWindow(string text, string? ownerToolkitId);
 
     /// <summary>
+    /// Opens (or focuses) the card orchestrator for a ToolKit (implementation design P5).
+    /// </summary>
+    /// <param name="toolkitId">The ToolKit whose layout is being edited.</param>
+    /// <remarks>
+    /// One window per ToolKit, like <see cref="OpenBenchWindow"/>: two orchestrators on the same
+    /// layout would each write the whole document, so the second save would silently discard the
+    /// first one's work.
+    /// </remarks>
+    void OpenSurfaceEditorWindow(string toolkitId);
+
+    /// <summary>
     /// Opens a window through the shared open/close lifecycle (registers in <see cref="Windows"/>,
     /// unsubscribes OnExiting on close, dedups when requested).
     /// </summary>

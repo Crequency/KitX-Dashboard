@@ -1,0 +1,210 @@
+<Window x:Class="KitX.Dashboard.Views.SurfaceEditorWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:decl="using:KitX.ToolKit.Contract.Declaration"
+        xmlns:viewModels="using:KitX.Dashboard.ViewModels"
+        Title="{DynamicResource Text_Bench_Surface_Title}"
+        Width="1180"
+        Height="900"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!--
+          The canvas is a fixed 390 x 845 rectangle, centred, with margin around it. It is not
+          stretched to the window and has no zoom control: stretching would make "what you see is
+          what you get" a lie (a 1600-wide window would lay out a desktop card), and zooming would
+          make the author answer a question this screen cannot — how wide is one cell right now.
+        -->
+        <Style Selector="Border.canvas">
+            <Setter Property="Width" Value="390" />
+            <Setter Property="Height" Value="845" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto, *, Auto" Margin="16">
+
+        <!-- ── toolbar ───────────────────────────────────────────────────────────────────── -->
+        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+            <StackPanel Grid.Column="0" Orientation="Vertical" Spacing="2">
+                <TextBlock Text="{DynamicResource Text_Bench_Surface_Title}"
+                           FontSize="18"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ToolkitId}"
+                           FontSize="12"
+                           Opacity="0.7" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button Command="{Binding SaveCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="16" Height="16" Kind="ContentSave" />
+                        <TextBlock Text="{DynamicResource Text_Bench_Surface_Save}" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding ClearCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="16" Height="16" Kind="DeleteSweep" />
+                        <TextBlock Text="{DynamicResource Text_Bench_Surface_Clear}" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- ── editor body ──────────────────────────────────────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="220, *, 260">
+
+            <!-- left: the palette is "declared but not placed", not "kinds of control" -->
+            <Border Grid.Column="0"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="0,0,1,0"
+                    Padding="0,0,12,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="{DynamicResource Text_Bench_Surface_Palette}"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,8" />
+
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="{DynamicResource Text_Bench_Surface_PaletteHint}"
+                               FontSize="11"
+                               Opacity="0.65"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8" />
+
+                    <ListBox ItemsSource="{Binding UnplacedKeys}"
+                             Background="Transparent"
+                             BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type decl:KeyDeclaration}">
+                                <Button Classes="palette"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left"
+                                        Command="{Binding $parent[Window].((viewModels:SurfaceEditorViewModel)DataContext).PlaceCommand}"
+                                        CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Vertical" Spacing="1">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock FontSize="11" Opacity="0.6">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0}">
+                                                    <Binding Path="Type" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- centre: the fixed canvas, scrolled rather than stretched when the window is short -->
+            <ScrollViewer Grid.Column="1"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          Padding="24,0">
+                <Border Classes="canvas">
+                    <Grid RowDefinitions="Auto,*">
+                        <!-- Column guides: four equal columns inside 390, drawn but not interactive. -->
+                        <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*" Height="24">
+                            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,1" />
+                            <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,1" />
+                            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,1" />
+                            <Border Grid.Column="3" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1" />
+                        </Grid>
+
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding Elements}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemContainerTheme>
+                                <ControlTheme TargetType="ContentPresenter">
+                                    <Setter Property="Canvas.Left" Value="{Binding ((viewModels:SurfaceElementVM)DataContext).Left}" />
+                                    <Setter Property="Canvas.Top" Value="{Binding ((viewModels:SurfaceElementVM)DataContext).Top}" />
+                                </ControlTheme>
+                            </ItemsControl.ItemContainerTheme>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type viewModels:SurfaceElementVM}">
+                                    <Border Width="{Binding Width}"
+                                            Height="{Binding Height}"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Padding="8"
+                                            ToolTip.Tip="{Binding Description}">
+                                        <Grid RowDefinitions="Auto,*,Auto">
+                                            <TextBlock Grid.Row="0"
+                                                       Text="{Binding Kind}"
+                                                       FontSize="10"
+                                                       Opacity="0.6" />
+                                            <TextBlock Grid.Row="1"
+                                                       Text="{Binding Label}"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <Button Grid.Row="2"
+                                                    Classes="flat"
+                                                    HorizontalAlignment="Right"
+                                                    Command="{Binding $parent[Window].((viewModels:SurfaceEditorViewModel)DataContext).RemoveCommand}"
+                                                    CommandParameter="{Binding Element}">
+                                                <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+            </ScrollViewer>
+
+            <!-- right: what "save and check" found, named rather than summarised -->
+            <Border Grid.Column="2"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1,0,0,0"
+                    Padding="12,0,0,0">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{DynamicResource Text_Bench_Surface_Check}"
+                               FontWeight="SemiBold" />
+
+                    <TextBlock Text="{DynamicResource Text_Bench_Surface_NoValuesHint}"
+                               FontSize="11"
+                               Opacity="0.65"
+                               TextWrapping="Wrap" />
+
+                    <Border IsVisible="{Binding HasValidationMessage}"
+                            Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                            CornerRadius="4"
+                            Padding="8">
+                        <TextBlock Text="{Binding ValidationMessage}"
+                                   TextWrapping="Wrap"
+                                   FontSize="12" />
+                    </Border>
+
+                    <TextBlock Text="{Binding Status}"
+                               FontSize="12"
+                               Opacity="0.75"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ── footer ───────────────────────────────────────────────────────────────────── -->
+        <TextBlock Grid.Row="2"
+                   Text="{DynamicResource Text_Bench_Surface_Footer}"
+                   FontSize="11"
+                   Opacity="0.6"
+                   Margin="0,12,0,0"
+                   TextWrapping="Wrap" />
+    </Grid>
+</Window>

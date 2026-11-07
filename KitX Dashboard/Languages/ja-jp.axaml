@@ -451,6 +451,14 @@
     <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">同時実行フロー上限はマシン全体の設定です（設定 → パフォーマンス）。拒否が増えたらそこで増やしてください。</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完了エッジ（ハーネス）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">バインド：{0} → {1}</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Title">カード レイアウト</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">未配置</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_PaletteHint">このツールキットが宣言しているが、まだカードに置かれていないキーです。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Save">保存して確認</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Clear">カードを空にする</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Check">確認</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_NoValuesHint">キャンバスは値を表示しません。今たまたま入っている値に合わせて配置すると、今日だけに合うカードになります。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 固定、4 列。スマートフォンでの見え方であり、デスクトップのレイアウト プレビューではありません。</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完了 {0} · 失敗 {1}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">実行中</sys:String>

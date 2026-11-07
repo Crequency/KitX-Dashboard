@@ -451,6 +451,14 @@
     <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">Предел одновременных потоков — общая настройка (Настройки → Производительность); увеличьте его там, если триггеры отклоняются.</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Ребро завершения (жгут): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Привязка: {0} → {1}</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Title">Макет карточки</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">Ещё не размещено</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_PaletteHint">Все ключи, объявленные этим набором и отсутствующие на карточке.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Save">Сохранить и проверить</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Clear">Очистить карточку</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Check">Проверка</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_NoValuesHint">Холст намеренно не показывает значения. Разметка вокруг того, что случайно сохранено сегодня, даёт карточку, подходящую только на сегодня.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">Фиксированные 390 × 845, четыре колонки. Так это видно на телефоне; это не предпросмотр макета для настольного компьютера.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">Завершено {0} · Сбоев {1}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">Выполняется</sys:String>

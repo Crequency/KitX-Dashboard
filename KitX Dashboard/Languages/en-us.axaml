@@ -451,6 +451,14 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_MaxConcurrentFlowsHint">The concurrent-flow cap is a machine-wide setting (Settings → Performance); raise it there if triggers start getting rejected.</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Completion edge (harness): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Binding: {0} → {1}</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Title">Card layout</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">Not placed yet</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_PaletteHint">Every key this ToolKit declares and nothing has put on the card. Pick one to place it.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Save">Save and check</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Clear">Empty the card</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Check">Check</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_NoValuesHint">The canvas shows no values on purpose. Laying out around what happens to be stored today produces a card that only fits today.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">Fixed 390 x 845, four columns. This is what a phone shows; it is not a desktop layout preview.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} completed · {1} failed</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">Running</sys:String>

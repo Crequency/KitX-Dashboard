@@ -100,6 +100,36 @@ public class WindowService : IWindowService
             window.Show();
     }
 
+    /// <summary>Tracks open card orchestrators by ToolKit id (one per ToolKit).</summary>
+    public Dictionary<string, Window> SurfaceEditorWindows { get; } = [];
+
+    /// <summary>
+    /// Opens (or focuses) the card orchestrator for a ToolKit.
+    /// </summary>
+    /// <remarks>
+    /// The view model is resolved lazily through <see cref="App.GetService{T}"/>, for the same
+    /// reason every other window here does it: constructor-injecting a ViewModel into this service
+    /// produces the DI cycle that manifests as a frozen UI.
+    /// </remarks>
+    public void OpenSurfaceEditorWindow(string toolkitId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(toolkitId);
+
+        if (SurfaceEditorWindows.TryGetValue(toolkitId, out var existing) && existing is { IsVisible: true })
+        {
+            existing.Activate();
+            return;
+        }
+
+        var viewModel = App.GetService<SurfaceEditorViewModel>();
+        var window = new SurfaceEditorWindow(viewModel, toolkitId);
+
+        SurfaceEditorWindows[toolkitId] = window;
+        window.Closed += (_, _) => SurfaceEditorWindows.Remove(toolkitId);
+
+        ShowWindow(window);
+    }
+
     public void ShowWindow<T>(T window, Window? owner = null, bool showDialog = false, bool onlyOneInSameTime = false)
         where T : Window
     {
