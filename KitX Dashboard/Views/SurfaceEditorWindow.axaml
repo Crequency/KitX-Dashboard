@@ -112,13 +112,12 @@
                           Padding="24,0">
                 <Border Classes="canvas">
                     <Grid RowDefinitions="Auto,*">
-                        <!-- Column guides: four equal columns inside 390, drawn but not interactive. -->
-                        <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*" Height="24">
-                            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,1" />
-                            <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,1" />
-                            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,1" />
-                            <Border Grid.Column="3" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1" />
-                        </Grid>
+                        <!-- A scale for the rows below, not a grid: since Q101 a row divides itself
+                             and its cells have no width in common with the next row's. Four equal
+                             ticks would name divisions that nothing on the canvas uses. -->
+                        <Border Grid.Row="0" Height="24"
+                                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                BorderThickness="0,0,0,1" />
 
                         <ItemsControl Grid.Row="1" ItemsSource="{Binding Elements}">
                             <ItemsControl.ItemsPanel>

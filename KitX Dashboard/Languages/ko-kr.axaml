@@ -458,7 +458,7 @@
     <sys:String x:Key="Text_Bench_Surface_Clear">카드 비우기</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">확인</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NoValuesHint">캔버스는 의도적으로 값을 표시하지 않습니다. 지금 우연히 저장된 값에 맞춰 배치하면 오늘에만 맞는 카드가 됩니다.</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 고정, 4열. 휴대폰에서 보이는 모습이며 데스크톱 레이아웃 미리보기가 아닙니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 고정. 각 행은 그 행의 요소들 사이에서 가중치에 따라 너비를 나눕니다. 휴대폰에서 보이는 모습이며 데스크톱 레이아웃 미리보기가 아닙니다.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">완료 {0} · 실패 {1}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">실행 중</sys:String>

@@ -458,7 +458,7 @@
     <sys:String x:Key="Text_Bench_Surface_Clear">清空畫布</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">檢查</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NoValuesHint">畫布刻意不顯示任何值。圍著「今天恰好存著什麼」排版，排出來的卡片只適合今天。</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Footer">固定 390 × 845、四欄。這是手機上的樣子，不是桌面版面預覽。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">固定 390 × 845。每一橫排按權重在自己這排的元素之間分配寬度。這是手機上的樣子，不是桌面版面預覽。</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完成 {0} · 失敗 {1}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">執行中</sys:String>

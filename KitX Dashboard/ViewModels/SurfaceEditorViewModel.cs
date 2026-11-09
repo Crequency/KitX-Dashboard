@@ -40,12 +40,6 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// <summary>The canvas height in logical pixels.</summary>
     public const double CanvasHeight = 845;
 
-    /// <summary>How many columns the layout has. Mirrors <see cref="SurfaceDocument.DefaultColumns"/>.</summary>
-    public const int Columns = SurfaceDocument.DefaultColumns;
-
-    /// <summary>One column's width. <see cref="CanvasWidth"/> divided by <see cref="Columns"/>.</summary>
-    public const double ColumnWidth = CanvasWidth / Columns;
-
     private readonly ISurfaceStore _store;
     private readonly Func<string, IReadOnlyList<KeyDeclaration>> _keysOf;
 
@@ -118,6 +112,30 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// <summary>Whether <see cref="ValidationMessage"/> has anything in it.</summary>
     public bool HasValidationMessage => !string.IsNullOrEmpty(_validationMessage);
 
+    /// <summary>Replaces every view on the canvas from a list of elements.</summary>
+    /// <param name="elements">The elements to draw, in declaration order.</param>
+    /// <remarks>
+    /// <para><b>Every mutation rebuilds the whole canvas rather than patching one cell.</b> A cell's
+    /// width is a share of its row (Q101), so adding or removing one element changes the widths of
+    /// the others on that row. Patching would leave those views holding a document that no longer
+    /// matches the one on screen — and the symptom would be a card whose cells overlap or leave a
+    /// gap, which reads as a layout bug rather than as a stale snapshot.</para>
+    ///
+    /// <para>The cost is a rebuild of at most <see cref="MaxElements"/> small objects, on an action
+    /// a person takes by hand.</para>
+    /// </remarks>
+    private void Rebuild(IReadOnlyList<SurfaceElement> elements)
+    {
+        Elements.Clear();
+
+        var document = elements as IReadOnlyList<SurfaceElement> ?? [.. elements];
+        foreach (var element in document)
+            Elements.Add(new SurfaceElementVM(element, document));
+    }
+
+    /// <summary>The elements currently on the canvas, in declaration order.</summary>
+    private List<SurfaceElement> CurrentElements() => [.. Elements.Select(e => e.Element)];
+
     /// <summary>Loads a ToolKit's current layout.</summary>
     /// <param name="toolkitId">The ToolKit to edit.</param>
     public void Load(string toolkitId)
@@ -143,9 +161,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         }
         else
         {
-            Elements.Clear();
-            foreach (var element in loaded.Document.Elements)
-                Elements.Add(new SurfaceElementVM(element));
+            Rebuild(loaded.Document.Elements);
         }
 
         if (loaded.Warnings.Count > 0)
@@ -215,7 +231,11 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             return;
         }
 
-        Elements.Add(new SurfaceElementVM(CreateElementFor(key, Elements.Count)));
+        // Built on the list that will be on screen, not on Elements.Count: the new element is about
+        // to be appended, and its row has to follow the last one rather than repeat it.
+        var appended = CurrentElements();
+        appended.Add(CreateElementFor(key, appended.Count));
+        Rebuild(appended);
         RefreshUnplaced();
     }
 
@@ -226,7 +246,11 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         if (element is null)
             return;
 
-        Elements.Remove(element);
+        // Rebuilt rather than removed in place: the survivors on that row get wider, and their
+        // views were built against a document that still contained this one.
+        var remaining = CurrentElements();
+        remaining.Remove(element.Element);
+        Rebuild(remaining);
         ValidationMessage = null;
         RefreshUnplaced();
     }
@@ -238,16 +262,22 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// Builds the element a declared key implies.
     /// </summary>
     /// <remarks>
-    /// Type drives the choice, because the declaration already says what the View should draw. A
-    /// key whose type this build does not know still gets an element — <see cref="SurfaceTextElement"/>
-    /// — rather than being refused: the type is advisory, and an author should be able to lay out a
-    /// key whose type they intend to change.
+    /// <para>Type drives the choice, because the declaration already says what the View should
+    /// draw. A key whose type this build does not know still gets an element —
+    /// <see cref="SurfaceTextElement"/> — rather than being refused: the type is advisory, and an
+    /// author should be able to lay out a key whose type they intend to change.</para>
+    ///
+    /// <para><b>One key per row.</b> Before Q101 this packed four keys to a row because there were
+    /// four columns to fill; now a row is a group the author composes, and the palette has no
+    /// opinion about which keys belong together. A newly placed key getting the whole row is the
+    /// honest default — it says "nothing else is on this row yet" — and combining rows is then an
+    /// act the author performs rather than one the editor guessed.</para>
+    ///
+    /// <para>The weight is left at its default of 1, which alone on a row means the full width.
+    /// Setting it here would record a ratio that means nothing until a second element joins.</para>
     /// </remarks>
     private static SurfaceElement CreateElementFor(KeyDeclaration key, int index)
     {
-        var row = (index / Columns) + 1;
-        var column = (index % Columns) + 1;
-
         SurfaceElement element = key.Type switch
         {
             "number" => new SurfaceNumberElement { Key = key.Name },
@@ -256,7 +286,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             _ => new SurfaceTextElement { Key = key.Name },
         };
 
-        return element with { Row = row, Column = column };
+        return element with { Row = index + 1 };
     }
 
     private void RefreshUnplaced()

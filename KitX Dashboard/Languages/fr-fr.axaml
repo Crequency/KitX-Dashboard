@@ -458,7 +458,7 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_Surface_Clear">Vider la carte</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Vérification</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NoValuesHint">Le canevas n&apos;affiche aucune valeur, volontairement. Disposer autour de ce qui est stocké aujourd&apos;hui donne une carte qui ne convient qu&apos;à aujourd&apos;hui.</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 fixe, quatre colonnes. C&apos;est ce qu&apos;affiche un téléphone, pas un aperçu de disposition pour bureau.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 fixe. Chaque rangée se partage entre ses propres éléments, au prorata du poids. C&apos;est ce qu&apos;affiche un téléphone, pas un aperçu de disposition pour bureau.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} terminés · {1} échoués</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">En cours</sys:String>

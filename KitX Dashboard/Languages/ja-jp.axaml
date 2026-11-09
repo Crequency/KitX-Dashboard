@@ -458,7 +458,7 @@
     <sys:String x:Key="Text_Bench_Surface_Clear">カードを空にする</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">確認</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NoValuesHint">キャンバスは値を表示しません。今たまたま入っている値に合わせて配置すると、今日だけに合うカードになります。</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 固定、4 列。スマートフォンでの見え方であり、デスクトップのレイアウト プレビューではありません。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 固定。各行はその行の要素の間で重みに応じて幅を分けます。スマートフォンでの見え方であり、デスクトップのレイアウト プレビューではありません。</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完了 {0} · 失敗 {1}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">実行中</sys:String>
