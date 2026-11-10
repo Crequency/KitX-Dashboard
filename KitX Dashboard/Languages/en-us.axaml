@@ -339,7 +339,7 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_TrialRun">Trial run</sys:String>
     <sys:String x:Key="Text_Bench_Save">Save</sys:String>
     <sys:String x:Key="Text_Bench_MountedBanner">Mounted — unmount before editing</sys:String>
-    <sys:String x:Key="Text_Bench_UnmountAndEdit">Unmount & edit</sys:String>
+    <sys:String x:Key="Text_Bench_UnmountAndEdit">Unmount &amp; edit</sys:String>
     <sys:String x:Key="Text_Bench_ToolboxInspector">Toolbox</sys:String>
     <sys:String x:Key="Text_Bench_ToolboxHint">Metadata and run parameters are config truth; the header is read-only.</sys:String>
     <sys:String x:Key="Text_Bench_MetaName">Name</sys:String>
@@ -458,6 +458,11 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Empty the card</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Check</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NoValuesHint">The canvas shows no values on purpose. Laying out around what happens to be stored today produces a card that only fits today.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightHint">Share of this row. The canvas keeps the current number until this is applied.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowHint">Which row of the card. The canvas keeps the current row until this is applied.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ApplyWeight">Apply this weight</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Weight must be at least 1.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">Row must be at least 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Footer">Fixed 390 x 845. Each row divides itself among its own elements, by weight. This is what a phone shows; it is not a desktop layout preview.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} completed · {1} failed</sys:String>
 

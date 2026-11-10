@@ -458,6 +458,11 @@
     <sys:String x:Key="Text_Bench_Surface_Clear">清空画布</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">检查</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NoValuesHint">画布故意不显示任何值。围着「今天恰好存着什么」排版，排出来的卡片只适合今天。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightHint">这一行的份额。按下应用之前，画布仍按原来的数字画。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowHint">卡片上的第几行。按下应用之前，画布仍按原来的行号画。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ApplyWeight">应用这个权重</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">权重至少为 1。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">行号至少为 1。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Footer">固定 390 × 845。每行按权重在自己这一行的元素之间分配。这是手机上的样子，不是桌面布局预览。</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完成 {0} · 失败 {1}</sys:String>
 

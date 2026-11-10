@@ -339,7 +339,7 @@
     <sys:String x:Key="Text_Bench_TrialRun">Trial run</sys:String>
     <sys:String x:Key="Text_Bench_Save">Save</sys:String>
     <sys:String x:Key="Text_Bench_MountedBanner">Mounted — unmount before editing</sys:String>
-    <sys:String x:Key="Text_Bench_UnmountAndEdit">Unmount & edit</sys:String>
+    <sys:String x:Key="Text_Bench_UnmountAndEdit">Unmount &amp; edit</sys:String>
     <sys:String x:Key="Text_Bench_ToolboxInspector">Toolbox</sys:String>
     <sys:String x:Key="Text_Bench_ToolboxHint">Metadata and run parameters are config truth; the header is read-only.</sys:String>
     <sys:String x:Key="Text_Bench_MetaName">Name</sys:String>
@@ -458,6 +458,11 @@
     <sys:String x:Key="Text_Bench_Surface_Clear">Очистить карточку</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Проверка</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NoValuesHint">Холст намеренно не показывает значения. Разметка вокруг того, что случайно сохранено сегодня, даёт карточку, подходящую только на сегодня.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightHint">Доля в этой строке. До применения холст сохраняет текущее число.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowHint">Какая строка карточки. До применения холст сохраняет текущий номер строки.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ApplyWeight">Применить этот вес</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Вес должен быть не меньше 1.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">Номер строки должен быть не меньше 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Footer">Фиксированные 390 × 845. Каждая строка делится между своими элементами пропорционально весу. Так это видно на телефоне; это не предпросмотр макета для настольного компьютера.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">Завершено {0} · Сбоев {1}</sys:String>
 

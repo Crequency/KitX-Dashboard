@@ -151,13 +151,48 @@
                                                        FontWeight="SemiBold"
                                                        VerticalAlignment="Center"
                                                        TextTrimming="CharacterEllipsis" />
-                                            <Button Grid.Row="2"
-                                                    Classes="flat"
-                                                    HorizontalAlignment="Right"
-                                                    Command="{Binding $parent[Window].((viewModels:SurfaceEditorViewModel)DataContext).RemoveCommand}"
-                                                    CommandParameter="{Binding Element}">
-                                                <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
-                                            </Button>
+                                            <!--  The two numbers are drafts, so they take effect when
+                                                  applied and not while being typed: a width is a
+                                                  share of the row, so each edit resizes its
+                                                  neighbours too. Minimum only constrains the
+                                                  spinner; the commands' own guard covers the rest.  -->
+                                            <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto">
+                                                <NumericUpDown Grid.Column="0"
+                                                               Value="{Binding DraftWeight}"
+                                                               Minimum="1"
+                                                               Maximum="10"
+                                                               Increment="1"
+                                                               FormatString="0"
+                                                               Width="72"
+                                                               ToolTip.Tip="{DynamicResource Text_Bench_Surface_WeightHint}" />
+                                                <!--  A tick rather than the word "apply": the row is
+                                                      often narrower than the canvas and a word
+                                                      would be truncated to "app…" on exactly the
+                                                      cells where the number matters most.  -->
+                                                <Button Grid.Column="1"
+                                                        Classes="flat"
+                                                        Margin="4,0,0,0"
+                                                        Content="✓"
+                                                        ToolTip.Tip="{DynamicResource Text_Bench_Surface_ApplyWeight}"
+                                                        Command="{Binding $parent[Window].((viewModels:SurfaceEditorViewModel)DataContext).SetWeightCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <NumericUpDown Grid.Column="2"
+                                                               Value="{Binding DraftRow}"
+                                                               Minimum="1"
+                                                               Maximum="99"
+                                                               Increment="1"
+                                                               FormatString="0"
+                                                               Width="72"
+                                                               HorizontalAlignment="Right"
+                                                               ToolTip.Tip="{DynamicResource Text_Bench_Surface_RowHint}" />
+                                                <Button Grid.Column="3"
+                                                        Classes="flat"
+                                                        HorizontalAlignment="Right"
+                                                        Command="{Binding $parent[Window].((viewModels:SurfaceEditorViewModel)DataContext).RemoveCommand}"
+                                                        CommandParameter="{Binding Element}">
+                                                    <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
+                                                </Button>
+                                            </Grid>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

@@ -58,10 +58,39 @@ public sealed class SurfaceElementVM
     {
         Element = element ?? throw new ArgumentNullException(nameof(element));
         _document = document ?? throw new ArgumentNullException(nameof(document));
+
+        DraftWeight = Math.Max(1, Element.Weight);
+        DraftRow = Math.Max(1, Element.Row);
     }
 
     /// <summary>The element this draws. Passed back when removing it.</summary>
     public SurfaceElement Element { get; }
+
+    /// <summary>What the weight box currently says. Not what the canvas is drawn from.</summary>
+    /// <remarks>
+    /// <para><b>A draft, not a value.</b> <see cref="Element"/> is the value that was committed; this
+    /// is what somebody has typed since. The two differ exactly between the moment a number is
+    /// entered and the moment it is applied, and that interval is the whole point of the property:
+    /// without it the box and the canvas would have no way to disagree, and an edit could not be
+    /// begun without also being finished.</para>
+    ///
+    /// <para><b>The geometry properties below deliberately do not read it.</b> <see cref="Width"/>,
+    /// <see cref="Left"/> and <see cref="Top"/> compute from <see cref="Element"/> only, because a
+    /// width is a share of the row and the row's other members have drafts of their own — reading
+    /// them would make this class reach back into its siblings, which is the one thing the remarks
+    /// on <see cref="CanvasWidth"/> forbid. So the canvas shows committed values; a typed number
+    /// reaches it when it is applied, and not before.</para>
+    ///
+    /// <para>Named <c>Draft</c> rather than simply <c>Weight</c> on purpose. A property called
+    /// <c>Weight</c> sitting next to <c>Element.Weight</c>, with the drawing code reading one and the
+    /// text box the other, is the kind of pair that reads as one thing and behaves as two.</para>
+    /// </remarks>
+    public int DraftWeight { get; set; }
+
+    /// <summary>What the row box currently says. Not what the canvas is drawn from.</summary>
+    /// <remarks>See <see cref="DraftWeight"/>; the reasoning is the same and <see cref="Top"/> reads
+    /// <see cref="Element"/> for the same reason.</remarks>
+    public int DraftRow { get; set; }
 
     /// <summary>Which key the element stands for, when it has one.</summary>
     public string? Key => Element.Key;
@@ -168,6 +197,12 @@ public sealed class SurfaceElementVM
     };
 
     /// <summary>A longer description for the tooltip: kind, position and key.</summary>
+    /// <remarks>
+    /// A projection: every part of it comes from <see cref="Element"/>, which is what lets it live
+    /// here instead of in a resource file. The two tooltips the input boxes need are <em>not</em>
+    /// projections — they are words written for a person, and they are in the language files like
+    /// every other word on this window.
+    /// </remarks>
     public string Description =>
         $"{Kind} · row {Element.Row}, weight {Element.Weight}" +
         (Key is null ? string.Empty : $" · key '{Key}'");

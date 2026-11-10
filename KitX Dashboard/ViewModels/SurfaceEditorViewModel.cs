@@ -134,7 +134,8 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     }
 
     /// <summary>The elements currently on the canvas, in declaration order.</summary>
-    private List<SurfaceElement> CurrentElements() => [.. Elements.Select(e => e.Element)];
+    private List<SurfaceElement> CurrentElements() =>
+        [.. Elements.Select(e => e.Element with { Weight = e.DraftWeight, Row = e.DraftRow })];
 
     /// <summary>Loads a ToolKit's current layout.</summary>
     /// <param name="toolkitId">The ToolKit to edit.</param>
@@ -255,6 +256,77 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         RefreshUnplaced();
     }
 
+    /// <summary>Gives one element a different share of its row.</summary>
+    /// <param name="element">The element to resize.</param>
+    /// <param name="weight">How many parts of the row it should take. One or more.</param>
+    /// <remarks>
+    /// <para><b>Refused here, tolerated there.</b> A weight below one is not accepted by this method,
+    /// while <see cref="SurfaceValidator"/> repairs it to one and reports a warning. The asymmetry is
+    /// deliberate: the editor must not let an author write a value that will be reported back at them,
+    /// and the loading path must accept whatever somebody else already wrote. Do not "unify" these two
+    /// checks — they answer different questions.</para>
+    ///
+    /// <para>Rebuilt rather than patched, for the same reason <see cref="Remove"/> is: a cell's width
+    /// is a share of its row, so changing one weight changes every sibling's width.</para>
+    /// </remarks>
+    public void SetWeight(SurfaceElementVM element, int weight)
+    {
+        if (element is null || weight < 1)
+        {
+            // Refused. This is the only place that says so, because ReactiveUI's CanExecute cannot
+            // see the command's parameter and therefore cannot ask "is this cell's draft valid".
+            // Staying silent would make the refusal indistinguishable from the button being dead.
+            ValidationMessage = TranslateText("Bench_Surface_WeightOutOfRange") ?? "Weight must be at least 1.";
+            return;
+        }
+
+        var changed = CurrentElements();
+        var index = changed.IndexOf(element.Element);
+
+        if (index < 0)
+            return;
+
+        changed[index] = changed[index] with { Weight = weight };
+        Rebuild(changed);
+        ValidationMessage = null;
+    }
+
+    /// <summary>Moves one element to a different row of the card.</summary>
+    /// <param name="element">The element to move.</param>
+    /// <param name="row">The row number it should sit on. One or more.</param>
+    /// <remarks>
+    /// Moving an element onto an occupied row puts it at the end of that row rather than at the end of
+    /// the document — the document's element order is also the left-to-right order of a row (Q101), so
+    /// the new arrival belongs after whatever was already there.
+    /// </remarks>
+    public void MoveToRow(SurfaceElementVM element, int row)
+    {
+        if (element is null || row < 1)
+        {
+            // Same reasoning as SetWeight: a silent refusal here reads as a dead button.
+            ValidationMessage = TranslateText("Bench_Surface_RowOutOfRange") ?? "Row must be at least 1.";
+            return;
+        }
+
+        var moved = CurrentElements();
+        var index = moved.IndexOf(element.Element);
+
+        if (index < 0)
+            return;
+
+        var updated = moved[index] with { Row = row };
+
+        moved.RemoveAt(index);
+
+        // After the last element already on that row, so it lands on the right-hand end of it.
+        var lastOnRow = moved.FindLastIndex(other => other.Row == row);
+
+        moved.Insert(lastOnRow < 0 ? moved.Count : lastOnRow + 1, updated);
+
+        Rebuild(moved);
+        ValidationMessage = null;
+    }
+
     /// <summary>How many elements a card may hold. A guard against an accidental infinite scroll.</summary>
     public const int MaxElements = 200;
 
@@ -307,6 +379,23 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         RemoveCommand = ReactiveCommand.Create<SurfaceElementVM>(Remove);
         SaveCommand = ReactiveCommand.Create(Save);
         ClearCommand = ReactiveCommand.Create(Clear);
+
+        // The command takes the cell itself and reads the number off its draft, so a text box binds
+        // straight to the property it edits and the parameter needs no packing. The two workhorse
+        // methods below still take the number explicitly — they are the ones a test or a later
+        // caller would reach for, and neither should have to know that a draft exists.
+        //
+        // There is no CanExecute here, and that is a limitation rather than a choice: ReactiveUI
+        // takes an IObservable<bool>, which cannot see the parameter, so with one command per cell
+        // there is nowhere to put "this cell's draft is currently valid". Avalonia still calls
+        // Execute, and Execute refuses — so a NumericUpDown that accepted a pasted 0 changes
+        // nothing rather than drawing a degenerate row. The guard in SetWeight is therefore the
+        // only line of defence and must not be removed as "redundant".
+        SetWeightCommand = ReactiveCommand.Create<SurfaceElementVM>(
+            element => SetWeight(element, element.DraftWeight));
+
+        MoveToRowCommand = ReactiveCommand.Create<SurfaceElementVM>(
+            element => MoveToRow(element, element.DraftRow));
     }
 
     /// <inheritdoc/>
@@ -327,4 +416,10 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
     /// <summary>Empties the canvas in memory.</summary>
     public ReactiveCommand<Unit, Unit> ClearCommand { get; private set; } = null!;
+
+    /// <summary>Applies one cell's draft weight to the canvas.</summary>
+    public ReactiveCommand<SurfaceElementVM, Unit> SetWeightCommand { get; private set; } = null!;
+
+    /// <summary>Applies one cell's draft row to the canvas.</summary>
+    public ReactiveCommand<SurfaceElementVM, Unit> MoveToRowCommand { get; private set; } = null!;
 }

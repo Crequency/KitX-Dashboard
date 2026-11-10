@@ -339,7 +339,7 @@
     <sys:String x:Key="Text_Bench_TrialRun">Trial run</sys:String>
     <sys:String x:Key="Text_Bench_Save">Save</sys:String>
     <sys:String x:Key="Text_Bench_MountedBanner">Mounted — unmount before editing</sys:String>
-    <sys:String x:Key="Text_Bench_UnmountAndEdit">Unmount & edit</sys:String>
+    <sys:String x:Key="Text_Bench_UnmountAndEdit">Unmount &amp; edit</sys:String>
     <sys:String x:Key="Text_Bench_ToolboxInspector">Toolbox</sys:String>
     <sys:String x:Key="Text_Bench_ToolboxHint">Metadata and run parameters are config truth; the header is read-only.</sys:String>
     <sys:String x:Key="Text_Bench_MetaName">Name</sys:String>
@@ -458,6 +458,11 @@
     <sys:String x:Key="Text_Bench_Surface_Clear">カードを空にする</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">確認</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NoValuesHint">キャンバスは値を表示しません。今たまたま入っている値に合わせて配置すると、今日だけに合うカードになります。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightHint">この行の取り分です。適用するまでキャンバスは元の数値のまま描きます。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowHint">カード上の何行目か。適用するまでキャンバスは元の行番号のまま描きます。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ApplyWeight">この重みを適用</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">重みは 1 以上にしてください。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">行番号は 1 以上にしてください。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 固定。各行はその行の要素の間で重みに応じて幅を分けます。スマートフォンでの見え方であり、デスクトップのレイアウト プレビューではありません。</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完了 {0} · 失敗 {1}</sys:String>
 

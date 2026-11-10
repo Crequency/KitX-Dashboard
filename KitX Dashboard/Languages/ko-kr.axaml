@@ -339,7 +339,7 @@
     <sys:String x:Key="Text_Bench_TrialRun">Trial run</sys:String>
     <sys:String x:Key="Text_Bench_Save">Save</sys:String>
     <sys:String x:Key="Text_Bench_MountedBanner">Mounted — unmount before editing</sys:String>
-    <sys:String x:Key="Text_Bench_UnmountAndEdit">Unmount & edit</sys:String>
+    <sys:String x:Key="Text_Bench_UnmountAndEdit">Unmount &amp; edit</sys:String>
     <sys:String x:Key="Text_Bench_ToolboxInspector">Toolbox</sys:String>
     <sys:String x:Key="Text_Bench_ToolboxHint">Metadata and run parameters are config truth; the header is read-only.</sys:String>
     <sys:String x:Key="Text_Bench_MetaName">Name</sys:String>
@@ -458,6 +458,11 @@
     <sys:String x:Key="Text_Bench_Surface_Clear">카드 비우기</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">확인</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NoValuesHint">캔버스는 의도적으로 값을 표시하지 않습니다. 지금 우연히 저장된 값에 맞춰 배치하면 오늘에만 맞는 카드가 됩니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightHint">이 행에서의 몫입니다. 적용하기 전까지 캔버스는 원래 숫자대로 그립니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowHint">카드의 몇 번째 행인지. 적용하기 전까지 캔버스는 원래 행 번호대로 그립니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ApplyWeight">이 가중치 적용</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">가중치는 1 이상이어야 합니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">행 번호는 1 이상이어야 합니다.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 고정. 각 행은 그 행의 요소들 사이에서 가중치에 따라 너비를 나눕니다. 휴대폰에서 보이는 모습이며 데스크톱 레이아웃 미리보기가 아닙니다.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">완료 {0} · 실패 {1}</sys:String>
 
