@@ -152,5 +152,34 @@
         </Compile>
     </ItemGroup>
 
+    <!--
+        The language files are Content, not AvaloniaXaml (see the Remove block above), so nothing
+        compiles them. That is deliberate: they are loaded at run time by LanguageLoader. It also
+        means a malformed one is invisible until the application starts, and then it fails
+        silently. LanguageLoader's own fallback throws too, it logs "No supported language file
+        loaded", and every {DynamicResource Text_*} resolves to nothing. The whole UI loses its
+        words with no exception surfacing anywhere.
+
+        This target exists because that has already happened once (4cf1ce9: an unescaped '&' in
+        Text_Bench_UnmountAndEdit, in five of the seven files). XDocument parsing is the cheapest
+        thing that catches the only shape this defect takes, and it runs outside the Avalonia build
+        path precisely because the point is that these files are not in it.
+    -->
+    <ItemGroup>
+        <LanguageFile Include="$(MSBuildProjectDirectory)\Languages\*.axaml" />
+    </ItemGroup>
+
+    <Target Name="ValidateLanguageFiles" BeforeTargets="Build">
+        <!--
+            XmlPeek is the whole check: it parses the file, and a parse failure surfaces as
+            MSB3733 and stops the build. No assertion is needed on top of that, because "did it
+            parse" is exactly the question. The Query pulls the root node so that a file which is
+            well-formed but has no root (empty) is also caught.
+        -->
+        <XmlPeek XmlInputPath="%(LanguageFile.Identity)" Query="/*">
+            <Output TaskParameter="Result" ItemName="LanguageFileRoots" />
+        </XmlPeek>
+    </Target>
+
     <!-- Obsolete files removed in Phase 6 cleanup -->
 </Project>
