@@ -171,14 +171,26 @@
 
     <Target Name="ValidateLanguageFiles" BeforeTargets="Build">
         <!--
-            XmlPeek is the whole check: it parses the file, and a parse failure surfaces as
-            MSB3733 and stops the build. No assertion is needed on top of that, because "did it
-            parse" is exactly the question. The Query pulls the root node so that a file which is
-            well-formed but has no root (empty) is also caught.
+            The count is not about the parse; it is about this target still being able to see
+            what it is supposed to check. The glob above is flat, so a file moved into a
+            subdirectory silently drops out of it and every remaining file still parses. The
+            check would go on passing while checking one file fewer, which is the same defect
+            this target was added to catch, one level up.
+
+            Seven is written down rather than derived, on purpose. Adding a language is allowed,
+            and it has to be an edit somebody sees: the eighth file turns this red once, and
+            whoever sees it answers "why eight". A number that updated itself would answer that
+            question without anyone reading it.
         -->
-        <XmlPeek XmlInputPath="%(LanguageFile.Identity)" Query="/*">
-            <Output TaskParameter="Result" ItemName="LanguageFileRoots" />
-        </XmlPeek>
+        <Error Condition="'@(LanguageFile->Count())' != '7'"
+               Text="Expected 7 language files under Languages\, found @(LanguageFile->Count()). If one moved into a subdirectory, the glob above no longer reaches it and nothing is being checked. If one was added, update this number." />
+
+        <!--
+            XmlPeek is the parse check: a failure surfaces as MSB3733 and stops the build, with
+            the same line and position the runtime loader would report. The Query pulls the root
+            node so that a well-formed file with no root is caught too.
+        -->
+        <XmlPeek XmlInputPath="%(LanguageFile.Identity)" Query="/*" />
     </Target>
 
     <!-- Obsolete files removed in Phase 6 cleanup -->
