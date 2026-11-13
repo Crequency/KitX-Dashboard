@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
@@ -81,6 +82,85 @@ public class SurfaceEditorRenderTests
         new SurfaceTextElement { Row = 1, Weight = 1, Key = "left" },
         new SurfaceButtonElement { Row = 1, Weight = 2, Label = "right", Events = ["go"] },
     ];
+
+    /// <summary>Whether a test in this file fails when the canvas defect is present.</summary>
+    private enum Under { Catches, PassesAnyway }
+
+    /// <summary>
+    /// What each test in this file does under the canvas defect, measured — not guessed.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why a table and not prose.</b> Three versions of this file's guard were written, and
+    /// two of them passed while the canvas was broken. That fact lived in comments, and comments are
+    /// what the next person skims past to copy whichever test looks most like a template. The
+    /// unclassified test gets copied; the one labelled "this one is wrong" does not, because the
+    /// label is a sentence rather than a row.</para>
+    ///
+    /// <para><b>How each row was measured.</b> Change <c>SurfaceCanvasLayer</c> from a <c>Grid</c> to
+    /// a <c>Canvas</c>, rebuild, run only this class, and read which tests failed. Restore. A row
+    /// whose verdict was reasoned out rather than observed would defeat the point of the table.</para>
+    /// </remarks>
+    private static readonly IReadOnlyDictionary<string, (Under Verdict, string UnderTheDefect)> Ledger =
+        new Dictionary<string, (Under, string)>(StringComparer.Ordinal)
+        {
+            [nameof(The_canvas_layer_gets_a_size_from_its_parent)] =
+                (Under.PassesAnyway, "layer still measures 388×819 — its size comes from the Grid row it sits in"),
+
+            [nameof(Every_cell_is_measured_and_placed_inside_the_canvas)] =
+                (Under.PassesAnyway, "cell still measures 125×88 — an ItemsControl lays its own containers out"),
+
+            [nameof(The_two_cells_do_not_overlap_and_leave_the_declared_gap)] =
+                (Under.PassesAnyway, "arithmetic on the view model, unaffected by where anything is drawn"),
+
+            [nameof(A_row_of_one_weight_cell_draws_the_full_width)] =
+                (Under.PassesAnyway, "same — it reads a width, not a rendering"),
+
+            [nameof(The_items_controls_inside_the_layer_are_not_measured_to_zero)] =
+                (Under.Catches, "the ItemsControl inside the layer reads 0×0"),
+
+            [nameof(Every_ancestor_between_a_cell_and_the_window_has_a_size)] =
+                (Under.Catches, "the Canvas ancestor reads 0×0"),
+        };
+
+    /// <summary>
+    /// Every test in this file is classified in <see cref="Ledger"/>, so a new one cannot skip it.
+    /// </summary>
+    /// <remarks>
+    /// This is the only test here whose subject is the other tests. It exists because the ledger is
+    /// worthless the moment someone adds a seventh test and does not add a row: the table would
+    /// still read as complete while covering five sixths of the file.
+    /// </remarks>
+    [AvaloniaFact]
+    public void Every_test_in_this_file_says_whether_it_catches_the_canvas_defect()
+    {
+        var mine = nameof(Every_test_in_this_file_says_whether_it_catches_the_canvas_defect);
+
+        var tests = typeof(SurfaceEditorRenderTests)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Where(method => method.GetCustomAttribute<AvaloniaFactAttribute>() is not null)
+            .Select(method => method.Name)
+            .Where(name => !string.Equals(name, mine, StringComparison.Ordinal))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.NotEmpty(tests);
+
+        var missing = tests.Where(name => !Ledger.ContainsKey(name)).ToList();
+        Assert.True(
+            missing.Count == 0,
+            $"these tests say nothing about what they do under the canvas defect: " +
+            $"{string.Join(", ", missing)}. Break the layer, run them, then add a row.");
+
+        var stale = Ledger.Keys.Where(key => !tests.Contains(key, StringComparer.Ordinal)).ToList();
+        Assert.True(
+            stale.Count == 0,
+            $"the ledger names tests that no longer exist: {string.Join(", ", stale)}");
+
+        var catching = Ledger.Count(row => row.Value.Verdict == Under.Catches);
+        Assert.True(
+            catching > 0,
+            "no test in this file catches the canvas defect — the ledger is describing smoke only");
+    }
 
     private static SurfaceEditorWindow Open(IReadOnlyList<SurfaceElement> elements)
     {
