@@ -143,6 +143,9 @@ public class SurfaceEditorRenderTests
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
 
+        // Not empty: if reflection ever stops finding the attributes, the count goes from seven to
+        // zero — a suite that shrinks by seven is visible on its own, without a cleverer assertion
+        // here. The message is a convenience, not the safety net.
         Assert.NotEmpty(tests);
 
         var missing = tests.Where(name => !Ledger.ContainsKey(name)).ToList();

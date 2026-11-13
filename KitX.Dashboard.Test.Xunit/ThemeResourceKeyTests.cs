@@ -143,6 +143,14 @@ public class ThemeResourceKeyTests
     /// <para><b>What it does not prove.</b> That every key differs, only that the variant switch
     /// reaches the resource lookup at all. One key changing is what distinguishes "two themes" from
     /// "one theme asked twice".</para>
+    ///
+    /// <para><b>If an assertion reads the same value under both variants, suspect the reading before
+    /// the subject.</b> The first version of this test pushed <c>RequestedThemeVariant</c> and then
+    /// read with the parameterless <c>TryFindResource</c>, which answers from the host's current
+    /// variant; the property had been assigned but nothing had re-resolved, so both reads returned
+    /// <c>#80ffffff</c> and the test reported "light and dark are identical". The theme was fine.
+    /// A wrong reading fails in the shape of "the two are the same", which is the hardest green to
+    /// notice: it agrees with a plausible diagnosis and produces no other symptom.</para>
     /// </remarks>
     [AvaloniaFact]
     public void The_two_theme_variants_do_not_answer_with_the_same_brush()
