@@ -360,36 +360,51 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         ValidationMessage = null;
     }
 
-    /// <summary>Saves the canvas, first checking that every element still refers to a key.</summary>
+    /// <summary>
+    /// Writes the canvas and reports what the validator would drop — in that order, always.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The write comes first, and nothing below can undo it.</b> The canvas is the only copy
+    /// of the author's layout between saves, so a save that refuses to run because the card currently
+    /// has a problem throws that work away over a key they can re-declare. The user's rule is the
+    /// whole design here: <em>saving must never be blocked by a warning</em>. Writing before asking
+    /// is what makes that structural rather than a promise — even a validator that threw could not
+    /// take the file with it.</para>
+    ///
+    /// <para><b>The document written is the one on the canvas, not the one that survives
+    /// validation.</b> Pruning before writing would delete the very elements the warning is about,
+    /// and the author would be told about cells that are already gone. So the file keeps everything,
+    /// and <see cref="ValidationMessage"/> names what a render will leave out.</para>
+    ///
+    /// <para><b>Diagnosis is delegated, not re-implemented.</b> The old version hand-checked
+    /// <c>key</c> against <see cref="DeclaredKeys"/> here and knew about exactly one rule. The
+    /// validator knows a dozen — <c>key-ignored</c>, <c>inert</c>, bad weight, unknown emphasis,
+    /// list key not an array — and lives inside <c>KitX.ToolKit</c>, which this assembly cannot see;
+    /// <see cref="ISurfaceStore.Diagnose"/> is the seam that lets it be asked.</para>
+    /// </remarks>
     public void Save()
     {
         if (string.IsNullOrWhiteSpace(ToolkitId))
             return;
 
-        var problems = new List<string>();
+        var document = new SurfaceDocument { Elements = CurrentElements() };
 
-        foreach (var element in Elements)
-        {
-            if (element.Key is null)
-                continue;
+        _store.Save(ToolkitId, document);
 
-            if (!DeclaredKeys.Any(k => string.Equals(k.Name, element.Key, StringComparison.Ordinal)))
-                problems.Add($"'{element.Key}' is no longer declared.");
-        }
-        if (problems.Count > 0)
+        // Materialised rather than passed live: the store is handed a question, not a window onto a
+        // collection the user can still edit.
+        var warnings = _store.Diagnose(document, [.. DeclaredKeys]);
+
+        if (warnings.Count > 0)
         {
-            // Named, and saved anyway: refusing the save would throw away the author's layout work
-            // over a key they can re-add. The check is an alarm, not a gate.
-            ValidationMessage = string.Join(" ", problems.Distinct(StringComparer.Ordinal));
+            ValidationMessage = string.Join(
+                " ", warnings.Select(warning => warning.Message).Distinct(StringComparer.Ordinal));
             Status = TranslateText("Bench_Surface_SavedWithProblems") ?? "Saved, with problems.";
+
+            Log.Warning("[SurfaceEditor] '{Toolkit}' was saved with {Count} diagnostic(s)",
+                ToolkitId, warnings.Count);
         }
-
-        _store.Save(ToolkitId, new SurfaceDocument
-        {
-            Elements = CurrentElements(),
-        });
-
-        if (problems.Count == 0)
+        else
         {
             ValidationMessage = null;
             Status = TranslateText("Bench_Surface_Saved") ?? "Saved.";

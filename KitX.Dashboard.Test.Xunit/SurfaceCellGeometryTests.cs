@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using KitX.Dashboard.ViewModels;
 using KitX.ToolKit.Contract;
+using KitX.ToolKit.Contract.Declaration;
 using KitX.ToolKit.Contract.Surface;
 using Xunit;
 
@@ -337,6 +338,10 @@ public class SurfaceCellGeometryTests
         public void Save(string toolkitId, SurfaceDocument document)
         {
         }
+
+        /// <summary>Nothing to report: this store exists to be loaded from.</summary>
+        public IReadOnlyList<Diagnostic> Diagnose(
+            SurfaceDocument document, IEnumerable<KeyDeclaration> keys) => [];
 
         public void Delete(string toolkitId)
         {

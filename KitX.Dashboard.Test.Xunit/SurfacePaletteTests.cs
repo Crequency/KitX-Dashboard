@@ -116,6 +116,10 @@ public sealed class SurfacePaletteTests
         {
         }
 
+        /// <summary>Nothing to report: this store exists to be loaded from.</summary>
+        public IReadOnlyList<Diagnostic> Diagnose(
+            SurfaceDocument document, IEnumerable<KeyDeclaration> keys) => [];
+
         public void Delete(string toolkitId)
         {
         }
