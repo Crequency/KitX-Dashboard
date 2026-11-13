@@ -516,8 +516,15 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     ///
     /// <para>Nothing in the product ran either path: <c>SurfaceValidator</c> has no production call
     /// site, so nothing dropped the element, and a <c>Number</c>'s value is written by a workflow, so
-    /// nothing pushed one into it. Two missing wires hid one broken author. The mapping is fixed here
-    /// because it is the part that was wrong on its own terms, not because a wire is about to run.</para>
+    /// nothing pushed one into it. Two missing wires hid one broken author.</para>
+    ///
+    /// <para><b>Fixing this one mapping does not close the road.</b> A document reaches the renderer
+    /// from two places, and neither is checked: <c>SurfaceStore.Load</c> deserialises whatever is on
+    /// disk, and <c>ViewSession.Attach</c> logs the surface validator's diagnostics and attaches
+    /// anyway. Both still carry a hand-written <c>Number { Key = "x" }</c> to the same
+    /// <c>NotSupportedException</c>. The intercept for those is <c>SurfaceValidator</c>, which has no
+    /// production call site -- so what this fixes is the producer that could be fixed without wiring
+    /// anything, not the shape.</para>
     ///
     /// <para><b>A type this build does not know also gets <see cref="SurfaceTextElement"/> rather
     /// than being refused.</b> The type is advisory, and an author should be able to lay out a key
