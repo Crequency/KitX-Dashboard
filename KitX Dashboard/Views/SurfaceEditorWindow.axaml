@@ -153,55 +153,121 @@
                                             Padding="8"
                                             ToolTip.Tip="{Binding Description}">
                                         <Grid RowDefinitions="Auto,*,Auto">
+                                            <!--  Trimming, not clipping: at ten equal weights a cell is
+                                                  31px wide and 15px of that is content, so "Button"
+                                                  cannot be drawn. Left to clip it renders as "But",
+                                                  which reads as a word rather than as a cut.  -->
                                             <TextBlock Grid.Row="0"
                                                        Text="{Binding Kind}"
                                                        FontSize="10"
-                                                       Opacity="0.6" />
+                                                       Opacity="0.6"
+                                                       TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Row="1"
                                                        Text="{Binding Label}"
                                                        FontWeight="SemiBold"
                                                        VerticalAlignment="Center"
                                                        TextTrimming="CharacterEllipsis" />
-                                            <!--  The two numbers are drafts, so they take effect when
-                                                  applied and not while being typed: a width is a
-                                                  share of the row, so each edit resizes its
-                                                  neighbours too. Minimum only constrains the
-                                                  spinner; the commands' own guard covers the rest.  -->
+                                            <!--  Two modes, because a cell can be 31px wide.
+                                                  A weight is a share of its row, so this box's width
+                                                  is decided by its siblings: ten equal weights make
+                                                  each cell 31px, and the strip below needs 204. Drawn
+                                                  inline in a cell that narrow, the spinners and ticks
+                                                  overlapped each other and spilled outside the
+                                                  border — while every number involved was correct.
+                                                  So the strip only appears where it fits, and a
+                                                  button puts the same controls in a flyout, which is
+                                                  laid out against the window and therefore can be the
+                                                  natural size at any cell width.  -->
                                             <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto">
-                                                <NumericUpDown Grid.Column="0"
-                                                               Value="{Binding DraftWeight}"
-                                                               Minimum="1"
-                                                               Maximum="10"
-                                                               Increment="1"
-                                                               FormatString="0"
-                                                               Width="72"
-                                                               ToolTip.Tip="{DynamicResource Text_Bench_Surface_WeightHint}" />
-                                                <!--  A tick rather than the word "apply": the row is
-                                                      often narrower than the canvas and a word
-                                                      would be truncated to "app…" on exactly the
-                                                      cells where the number matters most.  -->
-                                                <Button Grid.Column="1"
-                                                        Classes="flat"
-                                                        Margin="4,0,0,0"
-                                                        Content="✓"
-                                                        ToolTip.Tip="{DynamicResource Text_Bench_Surface_ApplyWeight}"
-                                                        Command="{Binding $parent[Window].DataContext.SetWeightCommand}"
-                                                        CommandParameter="{Binding}" />
-                                                <NumericUpDown Grid.Column="2"
-                                                               Value="{Binding DraftRow}"
-                                                               Minimum="1"
-                                                               Maximum="99"
-                                                               Increment="1"
-                                                               FormatString="0"
-                                                               Width="72"
-                                                               HorizontalAlignment="Right"
-                                                               ToolTip.Tip="{DynamicResource Text_Bench_Surface_RowHint}" />
-                                                <Button Grid.Column="3"
+                                                <Grid Grid.ColumnSpan="4"
+                                                      IsVisible="{Binding ShowsFullControls}"
+                                                      ColumnDefinitions="Auto,Auto,*,Auto">
+                                                    <NumericUpDown Grid.Column="0"
+                                                                   Value="{Binding DraftWeight}"
+                                                                   Minimum="1"
+                                                                   Maximum="10"
+                                                                   Increment="1"
+                                                                   FormatString="0"
+                                                                   Width="72"
+                                                                   ToolTip.Tip="{DynamicResource Text_Bench_Surface_WeightHint}" />
+                                                    <!--  A tick rather than the word "apply": the row is
+                                                          often narrower than the canvas and a word
+                                                          would be truncated to "app…" on exactly the
+                                                          cells where the number matters most.  -->
+                                                    <Button Grid.Column="1"
+                                                            Classes="flat"
+                                                            Margin="4,0,0,0"
+                                                            Content="✓"
+                                                            ToolTip.Tip="{DynamicResource Text_Bench_Surface_ApplyWeight}"
+                                                            Command="{Binding $parent[Window].DataContext.SetWeightCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                    <NumericUpDown Grid.Column="2"
+                                                                   Value="{Binding DraftRow}"
+                                                                   Minimum="1"
+                                                                   Maximum="99"
+                                                                   Increment="1"
+                                                                   FormatString="0"
+                                                                   Width="72"
+                                                                   HorizontalAlignment="Right"
+                                                                   ToolTip.Tip="{DynamicResource Text_Bench_Surface_RowHint}" />
+                                                    <Button Grid.Column="3"
+                                                            Classes="flat"
+                                                            HorizontalAlignment="Right"
+                                                            Command="{Binding $parent[Window].DataContext.RemoveCommand}"
+                                                            CommandParameter="{Binding Element}">
+                                                        <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
+                                                    </Button>
+                                                </Grid>
+
+                                                <Button Grid.ColumnSpan="4"
                                                         Classes="flat"
                                                         HorizontalAlignment="Right"
-                                                        Command="{Binding $parent[Window].DataContext.RemoveCommand}"
-                                                        CommandParameter="{Binding Element}">
-                                                    <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
+                                                        VerticalAlignment="Center"
+                                                        IsVisible="{Binding !ShowsFullControls}"
+                                                        ToolTip.Tip="{DynamicResource Text_Bench_Surface_AdjustCell}">
+                                                    <icon:MaterialIcon Width="14" Height="14" Kind="DotsHorizontal" />
+                                                    <Button.Flyout>
+                                                        <Flyout Placement="Bottom">
+                                                            <StackPanel Spacing="8" MinWidth="200">
+                                                                <TextBlock Text="{DynamicResource Text_Bench_Surface_WeightHint}"
+                                                                           FontSize="11"
+                                                                           Opacity="0.65"
+                                                                           TextWrapping="Wrap" />
+                                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                    <NumericUpDown Value="{Binding DraftWeight}"
+                                                                                   Minimum="1"
+                                                                                   Maximum="10"
+                                                                                   Increment="1"
+                                                                                   FormatString="0"
+                                                                                   Width="72" />
+                                                                    <Button Classes="flat"
+                                                                            Margin="4,0,0,0"
+                                                                            Content="✓"
+                                                                            ToolTip.Tip="{DynamicResource Text_Bench_Surface_ApplyWeight}"
+                                                                            Command="{Binding $parent[Window].DataContext.SetWeightCommand}"
+                                                                            CommandParameter="{Binding}" />
+                                                                </StackPanel>
+                                                                <TextBlock Text="{DynamicResource Text_Bench_Surface_RowHint}"
+                                                                           FontSize="11"
+                                                                           Opacity="0.65"
+                                                                           TextWrapping="Wrap" />
+                                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                    <NumericUpDown Value="{Binding DraftRow}"
+                                                                                   Minimum="1"
+                                                                                   Maximum="99"
+                                                                                   Increment="1"
+                                                                                   FormatString="0"
+                                                                                   Width="72" />
+                                                                    <Button Classes="flat"
+                                                                            HorizontalAlignment="Right"
+                                                                            Command="{Binding $parent[Window].DataContext.RemoveCommand}"
+                                                                            CommandParameter="{Binding Element}">
+                                                                        <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                        </Flyout>
+                                                    </Button.Flyout>
                                                 </Button>
                                             </Grid>
                                         </Grid>

@@ -462,6 +462,7 @@
     <sys:String x:Key="Text_Bench_Surface_WeightHint">Доля в этой строке. До применения холст сохраняет текущее число.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowHint">Какая строка карточки. До применения холст сохраняет текущий номер строки.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_ApplyWeight">Применить этот вес</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_AdjustCell">Настройки ячейки</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Вес должен быть не меньше 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">Номер строки должен быть не меньше 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Footer">Фиксированные 390 × 845. Каждая строка делится между своими элементами пропорционально весу. Так это видно на телефоне; это не предпросмотр макета для настольного компьютера.</sys:String>

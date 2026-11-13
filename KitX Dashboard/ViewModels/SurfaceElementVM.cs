@@ -170,6 +170,43 @@ public sealed class SurfaceElementVM
     /// <summary>Height in canvas pixels.</summary>
     public double Height => RowHeight - CellGap;
 
+    /// <summary>Pixels of padding inside a cell, on each side.</summary>
+    /// <remarks>Mirrors the cell template's <c>Padding</c>. Named because the width arithmetic below
+    /// has to subtract it twice, and a literal 8 in three places is how the two drift apart.</remarks>
+    public const double CellPadding = 8;
+
+    /// <summary>What the inline weight/row strip needs to lay out without overlapping itself.</summary>
+    /// <remarks>
+    /// <para>Two 72px spinners, two icon buttons at their natural size, and the 4px margin before the
+    /// first tick — measured from the template rather than guessed, and asserted against the template
+    /// by <c>SurfaceCellGeometryTests</c> so the two cannot drift.</para>
+    ///
+    /// <para><b>This number is a fact about the controls, not a policy.</b> Changing a spinner's width
+    /// has to change this too, which is the point: the threshold below is derived from it, so making
+    /// the strip wider automatically makes it appear in fewer cells.</para>
+    /// </remarks>
+    public const double ControlStripNaturalWidth = 204;
+
+    /// <summary>The narrowest cell that can hold the inline strip and its padding.</summary>
+    public const double FullControlsMinimumWidth = ControlStripNaturalWidth + (CellPadding * 2);
+
+    /// <summary>Whether this cell is wide enough to show the weight/row controls inside it.</summary>
+    /// <remarks>
+    /// <para><b>A weight is a share of its row, so a cell can be arbitrarily narrow.</b> Ten equal
+    /// weights make each cell 31px; the strip needs 220. Drawn inside, the spinners and ticks
+    /// overlapped each other and spilled past the cell's border, and no assertion noticed because the
+    /// width was correct — 31px is the right width for a tenth of a row. The defect was never the
+    /// arithmetic; it was putting fixed-width children into a box whose size is decided elsewhere.</para>
+    ///
+    /// <para><b>Below the threshold the strip leaves the cell.</b> It does not shrink to 15px, because
+    /// a 15px spinner is not a smaller control, it is an unusable one. The cell keeps its label and
+    /// gains a button that opens the same controls in a flyout — a popup is laid out against the
+    /// window, so it can be the natural size no matter how narrow the cell is. That is what makes the
+    /// invariant hold for <em>any</em> weight combination: in compact mode nothing inside the cell has
+    /// a width of its own.</para>
+    /// </remarks>
+    public bool ShowsFullControls => Width >= FullControlsMinimumWidth;
+
     /// <summary>The element kind, for the cell's corner label.</summary>
     public string Kind => Element switch
     {

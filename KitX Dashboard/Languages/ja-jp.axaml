@@ -462,6 +462,7 @@
     <sys:String x:Key="Text_Bench_Surface_WeightHint">この行の取り分です。適用するまでキャンバスは元の数値のまま描きます。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowHint">カード上の何行目か。適用するまでキャンバスは元の行番号のまま描きます。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_ApplyWeight">この重みを適用</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_AdjustCell">セルの設定</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">重みは 1 以上にしてください。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">行番号は 1 以上にしてください。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 固定。各行はその行の要素の間で重みに応じて幅を分けます。スマートフォンでの見え方であり、デスクトップのレイアウト プレビューではありません。</sys:String>
