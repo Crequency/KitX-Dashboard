@@ -7,6 +7,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Skia;
 using Avalonia.Styling;
 using NodifyM.Avalonia.Controls;
 using NodifyM.Avalonia.ViewModelBase;
@@ -43,7 +44,18 @@ public static class TestAppBuilder
 {
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<TestApp>()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions());
+            // Skia, or no window can ever be shown. FluentAvaloniaTheme reaches its icons through a
+            // font family named "Symbols", and the headless drawing backend cannot rasterise it:
+            // `window.Show()` throws "Could not create glyphTypeface" before a single arrangement.
+            // Without Skia the most a test can do with a window is read its XAML as text, which is
+            // exactly how four Surface defects lived through eighty-six green tests.
+            .UseSkia()
+            // UseHeadlessDrawing = false, or there is nothing to draw with. The default headless
+            // backend is a stub: it creates no glyph typefaces, so a window whose theme names a
+            // font family throws "Could not create glyphTypeface" during Show() and never reaches
+            // layout. A stub renderer cannot tell a zero-sized control from a rendered one, which
+            // is the whole class of defect this file exists to catch.
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
 }
 
 /// <summary>
