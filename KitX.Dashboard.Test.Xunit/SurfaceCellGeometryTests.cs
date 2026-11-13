@@ -144,6 +144,29 @@ public class SurfaceCellGeometryTests
                 $"{SurfaceElementVM.CellGap}px gap it is centred in"));
     }
 
+    [Fact]
+    public void The_template_read_from_disk_is_the_one_the_running_assembly_was_built_from()
+    {
+        // The tests above read widths out of a file. If that file has been edited since the last
+        // build, they describe source that is not what ran — they would pass against a template the
+        // application does not have, and fail against one it does.
+        //
+        // The scope is exactly "same input, not stale": this proves the file and the assembly were
+        // produced from one comparison point. It does not prove the IL matches the text. And if the
+        // .axaml ever stops being a Compile item, the two mtimes lose their causal link and this
+        // assertion goes quietly true forever.
+        var axaml = RepositoryFile(
+            @"KitX Clients\KitX Dashboard\KitX Dashboard\Views\SurfaceEditorWindow.axaml");
+        var assembly = typeof(SurfaceEditorViewModel).Assembly.Location;
+
+        var edited = File.GetLastWriteTimeUtc(axaml);
+        var built = File.GetLastWriteTimeUtc(assembly);
+
+        Assert.True(
+            edited <= built,
+            $"template {edited:O}, assembly {built:O} — rebuild before trusting this file");
+    }
+
     [Theory]
     [InlineData(2)]
     [InlineData(3)]
