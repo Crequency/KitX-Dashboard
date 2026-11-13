@@ -285,6 +285,7 @@
     <sys:String x:Key="Text_ToolKit_Mount">マウント</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">アンマウント</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Bench を開く</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenSurface">Surface を編集</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">新規 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">削除</sys:String>
     <sys:String x:Key="Text_ToolKit_NoSelection">ToolKit が選択されていません</sys:String>

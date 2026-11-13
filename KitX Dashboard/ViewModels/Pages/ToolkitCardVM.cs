@@ -30,6 +30,7 @@ public sealed class ToolkitCardVM : ReactiveObject
         _runningInstances = toolkitService.ActiveFlowCounts().TryGetValue(model.GetId(), out var active) ? active : 0;
         ToggleMountCommand = ReactiveCommand.Create(ToggleMount);
         OpenBenchCommand = ReactiveCommand.Create(OpenBench);
+        OpenSurfaceEditorCommand = ReactiveCommand.Create(OpenSurfaceEditor);
     }
 
     /// <summary>The underlying config model.</summary>
@@ -74,6 +75,29 @@ public sealed class ToolkitCardVM : ReactiveObject
     public ReactiveCommand<Unit, Unit> ToggleMountCommand { get; }
     public ReactiveCommand<Unit, Unit> OpenBenchCommand { get; }
 
+    /// <summary>Opens the card orchestrator for this ToolKit (surface editor, design P5).</summary>
+    /// <remarks>
+    /// <para><b>Not gated on <see cref="IsMounted"/>, deliberately.</b> This edits the declaration —
+    /// the <c>surface.json</c> a ToolKit is installed with — and writing a declaration does not need
+    /// the ToolKit to be running. The 2026-11-11 ruling that "editing a Surface only makes sense
+    /// while the ToolKit is mounted" assumed the editor lived in the Surface client; once it moved to
+    /// the Dashboard's orchestrator that premise went away (design §3, <c>Surface.md:816</c>).</para>
+    ///
+    /// <para><b>The save does not degrade when the ToolKit is unmounted, and the reason is worth
+    /// stating because it was assumed otherwise.</b> The key check in
+    /// <c>SurfaceEditorViewModel.Save</c> compares against the declarations handed to it by
+    /// <c>App.axaml.cs</c>, which reads <c>IToolkitService.GetToolkit(id).Keys</c> — that call is
+    /// <c>ToolkitStore.Load</c>, i.e. the config on disk, not the compiled table. So the declared
+    /// keys are the same set mounted or not, and the check that a layout does not name a key the
+    /// ToolKit stopped declaring works in both states.</para>
+    ///
+    /// <para>What is genuinely out of reach while unmounted is everything that needs the ToolKit to
+    /// have been compiled at all — today that is <c>SurfaceValidator</c>'s repairs and warnings, which
+    /// no production path runs on save either way (only the View attach path logs them). Nothing here
+    /// hides that: the editor reports load-time errors and warnings it does have.</para>
+    /// </remarks>
+    public ReactiveCommand<Unit, Unit> OpenSurfaceEditorCommand { get; }
+
     private void ToggleMount()
     {
         try
@@ -95,4 +119,6 @@ public sealed class ToolkitCardVM : ReactiveObject
     }
 
     private void OpenBench() => _windowService.OpenBenchWindow(Model);
+
+    private void OpenSurfaceEditor() => _windowService.OpenSurfaceEditorWindow(Model.GetId());
 }

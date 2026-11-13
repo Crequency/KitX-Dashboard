@@ -285,6 +285,7 @@
     <sys:String x:Key="Text_ToolKit_Mount">挂载</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">卸载</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">打开 Bench</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenSurface">编辑卡片</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">新建 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">删除</sys:String>
     <sys:String x:Key="Text_ToolKit_NoSelection">未选择 ToolKit</sys:String>

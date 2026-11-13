@@ -285,6 +285,7 @@
     <sys:String x:Key="Text_ToolKit_Mount">Монтировать</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">Размонтировать</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Открыть Bench</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenSurface">Изменить Surface</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">Новый ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Удалить</sys:String>
     <sys:String x:Key="Text_ToolKit_NoSelection">ToolKit не выбран</sys:String>

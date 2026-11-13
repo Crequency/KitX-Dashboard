@@ -285,6 +285,7 @@
     <sys:String x:Key="Text_ToolKit_Mount">마운트</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">언마운트</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Bench 열기</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenSurface">Surface 편집</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">새 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">삭제</sys:String>
     <sys:String x:Key="Text_ToolKit_NoSelection">ToolKit이 선택되지 않음</sys:String>

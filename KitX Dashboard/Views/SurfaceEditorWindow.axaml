@@ -21,8 +21,8 @@
             <Setter Property="Height" Value="845" />
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Top" />
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+            <Setter Property="Background" Value="{DynamicResource LayerFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorSecondaryBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="8" />
         </Style>
@@ -62,7 +62,7 @@
 
             <!-- left: the palette is "declared but not placed", not "kinds of control" -->
             <Border Grid.Column="0"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                     BorderThickness="0,0,1,0"
                     Padding="0,0,12,0">
                 <DockPanel>
@@ -86,7 +86,7 @@
                                 <Button Classes="palette"
                                         HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Left"
-                                        Command="{Binding $parent[Window].((viewModels:SurfaceEditorViewModel)DataContext).PlaceCommand}"
+                                        Command="{Binding $parent[Window].DataContext.PlaceCommand}"
                                         CommandParameter="{Binding}">
                                     <StackPanel Orientation="Vertical" Spacing="1">
                                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
@@ -110,13 +110,15 @@
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           Padding="24,0">
-                <Border Classes="canvas">
+                <!-- Named so a test can reach it without depending on when the visual tree is
+                     built: an unreached visual cannot be checked for the brushes it resolved. -->
+                <Border x:Name="SurfaceCanvas" Classes="canvas">
                     <Grid RowDefinitions="Auto,*">
                         <!-- A scale for the rows below, not a grid: since Q101 a row divides itself
                              and its cells have no width in common with the next row's. Four equal
                              ticks would name divisions that nothing on the canvas uses. -->
                         <Border Grid.Row="0" Height="24"
-                                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                 BorderThickness="0,0,0,1" />
 
                         <ItemsControl Grid.Row="1" ItemsSource="{Binding Elements}">
@@ -126,17 +128,26 @@
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemContainerTheme>
+                                <!--
+                                  A ControlTheme's setters are resolved outside this file's XAML name
+                                  scope, so a cast such as ((viewModels:SurfaceElementVM)DataContext)
+                                  cannot be resolved there at runtime: the window threw
+                                  "Unable to resolve type viewModels:SurfaceElementVM" while measuring
+                                  and never appeared. The cast was never needed — the ContentPresenter
+                                  this theme targets has the element itself as its DataContext, so a
+                                  plain path reaches the same property.
+                                -->
                                 <ControlTheme TargetType="ContentPresenter">
-                                    <Setter Property="Canvas.Left" Value="{Binding ((viewModels:SurfaceElementVM)DataContext).Left}" />
-                                    <Setter Property="Canvas.Top" Value="{Binding ((viewModels:SurfaceElementVM)DataContext).Top}" />
+                                    <Setter Property="Canvas.Left" Value="{Binding Left}" />
+                                    <Setter Property="Canvas.Top" Value="{Binding Top}" />
                                 </ControlTheme>
                             </ItemsControl.ItemContainerTheme>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type viewModels:SurfaceElementVM}">
                                     <Border Width="{Binding Width}"
                                             Height="{Binding Height}"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                            Background="{DynamicResource LayerFillColorDefaultBrush}"
+                                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                             BorderThickness="1"
                                             CornerRadius="6"
                                             Padding="8"
@@ -174,7 +185,7 @@
                                                         Margin="4,0,0,0"
                                                         Content="✓"
                                                         ToolTip.Tip="{DynamicResource Text_Bench_Surface_ApplyWeight}"
-                                                        Command="{Binding $parent[Window].((viewModels:SurfaceEditorViewModel)DataContext).SetWeightCommand}"
+                                                        Command="{Binding $parent[Window].DataContext.SetWeightCommand}"
                                                         CommandParameter="{Binding}" />
                                                 <NumericUpDown Grid.Column="2"
                                                                Value="{Binding DraftRow}"
@@ -188,7 +199,7 @@
                                                 <Button Grid.Column="3"
                                                         Classes="flat"
                                                         HorizontalAlignment="Right"
-                                                        Command="{Binding $parent[Window].((viewModels:SurfaceEditorViewModel)DataContext).RemoveCommand}"
+                                                        Command="{Binding $parent[Window].DataContext.RemoveCommand}"
                                                         CommandParameter="{Binding Element}">
                                                     <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
                                                 </Button>
@@ -204,7 +215,7 @@
 
             <!-- right: what "save and check" found, named rather than summarised -->
             <Border Grid.Column="2"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                     BorderThickness="1,0,0,0"
                     Padding="12,0,0,0">
                 <StackPanel Spacing="8">

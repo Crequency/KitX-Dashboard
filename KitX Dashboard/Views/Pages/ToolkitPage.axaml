@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="KitX.Dashboard.Views.Pages.ToolkitPage"
+<UserControl x:Class="KitX.Dashboard.Views.Pages.ToolkitPage"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -114,6 +114,20 @@
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <icon:MaterialIcon Width="16" Height="16" Kind="Toolbox"/>
                                                 <TextBlock Text="{DynamicResource Text_ToolKit_OpenBench}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <!--
+                                          The card orchestrator sits beside "open Bench", not inside it:
+                                          both edit a declaration that belongs to this ToolKit, and neither
+                                          needs the ToolKit to be mounted. It is always visible for that
+                                          reason: a button that only appeared while mounted would suggest
+                                          editing the layout requires running it, which is the opposite of
+                                          what the design settled on (surface.json is a declaration).
+                                        -->
+                                        <Button Command="{Binding OpenSurfaceEditorCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:MaterialIcon Width="16" Height="16" Kind="CardTextOutline"/>
+                                                <TextBlock Text="{DynamicResource Text_ToolKit_OpenSurface}"/>
                                             </StackPanel>
                                         </Button>
                                         <Button Command="{Binding $parent[UserControl].DataContext.DeleteToolkitCommand}"

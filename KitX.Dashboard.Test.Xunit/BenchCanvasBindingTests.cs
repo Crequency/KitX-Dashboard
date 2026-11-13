@@ -20,8 +20,14 @@ public class TestApp : Application
 {
     public override void Initialize()
     {
-        // Real control templates so headless tests exercise the same visuals as the app.
-        Styles.Add(new Avalonia.Themes.Fluent.FluentTheme());
+        // The product's theme, not a FluentTheme. This is not cosmetic: FluentAvaloniaTheme and
+        // Avalonia's FluentTheme define *disjoint* resource keys. Under FluentTheme the keys this
+        // Dashboard uses (LayerFillColorDefaultBrush, ControlStrokeColorSecondaryBrush) resolve to
+        // null, and the keys FluentTheme defines (SystemControlBackgroundAltHighBrush and friends)
+        // resolve to null under the product theme. A test app on the wrong theme therefore cannot
+        // see a missing-resource bug at all, in either direction: it either reports null for
+        // everything, or resolves keys the product never had.
+        Styles.Add(new FluentAvalonia.Styling.FluentAvaloniaTheme());
         Styles.Add(new StyleInclude(new Uri("avares://KitX.Dashboard.Test.Xunit"))
         {
             Source = new Uri("avares://NodifyM.Avalonia/Styles/ControlStyles.axaml")

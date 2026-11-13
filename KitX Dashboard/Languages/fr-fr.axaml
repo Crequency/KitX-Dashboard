@@ -285,6 +285,7 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_ToolKit_Mount">Monter</sys:String>
     <sys:String x:Key="Text_ToolKit_Unmount">Démonter</sys:String>
     <sys:String x:Key="Text_ToolKit_OpenBench">Ouvrir Bench</sys:String>
+    <sys:String x:Key="Text_ToolKit_OpenSurface">Modifier la Surface</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">Nouveau ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Supprimer</sys:String>
     <sys:String x:Key="Text_ToolKit_NoSelection">Aucun ToolKit sélectionné</sys:String>
