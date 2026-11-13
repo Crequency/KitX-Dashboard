@@ -1,6 +1,7 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using KitX.Core.Contract.Configuration;
 using KitX.Core.Contract.Announcement;
 using KitX.Core.Contract.Event;
@@ -38,6 +39,23 @@ public abstract class ViewModelBase : ReactiveObject
         app ??= Application.Current;
 
         if (app is null)
+            return null;
+
+        // Looking a resource up in an Application is a UI-thread operation in everything but its
+        // signature: the lookup reaches Application.Styles, which is built lazily and whose
+        // construction calls AvaloniaObject's constructor, and that one calls
+        // Dispatcher.VerifyAccess. A caller on another thread therefore gets an answer, a miss or a
+        // "Call from invalid thread" exception depending on whether the application has finished
+        // initialising -- which is a race, not a rule.
+        //
+        // Measured, not inferred: seventeen Bench tests failed at once with exactly that exception
+        // from Avalonia.Threading.Dispatcher.VerifyAccess <- AvaloniaObject..ctor <- Styles..ctor <-
+        // Application.get_Styles() <- Application.TryGetResource <- this method, in one full-suite
+        // run, while the next two runs were clean and the same classes passed when run alone.
+        //
+        // Returning null is well defined here because every call site is written as
+        // TranslateText(key) ?? "fallback": the fallback is the answer the caller already handles.
+        if (!Dispatcher.UIThread.CheckAccess())
             return null;
 
         // Each segment carries its own separator, so an empty one contributes nothing. Joining
