@@ -22,19 +22,31 @@ namespace KitX.Dashboard.Test.Xunit;
 /// <para><b>Why this file exists.</b> Nine geometry tests asserted <c>Left</c>, <c>Width</c> and
 /// <c>Top</c> on the view model and passed while the window drew an empty canvas: the cells were
 /// inside an <c>ItemsControl</c> whose parent was a <c>Canvas</c>, and a <c>Canvas</c> arranges its
-/// children at absolute positions without giving them any size. Both measured to zero. Arithmetic
-/// was right, nothing was painted, and every test was green.</para>
+/// children at absolute positions without giving them any size. The <c>ItemsControl</c> measured to
+/// zero, so nothing inside it was arranged onto a surface. Arithmetic was right, nothing was painted,
+/// and every test was green.</para>
 ///
-/// <para><b>What it costs and what it cannot do.</b> This is the only file in the project that shows
-/// a real window, and headless Avalonia can do that here only because the editor's styles do not pull
-/// in FluentAvalonia's icon font — the Surface card's do, and <c>Show()</c> on those throws
-/// <c>Could not create glyphTypeface. Font family: Symbols</c>. So this asserts geometry after layout,
-/// which is the layer where "measured to zero" lives; it does not assert colours or brushes.</para>
+/// <para><b><c>Bounds &gt; 0</c> proves Measure, not Arrange, and that distinction cost me a
+/// test.</b> The first version of this file asserted that each cell's <c>Bounds.Width</c> was greater
+/// than zero. Mutating the layer back to a <c>Canvas</c> left all five tests green, and a probe
+/// explained why: an <c>ItemsControl</c> lays its own containers out from its <c>ItemsPanel</c>, so
+/// the cell's <c>ContentPresenter</c> still reports 125×88 while the <c>ItemsControl</c> above it
+/// reports 0×0. The cell was never the zero. A control can be measured and still be arranged onto
+/// nothing, so both facts need asserting: the control has a size, <em>and</em> every ancestor between
+/// it and the window has one too.</para>
 ///
-/// <para><b>The assertion that would have caught it.</b> Not "the element exists", and not "the
-/// view model says 122" — but "after layout, this control's <c>Bounds.Width</c> is greater than
-/// zero". A control that never got a size still exists in the logical tree and still has a correct
-/// view model; only its bounds show that nobody measured it.</para>
+/// <para><b>A test that stays green under the defect is a smoke test, and it has to say so.</b>
+/// <see cref="The_canvas_layer_gets_a_size_from_its_parent"/> is one: the layer keeps its 388×819 even
+/// in the broken window, because the layer's own size comes from the <c>Grid</c> above it rather than
+/// from what it arranges. It is kept — a window that fails to open should fail loudly and early — but
+/// it is named and commented as a smoke test so nobody counts it as protection.</para>
+///
+/// <para><b>What this file cannot see.</b> It asserts geometry after layout; it does not assert
+/// colours, brushes or glyphs. Showing a window at all needs Skia with
+/// <c>UseHeadlessDrawing = false</c>, because the default headless backend creates no glyph
+/// typefaces and <c>Show()</c> throws before layout. That also means the window never ran in an
+/// environment that creates glyphs until this file existed — which is why a missing theme key
+/// (defect 8) could not have been found here either.</para>
 /// </remarks>
 public class SurfaceEditorRenderTests
 {
@@ -99,12 +111,18 @@ public class SurfaceEditorRenderTests
             .Where(c => c.GetVisualParent() is not Control { DataContext: SurfaceElementVM })
     ];
 
+    /// <summary>
+    /// <b>A smoke test, not a guard.</b> It stays green under the defect it looks like it covers.
+    /// </summary>
+    /// <remarks>
+    /// The layer reports 388×819 even in the broken window, because its size comes from the
+    /// <c>Grid</c> row it sits in — not from anything it arranges. Kept because a window that cannot
+    /// open should fail loudly and early; named this way so nobody counts it as protection against
+    /// the canvas defect. <see cref="An_arranged_cell_lands_inside_the_window"/> is the guard.
+    /// </remarks>
     [AvaloniaFact]
     public void The_canvas_layer_gets_a_size_from_its_parent()
     {
-        // The regression itself. The cells lived inside an ItemsControl that was a direct child of
-        // a Canvas, so the ItemsControl measured to zero and so did everything below it. Asserting
-        // the *layer* rather than a cell says why: it is the container that failed to be measured.
         var window = Open(Pair());
 
         var layer = window.FindControl<Control>("SurfaceCanvasLayer");
@@ -114,6 +132,41 @@ public class SurfaceEditorRenderTests
             layer!.Bounds.Width > 0 && layer.Bounds.Height > 0,
             $"the canvas layer measured {layer.Bounds.Width}×{layer.Bounds.Height}; " +
             "a container inside a Canvas gets no size of its own");
+    }
+
+    /// <summary>
+    /// Every control between a cell and the window has to have a size.
+    /// </summary>
+    /// <remarks>
+    /// <para>This is what "arranged onto something" actually means here, and it took two wrong
+    /// versions to get to. <c>TranslatePoint(…, window)</c> does <em>not</em> catch the defect: a
+    /// cell under a zero-sized <c>ItemsControl</c> still translates to a point inside the client
+    /// area, because the translation walks the same broken transforms. Nor does the cell's own
+    /// <c>Bounds</c>: it stays 125×88.</para>
+    ///
+    /// <para>What does catch it is the ancestor chain. A control that is 388 pixels wide, sitting
+    /// under a parent that is zero pixels wide, is not on the screen in any sense a reader would
+    /// accept — and nothing in the cell's own numbers says so.</para>
+    /// </remarks>
+    [AvaloniaFact]
+    public void Every_ancestor_between_a_cell_and_the_window_has_a_size()
+    {
+        var window = Open(Pair());
+
+        var cells = Cells(window);
+        Assert.Equal(2, cells.Count);
+
+        foreach (var cell in cells)
+        {
+            for (Visual? ancestor = cell.GetVisualParent(); ancestor is not null; ancestor = ancestor.GetVisualParent())
+            {
+                Assert.True(
+                    ancestor.Bounds.Width > 0 && ancestor.Bounds.Height > 0,
+                    $"{ancestor.GetType().Name} between a cell and the window measured " +
+                    $"{ancestor.Bounds.Width}×{ancestor.Bounds.Height} — the cell is inside " +
+                    "something that occupies nothing, so it is drawn nowhere");
+            }
+        }
     }
 
     [AvaloniaFact]
