@@ -6,6 +6,8 @@ using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.Styling;
 using Xunit;
 
 namespace KitX.Dashboard.Test.Xunit;
@@ -126,5 +128,62 @@ public class ThemeResourceKeyTests
 
         // And a key known not to exist anywhere, so the lookup cannot be answering true blindly.
         Assert.False(Application.Current!.TryFindResource("SystemControlBackgroundAltHighBrush", out _));
+    }
+
+    /// <summary>
+    /// Light and dark must answer the same key with different brushes, or there is only one theme.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why this is separate from the scan above.</b> The scan asks whether each key
+    /// resolves. It would stay green if both theme variants resolved every key to the same brush —
+    /// the keys exist, the lookup works, and there is nothing to see. Two screenshots taken that way
+    /// would be identical, and "I checked dark mode" would be a claim about a picture that never
+    /// changed.</para>
+    ///
+    /// <para><b>What it does not prove.</b> That every key differs, only that the variant switch
+    /// reaches the resource lookup at all. One key changing is what distinguishes "two themes" from
+    /// "one theme asked twice".</para>
+    /// </remarks>
+    [AvaloniaFact]
+    public void The_two_theme_variants_do_not_answer_with_the_same_brush()
+    {
+        var app = Application.Current!;
+        var original = app.RequestedThemeVariant;
+
+        try
+        {
+            var light = BrushUnder(app, ThemeVariant.Light, "LayerFillColorDefaultBrush");
+            var dark = BrushUnder(app, ThemeVariant.Dark, "LayerFillColorDefaultBrush");
+
+            var strokeLight = BrushUnder(app, ThemeVariant.Light, "ControlStrokeColorSecondaryBrush");
+            var strokeDark = BrushUnder(app, ThemeVariant.Dark, "ControlStrokeColorSecondaryBrush");
+
+            Assert.NotNull(light);
+            Assert.NotNull(dark);
+
+            // Measured: fill reads #80ffffff on light and #4c3a3a3a on dark; the stroke reads
+            // #29000000 and #18ffffff. Two keys rather than one because a single key could differ
+            // for a reason that is not the variant — the pair makes "the switch reaches the
+            // lookup" a fact about the theme, not about one resource.
+            Assert.NotEqual(light, dark);
+            Assert.NotEqual(strokeLight, strokeDark);
+        }
+        finally
+        {
+            app.RequestedThemeVariant = original;
+        }
+    }
+
+    /// <summary>The colour a solid brush key resolves to under one variant, as text.</summary>
+    private static string? BrushUnder(Application app, ThemeVariant variant, string key)
+    {
+        // The variant is passed to the lookup rather than pushed into RequestedThemeVariant first:
+        // the parameterless overload answers from the host's *current* variant, which does not
+        // change until something asks it to re-resolve. Pushing the property and reading straight
+        // back returns the previous variant's brush — the two states would read the same.
+        if (!app.TryFindResource(key, variant, out var value) || value is not ISolidColorBrush brush)
+            return null;
+
+        return brush.Color.ToString();
     }
 }

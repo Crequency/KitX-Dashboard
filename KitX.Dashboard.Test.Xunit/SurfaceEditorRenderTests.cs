@@ -156,6 +156,11 @@ public class SurfaceEditorRenderTests
             stale.Count == 0,
             $"the ledger names tests that no longer exist: {string.Join(", ", stale)}");
 
+        // Why ">= 1" and not a ratio or an absolute floor: having one catcher is the minimum for the
+        // ledger to mean anything, not a sufficient one. Downgrading a second catcher to smoke would
+        // leave this assertion green — it cannot see a slide from two to one. Coverage is read from
+        // the Catches count itself, which is in this table where a reader will meet it. A threshold
+        // that only guards one extreme does not guard the drift.
         var catching = Ledger.Count(row => row.Value.Verdict == Under.Catches);
         Assert.True(
             catching > 0,
@@ -172,6 +177,11 @@ public class SurfaceEditorRenderTests
         // Layout runs on the dispatcher queue rather than inside Show(). Without this the window is
         // open and every child still reports bounds of zero — which is the same reading a broken
         // layout gives, so the test would be unable to tell the two apart.
+        //
+        // That is the precondition for every test in this file, and it is a shape worth naming:
+        // the fix was not another assertion, it was making the two states stop reading the same.
+        // Anyone writing a second window test here and forgetting this line will see a tree of
+        // zeroes and have no way to tell "layout has not run" from "layout is broken".
         Dispatcher.UIThread.RunJobs();
 
         return window;
