@@ -416,8 +416,14 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
         if (Elements.Count >= MaxElements)
         {
-            ValidationMessage = TranslateText("Bench_Surface_TooManyElements")
-                ?? $"A card holds at most {MaxElements} elements.";
+            // string.Format, because the resource text carries a {0} for the limit: the two halves
+            // of this line used to disagree, the fallback interpolating the number into a literal
+            // while the resource would have been returned unformatted, braces and all. Same call
+            // shape as every other translation in the Bench canvas.
+            ValidationMessage = string.Format(
+                TranslateText("Bench_Surface_TooManyElements")
+                    ?? "A card holds at most {0} elements.",
+                MaxElements);
             return;
         }
 

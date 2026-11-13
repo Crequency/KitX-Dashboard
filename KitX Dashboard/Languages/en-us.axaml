@@ -461,6 +461,9 @@ If this wasn't you, please check your device's security.</sys:String>
 <sys:String x:Key="Text_Bench_Surface_Remove">Remove from card</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Weight must be at least 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">Row must be at least 1.</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_Saved">Saved.</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">Saved, with problems.</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_TooManyElements">A card holds at most {0} elements.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} completed · {1} failed</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">Running</sys:String>

@@ -40,7 +40,17 @@ public abstract class ViewModelBase : ReactiveObject
         if (app is null)
             return null;
 
-        var resKey = $"{prefix}{separator}{key}{separator}{suffix}";
+        // Each segment carries its own separator, so an empty one contributes nothing. Joining
+        // all three unconditionally left a trailing underscore whenever suffix was empty, and
+        // every key in Languages/*.axaml is written without one: TranslateText answered null for
+        // every key it was ever given, and the `?? "English fallback"` beside each call site was
+        // the only text anybody ever saw. Measured on zh-cn.axaml: TranslateText
+        // ("Bench_Surface_RowOutOfRange") returned null, while the resource
+        // Text_Bench_Surface_RowOutOfRange resolved to "行号至少为 1。".
+        var resKey = string.Concat(
+            string.IsNullOrEmpty(prefix) ? string.Empty : prefix + separator,
+            key,
+            string.IsNullOrEmpty(suffix) ? string.Empty : separator + suffix);
 
         if (!app.TryFindResource(resKey, out var found))
             return null;

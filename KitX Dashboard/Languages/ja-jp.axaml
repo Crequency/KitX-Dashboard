@@ -461,6 +461,9 @@
 <sys:String x:Key="Text_Bench_Surface_Remove">カードから外す</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">重みは 1 以上にしてください。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">行番号は 1 以上にしてください。</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_Saved">保存しました。</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">保存しましたが、問題があります。</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_TooManyElements">カードに置ける要素は最大 {0} 個です。</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完了 {0} · 失敗 {1}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">実行中</sys:String>
