@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using KitX.ToolKit.Contract.Surface;
 
 namespace KitX.Dashboard.ViewModels;
@@ -25,8 +27,15 @@ namespace KitX.Dashboard.ViewModels;
 /// <see cref="Width"/> pure functions of the declaration — the alternative, calling back into the
 /// editor's mutable collection, would make a cell's position depend on what was on screen when it
 /// was created.</para>
+///
+/// <para><b>It notifies, because a drag rewrites it in place.</b> Dragging a border between two
+/// cells changes their weights on every pointer move, and the control that is being dragged must
+/// survive those updates — so the collection cannot be rebuilt underneath the pointer. Instead the
+/// editor replaces the declarations and calls <see cref="Refresh"/>, and the cells redraw. This is
+/// the one place where the old "rebuild everything" rule had to bend: it was correct while the only
+/// edits came from buttons, and wrong the moment an edit has a duration.</para>
 /// </remarks>
-public sealed class SurfaceElementVM
+public sealed class SurfaceElementVM : INotifyPropertyChanged
 {
     /// <summary>Pixels between consecutive rows' top edges.</summary>
     public const double RowHeight = 96;
@@ -45,7 +54,8 @@ public sealed class SurfaceElementVM
     /// </remarks>
     public const double CanvasWidth = 390;
 
-    private readonly IReadOnlyList<SurfaceElement> _document;
+    private SurfaceElement _element;
+    private IReadOnlyList<SurfaceElement> _document;
 
     /// <summary>Creates the view of one element.</summary>
     /// <param name="element">The element to draw.</param>
@@ -56,44 +66,18 @@ public sealed class SurfaceElementVM
     /// </param>
     public SurfaceElementVM(SurfaceElement element, IReadOnlyList<SurfaceElement> document)
     {
-        Element = element ?? throw new ArgumentNullException(nameof(element));
+        _element = element ?? throw new ArgumentNullException(nameof(element));
         _document = document ?? throw new ArgumentNullException(nameof(document));
-
-        DraftWeight = Math.Max(1, Element.Weight);
-        DraftRow = Math.Max(1, Element.Row);
     }
 
+    /// <inheritdoc/>
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     /// <summary>The element this draws. Passed back when removing it.</summary>
-    public SurfaceElement Element { get; }
-
-    /// <summary>What the weight box currently says. Not what the canvas is drawn from.</summary>
-    /// <remarks>
-    /// <para><b>A draft, not a value.</b> <see cref="Element"/> is the value that was committed; this
-    /// is what somebody has typed since. The two differ exactly between the moment a number is
-    /// entered and the moment it is applied, and that interval is the whole point of the property:
-    /// without it the box and the canvas would have no way to disagree, and an edit could not be
-    /// begun without also being finished.</para>
-    ///
-    /// <para><b>The geometry properties below deliberately do not read it.</b> <see cref="Width"/>,
-    /// <see cref="Left"/> and <see cref="Top"/> compute from <see cref="Element"/> only, because a
-    /// width is a share of the row and the row's other members have drafts of their own — reading
-    /// them would make this class reach back into its siblings, which is the one thing the remarks
-    /// on <see cref="CanvasWidth"/> forbid. So the canvas shows committed values; a typed number
-    /// reaches it when it is applied, and not before.</para>
-    ///
-    /// <para>Named <c>Draft</c> rather than simply <c>Weight</c> on purpose. A property called
-    /// <c>Weight</c> sitting next to <c>Element.Weight</c>, with the drawing code reading one and the
-    /// text box the other, is the kind of pair that reads as one thing and behaves as two.</para>
-    /// </remarks>
-    public int DraftWeight { get; set; }
-
-    /// <summary>What the row box currently says. Not what the canvas is drawn from.</summary>
-    /// <remarks>See <see cref="DraftWeight"/>; the reasoning is the same and <see cref="Top"/> reads
-    /// <see cref="Element"/> for the same reason.</remarks>
-    public int DraftRow { get; set; }
+    public SurfaceElement Element => _element;
 
     /// <summary>Which key the element stands for, when it has one.</summary>
-    public string? Key => Element.Key;
+    public string? Key => _element.Key;
 
     /// <summary>The elements sharing this one's row, in declaration order.</summary>
     /// <remarks>
@@ -101,7 +85,7 @@ public sealed class SurfaceElementVM
     /// row has to be known before any share can be turned into pixels.
     /// </remarks>
     private IReadOnlyList<SurfaceElement> RowSiblings =>
-        [.. _document.Where(e => e.Row == Element.Row)];
+        [.. _document.Where(e => e.Row == _element.Row)];
 
     /// <summary>Left edge in canvas pixels.</summary>
     /// <remarks>
@@ -125,7 +109,7 @@ public sealed class SurfaceElementVM
             var offset = CellGap / 2;
             foreach (var sibling in siblings)
             {
-                if (ReferenceEquals(sibling, Element))
+                if (ReferenceEquals(sibling, _element))
                     return offset;
 
                 offset += CellWidth(siblings, sibling, total) + CellGap;
@@ -135,8 +119,11 @@ public sealed class SurfaceElementVM
         }
     }
 
+    /// <summary>Right edge in canvas pixels. What a border is measured from.</summary>
+    public double Right => Left + Width;
+
     /// <summary>Top edge in canvas pixels.</summary>
-    public double Top => RowOrigin + ((Element.Row - 1) * RowHeight) + (CellGap / 2);
+    public double Top => RowOrigin + ((_element.Row - 1) * RowHeight) + (CellGap / 2);
 
     /// <summary>Width in canvas pixels, from this element's share of its row.</summary>
     /// <remarks>
@@ -150,65 +137,20 @@ public sealed class SurfaceElementVM
         {
             var siblings = RowSiblings;
             var total = TotalWeight(siblings);
-            return total <= 0 ? CanvasWidth - CellGap : CellWidth(siblings, Element, total);
+            return total <= 0 ? CanvasWidth - CellGap : CellWidth(siblings, _element, total);
         }
     }
-
-    private static int TotalWeight(IReadOnlyList<SurfaceElement> row)
-    {
-        var total = 0;
-        foreach (var element in row)
-            total += Math.Max(1, element.Weight);
-
-        return total;
-    }
-
-    private static double CellWidth(
-        IReadOnlyList<SurfaceElement> row, SurfaceElement element, int totalWeight) =>
-        (CanvasWidth - (row.Count * CellGap)) * Math.Max(1, element.Weight) / totalWeight;
 
     /// <summary>Height in canvas pixels.</summary>
     public double Height => RowHeight - CellGap;
 
     /// <summary>Pixels of padding inside a cell, on each side.</summary>
-    /// <remarks>Mirrors the cell template's <c>Padding</c>. Named because the width arithmetic below
-    /// has to subtract it twice, and a literal 8 in three places is how the two drift apart.</remarks>
+    /// <remarks>Mirrors the cell template's <c>Padding</c>. Named because the width arithmetic has to
+    /// subtract it twice, and a literal 8 in three places is how the two drift apart.</remarks>
     public const double CellPadding = 8;
 
-    /// <summary>What the inline weight/row strip needs to lay out without overlapping itself.</summary>
-    /// <remarks>
-    /// <para>Two 72px spinners, two icon buttons at their natural size, and the 4px margin before the
-    /// first tick — measured from the template rather than guessed, and asserted against the template
-    /// by <c>SurfaceCellGeometryTests</c> so the two cannot drift.</para>
-    ///
-    /// <para><b>This number is a fact about the controls, not a policy.</b> Changing a spinner's width
-    /// has to change this too, which is the point: the threshold below is derived from it, so making
-    /// the strip wider automatically makes it appear in fewer cells.</para>
-    /// </remarks>
-    public const double ControlStripNaturalWidth = 204;
-
-    /// <summary>The narrowest cell that can hold the inline strip and its padding.</summary>
-    public const double FullControlsMinimumWidth = ControlStripNaturalWidth + (CellPadding * 2);
-
-    /// <summary>Whether this cell is wide enough to show the weight/row controls inside it.</summary>
-    /// <remarks>
-    /// <para><b>A weight is a share of its row, so a cell can be arbitrarily narrow.</b> Ten equal
-    /// weights make each cell 31px; the strip needs 220. Drawn inside, the spinners and ticks
-    /// overlapped each other and spilled past the cell's border, and no assertion noticed because the
-    /// width was correct — 31px is the right width for a tenth of a row. The defect was never the
-    /// arithmetic; it was putting fixed-width children into a box whose size is decided elsewhere.</para>
-    ///
-    /// <para><b>Below the threshold the strip leaves the cell.</b> It does not shrink to 15px, because
-    /// a 15px spinner is not a smaller control, it is an unusable one. The cell keeps its label and
-    /// gains a button that opens the same controls in a flyout — a popup is laid out against the
-    /// window, so it can be the natural size no matter how narrow the cell is. That is what makes the
-    /// invariant hold for <em>any</em> weight combination: in compact mode nothing inside the cell has
-    /// a width of its own.</para>
-    /// </remarks>
-    public bool ShowsFullControls => Width >= FullControlsMinimumWidth;
-
     /// <summary>The element kind, for the cell's corner label.</summary>
-    public string Kind => Element switch
+    public string Kind => _element switch
     {
         SurfaceTextElement => "Text",
         SurfaceButtonElement => "Button",
@@ -226,7 +168,7 @@ public sealed class SurfaceElementVM
     /// "chat" says what will be drawn there; a cell reading the currently stored chat message says
     /// what happens to be there now, and invites laying out around it.
     /// </remarks>
-    public string Label => Element switch
+    public string Label => _element switch
     {
         SurfaceButtonElement button when !string.IsNullOrWhiteSpace(button.Label) => button.Label,
         { Key: { Length: > 0 } key } => key,
@@ -236,11 +178,63 @@ public sealed class SurfaceElementVM
     /// <summary>A longer description for the tooltip: kind, position and key.</summary>
     /// <remarks>
     /// A projection: every part of it comes from <see cref="Element"/>, which is what lets it live
-    /// here instead of in a resource file. The two tooltips the input boxes need are <em>not</em>
-    /// projections — they are words written for a person, and they are in the language files like
-    /// every other word on this window.
+    /// here instead of in a resource file.
     /// </remarks>
     public string Description =>
-        $"{Kind} · row {Element.Row}, weight {Element.Weight}" +
+        $"{Kind} · row {_element.Row}, weight {_element.Weight}" +
         (Key is null ? string.Empty : $" · key '{Key}'");
+
+    /// <summary>Replaces what this cell draws, keeping the object the pointer may be holding.</summary>
+    /// <param name="element">This cell's new declaration.</param>
+    /// <param name="document">The whole document after the change.</param>
+    /// <remarks>
+    /// Both arguments are needed and they are not redundant: a drag changes two cells' weights, so
+    /// every cell on that row has a new declaration <em>and</em> new siblings, and <see cref="Left"/>
+    /// cannot be computed from either one alone.
+    /// </remarks>
+    public void Refresh(SurfaceElement element, IReadOnlyList<SurfaceElement> document)
+    {
+        ArgumentNullException.ThrowIfNull(element);
+        ArgumentNullException.ThrowIfNull(document);
+
+        _element = element;
+        _document = document;
+
+        // One notification per property, because each is bound separately: a cell that redraws its
+        // width but keeps its old Left slides the whole row instead of resizing one cell.
+        Raise(nameof(Element));
+        Raise(nameof(Left));
+        Raise(nameof(Right));
+        Raise(nameof(Top));
+        Raise(nameof(Width));
+        Raise(nameof(Height));
+        Raise(nameof(Label));
+        Raise(nameof(Kind));
+        Raise(nameof(Description));
+        Raise(nameof(Key));
+    }
+
+    private void Raise([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    /// <summary>The width the whole row has to share, after the gaps are taken out.</summary>
+    /// <param name="cellsOnRow">How many cells share the row.</param>
+    /// <remarks>
+    /// Here rather than on the editor because a drag converts pixels to weights with it on every
+    /// pointer move, and the conversion has to use the same arithmetic that produced the pixels.
+    /// </remarks>
+    public static double ShareableWidth(int cellsOnRow) => CanvasWidth - (cellsOnRow * CellGap);
+
+    private static int TotalWeight(IReadOnlyList<SurfaceElement> row)
+    {
+        var total = 0;
+        foreach (var element in row)
+            total += Math.Max(1, element.Weight);
+
+        return total;
+    }
+
+    private static double CellWidth(
+        IReadOnlyList<SurfaceElement> row, SurfaceElement element, int totalWeight) =>
+        (CanvasWidth - (row.Count * CellGap)) * Math.Max(1, element.Weight) / totalWeight;
 }

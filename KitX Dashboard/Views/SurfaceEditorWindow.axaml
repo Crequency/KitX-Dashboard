@@ -26,9 +26,28 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="8" />
         </Style>
+
+        <!--
+          The grip is invisible until the pointer is near it. Always-drawn handles would put eleven
+          lines on a card that will be seen with none, and the author would be laying out around the
+          editor's furniture. Cursor is set to the resize shape so pointing at the gap says what it
+          does without a caption.
+        -->
+        <Style Selector="Border.grip">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="SizeWestEast" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.grip:pointerover">
+            <Setter Property="Background" Value="{DynamicResource ControlStrokeColorSecondaryBrush}" />
+        </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto, *, Auto" Margin="16">
+    <Grid RowDefinitions="Auto, *" Margin="16">
 
         <!-- ── toolbar ───────────────────────────────────────────────────────────────────── -->
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
@@ -69,13 +88,6 @@
                     <TextBlock DockPanel.Dock="Top"
                                Text="{DynamicResource Text_Bench_Surface_Palette}"
                                FontWeight="SemiBold"
-                               Margin="0,0,0,8" />
-
-                    <TextBlock DockPanel.Dock="Top"
-                               Text="{DynamicResource Text_Bench_Surface_PaletteHint}"
-                               FontSize="11"
-                               Opacity="0.65"
-                               TextWrapping="Wrap"
                                Margin="0,0,0,8" />
 
                     <ListBox ItemsSource="{Binding UnplacedKeys}"
@@ -121,160 +133,122 @@
                                 BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                 BorderThickness="0,0,0,1" />
 
-                        <ItemsControl Grid.Row="1" ItemsSource="{Binding Elements}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <Canvas />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemContainerTheme>
-                                <!--
-                                  A ControlTheme's setters are resolved outside this file's XAML name
-                                  scope, so a cast such as ((viewModels:SurfaceElementVM)DataContext)
-                                  cannot be resolved there at runtime: the window threw
-                                  "Unable to resolve type viewModels:SurfaceElementVM" while measuring
-                                  and never appeared. The cast was never needed — the ContentPresenter
-                                  this theme targets has the element itself as its DataContext, so a
-                                  plain path reaches the same property.
-                                -->
-                                <ControlTheme TargetType="ContentPresenter">
-                                    <Setter Property="Canvas.Left" Value="{Binding Left}" />
-                                    <Setter Property="Canvas.Top" Value="{Binding Top}" />
-                                </ControlTheme>
-                            </ItemsControl.ItemContainerTheme>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type viewModels:SurfaceElementVM}">
-                                    <Border Width="{Binding Width}"
-                                            Height="{Binding Height}"
-                                            Background="{DynamicResource LayerFillColorDefaultBrush}"
-                                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Padding="8"
-                                            ToolTip.Tip="{Binding Description}">
-                                        <Grid RowDefinitions="Auto,*,Auto">
-                                            <!--  Trimming, not clipping: at ten equal weights a cell is
-                                                  31px wide and 15px of that is content, so "Button"
-                                                  cannot be drawn. Left to clip it renders as "But",
-                                                  which reads as a word rather than as a cut.  -->
-                                            <TextBlock Grid.Row="0"
-                                                       Text="{Binding Kind}"
-                                                       FontSize="10"
-                                                       Opacity="0.6"
-                                                       TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Grid.Row="1"
-                                                       Text="{Binding Label}"
-                                                       FontWeight="SemiBold"
-                                                       VerticalAlignment="Center"
-                                                       TextTrimming="CharacterEllipsis" />
-                                            <!--  Two modes, because a cell can be 31px wide.
-                                                  A weight is a share of its row, so this box's width
-                                                  is decided by its siblings: ten equal weights make
-                                                  each cell 31px, and the strip below needs 204. Drawn
-                                                  inline in a cell that narrow, the spinners and ticks
-                                                  overlapped each other and spilled outside the
-                                                  border — while every number involved was correct.
-                                                  So the strip only appears where it fits, and a
-                                                  button puts the same controls in a flyout, which is
-                                                  laid out against the window and therefore can be the
-                                                  natural size at any cell width.  -->
-                                            <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto">
-                                                <Grid Grid.ColumnSpan="4"
-                                                      IsVisible="{Binding ShowsFullControls}"
-                                                      ColumnDefinitions="Auto,Auto,*,Auto">
-                                                    <NumericUpDown Grid.Column="0"
-                                                                   Value="{Binding DraftWeight}"
-                                                                   Minimum="1"
-                                                                   Maximum="10"
-                                                                   Increment="1"
-                                                                   FormatString="0"
-                                                                   Width="72"
-                                                                   ToolTip.Tip="{DynamicResource Text_Bench_Surface_WeightHint}" />
-                                                    <!--  A tick rather than the word "apply": the row is
-                                                          often narrower than the canvas and a word
-                                                          would be truncated to "app…" on exactly the
-                                                          cells where the number matters most.  -->
-                                                    <Button Grid.Column="1"
-                                                            Classes="flat"
-                                                            Margin="4,0,0,0"
-                                                            Content="✓"
-                                                            ToolTip.Tip="{DynamicResource Text_Bench_Surface_ApplyWeight}"
-                                                            Command="{Binding $parent[Window].DataContext.SetWeightCommand}"
-                                                            CommandParameter="{Binding}" />
-                                                    <NumericUpDown Grid.Column="2"
-                                                                   Value="{Binding DraftRow}"
-                                                                   Minimum="1"
-                                                                   Maximum="99"
-                                                                   Increment="1"
-                                                                   FormatString="0"
-                                                                   Width="72"
-                                                                   HorizontalAlignment="Right"
-                                                                   ToolTip.Tip="{DynamicResource Text_Bench_Surface_RowHint}" />
-                                                    <Button Grid.Column="3"
-                                                            Classes="flat"
-                                                            HorizontalAlignment="Right"
-                                                            Command="{Binding $parent[Window].DataContext.RemoveCommand}"
-                                                            CommandParameter="{Binding Element}">
-                                                        <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
-                                                    </Button>
-                                                </Grid>
+                        <!--
+                          Both layers share this cell. A Canvas arranges children at absolute
+                          positions but gives them no size of their own, so an ItemsControl placed
+                          directly inside one measures to zero and draws nothing — the cells were
+                          laid out correctly and never rendered. They live in a Grid instead, and
+                          the Grid is what the drag measures its x against.
+                        -->
+                        <Grid Grid.Row="1" x:Name="SurfaceCanvasLayer">
 
-                                                <Button Grid.ColumnSpan="4"
+                            <ItemsControl ItemsSource="{Binding Elements}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerTheme>
+                                    <!--
+                                      A ControlTheme's setters are resolved outside this file's XAML
+                                      name scope, so a cast such as
+                                      ((viewModels:SurfaceElementVM)DataContext) cannot be resolved
+                                      there at runtime: the window threw "Unable to resolve type
+                                      viewModels:SurfaceElementVM" while measuring and never
+                                      appeared. The cast was never needed — the ContentPresenter
+                                      this theme targets has the element itself as its DataContext,
+                                      so a plain path reaches the same property.
+                                    -->
+                                    <ControlTheme TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding Left}" />
+                                        <Setter Property="Canvas.Top" Value="{Binding Top}" />
+                                    </ControlTheme>
+                                </ItemsControl.ItemContainerTheme>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:SurfaceElementVM}">
+                                        <Border Background="{DynamicResource LayerFillColorDefaultBrush}"
+                                                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="8"
+                                                Width="{Binding Width}"
+                                                Height="{Binding Height}"
+                                                ToolTip.Tip="{Binding Description}">
+                                            <Grid RowDefinitions="Auto,*,Auto">
+                                                <!--  Trimming, not clipping: at ten equal weights a
+                                                      cell is 31px wide and 15px of that is content,
+                                                      so "Button" cannot be drawn. Left to clip it
+                                                      renders as "But", which reads as a word rather
+                                                      than as a cut.  -->
+                                                <TextBlock Grid.Row="0"
+                                                           Text="{Binding Kind}"
+                                                           FontSize="10"
+                                                           Opacity="0.6"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Row="1"
+                                                           Text="{Binding Label}"
+                                                           FontWeight="SemiBold"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <!--  One control, at the bottom right: remove. A
+                                                      weight is not typed here any more — dragging the
+                                                      border beside the cell sets it, so there is
+                                                      nothing to confirm and nothing to explain.  -->
+                                                <Button Grid.Row="2"
                                                         Classes="flat"
                                                         HorizontalAlignment="Right"
-                                                        VerticalAlignment="Center"
-                                                        IsVisible="{Binding !ShowsFullControls}"
-                                                        ToolTip.Tip="{DynamicResource Text_Bench_Surface_AdjustCell}">
-                                                    <icon:MaterialIcon Width="14" Height="14" Kind="DotsHorizontal" />
-                                                    <Button.Flyout>
-                                                        <Flyout Placement="Bottom">
-                                                            <StackPanel Spacing="8" MinWidth="200">
-                                                                <TextBlock Text="{DynamicResource Text_Bench_Surface_WeightHint}"
-                                                                           FontSize="11"
-                                                                           Opacity="0.65"
-                                                                           TextWrapping="Wrap" />
-                                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                    <NumericUpDown Value="{Binding DraftWeight}"
-                                                                                   Minimum="1"
-                                                                                   Maximum="10"
-                                                                                   Increment="1"
-                                                                                   FormatString="0"
-                                                                                   Width="72" />
-                                                                    <Button Classes="flat"
-                                                                            Margin="4,0,0,0"
-                                                                            Content="✓"
-                                                                            ToolTip.Tip="{DynamicResource Text_Bench_Surface_ApplyWeight}"
-                                                                            Command="{Binding $parent[Window].DataContext.SetWeightCommand}"
-                                                                            CommandParameter="{Binding}" />
-                                                                </StackPanel>
-                                                                <TextBlock Text="{DynamicResource Text_Bench_Surface_RowHint}"
-                                                                           FontSize="11"
-                                                                           Opacity="0.65"
-                                                                           TextWrapping="Wrap" />
-                                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                    <NumericUpDown Value="{Binding DraftRow}"
-                                                                                   Minimum="1"
-                                                                                   Maximum="99"
-                                                                                   Increment="1"
-                                                                                   FormatString="0"
-                                                                                   Width="72" />
-                                                                    <Button Classes="flat"
-                                                                            HorizontalAlignment="Right"
-                                                                            Command="{Binding $parent[Window].DataContext.RemoveCommand}"
-                                                                            CommandParameter="{Binding Element}">
-                                                                        <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
-                                                                    </Button>
-                                                                </StackPanel>
-                                                            </StackPanel>
-                                                        </Flyout>
-                                                    </Button.Flyout>
+                                                        VerticalAlignment="Bottom"
+                                                        ToolTip.Tip="{DynamicResource Text_Bench_Surface_Remove}"
+                                                        Command="{Binding $parent[Window].DataContext.RemoveCommand}"
+                                                        CommandParameter="{Binding}">
+                                                    <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
                                                 </Button>
                                             </Grid>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!--
+                              Borders last, so they draw above the cells and take the press in the
+                              gap rather than letting it fall through to a cell's content.
+                            -->
+                            <ItemsControl ItemsSource="{Binding Boundaries}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerTheme>
+                                    <ControlTheme TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding Left}" />
+                                        <Setter Property="Canvas.Top" Value="{Binding Top}" />
+                                    </ControlTheme>
+                                </ItemsControl.ItemContainerTheme>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:SurfaceBoundaryVM}">
+                                        <!--
+                                          The grab area is exactly one gap wide, so it never covers
+                                          a cell's own content. Pointer capture is taken on press
+                                          and released on lift: the drag is the whole interaction,
+                                          and there is no state left behind after it.
+                                        -->
+                                        <Border Classes="grip"
+                                                Width="{Binding HitWidth}"
+                                                Height="{Binding Height}"
+                                                PointerPressed="OnBoundaryPressed"
+                                                PointerMoved="OnBoundaryMoved"
+                                                PointerReleased="OnBoundaryReleased">
+                                            <Border Width="3"
+                                                    HorizontalAlignment="Center"
+                                                    Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                                    Opacity="0.35"
+                                                    IsHitTestVisible="False" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
                     </Grid>
                 </Border>
             </ScrollViewer>
@@ -287,11 +261,6 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="{DynamicResource Text_Bench_Surface_Check}"
                                FontWeight="SemiBold" />
-
-                    <TextBlock Text="{DynamicResource Text_Bench_Surface_NoValuesHint}"
-                               FontSize="11"
-                               Opacity="0.65"
-                               TextWrapping="Wrap" />
 
                     <Border IsVisible="{Binding HasValidationMessage}"
                             Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
@@ -309,13 +278,5 @@
                 </StackPanel>
             </Border>
         </Grid>
-
-        <!-- ── footer ───────────────────────────────────────────────────────────────────── -->
-        <TextBlock Grid.Row="2"
-                   Text="{DynamicResource Text_Bench_Surface_Footer}"
-                   FontSize="11"
-                   Opacity="0.6"
-                   Margin="0,12,0,0"
-                   TextWrapping="Wrap" />
     </Grid>
 </Window>

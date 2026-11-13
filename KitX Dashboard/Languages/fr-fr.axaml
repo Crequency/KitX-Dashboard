@@ -458,14 +458,9 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_Surface_Save">Enregistrer et vérifier</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Vider la carte</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Vérification</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_NoValuesHint">Le canevas n&apos;affiche aucune valeur, volontairement. Disposer autour de ce qui est stocké aujourd&apos;hui donne une carte qui ne convient qu&apos;à aujourd&apos;hui.</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_WeightHint">Part de cette rangée. Le canevas conserve le nombre actuel jusqu'à application.</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_RowHint">Quelle rangée de la carte. Le canevas conserve la rangée actuelle jusqu'à application.</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_ApplyWeight">Appliquer ce poids</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_AdjustCell">Options de la cellule</sys:String>
+<sys:String x:Key="Text_Bench_Surface_Remove">Retirer de la carte</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Le poids doit être au moins 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">La rangée doit être au moins 1.</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Footer">390 × 845 fixe. Chaque rangée se partage entre ses propres éléments, au prorata du poids. C&apos;est ce qu&apos;affiche un téléphone, pas un aperçu de disposition pour bureau.</sys:String>
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} terminés · {1} échoués</sys:String>
 
     <sys:String x:Key="Text_PanelHost_InstanceRunning">En cours</sys:String>

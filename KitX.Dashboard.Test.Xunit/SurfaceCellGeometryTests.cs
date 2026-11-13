@@ -4,41 +4,46 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using KitX.Dashboard.ViewModels;
+using KitX.ToolKit.Contract;
 using KitX.ToolKit.Contract.Surface;
 using Xunit;
 
 namespace KitX.Dashboard.Test.Xunit;
 
 /// <summary>
-/// A cell's width is a share of its row, so it can be arbitrarily small; the controls drawn inside it
-/// have a natural width that cannot be. These tests are about that meeting point, which is where the
-/// orchestrator's canvas broke: three elements on one row gave the middle cell 122px of which 106 was
-/// usable, and two 72px spinners plus two ticks needed more than 160. Nothing overflowed at run time
-/// in a way any assertion saw, because <see cref="SurfaceElementVM.Width"/> was correct — 122 is the
-/// right width for a third of a row.
+/// A cell's width is a share of its row, so it can be arbitrarily small; whatever is drawn inside it
+/// cannot be. These tests are about that meeting point.
 /// </summary>
 /// <remarks>
 /// <para><b>The invariant is "content must not overflow at any weight".</b> It is not "a cell must be
-/// at least N pixels": the weight system exists to let a cell be narrow, so shrinking the floor would
-/// be solving the symptom by removing the feature. The cells therefore have to be able to show less,
-/// and the tests below hold both halves of that bargain — the strip is only drawn where it fits, and
-/// where it is not drawn nothing inside the cell has a width of its own.</para>
+/// at least N pixels": the weight system exists to let a cell be narrow, so raising the floor would
+/// solve the symptom by removing the feature.</para>
 ///
-/// <para><b>Why the template is parsed here at all.</b> The constants live in the view model and the
-/// widths live in the XAML; the defect was precisely that each was consistent with itself. A test
-/// that only checks <see cref="SurfaceElementVM.ShowsFullControls"/> against
-/// <see cref="SurfaceElementVM.FullControlsMinimumWidth"/> would be arithmetic about two numbers in
-/// one file. Reading the fixed widths out of the template is what makes the two files answer to each
-/// other.</para>
+/// <para><b>The previous version of this file guarded a narrower thing.</b> Cells used to carry a row
+/// of spinners and ticks whose natural width was 204px, so the template had to hide them in narrow
+/// cells and the tests measured that threshold. Now a weight is set by dragging the border between
+/// two cells, so a cell holds only a label and one 14px icon button — there is no fixed-width strip
+/// left to hide. The first test below keeps the reason the old one existed: it asserts that nothing
+/// inside a cell declares a width capable of outgrowing it, so a control added to this template later
+/// fails here rather than in a screenshot.</para>
 /// </remarks>
 public class SurfaceCellGeometryTests
 {
-    private static readonly Regex Spinner = new(
-        @"<NumericUpDown\b[^>]*?Width=""(?<value>\d+)""",
+    /// <summary>Fixed widths declared in the cell template.</summary>
+    /// <remarks>
+    /// Matches every <c>Width="N"</c> rather than only one control's: the point is that a cell holds
+    /// nothing big enough to overflow, whatever kind of control it is.
+    /// </remarks>
+    private static readonly Regex DeclaredWidth = new(
+        @"\bWidth=""(?<value>\d+)""",
         RegexOptions.Compiled);
 
     private static readonly Regex CellTemplate = new(
         @"<DataTemplate DataType=""\{x:Type viewModels:SurfaceElementVM\}"">(?<body>[\s\S]*?)</DataTemplate>",
+        RegexOptions.Compiled);
+
+    private static readonly Regex BoundaryTemplate = new(
+        @"<DataTemplate DataType=""\{x:Type viewModels:SurfaceBoundaryVM\}"">(?<body>[\s\S]*?)</DataTemplate>",
         RegexOptions.Compiled);
 
     /// <summary>A row of <paramref name="count"/> equal-weight elements, all on row 1.</summary>
@@ -54,7 +59,7 @@ public class SurfaceCellGeometryTests
         new(row[index], row);
 
     [Fact]
-    public void The_widest_controls_a_cell_can_hold_are_the_ones_its_strip_needs()
+    public void No_child_of_a_cell_declares_a_width_that_could_outgrow_it()
     {
         var path = RepositoryFile(
             @"KitX Clients\KitX Dashboard\KitX Dashboard\Views\SurfaceEditorWindow.axaml");
@@ -67,47 +72,81 @@ public class SurfaceCellGeometryTests
             $"({source.Length} chars read, " +
             $"{(source.Contains("viewModels:SurfaceElementVM") ? "the type name is present" : "the type name is absent")})");
 
-        // The template contains the strip twice: once laid out inside the cell and once inside a
-        // flyout. Only the first copy competes with the cell's width — the flyout is measured
-        // against the window, which is the whole reason it can carry the full-size controls into a
-        // 31px cell. Summing the whole template counts both and reports a width the cell never has.
-        var body = template.Groups["body"].Value;
-        var flyout = body.IndexOf("<Button.Flyout>", StringComparison.Ordinal);
-        Assert.True(flyout > 0, "the compact route's flyout was not found in the cell template");
-        var inline = body[..flyout];
+        // The narrowest cell a row can produce is (390 - 10*8)/10 = 31px, and 16 of that is padding.
+        var narrowestContent = 31 - (SurfaceElementVM.CellPadding * 2);
 
-        // Only the spinners compete with the cell's width. An icon's 14px is inside a button that is
-        // laid out by its content, and the flyout's 200 is a MinWidth measured against the window —
-        // counting either would report a width the cell never has to hold.
-        var declared = Spinner.Matches(inline)
+        var offenders = DeclaredWidth
+            .Matches(template.Groups["body"].Value)
             .Select(m => int.Parse(m.Groups["value"].Value))
-            .Sum();
+            .Where(width => width > narrowestContent)
+            .ToList();
 
-        Assert.Equal(144, declared);
-
-        // The flyout carries its own copy of both spinners, at the same natural width.
-        Assert.Equal(2, Spinner.Matches(body[flyout..]).Count);
-
-        // The constant has to leave room for the ticks and the margin as well, so it must be at least
-        // the spinners plus enough for two icon buttons. Asserting the ordering rather than an exact
-        // value keeps this a constraint rather than a copy of the constant.
         Assert.True(
-            SurfaceElementVM.ControlStripNaturalWidth >= declared + 40,
-            $"the strip is declared to need {SurfaceElementVM.ControlStripNaturalWidth}px while its " +
-            $"two spinners alone declare {declared}px; the ticks and the margin have nowhere to go. " +
-            $"Widening a spinner means widening {nameof(SurfaceElementVM.ControlStripNaturalWidth)}.");
+            offenders.Count == 0,
+            $"the cell template declares fixed widths of {string.Join(", ", offenders)}px, while a " +
+            $"tenth-of-a-row cell offers {narrowestContent}px of content space. A weight is a share of " +
+            $"its row, so a cell can be that narrow by design — nothing inside it may have a width of " +
+            $"its own. Use alignment or trimming instead.");
     }
 
     [Theory]
-    [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
     [InlineData(5)]
-    [InlineData(6)]
-    [InlineData(7)]
-    [InlineData(8)]
-    [InlineData(9)]
+    [InlineData(10)]
+    public void A_border_sits_in_the_gap_between_its_two_cells(int count)
+    {
+        var row = Row(count);
+        var cells = Enumerable.Range(0, count).Select(i => Cell(row, i)).ToList();
+
+        for (var i = 0; i + 1 < cells.Count; i++)
+        {
+            var border = new SurfaceBoundaryVM(cells[i], cells[i + 1]);
+
+            // Centred in the gap, so the grip does not lean into either neighbour.
+            Assert.Equal((cells[i].Right + cells[i + 1].Left) / 2, border.Centre, 6);
+
+            // The grab area covers the gap and only the gap: it must not overlap either cell, because
+            // a press on a cell belongs to the cell.
+            Assert.True(
+                border.Left >= cells[i].Right - 0.001,
+                $"{count} cells: the border at index {i} starts at {border.Left}, " +
+                $"inside the cell ending at {cells[i].Right}");
+            Assert.True(
+                border.Left + border.HitWidth <= cells[i + 1].Left + 0.001,
+                $"{count} cells: the border at index {i} ends at {border.Left + border.HitWidth}, " +
+                $"inside the cell starting at {cells[i + 1].Left}");
+        }
+    }
+
+    [Fact]
+    public void The_border_template_declares_no_grip_wider_than_the_gap()
+    {
+        // The grip is a child of the grab area, centred in it. Wider than the gap it would paint over
+        // a cell's border and read as part of that cell.
+        var path = RepositoryFile(
+            @"KitX Clients\KitX Dashboard\KitX Dashboard\Views\SurfaceEditorWindow.axaml");
+        var template = BoundaryTemplate.Match(File.ReadAllText(path));
+
+        Assert.True(template.Success, $"the border's DataTemplate was not found in {path}");
+
+        var widths = DeclaredWidth
+            .Matches(template.Groups["body"].Value)
+            .Select(m => int.Parse(m.Groups["value"].Value))
+            .ToList();
+
+        Assert.All(
+            widths,
+            width => Assert.True(
+                width <= SurfaceElementVM.CellGap,
+                $"the border template declares a {width}px child, wider than the " +
+                $"{SurfaceElementVM.CellGap}px gap it is centred in"));
+    }
+
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
     [InlineData(10)]
     public void A_row_of_equal_weights_stays_inside_its_row(int count)
     {
@@ -117,87 +156,131 @@ public class SurfaceCellGeometryTests
         {
             var cell = Cell(row, i);
 
-            // No cell may start before the canvas or end past it.
             Assert.True(cell.Left >= 0, $"cell {i} of {count} starts at {cell.Left}, left of the canvas");
             Assert.True(
-                cell.Left + cell.Width <= SurfaceElementVM.CanvasWidth + 0.5,
-                $"cell {i} of {count} ends at {cell.Left + cell.Width}, past the {SurfaceElementVM.CanvasWidth}px canvas");
+                cell.Right <= SurfaceElementVM.CanvasWidth + 0.5,
+                $"cell {i} of {count} ends at {cell.Right}, past the {SurfaceElementVM.CanvasWidth}px canvas");
         }
     }
 
-    [Theory]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    [InlineData(4)]
-    [InlineData(5)]
-    [InlineData(6)]
-    [InlineData(7)]
-    [InlineData(8)]
-    [InlineData(9)]
-    [InlineData(10)]
-    public void The_inline_strip_is_only_shown_where_it_fits(int count)
+    [Fact]
+    public void Dragging_a_border_to_a_position_puts_the_border_there()
     {
-        var row = Row(count);
+        // The round trip is the whole feature: if dragging to x leaves the border at some other x,
+        // the grip runs away from the pointer and the gesture is unusable however correct the
+        // weights are.
+        var editor = Editor(Row(2));
+        var border = editor.Boundaries[0];
 
-        foreach (var cell in row.Select((_, i) => Cell(row, i)))
+        foreach (var target in new[] { 120.0, 160.0, 200.0, 240.0 })
         {
-            if (!cell.ShowsFullControls)
-                continue;
+            editor.DragBoundary(border, target);
 
-            // The claim the property makes, checked against the width it is computed from: when the
-            // strip is shown, the space inside the cell's padding can hold it.
+            var landed = (editor.Elements[0].Right + editor.Elements[1].Left) / 2;
+
+            // Within one weight step, which is the finest the format can express.
             Assert.True(
-                cell.Width - (SurfaceElementVM.CellPadding * 2) >= SurfaceElementVM.ControlStripNaturalWidth,
-                $"{count} equal weights: a {cell.Width}px cell shows the full strip, which needs " +
-                $"{SurfaceElementVM.ControlStripNaturalWidth}px of content space");
+                Math.Abs(landed - target) <= SurfaceEditorViewModel.PixelsPerWeightUnit,
+                $"dragged to {target}, the border landed at {landed:F1}");
         }
     }
 
     [Fact]
-    public void The_narrowest_cell_the_editor_can_produce_takes_the_compact_route()
+    public void Dragging_one_border_leaves_every_other_cell_where_it_was()
     {
-        // Ten elements of weight 1 is the narrowest a row can get: (390 - 10*8) / 10 = 31px. This is
-        // the case fleet-delta asked to be answerable and the one the old template could not render.
-        var row = Row(10);
-        var cell = Cell(row, 0);
-
-        Assert.Equal(31, cell.Width, 3);
-        Assert.False(
-            cell.ShowsFullControls,
-            $"a {cell.Width}px cell claims to fit the {SurfaceElementVM.ControlStripNaturalWidth}px strip");
-    }
-
-    [Fact]
-    public void A_cell_wide_enough_for_the_strip_actually_takes_the_full_route()
-    {
-        // The other direction: without this, a threshold that never fires would pass the test above
-        // and silently move every control into a flyout, which is a different product.
-        var row = Row(1);
-        var cell = Cell(row, 0);
-
-        Assert.Equal(382, cell.Width, 3);
-        Assert.True(cell.ShowsFullControls);
-    }
-
-    [Fact]
-    public void A_weighted_row_midpoint_is_where_the_two_routes_divide()
-    {
-        // One row, two elements, weights chosen so the narrow one straddles the threshold. The point
-        // is that the decision is made per cell and not per row: the wide sibling keeps its controls
-        // while the narrow one does not.
         var row = new List<SurfaceElement>
         {
-            new SurfaceTextElement { Row = 1, Weight = 10, Key = "wide" },
-            new SurfaceTextElement { Row = 1, Weight = 1, Key = "narrow" },
+            new SurfaceTextElement { Row = 1, Weight = 3, Key = "a" },
+            new SurfaceTextElement { Row = 1, Weight = 3, Key = "b" },
+            new SurfaceTextElement { Row = 1, Weight = 3, Key = "c" },
         };
 
-        var wide = new SurfaceElementVM(row[0], row);
-        var narrow = new SurfaceElementVM(row[1], row);
+        var editor = Editor(row);
+        var before = editor.Elements.Select(e => (e.Left, e.Width)).ToList();
 
-        Assert.True(wide.Width > narrow.Width);
-        Assert.True(wide.ShowsFullControls, $"{wide.Width}px should hold the strip");
-        Assert.False(narrow.ShowsFullControls, $"{narrow.Width}px should not");
+        // Drag the second border (b|c), which must not move a.
+        editor.DragBoundary(editor.Boundaries[1], 300);
+
+        Assert.Equal(before[0].Item1, editor.Elements[0].Left, 3);
+        Assert.Equal(before[0].Item2, editor.Elements[0].Width, 3);
+
+        // And a cell either side of the dragged border did change, or the drag did nothing.
+        Assert.NotEqual(before[1].Item2, editor.Elements[1].Width, 3);
+    }
+
+    [Fact]
+    public void A_pair_of_ones_can_still_be_split_unevenly()
+    {
+        // The palette gives every newly placed key weight 1, so a row of two starts at 1:1 — the only
+        // integer split of a total of 2. Without refining the units a deliberate drag would be a
+        // no-op on exactly the rows the palette creates.
+        var editor = Editor(Row(2));
+
+        editor.DragBoundary(editor.Boundaries[0], 260);
+
+        Assert.True(
+            editor.Elements[0].Width > editor.Elements[1].Width,
+            $"after dragging right, the left cell is {editor.Elements[0].Width:F1}px and the right " +
+            $"is {editor.Elements[1].Width:F1}px");
+
+        // Ratios, not absolute numbers: the file may hold 5:2 or 10:4, and both are the same card.
+        var left = editor.Elements[0].Element.Weight;
+        var right = editor.Elements[1].Element.Weight;
+        Assert.True(left > right, $"weights are {left}:{right}, which is not the drag that happened");
+        Assert.True(left >= 1 && right >= 1, $"weights are {left}:{right}; a zero part is a missing cell");
+    }
+
+    [Fact]
+    public void Refining_the_units_does_not_move_the_cells_nobody_touched()
+    {
+        // Refining multiplies every weight on the row by the same factor, which changes no ratio. If
+        // it ever multiplied only the dragged pair, the other cells would jump.
+        var row = new List<SurfaceElement>
+        {
+            new SurfaceTextElement { Row = 1, Weight = 1, Key = "a" },
+            new SurfaceTextElement { Row = 1, Weight = 1, Key = "b" },
+            new SurfaceTextElement { Row = 1, Weight = 1, Key = "c" },
+        };
+
+        var editor = Editor(row);
+        var thirdBefore = (editor.Elements[2].Left, editor.Elements[2].Width);
+
+        editor.DragBoundary(editor.Boundaries[0], 200);
+
+        Assert.Equal(thirdBefore.Item1, editor.Elements[2].Left, 3);
+        Assert.Equal(thirdBefore.Item2, editor.Elements[2].Width, 3);
+    }
+
+    [Fact]
+    public void A_drag_never_produces_a_weight_below_one()
+    {
+        var editor = Editor(Row(3));
+
+        // Far past both ends, in both directions.
+        editor.DragBoundary(editor.Boundaries[0], -500);
+        editor.DragBoundary(editor.Boundaries[0], 0);
+        editor.DragBoundary(editor.Boundaries[1], 9999);
+
+        Assert.All(
+            editor.Elements,
+            cell => Assert.True(
+                cell.Element.Weight >= 1,
+                $"a cell ended with weight {cell.Element.Weight}; the format forbids it and the " +
+                $"renderer would read it as 1"));
+    }
+
+    /// <summary>An editor holding one document, wired to a store that keeps nothing.</summary>
+    /// <remarks>
+    /// The real <see cref="SurfaceEditorViewModel"/> is used rather than a stub: the drag arithmetic
+    /// is exactly what these tests measure and it lives on the real type. Only the store is fake —
+    /// none of these tests are about persistence, and a store that wrote files would let them fail
+    /// for a reason they do not measure.
+    /// </remarks>
+    private static SurfaceEditorViewModel Editor(IReadOnlyList<SurfaceElement> row)
+    {
+        var editor = new SurfaceEditorViewModel(new NoStore(row), _ => []);
+        editor.Load("test");
+        return editor;
     }
 
     /// <summary>Walks up from the test binary until it finds the solution file.</summary>
@@ -216,5 +299,30 @@ public class SurfaceCellGeometryTests
         }
 
         throw new InvalidOperationException("KitX.sln was not found above " + AppContext.BaseDirectory);
+    }
+
+    /// <summary>A store that hands back one document and writes nowhere.</summary>
+    private sealed class NoStore : ISurfaceStore
+    {
+        private readonly IReadOnlyList<SurfaceElement> _elements;
+
+        public NoStore(IReadOnlyList<SurfaceElement> elements) => _elements = elements;
+
+        public SurfaceLoadResult Load(string toolkitId) =>
+            new(new SurfaceDocument { Elements = _elements }, [], []);
+
+        public void Save(string toolkitId, SurfaceDocument document)
+        {
+        }
+
+        public void Delete(string toolkitId)
+        {
+        }
+
+        public event EventHandler<SurfaceChangedEventArgs>? Changed
+        {
+            add { }
+            remove { }
+        }
     }
 }
