@@ -493,10 +493,35 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// Builds the element a declared key implies.
     /// </summary>
     /// <remarks>
-    /// <para>Type drives the choice, because the declaration already says what the View should
-    /// draw. A key whose type this build does not know still gets an element —
-    /// <see cref="SurfaceTextElement"/> — rather than being refused: the type is advisory, and an
-    /// author should be able to lay out a key whose type they intend to change.</para>
+    /// <para><b>A declared key is a stored value, so what it places is a display element.</b> The
+    /// palette lists <c>KeyDeclaration</c>s — things the ToolKit's workflows write — and the only
+    /// kinds that show a stored value are <see cref="SurfaceTextElement"/> and
+    /// <see cref="SurfaceListElement"/>. The four editing kinds
+    /// (<c>Input</c>/<c>Number</c>/<c>Select</c>/<c>Switch</c>) show what the person typed, carry no
+    /// key at all (Q88), and cannot be reached from a list of keys.</para>
+    ///
+    /// <para><b>Two of the four mappings used to break that, and both were measured.</b> A
+    /// <c>number</c> key became <c>NumberElement { Key = … }</c> and a <c>boolean</c> key became
+    /// <c>SwitchElement { Key = … }</c> — editing kinds bound to keys. Two consequences, neither
+    /// reachable in the product and both real:</para>
+    ///
+    /// <code>
+    /// SurfaceValidator.Validate on such a document:
+    ///   number  → kept=0  [surface.element.key-ignored, surface.element.inert]
+    ///   boolean → kept=0  [surface.element.key-ignored, surface.element.inert]
+    ///
+    /// SurfaceCard.SetValue on such a cell:
+    ///   number  → NotSupportedException: no way to show a value in NumericUpDown
+    /// </code>
+    ///
+    /// <para>Nothing in the product ran either path: <c>SurfaceValidator</c> has no production call
+    /// site, so nothing dropped the element, and a <c>Number</c>'s value is written by a workflow, so
+    /// nothing pushed one into it. Two missing wires hid one broken author. The mapping is fixed here
+    /// because it is the part that was wrong on its own terms, not because a wire is about to run.</para>
+    ///
+    /// <para><b>A type this build does not know also gets <see cref="SurfaceTextElement"/> rather
+    /// than being refused.</b> The type is advisory, and an author should be able to lay out a key
+    /// whose type they intend to change.</para>
     ///
     /// <para><b>One key per row.</b> Before Q101 this packed four keys to a row because there were
     /// four columns to fill; now a row is a group the author composes, and the palette has no
@@ -509,10 +534,12 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// </remarks>
     private static SurfaceElement CreateElementFor(KeyDeclaration key, int index)
     {
+        // Two kinds, not four. Text draws every scalar (numbers and booleans reach the screen as
+        // their JSON text, which is what Scalars does); List is the only kind that can draw an array.
+        // A boolean key shown as a Switch would be an input control where a stored value belongs --
+        // the person cannot tick their way into changing what a workflow wrote.
         SurfaceElement element = key.Type switch
         {
-            "number" => new SurfaceNumberElement { Key = key.Name },
-            "boolean" => new SurfaceSwitchElement { Key = key.Name },
             "array" => new SurfaceListElement { Key = key.Name },
             _ => new SurfaceTextElement { Key = key.Name },
         };
