@@ -356,10 +356,32 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     }
 
     /// <summary>Drops what the last save found, because the document it described has changed.</summary>
+    /// <remarks>
+    /// <para><b>A verdict and an alarm are different pieces of news.</b> A verdict — "this is what the
+    /// validator saw the last time I looked" — describes a document that no longer exists the moment the
+    /// author touches anything, so it goes with the edit. An alarm — "the card cannot reach the disk" —
+    /// describes the disk, and an edit does not change the disk. Nothing the author can do on the canvas
+    /// answers it, so the only event that takes it down is a write that succeeds.</para>
+    ///
+    /// <para>That is why the failed write's finding survives here while everything else is swept: erasing
+    /// it would leave the status line pointing at the failure with an empty panel under it, and the panel
+    /// is the only list in the window still holding the news a minute later.</para>
+    /// </remarks>
     private void ForgetLastSave()
     {
-        Diagnostics.Clear();
+        // Walked backwards, because removing an entry shifts the ones the loop has not seen yet.
+        for (var i = Diagnostics.Count - 1; i >= 0; i--)
+        {
+            if (Diagnostics[i].Code != SaveFailedCode)
+                Diagnostics.RemoveAt(i);
+        }
+
         ValidationMessage = null;
+
+        // A standing alarm owns the status line: emptying it would say the write is fine, which is the
+        // one thing this method knows nothing about.
+        if (!_autoSaveFailed)
+            Status = string.Empty;
     }
 
     /// <summary>Records that the canvas no longer matches what is on disk.</summary>
@@ -1064,8 +1086,11 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         Elements.Clear();
         Boundaries.Clear();
         Select(null);
+
+        // ForgetLastSave already empties the status line unless a write failure is standing, and clearing
+        // the canvas is not a write. The explicit line that used to sit here was the same statement said
+        // twice, and the second one would have wiped the alarm.
         ForgetLastSave();
-        Status = string.Empty;
         RefreshUnplaced();
         MarkDirty();
     }
