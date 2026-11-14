@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using KitX.ToolKit.Contract;
+using KitX.ToolKit.Contract.Surface;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -40,6 +41,12 @@ public static class SurfaceDiagnosticText
 
     /// <summary>The prefix a ToolKit diagnostics code carries, and the one the key leaves behind.</summary>
     private const string CodePrefix = "surface.";
+
+    /// <summary>The value that names which element kind a finding is about (the file's word).</summary>
+    private const string KindField = "kind";
+
+    /// <summary>The value the sentence prints for that kind, translated when the dictionary has it.</summary>
+    private const string KindNameField = "kindName";
 
     /// <summary>
     /// A named placeholder. Digits are excluded on purpose: <c>{0}</c> is a format argument, not a
@@ -82,11 +89,58 @@ public static class SurfaceDiagnosticText
     {
         ArgumentNullException.ThrowIfNull(diagnostic);
 
-        var format = (lookup ?? DefaultLookup)(KeyFor(diagnostic.Code));
+        var ask = lookup ?? DefaultLookup;
+        var format = ask(KeyFor(diagnostic.Code));
 
         return string.IsNullOrEmpty(format)
             ? diagnostic.Message
-            : Fill(format!, diagnostic.Data);
+            : Fill(format!, Named(diagnostic.Data, ask));
+    }
+
+    /// <summary>
+    /// The values <paramref name="data"/> carries, with <c>kindName</c> translated when the
+    /// dictionary has a word for the kind.
+    /// </summary>
+    /// <param name="data">What the producer recorded, or <see langword="null"/>.</param>
+    /// <param name="ask">Resolves a resource key to text, or <see langword="null"/>.</param>
+    /// <remarks>
+    /// <para><b>Two words for one kind, and only one of them is translatable.</b> <c>kind</c> is the
+    /// discriminator in the file — <c>"type": "Input"</c> — which the author has to be able to
+    /// search for in <c>surface.json</c>, so it is printed as it stands. <c>kindName</c> is what the
+    /// reader calls the same thing, and the producer cannot supply it: <c>KitX.ToolKit</c> has no
+    /// dictionary and records the file word there as its own fallback. This is where that fallback
+    /// is replaced, and why the substitution lives here rather than in seven language files: a
+    /// sentence that spells out its own fallback has seven places to forget it, and a missing
+    /// translation would then print an empty word inside a sentence that still reads fine.</para>
+    ///
+    /// <para><b>A miss keeps the file word.</b> No key means the kind is still named — in the one
+    /// language everybody who opens the JSON reads — so an untranslated kind is a sentence that is
+    /// partly English, not a sentence with a hole in it. An unknown kind gets the same treatment
+    /// twice over: there is no key for a kind this build does not know, and the producer's word for
+    /// it is the fallback.</para>
+    /// </remarks>
+    private static IReadOnlyDictionary<string, string>? Named(
+        IReadOnlyDictionary<string, string>? data, Func<string, string?> ask)
+    {
+        if (data is null || data.Count == 0)
+            return data;
+
+        if (!data.TryGetValue(KindField, out var kind) || string.IsNullOrEmpty(kind))
+            return data;
+
+        var name = ask(SurfaceElementKind.NameKeyOf(kind));
+
+        if (string.IsNullOrEmpty(name))
+            return data;
+
+        // A copy, not the producer's dictionary: the record is shared with the log, and a caller
+        // that asked for a sentence has no business rewriting what the log is about to print.
+        var named = new Dictionary<string, string>(data, StringComparer.Ordinal)
+        {
+            [KindNameField] = name!,
+        };
+
+        return named;
     }
 
     /// <summary>

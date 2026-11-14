@@ -8,6 +8,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml;
 using KitX.Dashboard.ViewModels;
 using KitX.ToolKit.Contract;
+using KitX.ToolKit.Contract.Surface;
 using Xunit;
 
 namespace KitX.Dashboard.Test.Xunit;
@@ -32,6 +33,10 @@ namespace KitX.Dashboard.Test.Xunit;
 public class SurfaceDiagnosticTextTests
 {
     private const string Dashboard = @"KitX Clients\KitX Dashboard\KitX Dashboard";
+
+    /// <summary>The languages shipped beside the dashboard, in the order the build checks them.</summary>
+    private static readonly string[] Languages =
+        ["en-us", "fr-fr", "ja-jp", "ko-kr", "ru-ru", "zh-cn", "zh-tw"];
 
     /// <summary>The diagnostic codes the ToolKit can report, as strings, so a renamed key is caught here.</summary>
     /// <remarks>
@@ -74,9 +79,15 @@ public class SurfaceDiagnosticTextTests
     ];
 
     /// <summary>Every name a sentence in the dictionary is allowed to use.</summary>
+    /// <remarks>
+    /// <c>kind</c> and <c>kindName</c> are two names for one thing on purpose: the first is the word
+    /// in the file and never changes, the second is what the reader calls it and is substituted from
+    /// the kind table before the sentence is filled. A sentence may use either; one that uses
+    /// <c>{kindName}</c> reads better and one that uses <c>{kind}</c> is still correct.
+    /// </remarks>
     private static readonly HashSet<string> KnownPlaceholders = new(StringComparer.Ordinal)
     {
-        "count", "decimals", "expected", "field", "file", "key", "kind", "known",
+        "count", "decimals", "expected", "field", "file", "key", "kind", "kindName", "known",
         "max", "min", "name", "reason", "row", "step", "type", "value", "version", "weight",
     };
 
@@ -180,13 +191,9 @@ public class SurfaceDiagnosticTextTests
     {
         var missing = new List<string>();
 
-        foreach (var language in new[] { "en-us", "fr-fr", "ja-jp", "ko-kr", "ru-ru", "zh-cn", "zh-tw" })
+        foreach (var language in Languages)
         {
-            var path = RepositoryFile(Path.Combine(Dashboard, "Languages", language + ".axaml"));
-            Assert.True(File.Exists(path), $"Expected a language file at {path}.");
-
-            var dictionary = Assert.IsType<ResourceDictionary>(
-                AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(path)));
+            var dictionary = Load(language);
 
             foreach (var code in Codes)
             {
@@ -211,6 +218,115 @@ public class SurfaceDiagnosticTextTests
             string.Join(Environment.NewLine, missing));
     }
 
+    /// <summary>
+    /// The sentence names the element twice: the word in the file, and the word this reader uses.
+    /// </summary>
+    /// <remarks>
+    /// Measured on the build before this one: a Chinese reader was told 已丢弃第 1 行、权重 1 的 Input
+    /// — a sentence in their language with an English noun in the middle of it. The producer cannot
+    /// fix that (no dictionary) and the language files cannot fix it either (a sentence cannot look
+    /// up another key). So the producer records the file word under <c>kindName</c> as its own
+    /// fallback and this class replaces it — which is what this test pins.
+    /// </remarks>
+    [Fact]
+    public void A_kind_is_named_in_the_readers_language_while_the_word_in_the_file_stays_beside_it()
+    {
+        var said = SurfaceDiagnosticText.Describe(
+            Record("surface.element.unknown-key",
+                "Dropped Input at row 1, weight 1: the ToolKit does not declare a key named 'nope'.",
+                Values(("kind", "Input"), ("kindName", "Input"), ("row", "1"), ("weight", "1"),
+                    ("key", "nope"))),
+            key => key == SurfaceElementKind.NameKeyOf("Input")
+                ? "输入框"
+                : "已丢弃第 {row} 行、权重 {weight} 的 {kindName}（`{kind}`）：这个工具包没有声明名为 `{key}` 的键。");
+
+        Assert.Equal("已丢弃第 1 行、权重 1 的 输入框（`Input`）：这个工具包没有声明名为 `nope` 的键。", said);
+    }
+
+    /// <summary>
+    /// A kind the dictionary has no word for is still named, and named with the word from the file.
+    /// </summary>
+    /// <remarks>
+    /// The alternative — leaving <c>{kindName}</c> on screen — is what a client that trusted the
+    /// dictionary would do, and it turns a partly-translated sentence into a visibly broken one. The
+    /// file word is written in the one language every author of a surface file reads, so a miss
+    /// degrades rather than breaks.
+    /// </remarks>
+    [Fact]
+    public void A_kind_with_no_word_in_the_dictionary_keeps_the_word_from_the_file()
+    {
+        var said = SurfaceDiagnosticText.Describe(
+            Record("surface.element.unknown-key", "unused",
+                Values(("kind", "Input"), ("kindName", "Input"), ("row", "1"), ("weight", "1"),
+                    ("key", "nope"))),
+            key => key == SurfaceElementKind.NameKeyOf("Input")
+                ? null
+                : "已丢弃第 {row} 行、权重 {weight} 的 {kindName}（`{kind}`）：键 `{key}` 未声明。");
+
+        Assert.Equal("已丢弃第 1 行、权重 1 的 Input（`Input`）：键 `nope` 未声明。", said);
+    }
+
+    /// <summary>
+    /// A producer that records no kind at all still gets its sentence filled: nothing is translated,
+    /// nothing is invented.
+    /// </summary>
+    /// <remarks>
+    /// The guard matters because the substitution is keyed on <c>kind</c>, and a diagnostic without
+    /// one is every file-level finding in this file's sibling test — a code with no element has no
+    /// kind to name.
+    /// </remarks>
+    [Fact]
+    public void A_diagnostic_with_no_kind_is_filled_without_one()
+    {
+        var said = SurfaceDiagnosticText.Describe(
+            Record("surface.file.unknown-field", "unused",
+                Values(("file", "surface.json"), ("field", "columns"))),
+            _ => "`{file}` 有不认识的字段 `{field}`。");
+
+        Assert.Equal("`surface.json` 有不认识的字段 `columns`。", said);
+    }
+
+    /// <summary>
+    /// Every kind the ToolKit can report has a name in every language.
+    /// </summary>
+    /// <remarks>
+    /// The kind table is small enough to look complete while missing one, and the miss is invisible:
+    /// the sentence still renders, in the file's English, and nobody notices until an author using
+    /// that one kind reads it. So the check is per kind, per language, against the shipped files.
+    /// </remarks>
+    [AvaloniaFact]
+    public void Every_kind_the_toolkit_can_report_has_a_name_in_all_seven_languages()
+    {
+        var kinds = new[]
+        {
+            SurfaceElementKind.Text, SurfaceElementKind.Button, SurfaceElementKind.Input,
+            SurfaceElementKind.Number, SurfaceElementKind.Select, SurfaceElementKind.Switch,
+            SurfaceElementKind.List,
+        };
+
+        var missing = new List<string>();
+
+        foreach (var language in Languages)
+        {
+            var dictionary = Load(language);
+
+            foreach (var kind in kinds)
+            {
+                var key = SurfaceElementKind.NameKeyOf(kind);
+
+                if (!dictionary.TryGetResource(key, null, out var found) || found is not string name
+                    || string.IsNullOrWhiteSpace(name))
+                {
+                    missing.Add($"{language}: {key}");
+                }
+            }
+        }
+
+        Assert.True(missing.Count == 0,
+            "Kinds the editor would show in English:" + Environment.NewLine +
+            string.Join(Environment.NewLine, missing));
+    }
+
     private static string RepositoryFile(string relativePath)
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -220,5 +336,18 @@ public class SurfaceDiagnosticTextTests
 
         Assert.NotNull(dir);
         return Path.Combine(dir!.FullName, relativePath);
+    }
+
+    /// <summary>
+    /// One language file, loaded the way the product loads it: off disk through the runtime XAML
+    /// loader, because <c>Languages/*.axaml</c> is not an <c>AvaloniaResource</c>.
+    /// </summary>
+    private static ResourceDictionary Load(string language)
+    {
+        var path = RepositoryFile(Path.Combine(Dashboard, "Languages", language + ".axaml"));
+        Assert.True(File.Exists(path), $"Expected a language file at {path}.");
+
+        return Assert.IsType<ResourceDictionary>(
+            AvaloniaRuntimeXamlLoader.Load(File.ReadAllText(path)));
     }
 }
