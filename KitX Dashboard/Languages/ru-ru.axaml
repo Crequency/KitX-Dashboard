@@ -454,6 +454,8 @@
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Привязка: {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Title">Макет карточки</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Palette">Ещё не размещено</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Properties">Свойства</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Actions">Действия</sys:String>
     <sys:String x:Key="Text_Bench_Surface_PaletteHint">Все ключи, объявленные этим набором и отсутствующие на карточке.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">Сохранить и проверить</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Очистить карточку</sys:String>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Reactive;
 using KitX.ToolKit.Contract;
@@ -87,6 +88,69 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// the last cell on a row would have to know that it has no border.
     /// </remarks>
     public ObservableCollection<SurfaceBoundaryVM> Boundaries { get; } = [];
+
+    /// <summary>The interactive kinds the palette can place.</summary>
+    /// <remarks>
+    /// <para><b>A second section, not a replacement for the key list.</b> The key list answers "what
+    /// is declared and not yet shown"; this one answers "the card needs something to press". They are
+    /// different questions and the order between them is the point: the keys come first, so a card is
+    /// built out of what the ToolKit actually publishes rather than out of the controls that happened
+    /// to be listed in a palette. What the previous build lacked was not an argument against control
+    /// kinds — it was any way at all to place one, which made every card read-only.</para>
+    ///
+    /// <para><b>Only the five that are meaningfully placed by hand.</b> <c>Text</c> and <c>List</c>
+    /// come from the key list, because they need a key and a key is what that list has. The other five
+    /// are the ones a person adds on purpose: a button to press, an input to type into, and the three
+    /// values that ride along with whatever that button sends.</para>
+    /// </remarks>
+    public IReadOnlyList<string> PaletteKinds { get; } = ["Button", "Input", "Number", "Select", "Switch"];
+
+    private SurfaceElementVM? _selected;
+
+    /// <summary>The cell the inspector describes, or null when nothing is selected.</summary>
+    public SurfaceElementVM? Selected
+    {
+        get => _selected;
+        private set
+        {
+            if (ReferenceEquals(_selected, value))
+                return;
+
+            if (_selected is not null)
+                _selected.IsSelected = false;
+
+            _selected = value;
+
+            if (_selected is not null)
+                _selected.IsSelected = true;
+
+            this.RaisePropertyChanged(nameof(Selected));
+            this.RaisePropertyChanged(nameof(HasSelection));
+        }
+    }
+
+    /// <summary>Whether a cell is selected, and therefore whether there is anything to inspect.</summary>
+    public bool HasSelection => _selected is not null;
+
+    /// <summary>The selected element's properties, one field each.</summary>
+    /// <remarks>
+    /// Rebuilt on every selection change and never patched in place: the set of fields <em>is</em> a
+    /// function of the element's kind, so keeping stale fields around would leave a <c>label</c> row
+    /// under a <c>Text</c> element that has no label.
+    /// </remarks>
+    public ObservableCollection<SurfaceFieldVM> Fields { get; } = [];
+
+    /// <summary>Selects a cell, or clears the inspector when given null.</summary>
+    /// <param name="element">The cell to inspect, or null.</param>
+    public void Select(SurfaceElementVM? element)
+    {
+        if (ReferenceEquals(_selected, element))
+            return;
+
+        Selected = element;
+
+        BuildFields();
+    }
 
     /// <summary>The ToolKit being edited.</summary>
     public string ToolkitId
@@ -187,6 +251,11 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         // The panel described the document as it was before this call, so it goes first: a saved
         // warning about a cell the author has just deleted is the editor arguing with the canvas.
         ForgetLastSave();
+
+        // And so does the inspector: every cell is about to be replaced, so a field still pointing at
+        // one of the old objects would be editing a cell that is no longer on the canvas. Callers
+        // that put something new on the card select it again after this returns.
+        Select(null);
 
         var document = elements as IReadOnlyList<SurfaceElement> ?? [.. elements];
 
@@ -449,6 +518,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     {
         Elements.Clear();
         Boundaries.Clear();
+        Select(null);
         ForgetLastSave();
         Status = string.Empty;
         RefreshUnplaced();
@@ -476,9 +546,59 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         // Built on the list that will be on screen, not on Elements.Count: the new element is about
         // to be appended, and its row has to follow the last one rather than repeat it.
         var appended = CurrentElements();
-        appended.Add(CreateElementFor(key, appended.Count));
+        appended.Add(CreateElementFor(key, NextRow(appended)));
         Rebuild(appended);
         RefreshUnplaced();
+
+        // Selected on arrival, because the next thing the author wants is almost always a property of
+        // the thing they just placed — and before this the only properties reachable were none.
+        Select(Elements.Count > 0 ? Elements[^1] : null);
+    }
+
+    /// <summary>Puts one of the interactive kinds on the canvas, on a row of its own.</summary>
+    /// <param name="kind">One of <see cref="PaletteKinds"/>.</param>
+    /// <remarks>
+    /// <b>Named on arrival, and the name is the kind.</b> The validator drops an editing element that
+    /// neither names itself nor sends anything (<c>surface.element.inert</c>), so a bare <c>Input</c>
+    /// would disappear the next time the card was opened — the editor handing out elements that its own
+    /// check panel condemns. The name is a placeholder the author is expected to replace, and it is
+    /// visible in the cell rather than hidden in a default.
+    /// </remarks>
+    public void AddKind(string kind)
+    {
+        if (string.IsNullOrWhiteSpace(kind))
+            return;
+
+        if (Elements.Count >= MaxElements)
+        {
+            ValidationMessage = string.Format(
+                TranslateText("Bench_Surface_TooManyElements") ?? "A card holds at most {0} elements.",
+                MaxElements);
+            return;
+        }
+
+        SurfaceElement? created = kind switch
+        {
+            "Button" => new SurfaceButtonElement { Label = "Button" },
+            "Input" => new SurfaceInputElement { Name = "input" },
+            "Number" => new SurfaceNumberElement { Name = "number" },
+            "Select" => new SurfaceSelectElement { Name = "select" },
+            "Switch" => new SurfaceSwitchElement { Name = "switch" },
+            _ => null,
+        };
+
+        if (created is null)
+            return;
+
+        var document = CurrentElements();
+
+        // A row of its own, exactly like a placed key: combining two elements is the author's act, and
+        // it is one field away (the row), so the editor does not guess a pairing.
+        document.Add(created with { Row = NextRow(document) });
+
+        Rebuild(document);
+        RefreshUnplaced();
+        Select(Elements.Count > 0 ? Elements[^1] : null);
     }
 
     /// <summary>Removes one element from the canvas.</summary>
@@ -519,27 +639,244 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             return;
         }
 
-        var moved = CurrentElements();
-        var index = moved.IndexOf(element.Element);
+        var index = Elements.IndexOf(element);
 
         if (index < 0)
             return;
 
-        var updated = moved[index] with { Row = row };
+        if (element.Element.Row == row)
+        {
+            ValidationMessage = null;
+            return;
+        }
 
-        moved.RemoveAt(index);
+        // Reordered in the collection rather than rebuilt. A rebuild replaces every cell's view model,
+        // and the row is typed into a field that is bound to the selected cell — so typing "12" would
+        // commit "1", rebuild, and lose the focus before the "2" arrived. Moving the same objects keeps
+        // the inspector, and the field the cursor is in, exactly where they are.
+        Elements.RemoveAt(index);
 
         // After the last element already on that row, so it lands on the right-hand end of it.
-        var lastOnRow = moved.FindLastIndex(other => other.Row == row);
+        var lastOnRow = -1;
+        for (var i = 0; i < Elements.Count; i++)
+        {
+            if (Elements[i].Element.Row == row)
+                lastOnRow = i;
+        }
 
-        moved.Insert(lastOnRow < 0 ? moved.Count : lastOnRow + 1, updated);
+        var insertAt = lastOnRow < 0 ? Elements.Count : lastOnRow + 1;
+        Elements.Insert(insertAt, element);
 
-        Rebuild(moved);
+        var document = CurrentElements();
+        document[insertAt] = document[insertAt] with { Row = row };
+
+        // Every cell is refreshed, not only the two rows involved: a row's cells share their width, so
+        // the cells the element joined and the cells it left both changed size, and their order in the
+        // collection decides left-to-right placement.
+        for (var i = 0; i < Elements.Count; i++)
+            Elements[i].Refresh(document[i], document);
+
+        RebuildBoundaries();
+        ForgetLastSave();
         ValidationMessage = null;
     }
 
     /// <summary>How many elements a card may hold. A guard against an accidental infinite scroll.</summary>
     public const int MaxElements = 200;
+
+    /// <summary>The row a newly placed element goes on: below the lowest one in use.</summary>
+    /// <remarks>
+    /// Below the lowest row, not below the element count. Two elements on one row make those two
+    /// numbers disagree, and the count would then leave an empty row between the card's content and
+    /// whatever was placed next.
+    /// </remarks>
+    private static int NextRow(IReadOnlyList<SurfaceElement> document) =>
+        document.Count == 0 ? 1 : document.Max(e => e.Row) + 1;
+
+    /// <summary>Rebuilds the inspector for the selected element, from the element itself.</summary>
+    /// <remarks>
+    /// The field list is generated from the element's kind rather than declared per kind in XAML: the
+    /// contract already says which properties each kind has, and a second copy of that table in the
+    /// view is a second thing to forget. What the inspector offers is therefore exactly what the file
+    /// can hold.
+    /// </remarks>
+    private void BuildFields()
+    {
+        Fields.Clear();
+
+        if (_selected is null)
+            return;
+
+        // The row first, because every kind has one, and because it is the only field that is a
+        // statement about the document rather than about the element.
+        Fields.Add(new SurfaceFieldVM(
+            "row",
+            _selected.Element.Row.ToString(CultureInfo.InvariantCulture),
+            MoveSelectedToRow));
+
+        switch (_selected.Element)
+        {
+            case SurfaceTextElement:
+                AddField<SurfaceTextElement>("key", e => e.Key, (e, v) => e with { Key = Null(v) }, KeyChoices());
+                AddField<SurfaceTextElement>("format", e => e.Format, (e, v) => e with { Format = Null(v) },
+                    ["", "text", "date", "datetime", "percent"]);
+                break;
+
+            case SurfaceButtonElement:
+                AddField<SurfaceButtonElement>("label", e => e.Label, (e, v) => e with { Label = v });
+                AddField<SurfaceButtonElement>("events", e => Join(e.Events), (e, v) => e with { Events = Split(v) });
+                AddField<SurfaceButtonElement>("emphasis", e => e.Emphasis, (e, v) => e with { Emphasis = Null(v) },
+                    ["", "primary", "danger"]);
+                break;
+
+            case SurfaceInputElement:
+                AddField<SurfaceInputElement>("name", e => e.Name, (e, v) => e with { Name = Null(v) });
+                AddField<SurfaceInputElement>("events", e => Join(e.Events), (e, v) => e with { Events = Split(v) });
+                break;
+
+            case SurfaceNumberElement:
+                AddField<SurfaceNumberElement>("name", e => e.Name, (e, v) => e with { Name = Null(v) });
+                AddNumberField<SurfaceNumberElement>("min", e => e.Min, (e, n) => e with { Min = n });
+                AddNumberField<SurfaceNumberElement>("max", e => e.Max, (e, n) => e with { Max = n });
+                AddNumberField<SurfaceNumberElement>("step", e => e.Step, (e, n) => e with { Step = n });
+                AddNumberField<SurfaceNumberElement>(
+                    "decimals",
+                    e => e.Decimals is null ? null : e.Decimals.Value,
+                    (e, n) => e with { Decimals = n is null ? null : (int)n.Value });
+                break;
+
+            case SurfaceSelectElement:
+                AddField<SurfaceSelectElement>("name", e => e.Name, (e, v) => e with { Name = Null(v) });
+                AddField<SurfaceSelectElement>("options", e => Join(e.Options), (e, v) => e with { Options = Split(v) });
+                AddField<SurfaceSelectElement>("optionsKey", e => e.OptionsKey, (e, v) => e with { OptionsKey = Null(v) },
+                    KeyChoices());
+                break;
+
+            case SurfaceSwitchElement:
+                AddField<SurfaceSwitchElement>("name", e => e.Name, (e, v) => e with { Name = Null(v) });
+                break;
+
+            case SurfaceListElement:
+                AddField<SurfaceListElement>("key", e => e.Key, (e, v) => e with { Key = Null(v) }, KeyChoices());
+                AddField<SurfaceListElement>("itemTitle", e => e.ItemTitle, (e, v) => e with { ItemTitle = Null(v) });
+                AddField<SurfaceListElement>("itemSubtitle", e => e.ItemSubtitle, (e, v) => e with { ItemSubtitle = Null(v) });
+                break;
+        }
+    }
+
+    /// <summary>Adds one field, reading from and writing to the selected element's current value.</summary>
+    /// <remarks>
+    /// Both delegates take the element as it is <em>now</em> rather than the one the field was built
+    /// from: properties are edited one after another, and a writer closed over the first element would
+    /// undo every edit made before it.
+    /// </remarks>
+    private void AddField<T>(
+        string label,
+        Func<T, string?> read,
+        Func<T, string, SurfaceElement> write,
+        IReadOnlyList<string>? choices = null)
+        where T : SurfaceElement
+    {
+        if (_selected?.Element is not T current)
+            return;
+
+        Fields.Add(new SurfaceFieldVM(
+            label,
+            read(current),
+            text =>
+            {
+                if (_selected?.Element is T now)
+                    ApplyEdit(write(now, text));
+            },
+            choices));
+    }
+
+    /// <summary>Adds a field holding one optional number, refusing what is not one.</summary>
+    private void AddNumberField<T>(
+        string label,
+        Func<T, double?> read,
+        Func<T, double?, SurfaceElement> write)
+        where T : SurfaceElement
+        => AddField<T>(
+            label,
+            e => read(e)?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            (e, text) =>
+            {
+                if (string.IsNullOrWhiteSpace(text))
+                    return write(e, null);
+
+                if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
+                {
+                    // Refused, and said out loud: a silently ignored keystroke is indistinguishable
+                    // from a field that does not work.
+                    ValidationMessage = $"'{label}' must be a number.";
+                    return e;
+                }
+
+                return write(e, number);
+            });
+
+    /// <summary>Writes one property into the document and redraws what it affected.</summary>
+    private void ApplyEdit(SurfaceElement updated)
+    {
+        if (_selected is null)
+            return;
+
+        var index = Elements.IndexOf(_selected);
+        if (index < 0)
+            return;
+
+        var document = CurrentElements();
+
+        // A refused edit comes back as the element it started from. Nothing to write, and — more to
+        // the point — nothing to forget: the panel must keep saying what the refusal said.
+        if (ReferenceEquals(document[index], updated))
+            return;
+
+        document[index] = updated;
+
+        // A cell's width is a share of its row and no property here changes a weight, so refreshing
+        // the row is enough: the other rows cannot have moved.
+        for (var i = 0; i < Elements.Count; i++)
+        {
+            if (document[i].Row == updated.Row)
+                Elements[i].Refresh(document[i], document);
+        }
+
+        ForgetLastSave();
+    }
+
+    /// <summary>Moves the selected cell to a row typed into the inspector.</summary>
+    private void MoveSelectedToRow(string text)
+    {
+        if (_selected is null)
+            return;
+
+        if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var row) || row < 1)
+        {
+            ValidationMessage = TranslateText("Bench_Surface_RowOutOfRange") ?? "Row must be at least 1.";
+            return;
+        }
+
+        MoveToRow(_selected, row);
+    }
+
+    /// <summary>The choices for a property that names a declared key, with "none" first.</summary>
+    private IReadOnlyList<string> KeyChoices() =>
+        ["", .. DeclaredKeys.Select(k => k.Name).Distinct(StringComparer.Ordinal)];
+
+    /// <summary>Comma-separated text from a list, and back.</summary>
+    /// <remarks>
+    /// The file holds a list; a person types a line. Joining and splitting is the whole translation,
+    /// and it is lossless because neither an event name nor an option can contain a comma.
+    /// </remarks>
+    private static string Join(IReadOnlyList<string> values) => string.Join(", ", values);
+
+    private static string[] Split(string text) =>
+        [.. text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+
+    /// <summary>Text as an optional property: blank is absent.</summary>
+    private static string? Null(string text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
     /// <summary>
     /// Builds the element a declared key implies.
@@ -591,7 +928,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// <para>The weight is left at its default of 1, which alone on a row means the full width.
     /// Setting it here would record a ratio that means nothing until a second element joins.</para>
     /// </remarks>
-    private static SurfaceElement CreateElementFor(KeyDeclaration key, int index)
+    private static SurfaceElement CreateElementFor(KeyDeclaration key, int row)
     {
         // Two kinds, not four. Text draws every scalar (numbers and booleans reach the screen as
         // their JSON text, which is what Scalars does); List is the only kind that can draw an array.
@@ -603,7 +940,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             _ => new SurfaceTextElement { Key = key.Name },
         };
 
-        return element with { Row = index + 1 };
+        return element with { Row = row };
     }
 
     private void RefreshUnplaced()
@@ -621,6 +958,8 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     public override void InitCommands()
     {
         PlaceCommand = ReactiveCommand.Create<KeyDeclaration>(Place);
+        AddKindCommand = ReactiveCommand.Create<string>(AddKind);
+        SelectCommand = ReactiveCommand.Create<SurfaceElementVM?>(Select);
         RemoveCommand = ReactiveCommand.Create<SurfaceElementVM>(Remove);
         SaveCommand = ReactiveCommand.Create(Save);
         ClearCommand = ReactiveCommand.Create(Clear);
@@ -635,6 +974,12 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
     /// <summary>Puts a declared key on the canvas.</summary>
     public ReactiveCommand<KeyDeclaration, Unit> PlaceCommand { get; private set; } = null!;
+
+    /// <summary>Puts an interactive element on the canvas.</summary>
+    public ReactiveCommand<string, Unit> AddKindCommand { get; private set; } = null!;
+
+    /// <summary>Selects the cell the inspector describes.</summary>
+    public ReactiveCommand<SurfaceElementVM?, Unit> SelectCommand { get; private set; } = null!;
 
     /// <summary>Removes an element from the canvas.</summary>
     public ReactiveCommand<SurfaceElementVM, Unit> RemoveCommand { get; private set; } = null!;

@@ -56,6 +56,7 @@ public sealed class SurfaceElementVM : INotifyPropertyChanged
 
     private SurfaceElement _element;
     private IReadOnlyList<SurfaceElement> _document;
+    private bool _isSelected;
 
     /// <summary>Creates the view of one element.</summary>
     /// <param name="element">The element to draw.</param>
@@ -78,6 +79,28 @@ public sealed class SurfaceElementVM : INotifyPropertyChanged
 
     /// <summary>Which key the element stands for, when it has one.</summary>
     public string? Key => _element.Key;
+
+    /// <summary>The name the element's own value travels under, when it has one.</summary>
+    public string? Name => _element.Name;
+
+    /// <summary>Whether the inspector is describing this cell.</summary>
+    /// <remarks>
+    /// Editor state living on the cell rather than in a set the view model keeps: the cell is what
+    /// draws the selection, and a second collection of "which one is selected" would be a fact with two
+    /// homes that can disagree after a rebuild.
+    /// </remarks>
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected == value)
+                return;
+
+            _isSelected = value;
+            Raise();
+        }
+    }
 
     /// <summary>The elements sharing this one's row, in declaration order.</summary>
     /// <remarks>
@@ -161,6 +184,9 @@ public sealed class SurfaceElementVM : INotifyPropertyChanged
     public string Label => _element switch
     {
         SurfaceButtonElement button when !string.IsNullOrWhiteSpace(button.Label) => button.Label,
+        SurfaceButtonElement => "(button)",
+        SurfaceInputElement or SurfaceNumberElement or SurfaceSelectElement or SurfaceSwitchElement =>
+            string.IsNullOrWhiteSpace(_element.Name) ? "(unnamed)" : _element.Name!,
         { Key: { Length: > 0 } key } => key,
         _ => "(no key)",
     };
@@ -172,7 +198,8 @@ public sealed class SurfaceElementVM : INotifyPropertyChanged
     /// </remarks>
     public string Description =>
         $"{Kind} · row {_element.Row}, weight {_element.Weight}" +
-        (Key is null ? string.Empty : $" · key '{Key}'");
+        (Key is null ? string.Empty : $" · key '{Key}'") +
+        (Name is null ? string.Empty : $" · name '{Name}'");
 
     /// <summary>Replaces what this cell draws, keeping the object the pointer may be holding.</summary>
     /// <param name="element">This cell's new declaration.</param>
@@ -202,6 +229,7 @@ public sealed class SurfaceElementVM : INotifyPropertyChanged
         Raise(nameof(Kind));
         Raise(nameof(Description));
         Raise(nameof(Key));
+        Raise(nameof(Name));
     }
 
     private void Raise([CallerMemberName] string? name = null) =>

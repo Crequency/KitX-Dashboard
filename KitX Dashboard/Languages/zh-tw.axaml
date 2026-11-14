@@ -454,6 +454,8 @@
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">綁定：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Title">卡片排版</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Palette">還沒放到卡片上</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Properties">屬性</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Actions">動作</sys:String>
     <sys:String x:Key="Text_Bench_Surface_PaletteHint">這個工具包宣告了、但畫布上還沒有的鍵。選一個放上去。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">儲存並檢查</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">清空畫布</sys:String>

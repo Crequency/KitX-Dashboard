@@ -74,4 +74,29 @@ public partial class SurfaceEditorWindow : Window
         e.Pointer.Capture(null);
         e.Handled = true;
     }
+
+    /// <summary>Selects the cell that was pressed, so the inspector can describe it.</summary>
+    /// <remarks>
+    /// Handled, so the press does not reach the canvas underneath and immediately clear what it just
+    /// selected. The remove button inside the cell takes its own press first — that handler is on the
+    /// button, below this one in the route.
+    /// </remarks>
+    private void OnCellPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not Control { DataContext: SurfaceElementVM cell })
+            return;
+
+        if (DataContext is not SurfaceEditorViewModel editor)
+            return;
+
+        editor.Select(cell);
+        e.Handled = true;
+    }
+
+    /// <summary>Clears the inspector: a press on the canvas itself is a press on nothing.</summary>
+    private void OnCanvasPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is SurfaceEditorViewModel editor)
+            editor.Select(null);
+    }
 }

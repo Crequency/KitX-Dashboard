@@ -454,6 +454,8 @@
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">바인딩: {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Title">카드 레이아웃</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Palette">아직 배치되지 않음</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Properties">속성</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Actions">동작</sys:String>
     <sys:String x:Key="Text_Bench_Surface_PaletteHint">이 툴킷이 선언했지만 아직 카드에 놓이지 않은 키입니다.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">저장하고 확인</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">카드 비우기</sys:String>
