@@ -5,6 +5,7 @@
         xmlns:contract="using:KitX.ToolKit.Contract"
         xmlns:decl="using:KitX.ToolKit.Contract.Declaration"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
+        xmlns:converters="using:KitX.Dashboard.Converters"
         Title="{DynamicResource Text_Bench_Surface_Title}"
         Width="1180"
         Height="900"
@@ -18,6 +19,14 @@
           its named placeholders, and a code with no key falls back to the English sentence.
         -->
         <viewModels:SurfaceDiagnosticTextConverter x:Key="SurfaceDiagnosticText" />
+
+        <!--
+          Element kinds are drawn in the reader's language, but the collections that carry them stay
+          in the schema's own words: the palette's command parameter and the type dropdown's value
+          are compared against "Button"/"Input", so translating the collection would break both and
+          would go stale the moment the language changed. See SurfaceKindNameConverter.
+        -->
+        <converters:SurfaceKindNameConverter x:Key="SurfaceKindName" />
     </Window.Resources>
 
     <Window.Styles>
@@ -171,7 +180,8 @@
                                         HorizontalContentAlignment="Left"
                                         Command="{Binding $parent[Window].DataContext.AddKindCommand}"
                                         CommandParameter="{Binding}">
-                                    <TextBlock Text="{Binding}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Converter={StaticResource SurfaceKindName}}"
+                                               FontWeight="SemiBold" />
                                 </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -260,7 +270,7 @@
                                                       so "Button" cannot be drawn. Left to clip it
                                                       renders as "But", which reads as a word rather
                                                       than as a cut.  -->
-                                                <TextBlock Text="{Binding Kind}"
+                                                <TextBlock Text="{Binding Kind, Converter={StaticResource SurfaceKindName}}"
                                                            FontSize="10"
                                                            Opacity="0.6"
                                                            VerticalAlignment="Top"
@@ -383,7 +393,18 @@
                                     <ComboBox ItemsSource="{Binding Choices}"
                                               SelectedItem="{Binding Value, Mode=TwoWay}"
                                               IsVisible="{Binding IsChoice}"
-                                              HorizontalAlignment="Stretch" />
+                                              HorizontalAlignment="Stretch">
+                                        <!--
+                                          The type field's items are the schema's own words, because
+                                          ChangeType compares the chosen value against them; only the
+                                          words on screen are translated.
+                                        -->
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource SurfaceKindName}}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
