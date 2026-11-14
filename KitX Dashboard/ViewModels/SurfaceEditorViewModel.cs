@@ -380,7 +380,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
         // A standing alarm owns the status line: emptying it would say the write is fine, which is the
         // one thing this method knows nothing about.
-        if (!_autoSaveFailed)
+        if (!_writeFailed)
             Status = string.Empty;
     }
 
@@ -887,11 +887,10 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
         _store.Save(ToolkitId, document);
 
-        // A write that reached the disk answers an earlier alarm, whichever hand asked for it. Without
-        // this, a failed automatic write followed by a successful button save left the flag raised, so
-        // the next edit was forbidden from emptying a status line that had already been rewritten —
-        // a stale "Saved." over an empty panel, the same shape as the defect the flag exists to prevent.
-        ClearSaveFailure();
+        // The flag only. Everything the full alarm teardown would also empty is rewritten four lines
+        // down from here — the status line and the findings both — so calling that version would have
+        // done its work and then had it overwritten.
+        AcknowledgeWrite();
 
         // Materialised rather than passed live: the store is handed a question, not a window onto a
         // collection the user can still edit.
@@ -958,8 +957,14 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// </remarks>
     public TimeSpan AutoSaveInterval => TimeSpan.FromSeconds(30);
 
-    /// <summary>Whether the last automatic write failed, so a later success can take the alarm down.</summary>
-    private bool _autoSaveFailed;
+    /// <summary>Whether a write failed and no write has succeeded since.</summary>
+    /// <remarks>
+    /// Deliberately not named for the clock: the button raises the same alarm, and the question this
+    /// answers is not "who asked" but "is the file still unwritten". One flag rather than one per
+    /// caller, because two flags would turn <see cref="ClearSaveFailure"/>'s single guard back into
+    /// the pair of conditions this was built to avoid.
+    /// </remarks>
+    private bool _writeFailed;
 
     /// <summary>Writes the canvas if it has changed, without validating it.</summary>
     /// <remarks>
@@ -1052,18 +1057,28 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         return warnings.Count > 0 ? SurfaceCloseVerdict.ConfirmFindings : SurfaceCloseVerdict.Close;
     }
 
+    /// <summary>Records that a write reached the disk, so an earlier failure stops being the latest news.</summary>
+    /// <remarks>
+    /// Separated from <see cref="ClearSaveFailure"/> because the two callers need different amounts of
+    /// it. A save that is about to rewrite the status line and replace the findings needs only the flag
+    /// reset; a background write that must not disturb what the author is reading needs all three steps.
+    /// Keeping them one method made the full version run at a call site where two of its three effects
+    /// were immediately overwritten — harmless, and misleading to anyone reading either end.
+    /// </remarks>
+    private void AcknowledgeWrite() => _writeFailed = false;
+
     /// <summary>Takes down the alarm raised by an earlier failed write, now that a write succeeded.</summary>
     /// <remarks>
-    /// Status is emptied only when the alarm was ours: a "Saved." from the button is not something a
-    /// background write is allowed to erase, and a stale failure left standing on a card that has just
-    /// been written is an accusation the author cannot act on.
+    /// The whole alarm, not just the flag: a stale failure left standing on a card that has just been
+    /// written is an accusation the author cannot act on. Callers that are about to say something newer
+    /// use <see cref="AcknowledgeWrite"/> instead, so nothing here has to be undone a line later.
     /// </remarks>
     private void ClearSaveFailure()
     {
-        if (!_autoSaveFailed)
+        if (!_writeFailed)
             return;
 
-        _autoSaveFailed = false;
+        AcknowledgeWrite();
         Status = string.Empty;
 
         // Walked backwards, because removing the entry the loop is about to look at would shift the
@@ -1078,7 +1093,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// <summary>Makes a failed write visible in both places the author can still see.</summary>
     private void ReportSaveFailure(Exception exception)
     {
-        _autoSaveFailed = true;
+        _writeFailed = true;
 
         // The reason travels as a named value, not folded into the sentence: the panel looks the
         // sentence up by code and fills {reason} from it (see SurfaceDiagnosticText), so what the
