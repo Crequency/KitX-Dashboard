@@ -1039,7 +1039,11 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             }
 
             IsDirty = false;
-            ClearSaveFailure();
+
+            // The flag only, for the same reason Save() asks for only that: everything else the full
+            // teardown would do is rewritten below, on every path that reaches here. Calling it would
+            // run three steps and have two of them overwritten a dozen lines later.
+            AcknowledgeWrite();
         }
 
         var warnings = _store.Diagnose(document, [.. DeclaredKeys]);
