@@ -63,19 +63,59 @@ public class SurfaceEditorSaveTests
     }
 
     [Fact]
-    public void The_problem_is_reported_in_the_editors_own_words()
+    public void The_problem_is_reported_with_its_code()
     {
         var store = new RecordingStore(Documented(), [Problem("ghost")]);
         var editor = EditorOver(store);
 
         editor.Save();
 
-        Assert.True(editor.HasValidationMessage);
-        Assert.Contains("ghost", editor.ValidationMessage, StringComparison.Ordinal);
+        var reported = Assert.Single(editor.Diagnostics);
+
+        Assert.Contains("ghost", reported.Message, StringComparison.Ordinal);
+
+        // The code is not decoration: it is the half of a Diagnostic that survives rewording, and
+        // the half the display used to drop on the floor by joining messages into one string.
+        Assert.Equal("surface.element.unknown-key", reported.Code);
 
         // "with problems", not "did not save": the status is the one sentence an author reads
         // before closing the window.
         Assert.Equal("Saved, with problems.", editor.Status);
+    }
+
+    [Fact]
+    public void Two_problems_are_two_entries_not_one_run_on_sentence()
+    {
+        var store = new RecordingStore(Documented(), [Problem("ghost"), Problem("phantom")]);
+        var editor = EditorOver(store);
+
+        editor.Save();
+
+        // The measured shape of the defect: three warnings arrived in the panel as one paragraph,
+        // which is why a reader could not tell where one claim ended and the next began.
+        Assert.Equal(2, editor.Diagnostics.Count);
+        Assert.DoesNotContain("phantom", editor.Diagnostics[0].Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("ghost", editor.Diagnostics[1].Message, StringComparison.Ordinal);
+
+        // And nothing is left in the single-message property, so there is one place a reader looks.
+        Assert.Null(editor.ValidationMessage);
+    }
+
+    [Fact]
+    public void Editing_the_card_forgets_what_the_last_save_found()
+    {
+        var store = new RecordingStore(Documented(), [Problem("ghost")]);
+        var editor = EditorOver(store);
+
+        editor.Save();
+        Assert.Single(editor.Diagnostics);
+
+        // Removing the offending cell is the repair. A panel that keeps saying "ghost" afterwards is
+        // the editor arguing with the canvas about a document that no longer exists.
+        editor.Remove(editor.Elements[1]);
+
+        Assert.Empty(editor.Diagnostics);
+        Assert.Null(editor.ValidationMessage);
     }
 
     [Fact]
@@ -102,6 +142,7 @@ public class SurfaceEditorSaveTests
         editor.Save();
 
         Assert.NotNull(store.Saved);
+        Assert.Empty(editor.Diagnostics);
         Assert.False(editor.HasValidationMessage);
         Assert.Equal("Saved.", editor.Status);
     }

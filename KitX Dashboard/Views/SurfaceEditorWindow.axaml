@@ -2,6 +2,7 @@
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:icon="using:Material.Icons.Avalonia"
+        xmlns:contract="using:KitX.ToolKit.Contract"
         xmlns:decl="using:KitX.ToolKit.Contract.Declaration"
         xmlns:viewModels="using:KitX.Dashboard.ViewModels"
         Title="{DynamicResource Text_Bench_Surface_Title}"
@@ -258,24 +259,60 @@
                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                     BorderThickness="1,0,0,0"
                     Padding="12,0,0,0">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="{DynamicResource Text_Bench_Surface_Check}"
-                               FontWeight="SemiBold" />
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Row="0"
+                               Text="{DynamicResource Text_Bench_Surface_Check}"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,8" />
 
-                    <Border IsVisible="{Binding HasValidationMessage}"
-                            Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
-                            CornerRadius="4"
-                            Padding="8">
-                        <TextBlock Text="{Binding ValidationMessage}"
-                                   TextWrapping="Wrap"
-                                   FontSize="12" />
-                    </Border>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="6">
+                            <!-- The editor's own refusal: one gesture, one sentence. -->
+                            <Border IsVisible="{Binding HasValidationMessage}"
+                                    Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                                    CornerRadius="4"
+                                    Padding="8">
+                                <TextBlock Text="{Binding ValidationMessage}"
+                                           TextWrapping="Wrap"
+                                           FontSize="12" />
+                            </Border>
 
-                    <TextBlock Text="{Binding Status}"
+                            <!--
+                              One row per finding, because a save can find several and they are
+                              separate claims. The code under the sentence is the part that survives
+                              rewording, and the part a reader quotes when asking somebody else
+                              about it — a paragraph of three sentences had neither property.
+                            -->
+                            <ItemsControl ItemsSource="{Binding Diagnostics}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type contract:Diagnostic}">
+                                        <Border Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                                                CornerRadius="4"
+                                                Padding="8"
+                                                Margin="0,0,0,6">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Message}"
+                                                           TextWrapping="Wrap"
+                                                           FontSize="12" />
+                                                <TextBlock Text="{Binding Code}"
+                                                           FontSize="10"
+                                                           Opacity="0.55"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <TextBlock Grid.Row="2"
+                               Text="{Binding Status}"
                                FontSize="12"
                                Opacity="0.75"
-                               TextWrapping="Wrap" />
-                </StackPanel>
+                               TextWrapping="Wrap"
+                               Margin="0,8,0,0" />
+                </Grid>
             </Border>
         </Grid>
     </Grid>

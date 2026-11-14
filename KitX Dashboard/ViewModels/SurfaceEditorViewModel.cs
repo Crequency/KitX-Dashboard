@@ -102,11 +102,16 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _status, value);
     }
 
-    /// <summary>What the last check refused, or null when it found nothing.</summary>
+    /// <summary>The editor's own refusal, or null when it has nothing to refuse.</summary>
     /// <remarks>
-    /// Kept as a message rather than a boolean because the two things it can say are different
-    /// problems: an element whose key is gone, and a save that failed to reach the disk. Collapsing
-    /// them into "something is wrong" would leave the reader to guess which.
+    /// <para><b>Not where a save's findings go.</b> This holds what the editor itself would not do —
+    /// a card over the element limit, a row below one — and those are single, immediate, and about
+    /// one gesture. What a save finds is a list, and it lives in <see cref="Diagnostics"/>.</para>
+    ///
+    /// <para>The two used to share this property, joined with spaces into one paragraph. Three
+    /// problems then arrived as one run-on sentence with no way to tell where one ended: the
+    /// structured half of a <see cref="Diagnostic"/> — its code — never reached the screen at
+    /// all.</para>
     /// </remarks>
     public string? ValidationMessage
     {
@@ -121,6 +126,17 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// <summary>Whether there is anything to show in the check panel.</summary>
     public bool HasValidationMessage => !string.IsNullOrEmpty(_validationMessage);
 
+    /// <summary>What the last save found, one entry per problem.</summary>
+    /// <remarks>
+    /// <para><b>A collection, because a save can find several and they are separate claims.</b> Each
+    /// entry keeps its <see cref="Diagnostic.Code"/>: the code is the part a reader can act on
+    /// twice, and the part a future fix can attach an action to.</para>
+    ///
+    /// <para>Replaced on every save rather than appended to — the panel describes the file as it is
+    /// now, not a history of what was wrong with it.</para>
+    /// </remarks>
+    public ObservableCollection<Diagnostic> Diagnostics { get; } = [];
+
     /// <summary>Loads a ToolKit's current layout.</summary>
     /// <param name="toolkitId">The ToolKit to edit.</param>
     public void Load(string toolkitId)
@@ -129,7 +145,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
         ToolkitId = toolkitId;
         Status = string.Empty;
-        ValidationMessage = null;
+        ForgetLastSave();
 
         DeclaredKeys.Clear();
         foreach (var key in _keysOf(toolkitId))
@@ -168,6 +184,10 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// </remarks>
     private void Rebuild(IReadOnlyList<SurfaceElement> elements)
     {
+        // The panel described the document as it was before this call, so it goes first: a saved
+        // warning about a cell the author has just deleted is the editor arguing with the canvas.
+        ForgetLastSave();
+
         var document = elements as IReadOnlyList<SurfaceElement> ?? [.. elements];
 
         Elements.Clear();
@@ -175,6 +195,13 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             Elements.Add(new SurfaceElementVM(element, document));
 
         RebuildBoundaries();
+    }
+
+    /// <summary>Drops what the last save found, because the document it described has changed.</summary>
+    private void ForgetLastSave()
+    {
+        Diagnostics.Clear();
+        ValidationMessage = null;
     }
 
     /// <summary>Recomputes the border between every pair of neighbours on a row.</summary>
@@ -395,10 +422,15 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         // collection the user can still edit.
         var warnings = _store.Diagnose(document, [.. DeclaredKeys]);
 
+        // The panel describes this save, not the previous one.
+        ValidationMessage = null;
+        Diagnostics.Clear();
+
         if (warnings.Count > 0)
         {
-            ValidationMessage = string.Join(
-                " ", warnings.Select(warning => warning.Message).Distinct(StringComparer.Ordinal));
+            foreach (var warning in warnings)
+                Diagnostics.Add(warning);
+
             Status = TranslateText("Bench_Surface_SavedWithProblems") ?? "Saved, with problems.";
 
             Log.Warning("[SurfaceEditor] '{Toolkit}' was saved with {Count} diagnostic(s)",
@@ -406,7 +438,6 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         }
         else
         {
-            ValidationMessage = null;
             Status = TranslateText("Bench_Surface_Saved") ?? "Saved.";
         }
 
@@ -418,7 +449,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     {
         Elements.Clear();
         Boundaries.Clear();
-        ValidationMessage = null;
+        ForgetLastSave();
         Status = string.Empty;
         RefreshUnplaced();
     }

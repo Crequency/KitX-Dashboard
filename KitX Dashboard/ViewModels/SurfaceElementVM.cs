@@ -150,17 +150,7 @@ public sealed class SurfaceElementVM : INotifyPropertyChanged
     public const double CellPadding = 8;
 
     /// <summary>The element kind, for the cell's corner label.</summary>
-    public string Kind => _element switch
-    {
-        SurfaceTextElement => "Text",
-        SurfaceButtonElement => "Button",
-        SurfaceInputElement => "Input",
-        SurfaceNumberElement => "Number",
-        SurfaceSelectElement => "Select",
-        SurfaceSwitchElement => "Switch",
-        SurfaceListElement => "List",
-        _ => "Element",
-    };
+    public string Kind => SurfaceElementKind.Of(_element);
 
     /// <summary>What the cell shows in its body: the key, or a button's label.</summary>
     /// <remarks>
