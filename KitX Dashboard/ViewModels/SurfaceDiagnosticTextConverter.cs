@@ -16,9 +16,12 @@ namespace KitX.Dashboard.ViewModels;
 /// whenever the first changed; the sentence is a function of the record, so it is computed where
 /// the row is drawn.</para>
 ///
-/// <para><b>What it does not do.</b> It does not cache: a language switch re-renders the panel and
-/// the lookup runs again. Holding the text here would freeze the first language it was asked
-/// in — the defect that once made every string in this dashboard fall back to English.</para>
+/// <para><b>What it does not do.</b> It does not cache. A converter runs when the row is built, so
+/// switching language needs the rows rebuilt — the window subscribes to the language-change event
+/// and replaces the panel's contents for exactly that reason
+/// (see <c>SurfaceEditorWindow.RedrawDiagnostics</c>). Holding the sentence here instead would
+/// freeze the first language it was asked in, which is the defect that once left every string in
+/// this dashboard in English after a translation landed.</para>
 /// </remarks>
 public sealed class SurfaceDiagnosticTextConverter : IValueConverter
 {

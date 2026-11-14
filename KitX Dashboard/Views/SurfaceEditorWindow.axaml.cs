@@ -4,6 +4,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
+using KitX.Core.Contract.Event;
+using KitX.Dashboard.Names;
 using KitX.Dashboard.ViewModels;
 
 namespace KitX.Dashboard.Views;
@@ -30,6 +32,12 @@ public partial class SurfaceEditorWindow : Window
     /// <summary>The clock that writes the card while the window is open, or null before it is shown.</summary>
     internal DispatcherTimer? AutoSaveClock { get; private set; }
 
+    /// <summary>Where the language-change event comes from, or null when there is no service host.</summary>
+    private IEventService? _events;
+
+    /// <summary>The handler subscribed for the language-change event, kept so it can be unsubscribed by identity.</summary>
+    private EventHandler<EventArgs>? _languageChanged;
+
     /// <summary>Creates the window. The view model must be supplied before showing.</summary>
     public SurfaceEditorWindow()
     {
@@ -54,6 +62,8 @@ public partial class SurfaceEditorWindow : Window
         AutoSaveClock = new DispatcherTimer { Interval = editor.AutoSaveInterval };
         AutoSaveClock.Tick += (_, _) => editor.AutoSaveIfDirty();
         AutoSaveClock.Start();
+
+        SubscribeToLanguageChanges();
     }
 
     /// <inheritdoc/>
@@ -62,7 +72,64 @@ public partial class SurfaceEditorWindow : Window
         AutoSaveClock?.Stop();
         AutoSaveClock = null;
 
+        if (_events is not null && _languageChanged is not null)
+            _events.Unsubscribe(EventNames.LanguageChanged, _languageChanged);
+
+        _events = null;
+        _languageChanged = null;
+
         base.OnClosed(e);
+    }
+
+    /// <summary>Draws the check panel's rows again when the language changes.</summary>
+    /// <remarks>
+    /// <para><b>Why a redraw is the whole mechanism.</b> A row's sentence is composed from the
+    /// finding and the resource dictionary when the row is built (see
+    /// <see cref="SurfaceDiagnosticText"/>). Nothing in the finding changes when a language is
+    /// picked, so no property on it can notify anybody: the only way to make the lookup run again
+    /// is a new row, and replacing the collection's contents is what gives one.</para>
+    ///
+    /// <para><b>Why this is not cached text.</b> Holding the composed sentence would answer in the
+    /// language it was first asked in — the failure that once left every string in this dashboard
+    /// in English after a translation landed.</para>
+    /// </remarks>
+    private void RedrawDiagnostics()
+    {
+        if (DataContext is not SurfaceEditorViewModel editor || editor.Diagnostics.Count == 0)
+            return;
+
+        var findings = editor.Diagnostics.ToArray();
+
+        editor.Diagnostics.Clear();
+
+        foreach (var finding in findings)
+            editor.Diagnostics.Add(finding);
+    }
+
+    /// <summary>Asks to be told when the language changes, for as long as this window is open.</summary>
+    /// <remarks>
+    /// A window can be shown without a service host — the headless test host does exactly that —
+    /// and nothing in the panel depends on the event: without it the rows keep the language they
+    /// were drawn in until the next save redraws them. So a missing host is a quieter window, not a
+    /// window that fails to open.
+    /// </remarks>
+    private void SubscribeToLanguageChanges()
+    {
+        try
+        {
+            _events = App.GetService<IEventService>();
+        }
+        catch (InvalidOperationException)
+        {
+            _events = null;
+        }
+
+        if (_events is null)
+            return;
+
+        _languageChanged = (_, _) => RedrawDiagnostics();
+
+        _events.Subscribe(EventNames.LanguageChanged, _languageChanged);
     }
 
     /// <summary>Writes the card, asks the validator, and asks the author when the answer is not clean.</summary>

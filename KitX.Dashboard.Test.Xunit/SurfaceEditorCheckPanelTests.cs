@@ -52,11 +52,19 @@ public class SurfaceEditorCheckPanelTests
 
         Assert.Equal(2, texts.Count(text => text == WarningCode));
 
-        // Neither message may contain the other's word. That is the difference between two rows and
-        // one sentence containing two clauses, and it is the only assertion here a joined string
-        // fails.
-        Assert.Contains(texts, text => text?.Contains("ghost", StringComparison.Ordinal) == true);
-        Assert.Contains(texts, text => text?.Contains("phantom", StringComparison.Ordinal) == true);
+        // The sentence each row is expected to carry, asked of the product rather than assumed to be
+        // the producer's English: the panel shows whatever language is loaded, and whether a
+        // dictionary is merged at this point depends on which other test in this process ran first.
+        // This file is about rows, not about which dictionary is in force.
+        var expected = viewModel.Diagnostics.Select(finding => SurfaceDiagnosticText.Describe(finding)).ToArray();
+
+        Assert.Equal(2, expected.Length);
+        Assert.NotEqual(expected[0], expected[1]);
+
+        // Each sentence on its own row. A panel that joined two findings into one paragraph fails
+        // here twice over: the joined text equals neither sentence.
+        Assert.Contains(texts, text => text == expected[0]);
+        Assert.Contains(texts, text => text == expected[1]);
     }
 
     [AvaloniaFact]
