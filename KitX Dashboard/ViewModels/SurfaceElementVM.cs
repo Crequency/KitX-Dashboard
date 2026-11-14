@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using KitX.ToolKit.Contract.Surface;
+using KitX.ToolKit.View;
+using KitX.ToolKit.View.Avalonia;
 
 namespace KitX.Dashboard.ViewModels;
 
@@ -37,22 +39,31 @@ namespace KitX.Dashboard.ViewModels;
 /// </remarks>
 public sealed class SurfaceElementVM : INotifyPropertyChanged
 {
-    /// <summary>Pixels between consecutive rows' top edges.</summary>
-    public const double RowHeight = 96;
-
-    /// <summary>Pixels before the first row's top edge.</summary>
-    public const double RowOrigin = 24;
-
-    /// <summary>Pixels between cells, horizontally and vertically.</summary>
-    public const double CellGap = 8;
-
-    /// <summary>The canvas width this view lays out against.</summary>
+    /// <summary>Height of one grid slot, as the renderer states it.</summary>
     /// <remarks>
-    /// Mirrors <c>SurfaceEditorViewModel.CanvasWidth</c>. It is duplicated rather than referenced
-    /// because the editor's constant is on the caller and this class should not reach back into it:
-    /// every number a cell needs is either its own declaration or this file's.
+    /// <para><b>Not this file's number, and that is the point.</b> The editor used to lay out on its
+    /// own 96px rows while the renderer drew 64px slots, so the canvas held eight rows and the card
+    /// held thirteen, and the <c>List</c> that is six slots tall on the card was one slot here. The
+    /// canvas is supposed to be <em>the</em> card; a second set of numbers makes it a picture of one.</para>
+    ///
+    /// <para>Every geometry member below reads <see cref="SurfaceMetrics"/> or <see cref="SurfaceLayout"/>;
+    /// none of them computes a pixel distance from a row number. A row's top is the sum of the slots
+    /// above it, which is what makes a six-slot <c>List</c> push the rows under it down by six slots
+    /// here exactly as it does there.</para>
     /// </remarks>
-    public const double CanvasWidth = 390;
+    public static double SlotHeight => SurfaceMetrics.SlotHeight;
+
+    /// <summary>Pixels between cells that share a row, as the renderer states it.</summary>
+    public static double CellGap => SurfaceMetrics.FieldGap;
+
+    /// <summary>How many slots a <c>List</c> occupies, as the renderer states it.</summary>
+    public static int ListSlotCount => SurfaceMetrics.ListSlotCount;
+
+    /// <summary>The card's width, as the renderer states it.</summary>
+    public static double CanvasWidth => SurfaceMetrics.CardWidth;
+
+    /// <summary>The card's height, as the renderer states it.</summary>
+    public static double CanvasHeight => SurfaceMetrics.CardHeight;
 
     private SurfaceElement _element;
     private IReadOnlyList<SurfaceElement> _document;
@@ -146,7 +157,21 @@ public sealed class SurfaceElementVM : INotifyPropertyChanged
     public double Right => Left + Width;
 
     /// <summary>Top edge in canvas pixels.</summary>
-    public double Top => RowOrigin + ((_element.Row - 1) * RowHeight) + (CellGap / 2);
+    /// <remarks>
+    /// The slots above this element, not <c>(row - 1) × slot</c>: those agree only while every element
+    /// is one slot tall, and a <c>List</c> ends that. <see cref="SurfaceLayout.PixelTopOf"/> is the
+    /// renderer's own arithmetic, so the number the canvas draws at is the number the card draws at.
+    /// </remarks>
+    public double Top => SurfaceLayout.PixelTopOf(_document, _element, (int)SlotHeight, ListSlotCount);
+
+    /// <summary>Height in canvas pixels: the band its row occupies.</summary>
+    /// <remarks>
+    /// <b>The row's height, not this element's own slot count.</b> The renderer puts a row's cells in
+    /// one grid row, so a lone button beside a six-slot list is drawn in a six-slot band and its
+    /// control sits at the top of it. Measuring the element alone would draw the button 64 tall and
+    /// make the canvas disagree with the card at the one place the author is looking.
+    /// </remarks>
+    public double Height => SurfaceLayout.SlotHeightOf(_document, _element.Row, ListSlotCount) * SlotHeight;
 
     /// <summary>Width in canvas pixels, from this element's share of its row.</summary>
     /// <remarks>
@@ -163,9 +188,6 @@ public sealed class SurfaceElementVM : INotifyPropertyChanged
             return total <= 0 ? CanvasWidth - CellGap : CellWidth(siblings, _element, total);
         }
     }
-
-    /// <summary>Height in canvas pixels.</summary>
-    public double Height => RowHeight - CellGap;
 
     /// <summary>Pixels of padding inside a cell, on each side.</summary>
     /// <remarks>Mirrors the cell template's <c>Padding</c>. Named because the width arithmetic has to

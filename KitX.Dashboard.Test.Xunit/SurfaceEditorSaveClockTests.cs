@@ -11,6 +11,7 @@ using KitX.Dashboard.Views;
 using KitX.ToolKit.Contract;
 using KitX.ToolKit.Contract.Declaration;
 using KitX.ToolKit.Contract.Surface;
+using KitX.ToolKit.View;
 using Xunit;
 
 namespace KitX.Dashboard.Test.Xunit;
@@ -80,7 +81,7 @@ public class SurfaceEditorSaveClockTests
                 // Leftwards, past the first cell's midpoint: dragging the last cell to where it
                 // already is would be a no-op, and a no-op is deliberately not an edit.
                 editor.BeginReorder(editor.Elements[1]);
-                editor.ReorderTo(20, RowCentre(1));
+                editor.ReorderTo(20, RowCentre(editor, 1));
                 editor.CommitReorder();
                 break;
 
@@ -418,8 +419,19 @@ public class SurfaceEditorSaveClockTests
         dialog.Close();
     }
 
-    private static double RowCentre(int row) =>
-        SurfaceElementVM.RowOrigin + ((row - 1) * SurfaceElementVM.RowHeight) + (SurfaceElementVM.RowHeight / 2);
+    /// <summary>The y of a row's band, summed the way the renderer places rows.</summary>
+    private static double RowCentre(SurfaceEditorViewModel editor, int row)
+    {
+        var elements = editor.Elements.Select(cell => cell.Element).ToList();
+
+        var top = 0.0;
+        for (var above = 1; above < row; above++)
+            top += SurfaceLayout.SlotHeightOf(elements, above, SurfaceElementVM.ListSlotCount)
+                * SurfaceElementVM.SlotHeight;
+
+        return top + (SurfaceLayout.SlotHeightOf(elements, row, SurfaceElementVM.ListSlotCount)
+            * SurfaceElementVM.SlotHeight / 2);
+    }
 
     private static SurfaceFieldVM Field(SurfaceEditorViewModel editor, string label) =>
         editor.Fields.Single(field => field.Label == label);

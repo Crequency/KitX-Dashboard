@@ -10,16 +10,28 @@
         Height="900"
         WindowStartupLocation="CenterOwner">
 
+    <Window.Resources>
+        <!--
+          The check panel shows a save's findings. Each one arrives as the contract's Diagnostic:
+          a code, an English sentence, and the values that sentence was built from. The converter
+          composes the sentence this client shows — the code names a resource key, the values fill
+          its named placeholders, and a code with no key falls back to the English sentence.
+        -->
+        <viewModels:SurfaceDiagnosticTextConverter x:Key="SurfaceDiagnosticText" />
+    </Window.Resources>
+
     <Window.Styles>
         <!--
-          The canvas is a fixed 390 x 845 rectangle, centred, with margin around it. It is not
-          stretched to the window and has no zoom control: stretching would make "what you see is
-          what you get" a lie (a 1600-wide window would lay out a desktop card), and zooming would
-          make the author answer a question this screen cannot — how wide is one cell right now.
+          The canvas is the card's own rectangle, centred, with margin around it. It is not stretched
+          to the window and has no zoom control: stretching would make "what you see is what you get"
+          a lie (a 1600-wide window would lay out a desktop card), and zooming would make the author
+          answer a question this screen cannot — how wide is one cell right now.
+
+          Its size is bound to the view model instead of written here, and both sides read it from
+          SurfaceMetrics. The rectangle used to be two literals (390 x 845) with a third copy in the
+          editor, which is how the canvas came to hold eight rows of a card that holds thirteen.
         -->
         <Style Selector="Border.canvas">
-            <Setter Property="Width" Value="390" />
-            <Setter Property="Height" Value="845" />
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Top" />
             <!--
@@ -174,15 +186,18 @@
                           Padding="24,0">
                 <!-- Named so a test can reach it without depending on when the visual tree is
                      built: an unreached visual cannot be checked for the brushes it resolved. -->
-                <Border x:Name="SurfaceCanvas" Classes="canvas" PointerPressed="OnCanvasPressed">
-                    <Grid RowDefinitions="Auto,*">
-                        <!-- A scale for the rows below, not a grid: since Q101 a row divides itself
-                             and its cells have no width in common with the next row's. Four equal
-                             ticks would name divisions that nothing on the canvas uses. -->
-                        <Border Grid.Row="0" Height="24"
-                                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
-                                BorderThickness="0,0,0,1" />
-
+                <Border x:Name="SurfaceCanvas"
+                        Classes="canvas"
+                        Width="{Binding CanvasWidth}"
+                        Height="{Binding CanvasHeight}"
+                        PointerPressed="OnCanvasPressed">
+                    <!--
+                      The cells start at the card's own top edge. There used to be a 24px scale band
+                      here, which pushed every cell down by 24 pixels — the renderer draws no band, so
+                      the canvas was showing a card that began 24px lower than the real one and had
+                      room for one row fewer. The scale named no division that the card has anyway.
+                    -->
+                    <Grid>
                         <!--
                           Both layers share this cell. A Canvas arranges children at absolute
                           positions but gives them no size of their own, so an ItemsControl placed
@@ -190,7 +205,7 @@
                           laid out correctly and never rendered. They live in a Grid instead, and
                           the Grid is what the drag measures its x against.
                         -->
-                        <Grid Grid.Row="1" x:Name="SurfaceCanvasLayer">
+                        <Grid x:Name="SurfaceCanvasLayer">
 
                             <ItemsControl ItemsSource="{Binding Elements}">
                                 <ItemsControl.ItemsPanel>
@@ -230,28 +245,36 @@
                                                 PointerReleased="OnCellPointerReleased"
                                                 PointerCaptureLost="OnCellCaptureLost"
                                                 ToolTip.Tip="{Binding Description}">
-                                            <Grid RowDefinitions="Auto,*,Auto">
+                                            <!--
+                                              Stacked from the cell's top edge, not centred: a cell is
+                                              one slot (64px) or, for a List, six. Centring the label
+                                              put "items" in the middle of a 384px box, and the three
+                                              rows the old template stacked (kind, label, remove) need
+                                              more than the 48px a one-slot cell has left inside its
+                                              padding — the label was clipped in half. The remove
+                                              button overlays the corner instead of taking a row.
+                                            -->
+                                            <Grid>
                                                 <!--  Trimming, not clipping: at ten equal weights a
                                                       cell is 31px wide and 15px of that is content,
                                                       so "Button" cannot be drawn. Left to clip it
                                                       renders as "But", which reads as a word rather
                                                       than as a cut.  -->
-                                                <TextBlock Grid.Row="0"
-                                                           Text="{Binding Kind}"
+                                                <TextBlock Text="{Binding Kind}"
                                                            FontSize="10"
                                                            Opacity="0.6"
+                                                           VerticalAlignment="Top"
                                                            TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Grid.Row="1"
-                                                           Text="{Binding Label}"
+                                                <TextBlock Text="{Binding Label}"
                                                            FontWeight="SemiBold"
-                                                           VerticalAlignment="Center"
+                                                           Margin="0,14,0,0"
+                                                           VerticalAlignment="Top"
                                                            TextTrimming="CharacterEllipsis" />
                                                 <!--  One control, at the bottom right: remove. A
                                                       weight is not typed here any more — dragging the
                                                       border beside the cell sets it, so there is
                                                       nothing to confirm and nothing to explain.  -->
-                                                <Button Grid.Row="2"
-                                                        Classes="flat"
+                                                <Button Classes="flat"
                                                         HorizontalAlignment="Right"
                                                         VerticalAlignment="Bottom"
                                                         ToolTip.Tip="{DynamicResource Text_Bench_Surface_Remove}"
@@ -396,7 +419,7 @@
                                                 Padding="8"
                                                 Margin="0,0,0,6">
                                             <StackPanel Spacing="4">
-                                                <TextBlock Text="{Binding Message}"
+                                                <TextBlock Text="{Binding Converter={StaticResource SurfaceDiagnosticText}}"
                                                            TextWrapping="Wrap"
                                                            FontSize="12" />
                                                 <TextBlock Text="{Binding Code}"

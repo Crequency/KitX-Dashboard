@@ -128,6 +128,12 @@
         <ProjectReference Include="..\..\KitX Workflow\KitX.WorkflowV6\KitX.WorkflowV6.csproj" />
         <ProjectReference Include="..\..\KitX Workflow\KitX.ToolKit.Hosting\KitX.ToolKit.Hosting.csproj" />
     <ProjectReference Include="..\..\KitX Workflow\KitX.ToolKit.Contract\KitX.ToolKit.Contract.csproj" />
+    <!--
+      The surface editor previews the card this renderer draws, so it lays out against the
+      renderer's own metrics instead of a copy. A copy is what it had: 96px slots against the
+      renderer's 64, which made the canvas a picture of a card that no phone would ever show.
+    -->
+    <ProjectReference Include="..\..\KitX Workflow\KitX.ToolKit.View.Avalonia\KitX.ToolKit.View.Avalonia.csproj" />
         <ProjectReference Include="..\KitX Dashboard Assets\KitX.Dashboard.Assets.csproj" />
         <ProjectReference Include="..\KitX Dashboard Fonts\KitX.Dashboard.Fonts.csproj" />
         <ProjectReference Include="..\Specific\KitX Dashboard Specific MsWindows\KitX.Dashboard.Specific.MsWindows.csproj" />

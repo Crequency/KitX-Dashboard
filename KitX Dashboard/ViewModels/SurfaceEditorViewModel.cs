@@ -7,13 +7,16 @@ using System.Reactive;
 using KitX.ToolKit.Contract;
 using KitX.ToolKit.Contract.Declaration;
 using KitX.ToolKit.Contract.Surface;
+using KitX.ToolKit.View;
+using KitX.ToolKit.View.Avalonia;
 using ReactiveUI;
 using Serilog;
 
 namespace KitX.Dashboard.ViewModels;
 
 /// <summary>
-/// Lays out one ToolKit's card on a fixed 390 × 845 grid.
+/// Lays out one ToolKit's card on the renderer's own grid — <see cref="SurfaceMetrics.CardWidth"/> ×
+/// <see cref="SurfaceMetrics.CardHeight"/>, <see cref="SurfaceMetrics.SlotHeight"/> per slot.
 /// </summary>
 /// <remarks>
 /// <para><b>The canvas shows no runtime value, and that is the point.</b> An author who can see the
@@ -43,11 +46,16 @@ namespace KitX.Dashboard.ViewModels;
 /// </remarks>
 public sealed partial class SurfaceEditorViewModel : ViewModelBase
 {
-    /// <summary>The canvas width in logical pixels. Fixed, not derived from the window.</summary>
-    public const double CanvasWidth = 390;
+    /// <summary>The card's width in logical pixels, as the renderer states it.</summary>
+    /// <remarks>
+    /// Bound by the window rather than written into the XAML, so the rectangle the author arranges on
+    /// and the rectangle the phone draws are the same number. The window used to carry its own literals
+    /// (390 x 845) beside the editor's copy, which is how the canvas came to be the wrong size.
+    /// </remarks>
+    public double CanvasWidth => SurfaceMetrics.CardWidth;
 
-    /// <summary>The canvas height in logical pixels.</summary>
-    public const double CanvasHeight = 845;
+    /// <summary>The card's height in logical pixels, as the renderer states it.</summary>
+    public double CanvasHeight => SurfaceMetrics.CardHeight;
 
     private readonly ISurfaceStore _store;
     private readonly Func<string, IReadOnlyList<KeyDeclaration>> _keysOf;
@@ -592,10 +600,9 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         _reorderIndex = InsertionIndex(_reorderRow, canvasX);
         _hasDropTarget = true;
 
-        DropIndicator.Show(
-            LineLeft(_reorderRow, _reorderIndex),
-            RowTop(_reorderRow),
-            SurfaceElementVM.RowHeight - SurfaceElementVM.CellGap);
+        var (bandTop, bandHeight) = RowBand(_reorderRow);
+
+        DropIndicator.Show(LineLeft(_reorderRow, _reorderIndex), bandTop, bandHeight);
     }
 
     /// <summary>Drops the dragged cell where the pointer left it.</summary>
@@ -714,23 +721,71 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
     /// <summary>The row the pointer's vertical position is over, or the new row below the last one.</summary>
     /// <remarks>
-    /// Bands are counted from the first row's top edge, because a row's pixels are a function of its
-    /// number and nothing else (§10.2.1.2: row numbers order, they do not measure distance). A pointer
-    /// above the top edge belongs to row one; one below the lowest row in use belongs to a new row
-    /// underneath it — which is the only way to append a row by dragging.
+    /// <para><b>Walked band by band, not divided by a slot height.</b> A row occupies as many slots as
+    /// its tallest element, so pixels-to-rows is not one multiplication: a six-slot <c>List</c> on row
+    /// one puts row two at 384px here and at 384px on the card, while <c>y / 64</c> would still be
+    /// counting rows. <see cref="SurfaceLayout.SlotHeightOf"/> says how tall a row is; the loop turns
+    /// that into a band.</para>
+    ///
+    /// <para><b>An empty row has no pixels.</b> §10.2.1.2 keeps row numbers as an order rather than a
+    /// distance, so a row with nothing in it is zero pixels tall and cannot be pointed at; the pointer
+    /// falls through it to the next row that draws something, and a pointer below every band means the
+    /// new row under the last — the only way to append a row by dragging.</para>
     /// </remarks>
     private int TargetRow(double canvasY)
     {
-        var band = (int)Math.Floor((canvasY - SurfaceElementVM.RowOrigin) / SurfaceElementVM.RowHeight) + 1;
-
+        var elements = DocumentElements();
+        var top = 0.0;
         var last = 0;
-        foreach (var element in Elements)
+        var seen = false;
+
+        foreach (var row in UsedRows())
         {
-            if (element.Element.Row > last)
-                last = element.Element.Row;
+            var height = SurfaceLayout.SlotHeightOf(elements, row, SurfaceElementVM.ListSlotCount)
+                * SurfaceElementVM.SlotHeight;
+
+            if (canvasY < top + height)
+                return row;
+
+            top += height;
+            last = row;
+            seen = true;
         }
 
-        return Math.Clamp(band, 1, last + 1);
+        return seen ? last + 1 : 1;
+    }
+
+    /// <summary>Every element on the canvas, as the layout functions want them.</summary>
+    private IReadOnlyList<SurfaceElement> DocumentElements() => [.. Elements.Select(cell => cell.Element)];
+
+    /// <summary>The row numbers in use, ascending — an empty row draws nothing and is skipped.</summary>
+    private IReadOnlyList<int> UsedRows() =>
+        [.. Elements.Select(cell => cell.Element.Row).Distinct().Order()];
+
+    /// <summary>Where a row's band starts and how tall it will be once the drag lands.</summary>
+    /// <remarks>
+    /// The height is what the row will be <em>after</em> the drop: dragging a six-slot <c>List</c> into
+    /// a row of buttons makes that row six slots tall, and a drop line drawn one slot high would
+    /// promise a landing place the card cannot honour.
+    /// </remarks>
+    private (double Top, double Height) RowBand(int row)
+    {
+        var elements = DocumentElements();
+        var draggedSlots = _reordering is null
+            ? 1
+            : SurfaceLayout.SlotCountOf(_reordering.Element, SurfaceElementVM.ListSlotCount);
+
+        var top = 0.0;
+        foreach (var used in UsedRows())
+        {
+            var slots = SurfaceLayout.SlotHeightOf(elements, used, SurfaceElementVM.ListSlotCount);
+            if (used == row)
+                return (top, Math.Max(slots, draggedSlots) * SurfaceElementVM.SlotHeight);
+
+            top += slots * SurfaceElementVM.SlotHeight;
+        }
+
+        return (top, Math.Max(1, draggedSlots) * SurfaceElementVM.SlotHeight);
     }
 
     /// <summary>How many cells of a row the pointer is to the right of.</summary>
@@ -778,10 +833,6 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
         return (cells[index - 1].Right + cells[index].Left) / 2;
     }
-
-    /// <summary>The top edge a row's cells have, whether or not anything is on that row.</summary>
-    private static double RowTop(int row) =>
-        SurfaceElementVM.RowOrigin + ((row - 1) * SurfaceElementVM.RowHeight) + (SurfaceElementVM.CellGap / 2);
 
     /// <summary>
     /// Writes the canvas and reports what the validator would drop — in that order, always.

@@ -9,6 +9,8 @@ using KitX.Dashboard.Views;
 using KitX.ToolKit.Contract;
 using KitX.ToolKit.Contract.Declaration;
 using KitX.ToolKit.Contract.Surface;
+using KitX.ToolKit.View;
+using KitX.ToolKit.View.Avalonia;
 using Xunit;
 
 namespace KitX.Dashboard.Test.Xunit;
@@ -40,11 +42,29 @@ public class SurfaceEditorDragTests
 {
     /// <summary>The y of a drag aimed at the middle of one row's band.</summary>
     /// <remarks>
-    /// From the same two constants the cells place themselves with, so a test that aims at row 2 aims
-    /// at the pixels row 2 is drawn on rather than at a number that happens to work today.
+    /// Summed from <see cref="SurfaceLayout.SlotHeightOf"/> over the rows above, which is how the
+    /// renderer places a row — so a test that aims at row 2 aims at the pixels row 2 is drawn on, and
+    /// keeps aiming there if a <c>List</c> ever makes row 1 taller.
     /// </remarks>
-    private static double RowCentre(int row) =>
-        SurfaceElementVM.RowOrigin + ((row - 1) * SurfaceElementVM.RowHeight) + (SurfaceElementVM.RowHeight / 2);
+    private static double RowCentre(SurfaceEditorViewModel editor, int row)
+    {
+        var elements = editor.Elements.Select(cell => cell.Element).ToList();
+
+        return BandTop(elements, row)
+            + (SurfaceLayout.SlotHeightOf(elements, row, SurfaceElementVM.ListSlotCount)
+                * SurfaceElementVM.SlotHeight / 2);
+    }
+
+    /// <summary>Pixels from the card's top edge to a row's band, as the renderer measures them.</summary>
+    private static double BandTop(IReadOnlyList<SurfaceElement> elements, int row)
+    {
+        var top = 0.0;
+        for (var above = 1; above < row; above++)
+            top += SurfaceLayout.SlotHeightOf(elements, above, SurfaceElementVM.ListSlotCount)
+                * SurfaceElementVM.SlotHeight;
+
+        return top;
+    }
 
     /// <summary>The keys of the cells, in declaration order — which is also their left-to-right order.</summary>
     private static string[] Order(SurfaceEditorViewModel editor) =>
@@ -58,7 +78,7 @@ public class SurfaceEditorDragTests
         var middle = editor.Elements[1];
 
         editor.BeginReorder(middle);
-        editor.ReorderTo(20, RowCentre(1));
+        editor.ReorderTo(20, RowCentre(editor, 1));
         editor.CommitReorder();
 
         Assert.Equal(["k1", "k0", "k2"], Order(editor));
@@ -75,7 +95,7 @@ public class SurfaceEditorDragTests
         var middle = editor.Elements[1];
 
         editor.BeginReorder(middle);
-        editor.ReorderTo(SurfaceElementVM.CanvasWidth - 20, RowCentre(1));
+        editor.ReorderTo(SurfaceElementVM.CanvasWidth - 20, RowCentre(editor, 1));
         editor.CommitReorder();
 
         Assert.Equal(["k0", "k2", "k1"], Order(editor));
@@ -103,7 +123,7 @@ public class SurfaceEditorDragTests
         var moved = editor.Elements[0];
 
         editor.BeginReorder(moved);
-        editor.ReorderTo(10, RowCentre(2));
+        editor.ReorderTo(10, RowCentre(editor, 2));
         editor.CommitReorder();
 
         // Before the first cell of row 2, and after its old row's only survivor.
@@ -129,11 +149,69 @@ public class SurfaceEditorDragTests
 
         // Row 2 holds two equal cells, so its midpoint boundary is at 195. Twenty pixels past it is
         // inside the second cell: the drop belongs between them.
-        editor.ReorderTo(215, RowCentre(2));
+        editor.ReorderTo(215, RowCentre(editor, 2));
         editor.CommitReorder();
 
         Assert.Equal(["k1", "k0", "k2"], Order(editor));
         Assert.All(editor.Elements, cell => Assert.Equal(2, cell.Element.Row));
+    }
+
+    /// <summary>
+    /// Dragging a <c>List</c> over a one-slot row draws a drop line six slots tall.
+    /// </summary>
+    /// <remarks>
+    /// The line is a promise about the landing place, and the landing place is what the row will be
+    /// <em>after</em> the drop: a six-slot list makes its new row six slots tall, pushing every row
+    /// below it down. A line one slot high would point at a place the card will not have.
+    /// </remarks>
+    [Fact]
+    public void The_drop_line_over_a_row_that_will_hold_the_list_is_a_list_tall()
+    {
+        var editor = Editor(
+            new SurfaceTextElement { Row = 1, Key = "k0" },
+            new SurfaceListElement { Row = 2, Key = "items" });
+
+        editor.BeginReorder(editor.Elements[1]);
+        editor.ReorderTo(200, RowCentre(editor, 1));
+
+        Assert.Equal(SurfaceMetrics.ListSlotCount * SurfaceMetrics.SlotHeight, editor.DropIndicator.Height);
+    }
+
+    /// <summary>
+    /// A pointer 200px down a card whose first row holds a <c>List</c> is still over row one.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>This is why the landing row is walked rather than divided.</b> A <c>List</c> fills six
+    /// slots, so row one occupies 0–384px; <c>200 / 64</c> would answer "row 4" and the cell would be
+    /// dropped three rows below where the pointer was pointing. The numbers below are the rendering
+    /// facts, not the editor's: six slots of 64px.</para>
+    ///
+    /// <para>The second half of the test aims just past that band and expects the row under it, which
+    /// is the other half of the same claim — the boundary has to sit at 384, not at 64.</para>
+    /// </remarks>
+    [Fact]
+    public void A_pointer_over_a_six_slot_row_lands_on_that_row()
+    {
+        var editor = Editor(
+            new SurfaceListElement { Row = 1, Key = "items" },
+            new SurfaceTextElement { Row = 2, Key = "k0" });
+
+        var moved = editor.Elements[1];
+
+        editor.BeginReorder(moved);
+
+        // 200px is inside row one's six-slot band, even though it is three slots down.
+        editor.ReorderTo(200, 200);
+        editor.CommitReorder();
+
+        Assert.Equal(1, moved.Element.Row);
+
+        // And 400px is past that band, so a cell aimed there belongs to the row under it.
+        editor.BeginReorder(moved);
+        editor.ReorderTo(200, 400);
+        editor.CommitReorder();
+
+        Assert.Equal(2, moved.Element.Row);
     }
 
     [Fact]
@@ -156,7 +234,7 @@ public class SurfaceEditorDragTests
 
         Assert.Equal(3, moved.Element.Row);
         Assert.Equal(
-            SurfaceElementVM.RowOrigin + (2 * SurfaceElementVM.RowHeight) + (SurfaceElementVM.CellGap / 2),
+            BandTop(editor.Elements.Select(cell => cell.Element).ToList(), 3),
             moved.Top);
     }
 
@@ -183,7 +261,7 @@ public class SurfaceEditorDragTests
         var middle = editor.Elements[1];
 
         editor.BeginReorder(middle);
-        editor.ReorderTo(middle.Left + (middle.Width / 2), RowCentre(1));
+        editor.ReorderTo(middle.Left + (middle.Width / 2), RowCentre(editor, 1));
         editor.CommitReorder();
 
         Assert.Equal(["k0", "k1", "k2"], Order(editor));
@@ -221,7 +299,7 @@ public class SurfaceEditorDragTests
 
         editor.Select(moved);
         editor.BeginReorder(moved);
-        editor.ReorderTo(300, RowCentre(1));
+        editor.ReorderTo(300, RowCentre(editor, 1));
         editor.CommitReorder();
 
         Assert.Same(moved, editor.Selected);
@@ -251,7 +329,7 @@ public class SurfaceEditorDragTests
         var rows = editor.Elements.Select(cell => cell.Element.Row).ToList();
 
         editor.BeginReorder(editor.Elements[1]);
-        editor.ReorderTo(20, RowCentre(1));
+        editor.ReorderTo(20, RowCentre(editor, 1));
 
         Assert.Equal(before, editor.Elements);
         Assert.Equal(widths, editor.Elements.Select(cell => cell.Width));
@@ -260,10 +338,11 @@ public class SurfaceEditorDragTests
         // The line did move, so the drag is not simply refusing to say anything.
         Assert.True(editor.DropIndicator.IsVisible);
         Assert.Equal(SurfaceElementVM.CellGap / 2, editor.DropIndicator.Left);
-        Assert.Equal(
-            SurfaceElementVM.RowOrigin + (SurfaceElementVM.CellGap / 2),
-            editor.DropIndicator.Top);
-        Assert.Equal(SurfaceElementVM.RowHeight - SurfaceElementVM.CellGap, editor.DropIndicator.Height);
+
+        // Row one's band starts at the card's top edge — there is no band above it any more — and is
+        // one slot tall because every cell in this document is one slot tall.
+        Assert.Equal(0, editor.DropIndicator.Top);
+        Assert.Equal(SurfaceElementVM.SlotHeight, editor.DropIndicator.Height);
     }
 
     [Fact]
@@ -287,7 +366,7 @@ public class SurfaceEditorDragTests
         var before = editor.Elements.ToList();
 
         editor.BeginReorder(editor.Elements[1]);
-        editor.ReorderTo(20, RowCentre(1));
+        editor.ReorderTo(20, RowCentre(editor, 1));
         editor.CancelReorder();
 
         Assert.Equal(before, editor.Elements);
@@ -320,7 +399,7 @@ public class SurfaceEditorDragTests
         Assert.False(line!.IsVisible);
 
         editor.BeginReorder(editor.Elements[1]);
-        editor.ReorderTo(20, RowCentre(1));
+        editor.ReorderTo(20, RowCentre(editor, 1));
         Dispatcher.UIThread.RunJobs();
 
         Assert.True(line.IsVisible);
