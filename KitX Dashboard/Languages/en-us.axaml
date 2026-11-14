@@ -490,7 +490,7 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_select_no_options">Dropped {kind} at row {row}, weight {weight}: it has neither 'options' nor 'optionsKey', so there is nothing to choose from.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_select_ambiguous_options">Kept {kind} at row {row}, weight {weight}: it has both 'options' and 'optionsKey'; the static list wins.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_list_key_not_array">Dropped {kind} at row {row}, weight {weight}: key '{key}' is declared as '{type}', not 'array'.</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_position_out_of_grid">Dropped {kind} at row {row}, weight {weight}: 'row' is {row}, which is not a row.</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_position_out_of_grid">Dropped {kind} at row {row}, weight {weight}: 'row' is {row}, row numbers start at 1.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_weight_repaired">Kept {kind} at row {row}, weight {weight}: 'weight' is {weight}; it is treated as 1. A weight is a positive number of parts, and a row divides its width by the sum of the parts in it.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_text_unknown_format">Kept {kind} at row {row}, weight {weight}: 'format' is '{value}', which this build does not know; it is shown as plain text.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">Kept {kind} at row {row}, weight {weight}: 'min' ({min}) is greater than 'max' ({max}); the range is dropped.</sys:String>
