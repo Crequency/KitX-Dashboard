@@ -99,6 +99,66 @@ public class SurfaceEditorVerdictTests
         Assert.False(editor.IsDirty);
     }
 
+    /// <summary>A write that reaches the disk answers an earlier alarm, however it was asked for.</summary>
+    /// <remarks>
+    /// The flag guarding the status line was only ever lowered by the clock and by closing. A button save
+    /// that succeeded therefore left it raised, and the next edit was forbidden from emptying a status
+    /// line it had already rewritten — “Saved.” standing over an empty panel, which is the defect one
+    /// section up wearing a different face.
+    /// </remarks>
+    [Fact]
+    public void A_button_save_that_succeeds_answers_an_earlier_alarm()
+    {
+        var store = new AlarmStore(findings: []) { SaveFailure = new IOException("the disk is full") };
+        var editor = EditorOver(store);
+
+        editor.Place(editor.DeclaredKeys[^1]);
+        editor.AutoSaveIfDirty();
+        Assert.Equal(SurfaceEditorViewModel.SaveFailedCode, Assert.Single(editor.Diagnostics).Code);
+
+        store.SaveFailure = null;
+        editor.Save();
+
+        Assert.Empty(editor.Diagnostics);
+        Assert.Equal("Saved.", editor.Status);
+
+        // The assertion the defect violates: the alarm is gone, so an edit must now leave no sentence
+        // behind, exactly as it does when no alarm was ever raised.
+        editor.Place(editor.DeclaredKeys[0]);
+
+        Assert.Empty(editor.Diagnostics);
+        Assert.Empty(editor.Status);
+    }
+
+    /// <summary>The button reports a failed write instead of throwing it at the window.</summary>
+    /// <remarks>
+    /// <para>This is asserted on <see cref="SurfaceEditorViewModel.SaveCommand"/> and not on
+    /// <see cref="SurfaceEditorViewModel.Save"/>, because the gap was never in the method: the method
+    /// threw, and the command had nothing listening, so the framework's default handler wrote one log
+    /// line and the window stayed silent. A test that called Save() and caught the exception would
+    /// pass against the broken build.</para>
+    ///
+    /// <para>The subscription stands in for every place the framework would have handled it. Nothing
+    /// arriving there is the claim: the failure was reported in the window, not dropped on the floor.</para>
+    /// </remarks>
+    [Fact]
+    public void A_button_save_that_fails_says_so_instead_of_escaping()
+    {
+        var store = new AlarmStore(findings: []) { SaveFailure = new IOException("the disk is full") };
+        var editor = EditorOver(store);
+        editor.Place(editor.DeclaredKeys[^1]);
+
+        Exception? escaped = null;
+        using var subscription = editor.SaveCommand.ThrownExceptions.Subscribe(ex => escaped = ex);
+
+        editor.SaveCommand.Execute().Subscribe();
+
+        Assert.Null(escaped);
+        Assert.Contains("the disk is full", editor.Status, StringComparison.Ordinal);
+        Assert.Equal(SurfaceEditorViewModel.SaveFailedCode, Assert.Single(editor.Diagnostics).Code);
+        Assert.True(editor.IsDirty);
+    }
+
     private static SurfaceEditorViewModel EditorOver(ISurfaceStore store)
     {
         var editor = new SurfaceEditorViewModel(

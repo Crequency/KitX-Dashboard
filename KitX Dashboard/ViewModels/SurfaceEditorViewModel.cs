@@ -887,6 +887,12 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
         _store.Save(ToolkitId, document);
 
+        // A write that reached the disk answers an earlier alarm, whichever hand asked for it. Without
+        // this, a failed automatic write followed by a successful button save left the flag raised, so
+        // the next edit was forbidden from emptying a status line that had already been rewritten —
+        // a stale "Saved." over an empty panel, the same shape as the defect the flag exists to prevent.
+        ClearSaveFailure();
+
         // Materialised rather than passed live: the store is handed a question, not a window onto a
         // collection the user can still edit.
         var warnings = _store.Diagnose(document, [.. DeclaredKeys]);
@@ -915,6 +921,32 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         // Only after the write returned: a save that threw left the file as it was, and the canvas
         // is still the only copy of the author's work.
         IsDirty = false;
+    }
+
+    /// <summary>Writes the canvas because the author pressed the button, and says so when it fails.</summary>
+    /// <remarks>
+    /// <para><b>The button is the loudest thing in the window, so its silence is the loudest silence.</b>
+    /// Pressing "Save and check" is the one moment the author states that the card is finished; if that
+    /// write throws and nothing appears on screen, the reasonable reading is that the card is saved.</para>
+    ///
+    /// <para><see cref="Save"/> itself still throws — it is also the method the window calls on close and
+    /// the tests call directly, and swallowing an exception there would hide a failure from every other
+    /// caller to make one of them happy. The catching belongs to the command, which is the only place
+    /// where "nothing happens" is a user-visible outcome.</para>
+    /// </remarks>
+    private void SaveFromButton()
+    {
+        try
+        {
+            Save();
+        }
+        catch (Exception ex)
+        {
+            // Same reporting as a failed automatic write: the status line carries the reason and the
+            // check panel carries it as a finding. IsDirty was never lowered, because Save lowers it
+            // only after the write returns.
+            ReportSaveFailure(ex);
+        }
     }
 
     /// <summary>How often the editor writes the canvas while it is open.</summary>
@@ -1666,7 +1698,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         AddKindCommand = ReactiveCommand.Create<string>(AddKind);
         SelectCommand = ReactiveCommand.Create<SurfaceElementVM?>(Select);
         RemoveCommand = ReactiveCommand.Create<SurfaceElementVM>(Remove);
-        SaveCommand = ReactiveCommand.Create(Save);
+        SaveCommand = ReactiveCommand.Create(SaveFromButton);
         ClearCommand = ReactiveCommand.Create(Clear);
     }
 
