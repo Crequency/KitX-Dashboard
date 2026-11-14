@@ -453,9 +453,9 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Arête de complétion (faisceau) : {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Liaison : {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Title">Disposition de la carte</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Palette">Pas encore placé</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">Keys</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Surface_Properties">Propriétés</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Actions">Actions</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Actions">Controls</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Surface_Save">Enregistrer et vérifier</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Vider la carte</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Vérification</sys:String>

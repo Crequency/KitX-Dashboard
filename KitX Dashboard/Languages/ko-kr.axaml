@@ -453,9 +453,9 @@
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">완료 엣지(하네스): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">바인딩: {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Title">카드 레이아웃</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Palette">아직 배치되지 않음</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">Keys</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Surface_Properties">속성</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Actions">동작</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Actions">Controls</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Surface_Save">저장하고 확인</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">카드 비우기</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">확인</sys:String>

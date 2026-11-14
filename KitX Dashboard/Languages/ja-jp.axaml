@@ -453,9 +453,9 @@
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完了エッジ（ハーネス）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">バインド：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Title">カード レイアウト</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Palette">未配置</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">Keys</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Surface_Properties">プロパティ</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Actions">操作</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Actions">Controls</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Surface_Save">保存して確認</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">カードを空にする</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">確認</sys:String>

@@ -453,9 +453,9 @@
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">Ребро завершения (жгут): {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">Привязка: {0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Title">Макет карточки</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Palette">Ещё не размещено</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">Keys</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Surface_Properties">Свойства</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Actions">Действия</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Actions">Controls</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Surface_Save">Сохранить и проверить</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Очистить карточку</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Проверка</sys:String>

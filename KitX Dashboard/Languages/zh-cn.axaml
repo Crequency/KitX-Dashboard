@@ -453,9 +453,9 @@
     <sys:String x:Key="Text_Bench_EdgeToolTipCompletion">完成边（线束）：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_EdgeToolTipBinding">绑定：{0} → {1}</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Title">卡片排版</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Palette">还没放到卡片上</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Palette">键</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Properties">属性</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_Actions">动作</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Actions">控件</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">保存并检查</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">清空画布</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">检查</sys:String>
