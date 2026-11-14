@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
@@ -200,6 +201,141 @@ public class SurfaceEditorGeometryTests
         Assert.Equal(SurfaceMetrics.CardWidth, canvas.Bounds.Width, tolerance: 0.5);
         Assert.Equal(SurfaceMetrics.CardHeight, canvas.Bounds.Height, tolerance: 0.5);
     }
+
+    /// <summary>
+    /// Every cell is drawn where the renderer would draw it, measured off the visual tree.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why this test exists.</b> Everything above asserts the numbers the view model
+    /// computes. None of them can fail if that number never reaches the screen: the cell template puts
+    /// its position in a <c>ControlTheme</c> setter (<c>Canvas.Left</c> / <c>Canvas.Top</c>), and a
+    /// setter that is silently not applied leaves every assertion in this file green while every cell
+    /// sits in the canvas's top-left corner. That is not a hypothetical: it is what the editor was
+    /// reported to look like on 2026-11-14, with the view model's arithmetic provably correct.</para>
+    ///
+    /// <para><b>What makes it a rendering test and not a second view-model test.</b> The expected value
+    /// is <see cref="SurfaceLayout.PixelTopOf"/> — the renderer's own function — but the measured value
+    /// is the cell's bounds translated into the canvas's coordinate space, which is where Avalonia has
+    /// already applied the attached property. A missing or overwritten setter shows up in the second
+    /// and not in the first.</para>
+    ///
+    /// <para><b>Documents with a list, because that is where the two stand furthest apart.</b> A row of
+    /// text sits at 0 or 64, which a <c>StackPanel</c> would produce by accident; a cell under a
+    /// six-slot list sits at 384, which nothing but the attached property puts there.</para>
+    /// </remarks>
+    [AvaloniaFact]
+    public void Every_cell_is_drawn_where_the_renderer_would_draw_it()
+    {
+        var elements = new SurfaceElement[]
+        {
+            new SurfaceListElement { Row = 1, Key = "items" },
+            new SurfaceTextElement { Row = 2, Key = "k1" },
+            new SurfaceTextElement { Row = 3, Key = "k2" },
+        };
+
+        var editor = Editor(elements);
+        var window = new SurfaceEditorWindow(editor, "test");
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var drawn = DrawnCells(window);
+
+        Assert.Equal(elements.Length, drawn.Count);
+
+        foreach (var (element, position) in drawn)
+        {
+            var expectedTop = SurfaceLayout.PixelTopOf(
+                elements, element, (int)SurfaceMetrics.SlotHeight, SurfaceMetrics.ListSlotCount);
+
+            Assert.Equal(expectedTop, position.Y, tolerance: 0.5);
+        }
+
+        // The corner is what a card whose positions never applied looks like: every cell there at
+        // once. Asserting the values above already rules it out; asserting the distinctness states the
+        // failure in the form it was reported.
+        Assert.Equal(3, drawn.Select(cell => cell.Position.Y).Distinct().Count());
+    }
+
+    /// <summary>
+    /// Moving a cell past the last occupied row reorders it without adding space, and the canvas follows.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>This is the case that was reported as a bug.</b> A cell on row 2 given row 6 stays at the
+    /// same height, which reads as "the row was ignored". It is not: a row number is an ordinal, empty
+    /// rows take no height (<c>Package/ToolKit-设计-03-Surface.md</c> §10.2.1.2), so row six with rows
+    /// one and two occupied is simply the band after row two. The test pins the behaviour so the next
+    /// reader meets it as a decision rather than as a defect.</para>
+    ///
+    /// <para><b>And the canvas is what is being measured.</b> The assertion is on the drawn rectangle,
+    /// so it also covers the rebuild that a row change performs: a rebuild that refreshed the view model
+    /// but left each container's attached property where it was would keep the card still while every
+    /// number said otherwise.</para>
+    /// </remarks>
+    [AvaloniaFact]
+    public void A_row_past_the_last_occupied_one_reorders_the_card_without_adding_space()
+    {
+        var editor = Editor([
+            new SurfaceTextElement { Row = 1, Key = "k0" },
+            new SurfaceTextElement { Row = 2, Key = "k1" },
+        ]);
+
+        var window = new SurfaceEditorWindow(editor, "test");
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        editor.Select(editor.Elements[1]);
+        Dispatcher.UIThread.RunJobs();
+
+        var before = DrawnCells(window).Single(cell => cell.Element.Key == "k1").Position.Y;
+        Assert.Equal(SurfaceMetrics.SlotHeight, before, tolerance: 0.5);
+
+        Field(editor, "row").Value = "6";
+        Dispatcher.UIThread.RunJobs();
+
+        var after = DrawnCells(window).Single(cell => cell.Element.Key == "k1").Position.Y;
+
+        Assert.Equal(before, after, tolerance: 0.5);
+
+        // Now the ordering itself is turned over: the first cell is sent past the second one, so the
+        // two must trade places. This is what proves the canvas is following the document rather than
+        // having been frozen at whatever it first drew.
+        editor.Select(editor.Elements[0]);
+        Dispatcher.UIThread.RunJobs();
+
+        Field(editor, "row").Value = "7";
+        Dispatcher.UIThread.RunJobs();
+
+        var moved = DrawnCells(window)
+            .ToDictionary(cell => cell.Element.Key, cell => cell.Position.Y);
+
+        Assert.Equal(0, moved["k1"], tolerance: 0.5);
+        Assert.Equal(SurfaceMetrics.SlotHeight, moved["k0"], tolerance: 0.5);
+    }
+
+    /// <summary>Every cell's drawn position, measured in the coordinate space the positions are set in.</summary>
+    /// <remarks>
+    /// The reference is the <c>Canvas</c> panel the cells are children of, not the card's border: the
+    /// border is one pixel thick, so measuring against it adds that pixel to row one and would make
+    /// the first row look wrong on a card that is drawn correctly.
+    /// </remarks>
+    private static List<(SurfaceElement Element, Point Position)> DrawnCells(Window window)
+    {
+        var panel = window.GetVisualDescendants()
+            .OfType<ItemsControl>()
+            .First(control => control.ItemsPanelRoot is Canvas
+                && control.DataContext is SurfaceEditorViewModel)
+            .ItemsPanelRoot!;
+
+        return [.. window.GetVisualDescendants()
+            .OfType<Border>()
+            .Where(border => border.Classes.Contains("cell") && border.DataContext is SurfaceElementVM)
+            .Select(border => (
+                ((SurfaceElementVM)border.DataContext!).Element,
+                border.TranslatePoint(new Point(0, 0), panel) ?? new Point(double.NaN, double.NaN)))];
+    }
+
+    private static SurfaceFieldVM Field(SurfaceEditorViewModel editor, string label) =>
+        Assert.Single(editor.Fields, field => field.Label == label);
 
     private static SurfaceEditorViewModel Editor(IReadOnlyList<SurfaceElement> elements)
     {
