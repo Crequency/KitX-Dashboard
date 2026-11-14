@@ -11,6 +11,7 @@ using Avalonia.Skia;
 using Avalonia.Styling;
 using NodifyM.Avalonia.Controls;
 using NodifyM.Avalonia.ViewModelBase;
+using ReactiveUI.Avalonia;
 using Xunit;
 
 [assembly: AvaloniaTestApplication(typeof(KitX.Dashboard.Test.Xunit.TestAppBuilder))]
@@ -55,7 +56,15 @@ public static class TestAppBuilder
             // font family throws "Could not create glyphTypeface" during Show() and never reaches
             // layout. A stub renderer cannot tell a zero-sized control from a rendered one, which
             // is the whole class of defect this file exists to catch.
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+            // ReactiveUI's scheduler, which the product installs in Program.cs:59 and this builder
+            // did not. The two are not interchangeable: without it RxApp.MainThreadScheduler is
+            // ReactiveUI's default long-running scheduler, so ReactiveCommand raises
+            // CanExecuteChanged on a pool thread, and the Avalonia control bound to it throws
+            // "Call from invalid thread" from Button.get_Command -- an unhandled exception on a
+            // background thread, which kills the test host instead of failing one test. Measured:
+            // the first window test to execute a bound command aborted the run after 9 passes.
+            .UseReactiveUI();
 }
 
 /// <summary>
