@@ -456,7 +456,6 @@
     <sys:String x:Key="Text_Bench_Surface_Palette">还没放到卡片上</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Properties">属性</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Actions">动作</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_PaletteHint">这个工具包声明了、但画布上还没有的键。选一个放上去。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">保存并检查</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">清空画布</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">检查</sys:String>

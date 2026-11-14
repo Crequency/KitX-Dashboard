@@ -456,7 +456,6 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_Surface_Palette">Pas encore placé</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Properties">Propriétés</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Actions">Actions</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_PaletteHint">Toutes les clés déclarées par ce kit et encore absentes de la carte.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">Enregistrer et vérifier</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Vider la carte</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Vérification</sys:String>

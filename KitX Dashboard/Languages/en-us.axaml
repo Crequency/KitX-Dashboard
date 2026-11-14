@@ -456,7 +456,6 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Palette">Not placed yet</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Properties">Properties</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Actions">Actions</sys:String>
-    <sys:String x:Key="Text_Bench_Surface_PaletteHint">Every key this ToolKit declares and nothing has put on the card. Pick one to place it.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">Save and check</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Empty the card</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Check</sys:String>
