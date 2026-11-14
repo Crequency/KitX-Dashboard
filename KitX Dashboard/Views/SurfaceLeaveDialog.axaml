@@ -1,0 +1,33 @@
+<Window x:Class="KitX.Dashboard.Views.SurfaceLeaveDialog"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Card layout has findings"
+        Width="460"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <!--
+      The findings are listed, not summarised: "3 problems" would make the author leave the window to
+      find out what they are, and the window is about to close.
+    -->
+    <Grid RowDefinitions="Auto, Auto" Margin="20">
+        <TextBlock Grid.Row="0"
+                   x:Name="SurfaceLeaveMessage"
+                   TextWrapping="Wrap"
+                   MaxHeight="320" />
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8"
+                    Margin="0,20,0,0">
+            <Button x:Name="SurfaceLeaveFix"
+                    Content="Go back and fix"
+                    Click="OnFix" />
+            <Button x:Name="SurfaceLeaveLeave"
+                    Content="Leave anyway"
+                    Click="OnLeave" />
+        </StackPanel>
+    </Grid>
+</Window>

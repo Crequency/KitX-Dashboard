@@ -1,6 +1,9 @@
+using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using KitX.Dashboard.ViewModels;
 
 namespace KitX.Dashboard.Views;
@@ -21,10 +24,79 @@ public partial class SurfaceEditorWindow : Window
 {
     private SurfaceBoundaryVM? _dragging;
 
+    /// <summary>Set once the author has chosen to leave with findings, so the second close is not asked again.</summary>
+    private bool _closeConfirmed;
+
+    /// <summary>The clock that writes the card while the window is open, or null before it is shown.</summary>
+    internal DispatcherTimer? AutoSaveClock { get; private set; }
+
     /// <summary>Creates the window. The view model must be supplied before showing.</summary>
     public SurfaceEditorWindow()
     {
         InitializeComponent();
+
+        Closing += OnClosing;
+    }
+
+    /// <summary>Starts the write-behind clock: one automatic save every thirty seconds, only when dirty.</summary>
+    /// <remarks>
+    /// The clock lives here rather than in the view model because it is a property of the window being
+    /// open — a timer inside the editor would outlive the screen it describes and would keep writing a
+    /// document no one is looking at.
+    /// </remarks>
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+
+        if (DataContext is not SurfaceEditorViewModel editor)
+            return;
+
+        AutoSaveClock = new DispatcherTimer { Interval = editor.AutoSaveInterval };
+        AutoSaveClock.Tick += (_, _) => editor.AutoSaveIfDirty();
+        AutoSaveClock.Start();
+    }
+
+    /// <inheritdoc/>
+    protected override void OnClosed(EventArgs e)
+    {
+        AutoSaveClock?.Stop();
+        AutoSaveClock = null;
+
+        base.OnClosed(e);
+    }
+
+    /// <summary>Writes the card, asks the validator, and asks the author when the answer is not clean.</summary>
+    /// <remarks>
+    /// <para><b>Cancelled first, then closed again.</b> The dialog is modal and the close has to wait
+    /// for it, so the first attempt is always cancelled and the confirmed close re-enters this handler
+    /// with <see cref="_closeConfirmed"/> set.</para>
+    ///
+    /// <para><b>A failed write is not a question.</b> There is no "leave anyway" on offer when the file
+    /// could not be written — closing would drop the author's work while they believe it was saved, so
+    /// the window stays open with the reason on its status line.</para>
+    /// </remarks>
+    private async void OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_closeConfirmed || DataContext is not SurfaceEditorViewModel editor)
+            return;
+
+        var verdict = editor.PrepareToClose();
+
+        if (verdict == SurfaceEditorViewModel.SurfaceCloseVerdict.Close)
+            return;
+
+        e.Cancel = true;
+
+        if (verdict == SurfaceEditorViewModel.SurfaceCloseVerdict.WriteFailed)
+            return;
+
+        var findings = string.Join(Environment.NewLine, editor.Diagnostics.Select(d => d.Message));
+
+        if (!await new SurfaceLeaveDialog(findings).ShowDialog<bool>(this))
+            return;
+
+        _closeConfirmed = true;
+        Close();
     }
 
     /// <summary>Creates the window and loads a ToolKit's layout.</summary>

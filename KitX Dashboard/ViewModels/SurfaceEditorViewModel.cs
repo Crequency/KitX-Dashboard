@@ -51,23 +51,33 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
     private readonly ISurfaceStore _store;
     private readonly Func<string, IReadOnlyList<KeyDeclaration>> _keysOf;
+    private readonly Func<string, string?>? _nameOf;
 
     private string _toolkitId = string.Empty;
     private string _status = string.Empty;
     private string? _validationMessage;
+    private string _displayName = string.Empty;
+    private bool _isDirty;
 
     /// <summary>Creates the editor.</summary>
     /// <param name="store">Where layouts are read and written.</param>
     /// <param name="keysOf">Supplies a ToolKit's declared keys, by id.</param>
+    /// <param name="nameOf">
+    /// Supplies a ToolKit's display name, by id, or null when there is none. Optional because the id
+    /// is a complete answer and every test already had one; the display name only makes the subtitle
+    /// readable.
+    /// </param>
     public SurfaceEditorViewModel(
         ISurfaceStore store,
-        Func<string, IReadOnlyList<KeyDeclaration>> keysOf)
+        Func<string, IReadOnlyList<KeyDeclaration>> keysOf,
+        Func<string, string?>? nameOf = null)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(keysOf);
 
         _store = store;
         _keysOf = keysOf;
+        _nameOf = nameOf;
 
         InitCommands();
     }
@@ -178,6 +188,44 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _toolkitId, value);
     }
 
+    /// <summary>The ToolKit's display name, or its id when it has none.</summary>
+    /// <remarks>
+    /// <para><b>The id is a GUID, and a subtitle is read by a person.</b> <see cref="ToolkitId"/> stays
+    /// the id because it is what the store is keyed by; this is the same identity said the way the
+    /// ToolKit names itself (<see cref="ToolkitMeta.Name"/>), which is what the author recognises on
+    /// the card.</para>
+    ///
+    /// <para><b>One string, not "name (id)".</b> A ToolKit whose name and id are the same value — the
+    /// common case for anything made before ids were assigned — would otherwise print it twice. Falling
+    /// back to the id when there is no name keeps the subtitle from being blank, and printing it only
+    /// once keeps a hand-made ToolKit from looking like two different ones.</para>
+    /// </remarks>
+    public string DisplayName
+    {
+        get => _displayName;
+        private set => this.RaiseAndSetIfChanged(ref _displayName, value);
+    }
+
+    /// <summary>
+    /// Whether the card has changes that are not on disk.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The mark is what makes the other decisions cheap.</b> The clock writes only when this
+    /// is true, closing only asks the validator when there is something to write, and a save clears
+    /// it. Without it every one of those would have to compare documents, and comparing is exactly
+    /// the work that goes wrong when one field is compared by reference.</para>
+    ///
+    /// <para><b>Set from the edits, cleared from the write.</b> It is not derived from
+    /// <see cref="Diagnostics"/> or from <see cref="Status"/>: a card with no findings is not
+    /// necessarily saved, and a card with findings is not necessarily unsaved — those are two
+    /// different facts, and S10 needs this one.</para>
+    /// </remarks>
+    public bool IsDirty
+    {
+        get => _isDirty;
+        private set => this.RaiseAndSetIfChanged(ref _isDirty, value);
+    }
+
     /// <summary>What the last save reported.</summary>
     public string Status
     {
@@ -227,7 +275,12 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         ArgumentException.ThrowIfNullOrWhiteSpace(toolkitId);
 
         ToolkitId = toolkitId;
+        DisplayName = _nameOf?.Invoke(toolkitId) is { Length: > 0 } name ? name : toolkitId;
         Status = string.Empty;
+
+        // What was on disk a moment ago is, by definition, what is on disk now.
+        IsDirty = false;
+
         ForgetLastSave();
 
         // Nothing of the previous card survives a load, including the cell a drag might be holding:
@@ -301,6 +354,14 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         ValidationMessage = null;
     }
 
+    /// <summary>Records that the canvas no longer matches what is on disk.</summary>
+    /// <remarks>
+    /// One place, because every edit has to say it and no edit may say it differently: the flag is
+    /// what the clock and the close path branch on, so an edit that forgot it would be an edit the
+    /// editor silently discards on exit.
+    /// </remarks>
+    private void MarkDirty() => IsDirty = true;
+
     /// <summary>Recomputes the border between every pair of neighbours on a row.</summary>
     private void RebuildBoundaries()
     {
@@ -367,6 +428,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             boundary.Refresh();
 
         ValidationMessage = null;
+        MarkDirty();
     }
 
     /// <summary>How many canvas pixels one weight unit should be worth, during a drag.</summary>
@@ -482,6 +544,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             border.Refresh();
 
         ValidationMessage = null;
+        MarkDirty();
     }
 
     /// <summary>Whether a cell is being dragged to another place on the card.</summary>
@@ -629,6 +692,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         RebuildBoundaries();
         ForgetLastSave();
         ValidationMessage = null;
+        MarkDirty();
 
         // The inspector's "row" field is a value copied out of the declaration, so a drag that landed
         // on another row would leave the field saying the number the cell no longer has.
@@ -774,6 +838,169 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         }
 
         RefreshUnplaced();
+
+        // Only after the write returned: a save that threw left the file as it was, and the canvas
+        // is still the only copy of the author's work.
+        IsDirty = false;
+    }
+
+    /// <summary>How often the editor writes the canvas while it is open.</summary>
+    /// <remarks>
+    /// Thirty seconds is S10's number, and it is a compromise about interruption rather than about
+    /// performance: frequent enough that a crash loses at most half a minute of laying out, rare
+    /// enough that a writer without a visible action does not look like an editor that keeps doing
+    /// things on its own.
+    /// </remarks>
+    public TimeSpan AutoSaveInterval => TimeSpan.FromSeconds(30);
+
+    /// <summary>Whether the last automatic write failed, so a later success can take the alarm down.</summary>
+    private bool _autoSaveFailed;
+
+    /// <summary>Writes the canvas if it has changed, without validating it.</summary>
+    /// <remarks>
+    /// <para><b>The clock's whole job.</b> Called every <see cref="AutoSaveInterval"/> by the window;
+    /// silent when the card is clean, so an author who is reading rather than editing sees nothing
+    /// happen.</para>
+    ///
+    /// <para><b>No validation.</b> S10 is explicit about this, and the reason is the panel: a check
+    /// every thirty seconds would either replace what the author is reading with a fresh verdict or
+    /// pop a box over the canvas — both make the editor unusable for the one activity it exists for.
+    /// What a render would drop is a question worth asking on purpose, which is what "Save and check"
+    /// and closing the window are for.</para>
+    ///
+    /// <para><b>A failed write is a different kind of news.</b> A card that cannot reach the disk is
+    /// losing work while the author keeps laying out, so this is the one automatic action that speaks:
+    /// the status line carries the reason, and the check panel carries it as a finding, because that is
+    /// the only list in the window that survives long enough to be read.</para>
+    /// </remarks>
+    public void AutoSaveIfDirty()
+    {
+        if (!IsDirty || string.IsNullOrWhiteSpace(ToolkitId))
+            return;
+
+        var document = new SurfaceDocument { Elements = CurrentElements() };
+
+        try
+        {
+            _store.Save(ToolkitId, document);
+        }
+        catch (Exception ex)
+        {
+            ReportSaveFailure(ex);
+            return;
+        }
+
+        IsDirty = false;
+        ClearSaveFailure();
+    }
+
+    /// <summary>The code an automatic write failure is reported under.</summary>
+    public const string SaveFailedCode = "surface.save.failed";
+
+    /// <summary>Writes the card before the window closes, then asks the validator what a render would drop.</summary>
+    /// <returns>What the window has to do about it.</returns>
+    /// <remarks>
+    /// <para><b>Write first, always.</b> The user's rule from 2026-11-13 is that a warning must never
+    /// cost the file — so the write happens before the validator is asked anything, and a card full of
+    /// findings still lands on disk. The findings are then reported, because leaving the editor is the
+    /// last moment at which saying them is useful.</para>
+    ///
+    /// <para><b>A write that failed keeps the window open.</b> That is the one case where closing
+    /// silently destroys work: the file is not the canvas, and this method cannot promise the author
+    /// that anything is saved. Validation is not even attempted — there is nothing to hand it.</para>
+    /// </remarks>
+    public SurfaceCloseVerdict PrepareToClose()
+    {
+        if (string.IsNullOrWhiteSpace(ToolkitId))
+            return SurfaceCloseVerdict.Close;
+
+        var document = new SurfaceDocument { Elements = CurrentElements() };
+
+        if (IsDirty)
+        {
+            try
+            {
+                _store.Save(ToolkitId, document);
+            }
+            catch (Exception ex)
+            {
+                ReportSaveFailure(ex);
+                return SurfaceCloseVerdict.WriteFailed;
+            }
+
+            IsDirty = false;
+            ClearSaveFailure();
+        }
+
+        var warnings = _store.Diagnose(document, [.. DeclaredKeys]);
+
+        ValidationMessage = null;
+        Diagnostics.Clear();
+
+        foreach (var warning in warnings)
+            Diagnostics.Add(warning);
+
+        Status = warnings.Count > 0
+            ? TranslateText("Bench_Surface_SavedWithProblems") ?? "Saved, with problems."
+            : TranslateText("Bench_Surface_Saved") ?? "Saved.";
+
+        return warnings.Count > 0 ? SurfaceCloseVerdict.ConfirmFindings : SurfaceCloseVerdict.Close;
+    }
+
+    /// <summary>Takes down the alarm raised by an earlier failed write, now that a write succeeded.</summary>
+    /// <remarks>
+    /// Status is emptied only when the alarm was ours: a "Saved." from the button is not something a
+    /// background write is allowed to erase, and a stale failure left standing on a card that has just
+    /// been written is an accusation the author cannot act on.
+    /// </remarks>
+    private void ClearSaveFailure()
+    {
+        if (!_autoSaveFailed)
+            return;
+
+        _autoSaveFailed = false;
+        Status = string.Empty;
+
+        // Walked backwards, because removing the entry the loop is about to look at would shift the
+        // one it has not seen yet.
+        for (var i = Diagnostics.Count - 1; i >= 0; i--)
+        {
+            if (Diagnostics[i].Code == SaveFailedCode)
+                Diagnostics.RemoveAt(i);
+        }
+    }
+
+    /// <summary>Makes a failed write visible in both places the author can still see.</summary>
+    private void ReportSaveFailure(Exception exception)
+    {
+        _autoSaveFailed = true;
+
+        // The resource takes the reason as {0} and already exists (the Bench window says the same
+        // thing); the diagnostics panel is the only place that will still be holding it a minute
+        // later, which is why the failure is written into both.
+        var message = string.Format(
+            TranslateText("Bench_SaveFailed") ?? "Save failed: {0}",
+            exception.Message);
+
+        Status = message;
+
+        Diagnostics.Clear();
+        Diagnostics.Add(Diagnostic.Error(SaveFailedCode, message));
+
+        Log.Error(exception, "[SurfaceEditor] '{Toolkit}' could not be written", ToolkitId);
+    }
+
+    /// <summary>What the window has to do after <see cref="PrepareToClose"/>.</summary>
+    public enum SurfaceCloseVerdict
+    {
+        /// <summary>Nothing left to decide: the card is on disk and the validator has no findings.</summary>
+        Close,
+
+        /// <summary>The card is on disk, and a render would drop something — ask before leaving.</summary>
+        ConfirmFindings,
+
+        /// <summary>The card could not be written, so closing would lose it — stay open.</summary>
+        WriteFailed,
     }
 
     /// <summary>Removes every element from the canvas, without touching the file until saved.</summary>
@@ -785,6 +1012,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         ForgetLastSave();
         Status = string.Empty;
         RefreshUnplaced();
+        MarkDirty();
     }
 
     /// <summary>Puts a declared key on the canvas as the element its type implies.</summary>
@@ -812,6 +1040,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         appended.Add(CreateElementFor(key, NextRow(appended)));
         Rebuild(appended);
         RefreshUnplaced();
+        MarkDirty();
 
         // Selected on arrival, because the next thing the author wants is almost always a property of
         // the thing they just placed — and before this the only properties reachable were none.
@@ -861,6 +1090,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
         Rebuild(document);
         RefreshUnplaced();
+        MarkDirty();
         Select(Elements.Count > 0 ? Elements[^1] : null);
     }
 
@@ -878,6 +1108,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         Rebuild(remaining);
         ValidationMessage = null;
         RefreshUnplaced();
+        MarkDirty();
     }
 
     /// <summary>Moves one element to a different row of the card.</summary>
@@ -942,6 +1173,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         RebuildBoundaries();
         ForgetLastSave();
         ValidationMessage = null;
+        MarkDirty();
     }
 
     /// <summary>How many elements a card may hold. A guard against an accidental infinite scroll.</summary>
@@ -1107,6 +1339,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         }
 
         ForgetLastSave();
+        MarkDirty();
     }
 
     /// <summary>Moves the selected cell to a row typed into the inspector.</summary>

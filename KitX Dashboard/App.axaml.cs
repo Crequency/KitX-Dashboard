@@ -144,7 +144,9 @@ public partial class App : Application
             {
                 var toolkit = sp.GetRequiredService<KitX.ToolKit.Contract.IToolkitService>().GetToolkit(toolkitId);
                 return toolkit?.Keys ?? [];
-            }));
+            },
+            toolkitId => sp.GetRequiredService<KitX.ToolKit.Contract.IToolkitService>()
+                .GetToolkit(toolkitId)?.Meta.Name));
 
         // C3 convergence: all remaining ViewModels — constructor-injected services,
         // resolved via App.GetService at their View creation points.
