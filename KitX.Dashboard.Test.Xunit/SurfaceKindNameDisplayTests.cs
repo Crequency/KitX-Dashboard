@@ -39,6 +39,13 @@ public class SurfaceKindNameDisplayTests
     /// the command parameter proves what a click would carry. Reading only the text would let a
     /// regression that translated the collection pass, because the button would look right and
     /// <c>AddKindCommand</c> would be given "按钮" — a kind the schema does not have.
+    ///
+    /// <para><b>The comparison against <c>Named(sent)</c> alone is worthless.</b> Both sides ask the
+    /// same dictionary, so removing a kind's key makes them fall back together and the equality
+    /// holds: the assertion would be checking itself. Measured — deleting
+    /// <c>Text_Bench_Surface_Kind_input</c> left this test green until the second assertion below
+    /// was added. <c>NotEqual(sent, shown)</c> costs nothing when the dictionary is complete and
+    /// states what a bad implementation looks like.</para>
     /// </remarks>
     [AvaloniaFact]
     public void The_palette_says_the_kind_in_the_readers_language_and_sends_the_schemas_word()
@@ -63,6 +70,10 @@ public class SurfaceKindNameDisplayTests
 
             Assert.Equal(Named(sent), shown);
             Assert.Contains(sent, editor.PaletteKinds);
+
+            // The dictionary-independent half: if the kind's key is missing, `shown` falls back to
+            // the schema's word and this is the assertion that notices.
+            Assert.NotEqual(sent, shown);
         }
     }
 
@@ -100,6 +111,11 @@ public class SurfaceKindNameDisplayTests
     /// Same pair as the palette, and the reason the dropdown needed an <c>ItemTemplate</c> rather
     /// than a converted collection: <c>ChangeType</c> switches on the value, so the selection has to
     /// stay a schema name even while the visible item is a translated one.
+    ///
+    /// <para>The first version asked whether <em>any</em> TextBlock in the window said the translated
+    /// word — which a TextBlock in the palette would also satisfy, and which a missing key would
+    /// satisfy too, since the list then contains the schema's word. Both now have to hold inside the
+    /// dropdown itself: the word is there, and it is not the schema's.</para>
     /// </remarks>
     [AvaloniaFact]
     public void The_type_dropdown_lists_the_readers_language_and_stores_the_schemas_word()
@@ -120,11 +136,18 @@ public class SurfaceKindNameDisplayTests
         // The selection is the schema's word: ChangeType compares against it.
         Assert.Equal(SurfaceElementKind.Text, picker.SelectedItem);
 
-        // What the closed dropdown shows is the translated one.
-        var shown = window.GetVisualDescendants().OfType<TextBlock>()
-            .Any(block => block.Text == Named(SurfaceElementKind.Text));
+        // What the closed dropdown draws is the translated word, and it is not the schema's.
+        var shown = picker.GetVisualDescendants().OfType<TextBlock>()
+            .Select(block => block.Text)
+            .FirstOrDefault(text => text == Named(SurfaceElementKind.Text));
 
-        Assert.True(shown, $"Expected the dropdown to show '{Named(SurfaceElementKind.Text)}' for {SurfaceElementKind.Text}.");
+        Assert.True(shown is not null,
+            $"Expected the dropdown to draw '{Named(SurfaceElementKind.Text)}' for " +
+            $"{SurfaceElementKind.Text}; it drew " +
+            string.Join(", ", picker.GetVisualDescendants().OfType<TextBlock>()
+                .Select(block => $"'{block.Text}'")) + ".");
+
+        Assert.NotEqual(SurfaceElementKind.Text, shown);
     }
 
     /// <summary>The word this client uses for a kind, asked the same way the converter asks.</summary>
