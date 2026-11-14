@@ -44,7 +44,7 @@ public class SurfaceInspectorTests
         editor.Select(editor.Elements[0]);
 
         Assert.Equal(
-            ["row", "label", "events", "emphasis"],
+            ["type", "row", "label", "events", "emphasis"],
             editor.Fields.Select(field => field.Label).ToArray());
 
         Assert.Equal("Send", Field(editor, "label").Value);
@@ -68,7 +68,7 @@ public class SurfaceInspectorTests
         editor.Select(editor.Elements[0]);
 
         Assert.Equal(
-            ["row", "name", "min", "max", "step", "decimals"],
+            ["type", "row", "name", "min", "max", "step", "decimals"],
             editor.Fields.Select(field => field.Label).ToArray());
 
         Assert.Equal("0", Field(editor, "min").Value);
@@ -244,7 +244,7 @@ public class SurfaceInspectorTests
 
         Assert.Same(editor.Elements[0], editor.Selected);
         Assert.Equal(
-            ["row", "key", "format"],
+            ["type", "row", "key", "format"],
             editor.Fields.Select(field => field.Label).ToArray());
         Assert.Equal("title", Field(editor, "key").Value);
     }

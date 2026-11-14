@@ -1145,6 +1145,127 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         Select(Elements.Count > 0 ? Elements[^1] : null);
     }
 
+    /// <summary>The kinds an element can be turned into, in the order the schema lists them.</summary>
+    public IReadOnlyList<string> ElementTypes { get; } =
+    [
+        SurfaceElementKind.Text,
+        SurfaceElementKind.Button,
+        SurfaceElementKind.Input,
+        SurfaceElementKind.Number,
+        SurfaceElementKind.Select,
+        SurfaceElementKind.Switch,
+        SurfaceElementKind.List,
+    ];
+
+    /// <summary>Turns the selected element into another kind, keeping its place on the card.</summary>
+    /// <param name="kind">One of <see cref="ElementTypes"/>.</param>
+    /// <remarks>
+    /// <para><b>A type is a reconstruction, not a cast.</b> The kinds do not share a field set — a
+    /// <c>Button</c> has a label and no key, an <c>Input</c> has a name and events, a <c>Number</c>
+    /// has bounds a <c>Switch</c> has never heard of — so the new element is built from the rules of
+    /// the kind being chosen, carrying across only what that kind can hold. Whatever is dropped is
+    /// dropped visibly: the inspector relists itself from the new element, and a key that is gone
+    /// from the field list is the receipt for a key that is gone from the file.</para>
+    ///
+    /// <para><b>No confirmation, and nothing refused.</b> Undo is not in this round (§8), and the
+    /// gesture is an explicit choice from a list of seven, not a stray keystroke; a dialog here would
+    /// be asking the author to confirm what they just said. The same reasoning says a conversion is
+    /// not held back because the result will be reported: a <c>Text</c> turned into a <c>List</c> can
+    /// keep a key that holds a scalar, and <c>surface.element.list.key-not-array</c> says so on the
+    /// next check. Refusing the gesture would leave the author holding a card they cannot build; the
+    /// check panel is where the disagreement belongs.</para>
+    ///
+    /// <para><b>Rebuilt, not refreshed.</b> A cell's corner label is its kind and its height is its
+    /// kind's slot count (a <c>List</c> is six slots), and a cell built for a <c>Text</c> cannot show
+    /// either. The rebuild is also what puts the old key back in the palette: a key released by a
+    /// <c>Text</c> is unplaced again, which is the same question
+    /// <see cref="RefreshUnplaced"/> already answers for every other edit.</para>
+    /// </remarks>
+    public void ChangeType(string kind)
+    {
+        if (_selected is null || string.IsNullOrWhiteSpace(kind))
+            return;
+
+        var source = _selected.Element;
+        if (string.Equals(SurfaceElementKind.Of(source), kind, StringComparison.Ordinal))
+            return;
+
+        var index = Elements.IndexOf(_selected);
+        if (index < 0)
+            return;
+
+        var converted = Convert(source, kind);
+        if (converted is null)
+            return;
+
+        var document = CurrentElements();
+        document[index] = converted;
+
+        Rebuild(document);
+        RefreshUnplaced();
+        MarkDirty();
+
+        // Selected again, because the rebuild replaced the cell the selection pointed at: keeping the
+        // author on the element they just changed is what lets them carry on editing its new fields.
+        Select(Elements.FirstOrDefault(cell => ReferenceEquals(cell.Element, converted)));
+    }
+
+    /// <summary>Builds the element a type change produces, or null for a kind this build does not know.</summary>
+    /// <remarks>
+    /// <b>What carries across is what the target kind can hold.</b> <c>key</c> survives only into
+    /// <c>Text</c> and <c>List</c>, the two kinds that display a stored value — an edited
+    /// <c>Input</c> carrying a key would be an element whose key the runtime ignores
+    /// (<c>surface.element.key-ignored</c>). <c>name</c> survives only into the four kinds that
+    /// contribute a value, and a kind that needs one gets the placeholder <see cref="AddKind"/> also
+    /// uses, so the element is not <c>surface.element.inert</c> the moment it appears. <c>events</c>
+    /// travel only between the two kinds that can raise one. Everything else is a field of the old
+    /// kind, and the new kind does not have it.
+    /// </remarks>
+    private static SurfaceElement? Convert(SurfaceElement source, string kind)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        // Read once, and each case below asks for only the fields its kind can hold: what a kind
+        // cannot hold is dropped by not being requested. A guard per field would be a second copy of
+        // the same table, and a second copy is what drifts.
+        var key = source.Key;
+        var name = source.Name ?? kind.ToLowerInvariant();
+        var events = EventsOf(source);
+
+        SurfaceElement? converted = kind switch
+        {
+            SurfaceElementKind.Text => new SurfaceTextElement { Key = key },
+            SurfaceElementKind.Button => new SurfaceButtonElement
+            {
+                // A button with no label is unclickable, so the new one is born with the word the
+                // palette's own button carries. An existing label is kept: it is text the author
+                // wrote, and the target kind is the one kind that can hold it.
+                Label = source is SurfaceButtonElement existing && !string.IsNullOrWhiteSpace(existing.Label)
+                    ? existing.Label
+                    : SurfaceElementKind.Button,
+                Events = events,
+            },
+            SurfaceElementKind.Input => new SurfaceInputElement { Name = name, Events = events },
+            SurfaceElementKind.Number => new SurfaceNumberElement { Name = name },
+            SurfaceElementKind.Select => new SurfaceSelectElement { Name = name },
+            SurfaceElementKind.Switch => new SurfaceSwitchElement { Name = name },
+            SurfaceElementKind.List => new SurfaceListElement { Key = key },
+            _ => null,
+        };
+
+        // The place on the card is not a property of the kind: row and weight say where the cell is
+        // and how much of the row it takes, and a type change is not a request to move it.
+        return converted is null ? null : converted with { Row = source.Row, Weight = source.Weight };
+    }
+
+    /// <summary>The events an element can raise, or none for the kinds that cannot.</summary>
+    private static IReadOnlyList<string> EventsOf(SurfaceElement element) => element switch
+    {
+        SurfaceButtonElement button => button.Events,
+        SurfaceInputElement input => input.Events,
+        _ => [],
+    };
+
     /// <summary>Removes one element from the canvas.</summary>
     /// <param name="element">The element to remove.</param>
     public void Remove(SurfaceElementVM element)
@@ -1253,7 +1374,15 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         if (_selected is null)
             return;
 
-        // The row first, because every kind has one, and because it is the only field that is a
+        // The kind first: it decides which of the fields below it exist, and changing it rebuilds
+        // this list. It is the property's name in the file, like every other label here.
+        Fields.Add(new SurfaceFieldVM(
+            "type",
+            SurfaceElementKind.Of(_selected.Element),
+            ChangeType,
+            ElementTypes));
+
+        // The row next, because every kind has one, and because it is the only field that is a
         // statement about the document rather than about the element.
         Fields.Add(new SurfaceFieldVM(
             "row",
