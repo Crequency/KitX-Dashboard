@@ -466,6 +466,10 @@
   <sys:String x:Key="Text_Bench_Surface_Saved">已儲存。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">已儲存，但有問題。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">一張卡片最多放 {0} 個元素。</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_LeaveTitle">Card layout has findings</sys:String> <!-- TODO translate -->
+  <sys:String x:Key="Text_Bench_Surface_LeaveBody">The card is saved. Closing now leaves out what a render would not keep:</sys:String> <!-- TODO translate -->
+  <sys:String x:Key="Text_Bench_Surface_LeaveAnyway">Leave anyway</sys:String> <!-- TODO translate -->
+  <sys:String x:Key="Text_Bench_Surface_LeaveStay">Go back and fix</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Diag_file_unreadable">Could not read {file}: {reason}</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Diag_file_invalid_json">{file} is not valid JSON: {reason}</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Diag_file_root_not_object">{file} must contain a JSON object.</sys:String> <!-- TODO translate -->
@@ -496,6 +500,7 @@
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">Kept {kind} at row {row}, weight {weight}: 'min' ({min}) is greater than 'max' ({max}); the range is dropped.</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">Kept {kind} at row {row}, weight {weight}: 'step' ({step}) is not positive; it defaults to 1.</sys:String> <!-- TODO translate -->
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">Kept {kind} at row {row}, weight {weight}: 'decimals' ({decimals}) is negative; it defaults to the renderer's choice.</sys:String> <!-- TODO translate -->
+    <sys:String x:Key="Text_Bench_Diag_save_failed">The card could not be written: {reason}</sys:String> <!-- TODO translate -->
 
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完成 {0} · 失敗 {1}</sys:String>
 

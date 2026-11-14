@@ -1026,17 +1026,21 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     {
         _autoSaveFailed = true;
 
-        // The resource takes the reason as {0} and already exists (the Bench window says the same
-        // thing); the diagnostics panel is the only place that will still be holding it a minute
-        // later, which is why the failure is written into both.
-        var message = string.Format(
-            TranslateText("Bench_SaveFailed") ?? "Save failed: {0}",
-            exception.Message);
+        // The reason travels as a named value, not folded into the sentence: the panel looks the
+        // sentence up by code and fills {reason} from it (see SurfaceDiagnosticText), so what the
+        // author reads is in their language while the log keeps the English sentence.
+        var reason = exception.Message;
 
-        Status = message;
+        Status = string.Format(
+            TranslateText("Bench_SaveFailed") ?? "Save failed: {0}",
+            reason);
 
         Diagnostics.Clear();
-        Diagnostics.Add(Diagnostic.Error(SaveFailedCode, message));
+        Diagnostics.Add(Diagnostic.Error(
+            SaveFailedCode,
+            $"The card could not be written: {reason}",
+            null,
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["reason"] = reason }));
 
         Log.Error(exception, "[SurfaceEditor] '{Toolkit}' could not be written", ToolkitId);
     }

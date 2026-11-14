@@ -157,7 +157,10 @@ public partial class SurfaceEditorWindow : Window
         if (verdict == SurfaceEditorViewModel.SurfaceCloseVerdict.WriteFailed)
             return;
 
-        var findings = string.Join(Environment.NewLine, editor.Diagnostics.Select(d => d.Message));
+        // The dialog lists the same sentences the panel does: a reader who just looked at the panel
+        // recognises what the dialog is asking about, and a language that reached the panel reaches
+        // this list too.
+        var findings = string.Join(Environment.NewLine, editor.Diagnostics.Select(finding => SurfaceDiagnosticText.Describe(finding)));
 
         if (!await new SurfaceLeaveDialog(findings).ShowDialog<bool>(this))
             return;

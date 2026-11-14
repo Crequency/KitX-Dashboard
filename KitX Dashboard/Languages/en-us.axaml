@@ -466,6 +466,10 @@ If this wasn't you, please check your device's security.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">Saved.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">Saved, with problems.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">A card holds at most {0} elements.</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_LeaveTitle">Card layout has findings</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_LeaveBody">The card is saved. Closing now leaves out what a render would not keep:</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_LeaveAnyway">Leave anyway</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_LeaveStay">Go back and fix</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unreadable">Could not read {file}: {reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_invalid_json">{file} is not valid JSON: {reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_root_not_object">{file} must contain a JSON object.</sys:String>
@@ -496,6 +500,7 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">Kept {kind} at row {row}, weight {weight}: 'min' ({min}) is greater than 'max' ({max}); the range is dropped.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">Kept {kind} at row {row}, weight {weight}: 'step' ({step}) is not positive; it defaults to 1.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">Kept {kind} at row {row}, weight {weight}: 'decimals' ({decimals}) is negative; it defaults to the renderer's choice.</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_save_failed">The card could not be written: {reason}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">{0} completed · {1} failed</sys:String>
 

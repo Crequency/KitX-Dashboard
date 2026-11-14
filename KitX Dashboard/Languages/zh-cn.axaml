@@ -466,6 +466,10 @@
   <sys:String x:Key="Text_Bench_Surface_Saved">已保存。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">已保存，但有问题。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">一张卡片最多放 {0} 个元素。</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_LeaveTitle">卡片排版有问题</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_LeaveBody">卡片已保存。现在关闭，会落下渲染时不保留的部分：</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_LeaveAnyway">仍然关闭</sys:String>
+  <sys:String x:Key="Text_Bench_Surface_LeaveStay">回去修改</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unreadable">无法读取 {file}：{reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_invalid_json">{file} 不是合法的 JSON：{reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_root_not_object">{file} 必须是一个 JSON 对象。</sys:String>
@@ -496,6 +500,7 @@
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">已保留第 {row} 行、权重 {weight} 的 {kind}：'min'（{min}）大于 'max'（{max}），区间已丢弃。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">已保留第 {row} 行、权重 {weight} 的 {kind}：'step'（{step}）不是正数，默认按 1。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">已保留第 {row} 行、权重 {weight} 的 {kind}：'decimals'（{decimals}）是负数，默认交给渲染器决定。</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_save_failed">卡片写不进磁盘：{reason}</sys:String>
 
     <sys:String x:Key="Text_PanelHost_RunSummaryDetail">完成 {0} · 失败 {1}</sys:String>
 

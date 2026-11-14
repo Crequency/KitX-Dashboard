@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using KitX.Dashboard.ViewModels;
 
 namespace KitX.Dashboard.Views;
 
@@ -12,10 +13,11 @@ namespace KitX.Dashboard.Views;
 /// what a render would drop" or "go back and move the cell". A single OK would take that choice away,
 /// and a dialog with three buttons would offer a middle answer nobody can act on.</para>
 ///
-/// <para><b>The sentences are literals.</b> Every other string in this window comes from
-/// <c>Languages/*.axaml</c>; a new key here would have to be added to seven files that another change
-/// is editing right now, and this is the one screen where the words are not part of the product's
-/// vocabulary. They move into the language files with the diagnostics panel's localization.</para>
+/// <para><b>The sentences come from the dictionary.</b> Title, introduction and both answers are
+/// read through <see cref="SurfaceLeaveText"/>, so this window carries no English of its own. A
+/// language switched while the dialog is open is not followed: the dialog exists to answer one
+/// question and is gone before a reader could pick a different language, and re-reading the keys on
+/// an event would only add a way for the window to change under the pointer.</para>
 /// </remarks>
 public partial class SurfaceLeaveDialog : Window
 {
@@ -24,14 +26,28 @@ public partial class SurfaceLeaveDialog : Window
     public SurfaceLeaveDialog(string findings)
     {
         InitializeComponent();
+        ApplyLanguage();
 
-        SurfaceLeaveMessage.Text = findings;
+        SurfaceLeaveMessage.Text = SurfaceLeaveText.Compose(findings);
     }
 
     /// <summary>Parameterless constructor for the XAML loader.</summary>
     public SurfaceLeaveDialog()
     {
         InitializeComponent();
+        ApplyLanguage();
+    }
+
+    /// <summary>
+    /// Puts the dictionary's words on the window. Called from both constructors because the XAML
+    /// loader builds the parameterless one first, and a window that briefly shows no title is still
+    /// a window somebody can see.
+    /// </summary>
+    private void ApplyLanguage()
+    {
+        Title = SurfaceLeaveText.Title();
+        SurfaceLeaveFix.Content = SurfaceLeaveText.Stay();
+        SurfaceLeaveLeave.Content = SurfaceLeaveText.LeaveAnyway();
     }
 
     private void OnLeave(object? sender, RoutedEventArgs e) => Close(true);
