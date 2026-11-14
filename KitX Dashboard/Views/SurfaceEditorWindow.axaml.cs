@@ -75,11 +75,16 @@ public partial class SurfaceEditorWindow : Window
         e.Handled = true;
     }
 
-    /// <summary>Selects the cell that was pressed, so the inspector can describe it.</summary>
+    /// <summary>Selects the pressed cell and begins dragging it to another place on the card.</summary>
     /// <remarks>
-    /// Handled, so the press does not reach the canvas underneath and immediately clear what it just
-    /// selected. The remove button inside the cell takes its own press first — that handler is on the
-    /// button, below this one in the route.
+    /// <para>Handled, so the press does not reach the canvas underneath and immediately clear what it
+    /// just selected. The remove button inside the cell takes its own press first — that handler is on
+    /// the button, below this one in the route.</para>
+    ///
+    /// <para><b>A press starts the drag; a release that never moved commits nothing.</b> Deciding by
+    /// travelled distance instead would need a threshold, and every threshold is a number that is
+    /// wrong on somebody's mouse. A drag with no movement is already a no-op in the view model, so the
+    /// press can start one without asking whether it is going to become one.</para>
     /// </remarks>
     private void OnCellPressed(object? sender, PointerPressedEventArgs e)
     {
@@ -90,7 +95,50 @@ public partial class SurfaceEditorWindow : Window
             return;
 
         editor.Select(cell);
+
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            editor.BeginReorder(cell);
+
+            // Captured on the cell, because the cell under the pointer stops being this one as soon
+            // as the drag crosses into the next cell — and an uncaptured drag would end there, on the
+            // first cell boundary it reached.
+            e.Pointer.Capture((IInputElement?)sender);
+        }
+
         e.Handled = true;
+    }
+
+    /// <summary>Moves the drop line to where the pointer is, without touching the document.</summary>
+    private void OnCellPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (DataContext is not SurfaceEditorViewModel editor || !editor.IsReordering)
+            return;
+
+        if (SurfaceCanvasLayer is null)
+            return;
+
+        var point = e.GetPosition(SurfaceCanvasLayer);
+        editor.ReorderTo(point.X, point.Y);
+        e.Handled = true;
+    }
+
+    /// <summary>Drops the dragged cell where the pointer was released.</summary>
+    private void OnCellPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (DataContext is not SurfaceEditorViewModel editor || !editor.IsReordering)
+            return;
+
+        editor.CommitReorder();
+        e.Pointer.Capture(null);
+        e.Handled = true;
+    }
+
+    /// <summary>Forgets a drag whose pointer capture was taken away rather than released.</summary>
+    private void OnCellCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (DataContext is SurfaceEditorViewModel editor)
+            editor.CancelReorder();
     }
 
     /// <summary>Clears the inspector: a press on the canvas itself is a press on nothing.</summary>

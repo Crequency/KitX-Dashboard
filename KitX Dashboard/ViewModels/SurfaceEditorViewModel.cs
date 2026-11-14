@@ -89,6 +89,9 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// </remarks>
     public ObservableCollection<SurfaceBoundaryVM> Boundaries { get; } = [];
 
+    /// <summary>Where the cell being dragged would land, or hidden when nothing is being dragged.</summary>
+    public SurfaceDropIndicatorVM DropIndicator { get; } = new();
+
     /// <summary>The interactive kinds the palette can place.</summary>
     /// <remarks>
     /// <para><b>A second section, not a replacement for the key list.</b> The key list answers "what
@@ -106,6 +109,22 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     public IReadOnlyList<string> PaletteKinds { get; } = ["Button", "Input", "Number", "Select", "Switch"];
 
     private SurfaceElementVM? _selected;
+
+    /// <summary>The cell currently held by the pointer, or null when no drag is in progress.</summary>
+    private SurfaceElementVM? _reordering;
+
+    /// <summary>Where the last pointer move said the dragged cell would land: row, and place in it.</summary>
+    private int _reorderRow;
+    private int _reorderIndex;
+
+    /// <summary>Whether the pointer has ever moved during this drag.</summary>
+    /// <remarks>
+    /// Kept apart from <see cref="_reordering"/> because they answer different questions: a press
+    /// sets the cell, and only a move names a landing point. Without the second flag, releasing a
+    /// cell that was pressed and never moved would commit whatever the initial row and index happened
+    /// to be — a reorder nobody asked for, from a gesture that was a click.
+    /// </remarks>
+    private bool _hasDropTarget;
 
     /// <summary>The cell the inspector describes, or null when nothing is selected.</summary>
     public SurfaceElementVM? Selected
@@ -211,6 +230,10 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         Status = string.Empty;
         ForgetLastSave();
 
+        // Nothing of the previous card survives a load, including the cell a drag might be holding:
+        // the refused-file branch below empties the canvas without going through Rebuild.
+        CancelReorder();
+
         DeclaredKeys.Clear();
         foreach (var key in _keysOf(toolkitId))
             DeclaredKeys.Add(key);
@@ -248,6 +271,11 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// </remarks>
     private void Rebuild(IReadOnlyList<SurfaceElement> elements)
     {
+        // A rebuild replaces every cell, so a drag in flight is holding an object that is no longer on
+        // the canvas — and the drop line would be pointing at a document that no longer exists. This
+        // is the one place that knows every path which replaces the cells.
+        CancelReorder();
+
         // The panel described the document as it was before this call, so it goes first: a saved
         // warning about a cell the author has just deleted is the editor arguing with the canvas.
         ForgetLastSave();
@@ -455,6 +483,241 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
         ValidationMessage = null;
     }
+
+    /// <summary>Whether a cell is being dragged to another place on the card.</summary>
+    public bool IsReordering => _reordering is not null;
+
+    /// <summary>Starts dragging one cell to another place on the card.</summary>
+    /// <param name="cell">The cell whose body was pressed.</param>
+    /// <remarks>
+    /// <para><b>Nothing is written here.</b> The cell stays where it is until the pointer is released.
+    /// That is the same rule the border drag follows — a drag has no committed value until it ends —
+    /// and it is also what keeps the gesture readable: moving the cell on every pointer move would
+    /// change the very positions the next frame is measured against, so it would chase the pointer
+    /// instead of following it.</para>
+    ///
+    /// <para><b>The cell is selected here, not left to the window.</b> The inspector describes this
+    /// cell for the whole gesture, and the press that began the drag is the only evidence there is
+    /// about which cell that is.</para>
+    /// </remarks>
+    public void BeginReorder(SurfaceElementVM cell)
+    {
+        if (cell is null || Elements.IndexOf(cell) < 0)
+            return;
+
+        _reordering = cell;
+        _hasDropTarget = false;
+        DropIndicator.Hide();
+
+        Select(cell);
+    }
+
+    /// <summary>Points the drop line at where the pointer is, without moving anything.</summary>
+    /// <param name="canvasX">Pointer x, in canvas pixels.</param>
+    /// <param name="canvasY">Pointer y, in canvas pixels.</param>
+    /// <remarks>
+    /// Called on every pointer move, so it must stay a pure statement about the pointer: the document
+    /// is read, never rewritten. That is what lets the cell that is holding the pointer capture
+    /// survive the whole drag — see <see cref="CommitReorder"/> for the write that happens at the end.
+    /// </remarks>
+    public void ReorderTo(double canvasX, double canvasY)
+    {
+        if (_reordering is null)
+            return;
+
+        _reorderRow = TargetRow(canvasY);
+        _reorderIndex = InsertionIndex(_reorderRow, canvasX);
+        _hasDropTarget = true;
+
+        DropIndicator.Show(
+            LineLeft(_reorderRow, _reorderIndex),
+            RowTop(_reorderRow),
+            SurfaceElementVM.RowHeight - SurfaceElementVM.CellGap);
+    }
+
+    /// <summary>Drops the dragged cell where the pointer left it.</summary>
+    /// <remarks>
+    /// <para><b>A drop that changes nothing writes nothing.</b> Releasing a cell over its own place is
+    /// how a press that never became a drag ends, and it must leave the document, the check panel and
+    /// the selection exactly as they were: the card is byte-for-byte the one already on disk, so there
+    /// is nothing to save, nothing to report and nothing to re-describe.</para>
+    ///
+    /// <para><b>Rows are not renumbered.</b> The row a cell leaves keeps its number even when it is
+    /// now empty. §10.2.1.2 fixed what a row number means — an order, not a distance — and an empty
+    /// row has height zero, so compacting the numbers would change nothing on screen while rewriting
+    /// every row below the hole.</para>
+    ///
+    /// <para><b>Committed in place, never rebuilt.</b> The collection is reordered under the same
+    /// objects: the dragged cell is the one the inspector is describing, and a rebuild would replace
+    /// it — and its selection — with new objects for the same declarations. The last frame of a drag
+    /// has to land on the object the first frame picked up; that is also why the border drag
+    /// refreshes instead of rebuilding, taken one step further.</para>
+    /// </remarks>
+    public void CommitReorder()
+    {
+        var cell = _reordering;
+        var hasTarget = _hasDropTarget;
+        var row = _reorderRow;
+        var index = _reorderIndex;
+
+        _reordering = null;
+        _hasDropTarget = false;
+        DropIndicator.Hide();
+
+        // A press with no move: the gesture was a selection, and there is no landing point in it.
+        if (cell is null || !hasTarget)
+            return;
+
+        var from = Elements.IndexOf(cell);
+
+        // The cell can be gone: a click that removed it mid-drag arrives between the two events.
+        if (from < 0)
+            return;
+
+        // The order the collection will have once the cell is taken out. Built before anything is
+        // moved, so a drop that changes nothing can be recognised before the first write.
+        var remaining = new List<SurfaceElementVM>(Elements.Count - 1);
+        for (var i = 0; i < Elements.Count; i++)
+        {
+            if (i != from)
+                remaining.Add(Elements[i]);
+        }
+
+        var onTargetRow = remaining.Where(e => e.Element.Row == row).ToList();
+
+        int insertAt;
+        if (onTargetRow.Count == 0)
+        {
+            // An empty row (or the new row below the last one): it goes where the row would be in the
+            // declaration order, which keeps the file grouped by row rather than by edit history.
+            insertAt = remaining.FindIndex(e => e.Element.Row > row);
+            if (insertAt < 0)
+                insertAt = remaining.Count;
+        }
+        else if (index < onTargetRow.Count)
+        {
+            insertAt = remaining.IndexOf(onTargetRow[index]);
+        }
+        else
+        {
+            insertAt = remaining.IndexOf(onTargetRow[^1]) + 1;
+        }
+
+        var before = CurrentElements();
+
+        var after = new List<SurfaceElement>(remaining.Count + 1);
+        foreach (var element in remaining)
+            after.Add(element.Element);
+
+        after.Insert(insertAt, cell.Element with { Row = row });
+
+        // Value equality, because that is what "nothing changed" means for this file: two cells with
+        // identical declarations swapping places produce the same JSON, and that drag is a no-op too.
+        if (after.SequenceEqual(before))
+            return;
+
+        Elements.Move(from, insertAt);
+
+        var document = CurrentElements();
+        document[insertAt] = document[insertAt] with { Row = row };
+
+        // Every cell is refreshed, not only the two rows involved: the rows the cell left and joined
+        // both redistribute their widths, and the cell itself changed its top edge.
+        for (var i = 0; i < Elements.Count; i++)
+            Elements[i].Refresh(document[i], document);
+
+        RebuildBoundaries();
+        ForgetLastSave();
+        ValidationMessage = null;
+
+        // The inspector's "row" field is a value copied out of the declaration, so a drag that landed
+        // on another row would leave the field saying the number the cell no longer has.
+        BuildFields();
+    }
+
+    /// <summary>Abandons the drag: the cell stays where it is and the line goes away.</summary>
+    /// <remarks>
+    /// Reached when the pointer capture is taken rather than released — another window taking the
+    /// pointer, the cell being deleted by a click that was not part of the drag, a rebuild. Without it
+    /// the drop line would stay on the canvas pointing at nothing.
+    /// </remarks>
+    public void CancelReorder()
+    {
+        _reordering = null;
+        _hasDropTarget = false;
+        DropIndicator.Hide();
+    }
+
+    /// <summary>The row the pointer's vertical position is over, or the new row below the last one.</summary>
+    /// <remarks>
+    /// Bands are counted from the first row's top edge, because a row's pixels are a function of its
+    /// number and nothing else (§10.2.1.2: row numbers order, they do not measure distance). A pointer
+    /// above the top edge belongs to row one; one below the lowest row in use belongs to a new row
+    /// underneath it — which is the only way to append a row by dragging.
+    /// </remarks>
+    private int TargetRow(double canvasY)
+    {
+        var band = (int)Math.Floor((canvasY - SurfaceElementVM.RowOrigin) / SurfaceElementVM.RowHeight) + 1;
+
+        var last = 0;
+        foreach (var element in Elements)
+        {
+            if (element.Element.Row > last)
+                last = element.Element.Row;
+        }
+
+        return Math.Clamp(band, 1, last + 1);
+    }
+
+    /// <summary>How many cells of a row the pointer is to the right of.</summary>
+    /// <remarks>
+    /// Measured against the midpoint, not the edges: the author is choosing which cell to sit beside,
+    /// so crossing a cell's middle is the moment the choice becomes that cell's other side. The cell
+    /// being dragged is left out — it is about to leave this row, and counting it would make a drop on
+    /// its own place read as a move past it.
+    /// </remarks>
+    private int InsertionIndex(int row, double canvasX)
+    {
+        var index = 0;
+
+        foreach (var element in Elements)
+        {
+            if (element.Element.Row != row || ReferenceEquals(element, _reordering))
+                continue;
+
+            if (canvasX > element.Left + (element.Width / 2))
+                index++;
+        }
+
+        return index;
+    }
+
+    /// <summary>Where the drop line is drawn for a landing at one place in a row.</summary>
+    private double LineLeft(int row, int index)
+    {
+        var cells = Elements
+            .Where(e => e.Element.Row == row && !ReferenceEquals(e, _reordering))
+            .ToList();
+
+        // No cell to aim between: an empty row, or the new row below the last one. The line goes to
+        // the inset where that row's first cell would start, which is also where the drop lands.
+        if (cells.Count == 0)
+            return SurfaceElementVM.CellGap / 2;
+
+        if (index <= 0)
+            return Math.Max(SurfaceElementVM.CellGap / 2, cells[0].Left - (SurfaceElementVM.CellGap / 2));
+
+        if (index >= cells.Count)
+            return Math.Min(
+                CanvasWidth - (SurfaceElementVM.CellGap / 2),
+                cells[^1].Right + (SurfaceElementVM.CellGap / 2));
+
+        return (cells[index - 1].Right + cells[index].Left) / 2;
+    }
+
+    /// <summary>The top edge a row's cells have, whether or not anything is on that row.</summary>
+    private static double RowTop(int row) =>
+        SurfaceElementVM.RowOrigin + ((row - 1) * SurfaceElementVM.RowHeight) + (SurfaceElementVM.CellGap / 2);
 
     /// <summary>
     /// Writes the canvas and reports what the validator would drop — in that order, always.

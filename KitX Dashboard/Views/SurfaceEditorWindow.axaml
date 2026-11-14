@@ -56,6 +56,17 @@
         <Style Selector="Border.grip:pointerover">
             <Setter Property="Background" Value="{DynamicResource ControlStrokeColorSecondaryBrush}" />
         </Style>
+
+        <!--
+          The landing line of a cell drag. Accent-coloured because it is the same statement as the
+          selected cell's frame — "this is where the editor's next act happens" — and it must be the
+          one thing on the canvas that is neither a cell nor a border between two of them.
+        -->
+        <Style Selector="Border.dropline">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
+            <Setter Property="CornerRadius" Value="1.5" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+        </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="Auto, *" Margin="16">
@@ -206,6 +217,9 @@
                                                 Width="{Binding Width}"
                                                 Height="{Binding Height}"
                                                 PointerPressed="OnCellPressed"
+                                                PointerMoved="OnCellPointerMoved"
+                                                PointerReleased="OnCellPointerReleased"
+                                                PointerCaptureLost="OnCellCaptureLost"
                                                 ToolTip.Tip="{Binding Description}">
                                             <Grid RowDefinitions="Auto,*,Auto">
                                                 <!--  Trimming, not clipping: at ten equal weights a
@@ -281,6 +295,21 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+
+                            <!--
+                              The drop line, drawn above everything else so no cell can hide the place
+                              it points at. It takes no presses: the drag already holds the pointer,
+                              and a line that answered one would end the gesture it is describing.
+                            -->
+                            <Canvas IsHitTestVisible="False">
+                                <Border x:Name="SurfaceDropLine"
+                                        Classes="dropline"
+                                        IsVisible="{Binding DropIndicator.IsVisible}"
+                                        Canvas.Left="{Binding DropIndicator.Left}"
+                                        Canvas.Top="{Binding DropIndicator.Top}"
+                                        Width="{Binding DropIndicator.Width}"
+                                        Height="{Binding DropIndicator.Height}" />
+                            </Canvas>
                         </Grid>
                     </Grid>
                 </Border>
