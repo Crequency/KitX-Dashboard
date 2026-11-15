@@ -379,7 +379,7 @@
     <sys:String x:Key="Text_WorkflowEditor_BpWarnDetachedFix">如需保持执行顺序，请从输出端口拖出并选择新节点（自动链插入）。</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_ClearOutputTip">清空输出</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_CodeSections">代码分区</sys:String>
-    <sys:String x:Key="Text_WorkflowEditor_ConnectionDisconnectTip">Alt+щелчок по соединению или выводу разрывает его; отключить можно и правой кнопкой</sys:String>
+    <sys:String x:Key="Text_WorkflowEditor_ConnectionDisconnectTip">Alt+点击连线或端点即可断开；右键也可断开</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_ContinueTip">继续</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_Dashboard">仪表盘</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_DashboardTip">返回仪表盘</sys:String>

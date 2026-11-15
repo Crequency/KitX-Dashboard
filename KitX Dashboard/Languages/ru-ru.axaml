@@ -379,7 +379,7 @@
     <sys:String x:Key="Text_WorkflowEditor_BpWarnDetachedFix">Чтобы сохранить порядок выполнения, потяните от выходного контакта и выберите новый узел — цепочка будет вставлена автоматически.</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_ClearOutputTip">Очистить вывод</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_CodeSections">Разделы кода</sys:String>
-    <sys:String x:Key="Text_WorkflowEditor_ConnectionDisconnectTip">Alt+클릭으로 연결이나 핀을 끊고, 마우스 오른쪽 버튼으로도 끊을 수 있습니다</sys:String>
+    <sys:String x:Key="Text_WorkflowEditor_ConnectionDisconnectTip">Alt+щелчок по соединению или выводу разрывает его; отключить можно и правой кнопкой</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_ContinueTip">Продолжить</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_Dashboard">Панель управления</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_DashboardTip">Вернуться к панели управления</sys:String>

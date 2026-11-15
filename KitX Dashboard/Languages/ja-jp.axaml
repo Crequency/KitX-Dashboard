@@ -33,8 +33,8 @@
     <sys:String x:Key="Text_Public_Name">名前</sys:String>
     <sys:String x:Key="Text_Public_Author">著者</sys:String>
     <sys:String x:Key="Text_Public_More">もっと</sys:String>
-    <sys:String x:Key="Text_Log_Verbose">详细</sys:String>
-    <sys:String x:Key="Text_Log_Debug">调试</sys:String>
+    <sys:String x:Key="Text_Log_Verbose">詳細</sys:String>
+    <sys:String x:Key="Text_Log_Debug">デバッグ</sys:String>
     <sys:String x:Key="Text_Log_Information">情報</sys:String>
     <sys:String x:Key="Text_Log_Warning">警告</sys:String>
     <sys:String x:Key="Text_Log_Error">エラー</sys:String>
@@ -78,7 +78,7 @@
     <sys:String x:Key="Text_Device_Type_Master">マスター</sys:String>
     <sys:String x:Key="Text_Device_Tip_Detected">台のデバイスが検出されました</sys:String>
     <sys:String x:Key="Text_Device_PluginsCount">利用可能なプラグインの数:</sys:String>
-    <x:String x:Key="Text_Device_Context_Security">Sekurity</x:String>
+    <x:String x:Key="Text_Device_Context_Security">セキュリティ</x:String>
     <x:String x:Key="Text_Device_Context_AuthorizeAndExchangeDeviceKey">デバイスを承認し、キーを交換する</x:String>
     <x:String x:Key="Text_Device_Context_UnAuthorize">このデバイスの認可を取消し（新しいローカルキーを生成して他のデバイスと交換する）</x:String>
     <!-- ワークフローエディタウィンドウ -->
@@ -379,7 +379,7 @@
     <sys:String x:Key="Text_WorkflowEditor_BpWarnDetachedFix">実行順序を保つには、出力端子からドラッグして新しいノードを選んでください (チェーンに自動で挿入されます)。</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_ClearOutputTip">出力を消去</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_CodeSections">コードセクション</sys:String>
-    <sys:String x:Key="Text_WorkflowEditor_ConnectionDisconnectTip">Alt+cliquez sur une connexion ou une broche pour la couper ; clic droit pour déconnecter</sys:String>
+    <sys:String x:Key="Text_WorkflowEditor_ConnectionDisconnectTip">Alt+クリックで接続やピンを切断、右クリックでも切断できます</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_ContinueTip">続行</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_Dashboard">ダッシュボード</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_DashboardTip">ダッシュボードに戻る</sys:String>

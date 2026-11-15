@@ -379,7 +379,7 @@
     <sys:String x:Key="Text_WorkflowEditor_BpWarnDetachedFix">실행 순서를 유지하려면 출력 핀에서 끌어 새 노드를 고르세요 (체인에 자동으로 삽입됩니다).</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_ClearOutputTip">출력 지우기</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_CodeSections">코드 섹션</sys:String>
-    <sys:String x:Key="Text_WorkflowEditor_ConnectionDisconnectTip">Alt+クリックで接続やピンを切断、右クリックでも切断できます</sys:String>
+    <sys:String x:Key="Text_WorkflowEditor_ConnectionDisconnectTip">Alt+클릭으로 연결이나 핀을 끊고, 마우스 오른쪽 버튼으로도 끊을 수 있습니다</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_ContinueTip">계속</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_Dashboard">대시보드</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_DashboardTip">대시보드로 돌아가기</sys:String>
@@ -493,7 +493,7 @@
     <sys:String x:Key="Text_WorkflowEditor_UsageNameTip">참조하는 변수/상수/dict 이름 (오른쪽 연필 버튼으로 변경)</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_UsagePick">변수 선택…</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_UsagePickTip">참조할 변수/상수/dict 이름을 선택하거나 입력</sys:String>
-    <sys:String x:Key="Text_WorkflowEditor_UserValueTip">사용자 값 (비우면 스크립트 기본값, 변수 상수欄의 UserValue와 같은 항목)</sys:String>
+    <sys:String x:Key="Text_WorkflowEditor_UserValueTip">사용자 값 (비우면 스크립트 기본값, 변수 상수 칸의 UserValue와 같은 항목)</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_VariableConstants">변수 상수</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_Variables">변수</sys:String>
 
