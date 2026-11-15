@@ -101,6 +101,18 @@ public class LanguageTranslationTests
                     "the word this file uses for workflows throughout (Text_Bench_NewWorkflow)"),
                 ["Text_Bench_NodeKindWorkflow"] = ("Workflow",
                     "the word this file uses for a workflow throughout"),
+
+                // The workflow editor (v6). Four words French spells exactly as English does, and
+                // the file has to be allowed to leave them alone rather than inventing a synonym
+                // nobody writes.
+                ["Text_WorkflowEditor_Blueprint"] = ("Blueprint",
+                    "French uses the English word for a node graph; the file says it throughout"),
+                ["Text_WorkflowEditor_FieldType"] = ("Type",
+                    "the French word is spelt the same"),
+                ["Text_WorkflowEditor_PauseTip"] = ("Pause",
+                    "the French word is spelt the same"),
+                ["Text_WorkflowEditor_Variables"] = ("Variables",
+                    "the French word is spelt the same"),
             },
         };
 

@@ -15,6 +15,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
+using KitX.Core.Contract.Event;
 using KitX.Core.Contract.Workflow;
 using KitX.Dashboard.ViewModels;
 using KitX.WorkflowV6.Lens.BpGraphLens;
@@ -46,6 +47,12 @@ public partial class WorkflowEditorWindowV6 : Window
     private readonly WorkflowEditorViewModelV6 _viewModel;
     private EditorContext _context = EditorContext.MainProgram;
     private bool _textChangedWired;
+
+    /// <summary>The service that announces a language change, when the window was given one.</summary>
+    private IEventService? _eventService;
+
+    /// <summary>The handler registered for <see cref="EventNames.LanguageChanged"/>.</summary>
+    private EventHandler<EventArgs>? _languageChanged;
 
     public WorkflowEditorWindowV6()
     {
@@ -95,6 +102,8 @@ public partial class WorkflowEditorWindowV6 : Window
         };
 
         Closing += OnWindowClosing;
+
+        SubscribeToLanguageChanges();
     }
 
     protected override void OnClosed(EventArgs e)
@@ -103,7 +112,46 @@ public partial class WorkflowEditorWindowV6 : Window
         // the VM is transient per window, so release the PropertyChanged hook on close
         // to avoid retaining the window via the VM.
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+
+        if (_eventService is not null && _languageChanged is not null)
+            _eventService.Unsubscribe(EventNames.LanguageChanged, _languageChanged);
+
+        _eventService = null;
+        _languageChanged = null;
+
         base.OnClosed(e);
+    }
+
+    // ── Language ──
+
+    /// <summary>Asks to be told when the reader picks another language, for as long as this window is open.</summary>
+    /// <remarks>
+    /// <para><b>What is left to do here.</b> Almost everything in this window is a
+    /// <c>DynamicResource</c> in the XAML, and those resolve themselves again. Two things are written
+    /// in C# and cannot: the title above the editor, and the context menu, which is built fresh every
+    /// time it opens and is therefore already correct.</para>
+    ///
+    /// <para><b>Why a missing service host is not an error.</b> The headless test host opens windows
+    /// without one; without the event the title keeps the language it was written in, which is a
+    /// quieter window rather than one that fails to open.</para>
+    /// </remarks>
+    private void SubscribeToLanguageChanges()
+    {
+        try
+        {
+            _eventService = App.GetService<IEventService>();
+        }
+        catch (InvalidOperationException)
+        {
+            _eventService = null;
+        }
+
+        if (_eventService is null)
+            return;
+
+        _languageChanged = (_, _) => RefreshEditorContextTitle();
+
+        _eventService.Subscribe(EventNames.LanguageChanged, _languageChanged);
     }
 
     // ── Load workflow ──
@@ -112,7 +160,7 @@ public partial class WorkflowEditorWindowV6 : Window
     public async Task LoadWorkflowFileAsync(string filePath)
     {
         await _viewModel.LoadWorkflowFileAsync(filePath);
-        SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
+        SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "MainProgram", "Main Program");
         RefreshConstantsPanel();
     }
 
@@ -126,7 +174,7 @@ public partial class WorkflowEditorWindowV6 : Window
     public void LoadSource(string ksSource)
     {
         _viewModel.KsSource = ksSource;
-        SetEditorContext(EditorContext.MainProgram, ksSource, "Main Program");
+        SetEditorContext(EditorContext.MainProgram, ksSource, "MainProgram", "Main Program");
     }
 
     // ── AvaloniaEdit initialization ──
@@ -221,15 +269,36 @@ public partial class WorkflowEditorWindowV6 : Window
     /// context, keeping the context flag, document, and title in sync. The TextChanged
     /// handler routes typing to the main program (KsSource) or the selected helper's Code.
     /// </summary>
-    private void SetEditorContext(EditorContext context, string docText, string title)
+    private void SetEditorContext(EditorContext context, string docText, string titleKey,
+        string titleFallback, params (string Name, object? Value)[] values)
     {
         _context = context;
+        _editorContextTitle = (titleKey, titleFallback, values);
+
         var codeEditor = this.FindControl<TextEditor>("CodeEditor");
         var codeEditorTitle = this.FindControl<TextBlock>("CodeEditorTitle");
         if (codeEditor != null)
             codeEditor.Text = docText;
         if (codeEditorTitle != null)
-            codeEditorTitle.Text = title;
+            codeEditorTitle.Text = WorkflowEditorText.Get(titleKey, titleFallback, values);
+    }
+
+    /// <summary>The key and values behind the title above the text editor.</summary>
+    /// <remarks>
+    /// The title above the editor is written by this window, not by a binding, so nothing redraws it
+    /// when the reader picks another language: it has to be written again, and writing it again needs
+    /// the key rather than the sentence the old language produced.
+    /// </remarks>
+    private (string Key, string Fallback, (string, object?)[] Values)? _editorContextTitle;
+
+    /// <summary>Writes the editor title again in whatever language is current now.</summary>
+    private void RefreshEditorContextTitle()
+    {
+        if (_editorContextTitle is not { } title)
+            return;
+
+        if (this.FindControl<TextBlock>("CodeEditorTitle") is { } codeEditorTitle)
+            codeEditorTitle.Text = WorkflowEditorText.Get(title.Key, title.Fallback, title.Values);
     }
 
     /// <summary>
@@ -296,14 +365,14 @@ public partial class WorkflowEditorWindowV6 : Window
             _viewModel.SelectedHelperFunction = selectedFunction;
             SetEditorContext(EditorContext.HelperFunction,
                 selectedFunction.Code ?? string.Empty,
-                $"Helper Function: {selectedFunction.Name}");
+                "HelperFunctionTitle", "Helper Function: {name}", ("name", selectedFunction.Name));
         }
     }
 
     private void OnBackToMainProgram(object? sender, RoutedEventArgs e)
     {
         _viewModel.SelectedHelperFunction = null;
-        SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
+        SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "MainProgram", "Main Program");
 
         var listBox = this.FindControl<ListBox>("HelperFunctionsListBox");
         if (listBox != null)
@@ -340,13 +409,13 @@ public partial class WorkflowEditorWindowV6 : Window
             {
                 SetEditorContext(EditorContext.HelperFunction,
                     remaining.Code ?? string.Empty,
-                    $"Helper Function: {remaining.Name}");
+                    "HelperFunctionTitle", "Helper Function: {name}", ("name", remaining.Name));
                 if (listBox != null)
                     listBox.SelectedItem = remaining;
             }
             else
             {
-                SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
+                SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "MainProgram", "Main Program");
             }
         }
     }
@@ -394,20 +463,20 @@ public partial class WorkflowEditorWindowV6 : Window
         var panel = new StackPanel { Spacing = 2 };
         if (nodeVm != null)
         {
-            panel.Children.Add(CreateMenuButton("Toggle Breakpoint", _viewModel.ToggleBreakpointCommand, nodeVm));
-            panel.Children.Add(CreateMenuButton("添加组注释", _viewModel.BlueprintVM.AddGroupCommentCommand, nodeVm));
-            panel.Children.Add(CreateMenuButton("删除节点", _viewModel.BlueprintVM.DeleteNodeCommand, nodeVm));
+            panel.Children.Add(CreateMenuButton(WorkflowEditorText.Get("MenuToggleBreakpoint", "Toggle Breakpoint"), _viewModel.ToggleBreakpointCommand, nodeVm));
+            panel.Children.Add(CreateMenuButton(WorkflowEditorText.Get("MenuAddGroupComment", "Add group comment"), _viewModel.BlueprintVM.AddGroupCommentCommand, nodeVm));
+            panel.Children.Add(CreateMenuButton(WorkflowEditorText.Get("MenuDeleteNode", "Delete node"), _viewModel.BlueprintVM.DeleteNodeCommand, nodeVm));
         }
         else if (connectionVm != null)
         {
-            panel.Children.Add(CreateMenuButton("断开连线", _viewModel.BlueprintVM.RemoveConnectionCommand, connectionVm));
+            panel.Children.Add(CreateMenuButton(WorkflowEditorText.Get("MenuRemoveConnection", "Disconnect"), _viewModel.BlueprintVM.RemoveConnectionCommand, connectionVm));
         }
         else
         {
             // D13.6: placeholder entry for the blank-canvas context menu (under
             // development — no actions yet). Kept visible so the menu doesn't
             // feel broken; remove once canvas-level actions land.
-            panel.Children.Add(CreateMenuButton("画布菜单（开发中）", null, null));
+            panel.Children.Add(CreateMenuButton(WorkflowEditorText.Get("MenuCanvasPlaceholder", "Canvas actions (coming soon)"), null, null));
         }
         ShowContextPopup(panel);
     }
@@ -466,7 +535,7 @@ public partial class WorkflowEditorWindowV6 : Window
             {
                 // R1: returning to KS mode always restores the main-program editing context
                 // (in case a helper session was active when the mode switched).
-                SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "Main Program");
+                SetEditorContext(EditorContext.MainProgram, _viewModel.KsSource, "MainProgram", "Main Program");
 
                 var constantsItemsControl = this.FindControl<ItemsControl>("ConstantsItemsControl");
                 var codeEditor = this.FindControl<TextEditor>("CodeEditor");

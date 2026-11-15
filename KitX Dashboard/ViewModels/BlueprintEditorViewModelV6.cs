@@ -122,14 +122,107 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     public bool HasHoverError => !string.IsNullOrEmpty(HoverErrorText);
 
     partial void OnErrorInfoChanged(ConstraintViolation? value)
-        => OnPropertyChanged(nameof(HasError));
+    {
+        // Assigned from outside: whoever set it owns the sentence now, so the recipe that would
+        // overwrite it on the next language change has to go.
+        _errorMessage = null;
+        _lensError = null;
+        OnPropertyChanged(nameof(HasError));
+    }
 
     partial void OnHoverErrorTextChanged(string? value)
-        => OnPropertyChanged(nameof(HasHoverError));
+    {
+        _hoverMessage = null;
+        OnPropertyChanged(nameof(HasHoverError));
+    }
+
+    /// <summary>A message this class wrote, kept as the key and the values it was written from.</summary>
+    /// <remarks>
+    /// <para><b>Why a message is not stored as text here.</b> A rejection lives on screen for as long as
+    /// it takes the reader to fix the graph — minutes, sometimes — and the reader may change the
+    /// language in the middle of that. The dictionary is asked when the sentence is composed, so a
+    /// composed sentence cannot follow a later switch; the key can.</para>
+    ///
+    /// <para><b>Why it is a record and not a callback.</b> A closure would hold the VM alive from a
+    /// static-ish list of recipes, and the value bags here are small and copied. Rebuilding is
+    /// <see cref="Build"/> and nothing else.</para>
+    /// </remarks>
+    private sealed record Message(
+        string Code,
+        string Constraint,
+        string Key,
+        string Fallback,
+        (string Name, object? Value)[] Values,
+        IReadOnlyList<string> NodeIds,
+        IReadOnlyList<string>? ConnectionIds = null,
+        string? FixKey = null,
+        string? FixFallback = null,
+        string? BadgeHex = null)
+    {
+        public ConstraintViolation Build() => new(
+            Code, Constraint,
+            WorkflowEditorText.Get(Key, Fallback, Values),
+            NodeIds, ConnectionIds,
+            FixKey is null ? null : WorkflowEditorText.Get(FixKey, FixFallback ?? string.Empty),
+            BadgeHex);
+    }
+
+    /// <summary>The recipe behind <see cref="ErrorInfo"/>, or null when that message came from the lens.</summary>
+    private Message? _errorMessage;
+
+    /// <summary>The lens's finding behind <see cref="ErrorInfo"/>, when the bar is showing one.</summary>
+    /// <remarks>Held so a language change can show it again; the lens wrote the English and will write
+    /// it again in whatever language the panel is being drawn in, because it is asked, not cached.</remarks>
+    private ConstraintViolation? _lensError;
+
+    /// <summary>The recipe behind <see cref="HoverErrorText"/>, or null when it came from the lens.</summary>
+    private Message? _hoverMessage;
+
+    /// <summary>True while <see cref="HoverErrorText"/> is the lens's sentence rather than this class's.</summary>
+    /// <remarks>
+    /// The lens is a backend lens: its findings are codes and English sentences, and it has no window
+    /// to ask about a language. A hover message it produced cannot be re-composed here, so a language
+    /// change asks the lens for the finding again instead — which is the same computation that put it
+    /// there, run against the graph as it stands.
+    /// </remarks>
+    private bool _lensHover;
+
+    /// <summary>The connection the current hover message is about, when it came from the lens.</summary>
+    private (BlueprintConnectorVMV6 Source, BlueprintConnectorVMV6 Target)? _lensHoverPins;
+
+    /// <summary>A rejection this class raised itself, ready to be shown or hovered.</summary>
+    private static Message Reject(string code, string constraint, string key, string fallback,
+        IReadOnlyList<string> nodeIds, params (string Name, object? Value)[] values)
+        => new(code, constraint, key, fallback, values, nodeIds);
+
+    /// <summary>Puts a message in the error bar, or takes it away when <paramref name="message"/> is null.</summary>
+    private void ShowError(Message? message)
+    {
+        // Text first: assigning it clears the recipe on purpose, so the recipe is written after.
+        ErrorInfo = message?.Build();
+        _errorMessage = message;
+    }
+
+    /// <summary>Takes whatever the bar is showing away, recipe and lens finding alike.</summary>
+    private void ClearError()
+    {
+        ErrorInfo = null;
+        _errorMessage = null;
+        _lensError = null;
+    }
+
+    /// <summary>Puts a message under the cursor, or takes it away when <paramref name="message"/> is null.</summary>
+    private void ShowHoverError(Message? message)
+    {
+        HoverErrorText = message?.Build().Message;
+        _hoverMessage = message;
+        _lensHover = false;
+        _lensHoverPins = null;
+    }
 
     /// <summary>Status banner shown when the canvas is empty.</summary>
-    public string EmptyBanner =>
-        "蓝图视图为空。在 KS 模式中编写工作流代码后切换到 BP 模式即可看到可视化蓝图。";
+    public string EmptyBanner => WorkflowEditorText.Get("BpEmptyBanner",
+        "The blueprint is empty. Write the workflow in KS mode, then switch to BP mode to see it drawn.");
 
     // ── Declared const/var names (usage-node ComboBox source, 2026-08-03) ──
 
@@ -185,6 +278,40 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         Nodes.CollectionChanged += OnNodesCollectionChanged;
         PopulatePalette();
         RefreshPluginTriggers();
+    }
+
+    // ── Language ──
+
+    /// <summary>Redraws everything this class wrote itself when the reader picks another language.</summary>
+    /// <remarks>
+    /// <para><b>What has to be redrawn and what does not.</b> The empty banner and the palette labels are
+    /// computed when something asks for them, so a notification is all they need. The two messages are
+    /// different: their sentences were composed when the rejection happened, so each one is built
+    /// again from the recipe it was made from — or, when the backend lens wrote it, by asking the lens
+    /// the same question it answered before.</para>
+    ///
+    /// <para><b>Why the palette is refreshed and not rebuilt.</b> The entries carry keys, so nothing in
+    /// them is stale; what has to change is the notification, so the buttons are painted again.</para>
+    /// </remarks>
+    public void RefreshLanguage()
+    {
+        OnPropertyChanged(nameof(EmptyBanner));
+
+        if (PaletteItems.Count > 0)
+            RefreshFilteredPalette();
+
+        if (_errorMessage is { } error)
+            ShowError(error);
+        else if (_lensError is { } lens)
+        {
+            ErrorInfo = lens;
+            _lensError = lens;
+        }
+
+        if (_hoverMessage is { } hover)
+            ShowHoverError(hover);
+        else if (_lensHover && _lensHoverPins is { } pins)
+            RunStructuralHoverSimulation(pins.Source, pins.Target);
     }
 
     // ── Node move tracking (R6) ──
@@ -363,9 +490,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == primaryId
                                                        && gc.AnchorNodeId != vm.AnchorNodeId))
         {
-            ErrorInfo = new ConstraintViolation("PRE", "Comment",
-                "目标语句已有组注释（KS 侧一句话只能有一个 Leading 注释）。",
-                new[] { primaryId }, null, null, "#FF9800");
+            ShowError(new Message("PRE", "Comment",
+                "BpTargetHasComment",
+                "The target statement already carries a group comment: one KS statement can lead with only one comment.",
+                [], new[] { primaryId }, null, null, null, "#FF9800"));
             return;
         }
 
@@ -390,7 +518,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         vm.NodeIds = subgraphNodes.ToHashSet();
         vm.IsDocked = true;
         DockNote(vm);
-        ErrorInfo = null;
+        ShowError(null);
         NotifyBlueprintEdited();
     }
 
@@ -410,9 +538,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             : node.BlueprintNodeId;
         if (_workingBlueprint.GroupComments.Any(gc => gc.AnchorNodeId == primaryId))
         {
-            ErrorInfo = new ConstraintViolation("PRE", "Comment",
-                "该语句已有组注释（KS 侧一句话只能有一个 Leading 注释）。",
-                new[] { primaryId }, null, null, "#FF9800");
+            ShowError(new Message("PRE", "Comment",
+                "BpStatementHasComment",
+                "This statement already carries a group comment: one KS statement can lead with only one comment.",
+                [], new[] { primaryId }, null, null, null, "#FF9800"));
             return;
         }
 
@@ -474,8 +603,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _contractToConnector.Clear();
         _connectorToContract.Clear();
         _workingBlueprint = blueprint;
-        ErrorInfo = null;
-        HoverErrorText = null;
+        ShowError(null);
+        ShowHoverError(null);
         MarkGraphEdited();
 
         // Phase 1: background frames (added first → bottom ZOrder in ItemsControl).
@@ -541,8 +670,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         _contractToConnector.Clear();
         _connectorToContract.Clear();
         _workingBlueprint = null;
-        ErrorInfo = null;
-        HoverErrorText = null;
+        ShowError(null);
+        ShowHoverError(null);
         _groupCommentVms.Clear();
         _highlightVm = null;
         _hoveredGroupComment = null;
@@ -585,6 +714,18 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
     partial void OnSearchTextChanged(string value) => RefreshFilteredPalette();
 
+    /// <summary>Whether a palette entry answers to what the reader typed.</summary>
+    /// <remarks>
+    /// Both spellings are tried, because a palette is read by people who may type either: the word in
+    /// the language the window is showing, or the name of the thing itself — <c>Branch</c>, <c>const</c>
+    /// — which is what a workflow author sees on the canvas and in the text. Matching only the
+    /// translated word would make the English name unsearchable in a translated window, and matching
+    /// only the English one would make "分支" find nothing in any window.
+    /// </remarks>
+    private static bool Matches(PaletteItemV6 item, string query)
+        => item.Label.Contains(query, StringComparison.OrdinalIgnoreCase)
+           || item.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Refreshes the grouped/filtered palette collections from <see cref="PaletteItems"/>.</summary>
     private void RefreshFilteredPalette()
     {
@@ -613,29 +754,31 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     private void PopulatePalette()
     {
         PaletteItems.Clear();
-        PaletteItems.Add(new PaletteItemV6("if (Branch)", "ControlFlow", BpFunctionNames.Branch));
-        PaletteItems.Add(new PaletteItemV6("forEach (Each)", "ControlFlow", BpFunctionNames.Each));
-        PaletteItems.Add(new PaletteItemV6("while (While)", "ControlFlow", BpFunctionNames.While));
-        PaletteItems.Add(new PaletteItemV6("switch (Switch)", "ControlFlow", BpFunctionNames.Switch));
+        PaletteItems.Add(new PaletteItemV6("if (Branch)", "ControlFlow", BpFunctionNames.Branch, null, "PaletteIf"));
+        PaletteItems.Add(new PaletteItemV6("forEach (Each)", "ControlFlow", BpFunctionNames.Each, null, "PaletteForEach"));
+        PaletteItems.Add(new PaletteItemV6("while (While)", "ControlFlow", BpFunctionNames.While, null, "PaletteWhile"));
+        PaletteItems.Add(new PaletteItemV6("switch (Switch)", "ControlFlow", BpFunctionNames.Switch, null, "PaletteSwitch"));
+        // break and continue are the language's own keywords, spelled the same in every language the
+        // editor ships with, so they carry no key and the palette draws them as written.
         PaletteItems.Add(new PaletteItemV6("break", "ControlFlow", "break"));
         PaletteItems.Add(new PaletteItemV6("continue", "ControlFlow", "continue"));
         // Const/var nodes (2026-08-03): definition declarations + usage references.
-        PaletteItems.Add(new PaletteItemV6("const（定义）", "Definition", "const"));
-        PaletteItems.Add(new PaletteItemV6("var（定义）", "Definition", "var"));
+        PaletteItems.Add(new PaletteItemV6("const (define)", "Definition", "const", null, "PaletteConstDef"));
+        PaletteItems.Add(new PaletteItemV6("var (define)", "Definition", "var", null, "PaletteVarDef"));
         // DictNew definition node (T8): a `var name = { ... }` dict literal declaration.
         // Hardcoded here — NOT in the builtin registry (IR primitive, see
         // NodeFactoryV6.CreateDictNewDefinitionNode), so registry.AllNames can't feed it.
         // const dict declarations (`const { dict d = {...} }`) are legal KS — the
         // second entry creates one with DeclKind="const" (2026-08-03).
-        PaletteItems.Add(new PaletteItemV6("DictNew（新建 dict 定义）", "Definition", BpFunctionNames.DictNew));
-        PaletteItems.Add(new PaletteItemV6("DictNew（新建 const dict 定义）", "Definition", BpFunctionNames.DictNew, "const"));
+        PaletteItems.Add(new PaletteItemV6("DictNew (new dict)", "Definition", BpFunctionNames.DictNew, null, "PaletteDictDef"));
+        PaletteItems.Add(new PaletteItemV6("DictNew (new const dict)", "Definition", BpFunctionNames.DictNew, "const", "PaletteConstDictDef"));
         // Usage references (2026-08-03): TWO distinct usage node types mirroring the
         // definition nodes — a const reference (VarKind=Const, read-only, no Value
         // input pin) and a var reference (VarKind=PubVar, read/write). The literal
         // ConstNode ("常量（字面量）") remains a separate pipeline-source node.
-        PaletteItems.Add(new PaletteItemV6("常量（使用）", "Usage", "constRef"));
-        PaletteItems.Add(new PaletteItemV6("变量（使用）", "Usage", "var"));
-        PaletteItems.Add(new PaletteItemV6("常量（字面量）", "Usage", "literal"));
+        PaletteItems.Add(new PaletteItemV6("constant (use)", "Usage", "constRef", null, "PaletteConstUse"));
+        PaletteItems.Add(new PaletteItemV6("variable (use)", "Usage", "var", null, "PaletteVarUse"));
+        PaletteItems.Add(new PaletteItemV6("constant (literal)", "Usage", "literal", null, "PaletteConstLiteral"));
         if (_registry != null)
             foreach (var fn in _registry.All.OrderBy(f => f.Name))
                 PaletteItems.Add(new PaletteItemV6(fn.Name, "Builtin", fn.Name));
@@ -755,8 +898,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var q = NodeSelectorSearchText?.Trim();
         foreach (var item in _nodeSelectorAll)
         {
-            if (!string.IsNullOrEmpty(q)
-                && item.DisplayName.Contains(q, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.IsNullOrEmpty(q) && !Matches(item, q))
                 continue;
             NodeSelectorItems.Add(item);
         }
@@ -970,7 +1112,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         var preViolation = ValidateConnectionV6(src, tgt);
         if (preViolation != null)
         {
-            ErrorInfo = preViolation;
+            ShowError(preViolation);
             return;
         }
 
@@ -1024,6 +1166,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             if (oldEdge != null)
                 RestoreConnection(oldEdge);
             ErrorInfo = violation;
+            _lensError = violation;
             return;
         }
 
@@ -1032,16 +1175,19 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         Connections.Add(connVm);
         outVm.IsConnected = true;
         inVm.IsConnected = true;
-        ErrorInfo = null;
+        ShowError(null);
         MarkGraphEdited();
 
         // 6. Exec-reroute warning: the old chain tail is now a preserved detached graph
         //    (unless it is still data-proxy reachable from the main chain).
         if (execRerouted && detachedTailId is not null && !IsReachable(detachedTailId))
-            ErrorInfo = new ConstraintViolation("WARN", "Detach",
-                $"已断开节点 '{detachedTailId}' 的执行连线：其执行后继已脱离主执行流，将保留为孤立子图（BP 特权，KS 不可见）。可从主链拖线接回。",
-                new[] { detachedTailId }, null,
-                "如需保持执行顺序，请从输出端口拖出并选择新节点（自动链插入）。", "#FF9800");
+            ShowError(new Message("WARN", "Detach",
+                "BpWarnDetached",
+                "Node '{id}' lost its execution wire: what followed it is now a detached sub-graph (a BP privilege KS cannot see). Drag a wire from the main chain to reconnect it.",
+                [("id", detachedTailId)], new[] { detachedTailId }, null,
+                "BpWarnDetachedFix",
+                "To keep the execution order, drag out of an output pin and pick a new node; the chain is spliced in automatically.",
+                "#FF9800"));
 
         TryExpandVariadicPins(src, tgt);
         RefreshScopes();
@@ -1180,7 +1326,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
         RefreshIsConnected();
         RefreshScopes();
-        ErrorInfo = null;
+        ShowError(null);
         NotifyBlueprintEdited();
     }
 
@@ -1197,7 +1343,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         RemoveConnectionFromWorkingBlueprint(connection);
         RefreshIsConnected();
         RefreshScopes();
-        ErrorInfo = null;
+        ShowError(null);
         NotifyBlueprintEdited();
     }
 
@@ -1279,7 +1425,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         SelectedNodes.Clear();
         RefreshIsConnected();
         RefreshScopes();
-        ErrorInfo = null;
+        ShowError(null);
         RefreshDefinitionNames();
         NotifyBlueprintEdited();
     }
@@ -1292,7 +1438,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
     /// These overlap with StructuralReducer (KS102/KS111) but run instantly and
     /// pinpoint the offending pin without a full-graph traversal.
     /// </summary>
-    private ConstraintViolation? ValidateConnectionV6(
+    private Message? ValidateConnectionV6(
         BlueprintConnectorVMV6 src, BlueprintConnectorVMV6 tgt)
     {
         // Resolve node IDs for highlighting.
@@ -1303,33 +1449,35 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 
         // Definition nodes (const/var block declarations) don't participate in wiring.
         if (IsDefinitionConnector(src) || IsDefinitionConnector(tgt))
-            return new ConstraintViolation("PRE", "Definition",
-                "定义型节点不可连线（const/var 声明不参与数据/执行图）。", highlight);
+            return Reject("PRE", "Definition", "BpErrDefinition",
+                "A declaration node cannot be wired: const and var declarations take no part in the data or execution graph.",
+                highlight);
 
         // Direction: one end must be Output, the other Input.
         bool srcIsOutput = src.Flow == ConnectorViewModelBase.ConnectorFlow.Output;
         bool tgtIsOutput = tgt.Flow == ConnectorViewModelBase.ConnectorFlow.Output;
         if (srcIsOutput == tgtIsOutput)
-            return new ConstraintViolation("PRE", "Direction",
-                "连线方向错误：必须从输出端拖向输入端。", highlight);
+            return Reject("PRE", "Direction", "BpErrDirection",
+                "Wrong way round: a wire goes from an output pin to an input pin.", highlight);
 
         var output = srcIsOutput ? src : tgt;
         var input = srcIsOutput ? tgt : src;
 
         // Layer match: Exec↔Exec, Data↔Data.
         if (output.IsExecution != input.IsExecution)
-            return new ConstraintViolation("PRE", "Layer",
-                "图层不匹配：Exec pin 不能与 Data pin 连接。", highlight);
+            return Reject("PRE", "Layer", "BpErrLayer",
+                "Mixed layers: an execution pin cannot be wired to a data pin.", highlight);
 
         // Type compatibility (data pins only): Any is wildcard, else exact match.
         if (!output.IsExecution && !IsTypeCompatible(output.PinType, input.PinType))
-            return new ConstraintViolation("PRE", "Type",
-                $"类型不兼容：不能将 {output.PinTypeText} 连接到 {input.PinTypeText}。", highlight);
+            return Reject("PRE", "Type", "BpErrType",
+                "Types do not match: {source} cannot be wired to {target}.",
+                highlight, ("source", output.PinTypeText), ("target", input.PinTypeText));
 
         // Self-connect: both pins on the same node.
         if (!string.IsNullOrEmpty(srcCoord.NodeId) && srcCoord.NodeId == tgtCoord.NodeId)
-            return new ConstraintViolation("PRE", "SelfConnect",
-                "不允许节点自连接。", highlight);
+            return Reject("PRE", "SelfConnect", "BpErrSelfConnect",
+                "A node cannot be wired to itself.", highlight);
 
         // Duplicate edge / unique predecessor (E3) / single data input (D2):
         // reject if the input pin already has an incoming edge.
@@ -1338,10 +1486,10 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (inputHasIncoming)
         {
             return input.IsExecution
-                ? new ConstraintViolation(KsConstraintErrorCodes.KS102, "E3",
-                    "Exec input 已有前驱，不允许多入边。", highlight)
-                : new ConstraintViolation(KsConstraintErrorCodes.KS111, "D2",
-                    "Data input 已有入边，不允许多入边。", highlight);
+                ? Reject(KsConstraintErrorCodes.KS102, "E3", "BpErrExecIncoming",
+                    "This execution input already has a predecessor: only one wire may arrive.", highlight)
+                : Reject(KsConstraintErrorCodes.KS111, "D2", "BpErrDataIncoming",
+                    "This data input already has a wire: only one may arrive.", highlight);
         }
 
         // Cross-region data edges (detached-graph privilege): a data edge between the
@@ -1353,16 +1501,17 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         {
             var reachable = ComputeReachableIds();
             if (reachable.Contains(srcCoord.NodeId) != reachable.Contains(tgtCoord.NodeId))
-                return new ConstraintViolation("PRE", "Region",
-                    "跨区数据连线不允许：孤立子图与主执行链之间的数据引用无法表达（孤立图不执行，值不会流动）。", highlight);
+                return Reject("PRE", "Region", "BpErrRegion",
+                    "A data wire cannot cross between a detached sub-graph and the main chain: the detached graph never runs, so no value would ever flow.",
+                    highlight);
         }
 
         // Duplicate edge: identical (output, input) pair already exists.
         bool duplicate = Connections.OfType<BlueprintConnectionVMV6>()
             .Any(c => c.Source == output && c.Target == input);
         if (duplicate)
-            return new ConstraintViolation("PRE", "Duplicate",
-                "重复连线：该连接已存在。", highlight);
+            return Reject("PRE", "Duplicate", "BpErrDuplicate",
+                "This wire is already there.", highlight);
 
         return null;
     }
@@ -1409,7 +1558,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
             foreach (var c in nodeVm.Input.OfType<BlueprintConnectorVMV6>()) c.CanConnect = true;
             foreach (var c in nodeVm.Output.OfType<BlueprintConnectorVMV6>()) c.CanConnect = true;
         }
-        HoverErrorText = null;
+        ShowHoverError(null);
 
         if (PendingConnection.Source is not BlueprintConnectorVMV6 src) return;
         if (PendingConnection.PreviewTarget is not BlueprintConnectorVMV6 tgt) return;
@@ -1419,7 +1568,7 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (preViolation != null)
         {
             tgt.CanConnect = false;
-            HoverErrorText = preViolation.Message;
+            ShowHoverError(preViolation);
             return;
         }
 
@@ -1428,7 +1577,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (src.Flow == ConnectorViewModelBase.ConnectorFlow.Output)
         {
             if (Connections.OfType<BlueprintConnectionVMV6>().Any(c => c.Source == src))
-                HoverErrorText = "该输出已有连接：释放后将断开旧连接（重路由）。";
+                ShowHoverError(new Message("PRE", "Reroute", "BpErrReroute",
+                    "This output is already wired: releasing here disconnects the old edge (re-route).", [], []));
         }
 
         // D5: the StructuralReducer simulation is a full-graph validation — debounce it
@@ -1486,6 +1636,8 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         {
             tgt.CanConnect = false;
             HoverErrorText = violation!.Message;
+            _lensHover = true;
+            _lensHoverPins = (src, tgt);
         }
     }
 
@@ -2106,22 +2258,24 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
         if (string.IsNullOrEmpty(trimmed))
         {
             node.ApplyUsageFromContract(vn.VarName, null);
-            ErrorInfo = new ConstraintViolation("PRE", "UsageName",
-                "变量引用名称不能为空。",
-                new[] { vn.Id }, null, "请从列表中选择已声明的名称。", "#FF9800");
+            ShowError(new Message("PRE", "UsageName", "BpErrUsageNameEmpty",
+                "A variable reference needs a name.",
+                [], new[] { vn.Id }, null,
+                "BpErrUsageNameEmptyFix", "Pick a name from the list of declared names.", "#FF9800"));
             return;
         }
         if (!UsageNameValidator.IsDeclaredName(trimmed, DefinitionNames))
         {
             node.ApplyUsageFromContract(vn.VarName, null);
-            ErrorInfo = new ConstraintViolation("PRE", "UsageName",
-                $"未找到引用的声明 '{trimmed}'。",
-                new[] { vn.Id }, null, "请从列表中选择已声明的 const/var/dict 名称。", "#FF9800");
+            ShowError(new Message("PRE", "UsageName", "BpErrUsageNameUnknown",
+                "No declaration named '{name}' is on this canvas.",
+                [("name", trimmed)], new[] { vn.Id }, null,
+                "BpErrUsageNameUnknownFix", "Pick one of the declared const, var or dict names from the list.", "#FF9800"));
             return;
         }
 
         vn.VarName = trimmed;
-        ErrorInfo = null;
+        ShowError(null);
         NotifyBlueprintEdited();
     }
 
@@ -2195,11 +2349,35 @@ internal partial class BlueprintEditorViewModelV6 : NodifyEditorViewModelBase
 }
 
 /// <summary>A palette entry describing a creatable node.</summary>
-public sealed record PaletteItemV6(string DisplayName, string Kind, string? FunctionName, string? Tag = null);
+/// <remarks>
+/// <para><b>Why the entry carries a key and an English label rather than a translated one.</b> The
+/// palette is built once, when the editor is constructed, and the reader may pick another language
+/// afterwards. A collection holding translated strings would keep the language it was filled in; a
+/// collection holding keys can be drawn in whatever language is current when the entry is painted.
+/// The same reason makes the canvas kind names go through
+/// <see cref="Converters.SurfaceKindNameConverter"/> rather than a translated list.</para>
+///
+/// <para><b>Why the English label is kept as well.</b> Two readers are not looking at the same thing:
+/// one reads the palette, the other types into the search box. The search has to match whichever
+/// language the reader is typing in — including the English function name a KS user already knows —
+/// so both spellings stay on the entry.</para>
+/// </remarks>
+public sealed record PaletteItemV6(
+    string DisplayName,
+    string Kind,
+    string? FunctionName,
+    string? Tag = null,
+    string? Key = null)
+{
+    /// <summary>The word or words shown for this entry in the reader's language.</summary>
+    public string Label => Key is null ? DisplayName : WorkflowEditorText.Get(Key, DisplayName);
+}
 
 /// <summary>A dynamic palette entry for a plugin trigger (replaces the EntryNode on the canvas).</summary>
 public sealed record PluginTriggerPaletteItemV6(string PluginName, string TriggerName)
 {
-    public string DisplayName => $"Trigger: {PluginName}.{TriggerName}";
+    public string DisplayName => WorkflowEditorText.Get(
+        "PalettePluginTrigger", "Trigger: {plugin}.{trigger}",
+        ("plugin", PluginName), ("trigger", TriggerName));
 }
 

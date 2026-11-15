@@ -64,15 +64,24 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     private EditorMode _mode = EditorMode.BlockScript;
     private string? _workflowId;
     private string? _workflowFilePath;
-    private string _workflowName = "Untitled Workflow (v6)";
+    private string _workflowName = WorkflowEditorText.Get("UntitledWorkflow", "Untitled Workflow (v6)");
     private string _workflowDescription = string.Empty;
     private string _workflowAuthor = string.Empty;
     private bool _isDirty;
     private string _executionOutput = string.Empty;
     private bool _isExecuting;
-    private string _statusText = "Ready (v6)";
+    private string _statusText = WorkflowEditorText.Get("StatusReady", "Ready (v6)");
+
+    /// <summary>The key, the English sentence and the values behind what the status line says now.</summary>
+    private WorkflowEditorText.Recipe? _status;
+
+    /// <summary>The same recipe for the output panel, holding its frame rather than a run's output.</summary>
+    private WorkflowEditorText.Recipe? _output;
     private string _ksSource = string.Empty;
     private string _conversionError = string.Empty;
+
+    /// <summary>The key and values behind the conversion bar, or null when there is no bar.</summary>
+    private WorkflowEditorText.Recipe? _conversion;
     private V6Workflow? _lastIr;
 
     /// <summary>
@@ -152,6 +161,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                         WorkflowName, WorkflowDescription, WorkflowAuthor));
             }
         };
+
+        SubscribeToLanguageChanges();
     }
 
     // ── Mode ──
@@ -165,6 +176,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             {
                 OnPropertyChanged(nameof(IsBlockScriptMode));
                 OnPropertyChanged(nameof(IsBlueprintMode));
+                OnPropertyChanged(nameof(ModeLabel));
             }
         }
     }
@@ -172,15 +184,76 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     public bool IsBlockScriptMode => _mode == EditorMode.BlockScript;
     public bool IsBlueprintMode => _mode == EditorMode.Blueprint;
 
+    /// <summary>Which half of the window is showing, in the reader's language.</summary>
+    /// <remarks>
+    /// The mode switch carries this rather than a <c>StringFormat</c> over the enum, because the
+    /// format string — "Mode: {0}" — is itself copy, and a translation has to be able to put the mode
+    /// name wherever the sentence wants it.
+    /// </remarks>
+    public string ModeLabel => WorkflowEditorText.Get(
+        _mode == EditorMode.Blueprint ? "ModeBlueprint" : "ModeBlockScript",
+        _mode == EditorMode.Blueprint ? "Mode: Blueprint" : "Mode: BlockScript");
+
     // ── Metadata ──
 
     public string WorkflowName { get => _workflowName; set => SetProperty(ref _workflowName, value); }
     public string WorkflowDescription { get => _workflowDescription; set => SetProperty(ref _workflowDescription, value); }
     public string WorkflowAuthor { get => _workflowAuthor; set => SetProperty(ref _workflowAuthor, value); }
     public bool IsDirty { get => _isDirty; set => SetProperty(ref _isDirty, value); }
-    public string ExecutionOutput { get => _executionOutput; set => SetProperty(ref _executionOutput, value); }
+    public string ExecutionOutput
+    {
+        get => _executionOutput;
+        set
+        {
+            _output = null;
+            SetProperty(ref _executionOutput, value);
+        }
+    }
     public bool IsExecuting { get => _isExecuting; set => SetProperty(ref _isExecuting, value); }
-    public string StatusText { get => _statusText; set => SetProperty(ref _statusText, value); }
+    public string StatusText
+    {
+        get => _statusText;
+        set
+        {
+            _status = null;
+            SetProperty(ref _statusText, value);
+        }
+    }
+
+    /// <summary>
+    /// Writes the status line from a key and the values the sentence names, and remembers both.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why the recipe is kept and not just the sentence.</b> The dictionary is asked at the
+    /// moment the line is written, so a sentence written before a language switch stays in the old
+    /// language forever — the exact failure this window had when every string in it was a literal.
+    /// A key and its values can be asked again; a finished sentence cannot.</para>
+    ///
+    /// <para><b>Why the recipe is dropped when somebody assigns the property directly.</b> A caller that
+    /// sets <see cref="StatusText"/> to a sentence knows something this class does not — the text of a
+    /// runtime event, say — and keeping a stale recipe beside it would let the next language switch
+    /// overwrite that sentence with the previous one.</para>
+    /// </remarks>
+    private void SetStatus(string key, string fallback, params (string, object?)[] values)
+    {
+        _status = WorkflowEditorText.Make(key, fallback, values);
+        StatusText = WorkflowEditorText.Get(key, fallback, values);
+    }
+
+    /// <summary>
+    /// Writes the output panel from a key and the values the sentence names, and remembers both.
+    /// </summary>
+    /// <remarks>
+    /// The panel shows whatever the run produced, and a run's output is data rather than prose: it is
+    /// assigned straight to <see cref="ExecutionOutput"/> and never re-translated. What is kept here is
+    /// only the frame around it — "Finished in {ms}ms", "Execution failed: {detail}" — because that
+    /// frame is this window's own writing and is the part that has to follow the reader's language.
+    /// </remarks>
+    private void SetOutput(string key, string fallback, params (string, object?)[] values)
+    {
+        _output = WorkflowEditorText.Make(key, fallback, values);
+        ExecutionOutput = WorkflowEditorText.Get(key, fallback, values);
+    }
     public bool IsDebugging { get => _isDebugging; set => SetProperty(ref _isDebugging, value); }
     public bool IsPaused { get => _isPaused; set => SetProperty(ref _isPaused, value); }
     public ObservableCollection<RuntimeVariableItem> RuntimeVariables { get; } = [];
@@ -232,7 +305,32 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     public string ConversionError
     {
         get => _conversionError;
-        set => SetProperty(ref _conversionError, value);
+        set
+        {
+            _conversion = null;
+            SetProperty(ref _conversionError, value);
+        }
+    }
+
+    /// <summary>
+    /// Shows the bar above the text that says why the last conversion did not happen.
+    /// </summary>
+    /// <remarks>
+    /// Kept as a key and its values for the same reason the status line is: the bar stays on screen
+    /// while the reader fixes the text underneath it, and it has to change language without having to
+    /// be caused again.
+    /// </remarks>
+    private void SetConversionError(string key, string fallback, params (string, object?)[] values)
+    {
+        _conversion = WorkflowEditorText.Make(key, fallback, values);
+        ConversionError = WorkflowEditorText.Get(key, fallback, values);
+    }
+
+    /// <summary>Takes the bar away, and the recipe with it.</summary>
+    private void ClearConversionError()
+    {
+        _conversion = null;
+        ConversionError = string.Empty;
     }
 
     // ── Helper Functions ──
@@ -490,8 +588,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     /// <paramref name="nodeIdToCanonicalId"/> is non-null only in BP mode: the canvas
     /// node id → canonical (FNV path) id map of the reversal (see
     /// <see cref="BpGraphLens.ReverseWithNodePaths"/>).
-    /// On failure returns a fully formatted error message (parse errors carry the
-    /// indent hint; exceptions are prefixed); callers present it and abort.
+    /// On failure returns the parser's own diagnostics (or an exception, prefixed <c>[EX]</c>),
+    /// never a whole sentence: the caller owns the frame around it, and that frame is the part a
+    /// translation changes. A wrapper built here would be asked for before the language is known
+    /// and would then be nested inside the caller's frame.
     /// </summary>
     private (V6Workflow? Ir, LoweringResult? Lowering, string? Error, IReadOnlyDictionary<string, string>? NodeIdToCanonicalId) BuildIrForCurrentMode()
     {
@@ -517,8 +617,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
             var parseError = ValidateKsParse();
             if (parseError != null)
-                return (null, null,
-                    $"KS 解析错误：\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。", null);
+                return (null, null, parseError, null);
             var helpers = new List<HelperFunction>(HelperFunctions);
             // Re-attach BP-side privileged detached graphs (B1) from the pre-parse IR —
             // the KS text does not express them, so a KS-mode edit/save after a BP
@@ -537,13 +636,12 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 .Select(d => $"  [{d.Code}] L{d.Line}: {d.Message}"));
             Log.Warning(kex, "[WorkflowEditorVMV6] KS parse threw ({Count} error(s))",
                 kex.Diagnostics.Count(d => d.Severity == KsDiagnosticSeverity.Error));
-            return (null, null,
-                $"KS 解析错误：\n{detail}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。", null);
+            return (null, null, detail, null);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "[WorkflowEditorVMV6] BuildIrForCurrentMode failed");
-            return (null, null, $"解析失败: {ex.Message}", null);
+            return (null, null, $"[EX] {ex.Message}", null);
         }
     }
 
@@ -626,11 +724,11 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                     if (!string.Equals(projected, KsSource, StringComparison.Ordinal))
                         KsSource = projected;
                 }
-                ConversionError = string.Empty;
+                ClearConversionError();
             }
             catch (Exception ex)
             {
-                ConversionError = $"BP→KS 转换失败: {ex.Message}";
+                SetConversionError("ErrorBpToKs", "BP→KS conversion failed: {reason}", ("reason", ex.Message));
                 Log.Warning(ex, "[WorkflowEditorVMV6] BP→KS reverse failed");
             }
         }
@@ -682,8 +780,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             var parseError = ValidateKsParse();
             if (parseError != null)
             {
-                ConversionError = $"KS 解析错误，无法切换至 BP:\n{parseError}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
-                StatusText = "KS 解析错误";
+                SetConversionError("ErrorSwitchToBp",
+                    "KS parse error, cannot switch to BP:\n{detail}\n\nHint: indentation must be 4 spaces per level, no tabs.",
+                    ("detail", parseError));
+                SetStatus("StatusParseError", "KS parse error");
                 return;
             }
             var helpers = new List<HelperFunction>(HelperFunctions);
@@ -704,13 +804,14 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             var scopes = _bpGraphLens.AnalyzeScopes(bp);
 
             BlueprintVM.LoadBlueprint(bp, scopes);
-            ConversionError = string.Empty;
-            StatusText = $"BP 渲染完成: {bp.Nodes.Count} 节点, {bp.Connections.Count} 连线";
+            ClearConversionError();
+            SetStatus("StatusBpRendered", "BP rendered: {nodes} nodes, {wires} connections",
+                ("nodes", bp.Nodes.Count), ("wires", bp.Connections.Count));
         }
         catch (Exception ex)
         {
-            ConversionError = $"KS→BP 转换失败: {ex.Message}";
-            StatusText = "KS 解析错误";
+            SetConversionError("ErrorKsToBp", "KS→BP conversion failed: {reason}", ("reason", ex.Message));
+            SetStatus("StatusParseError", "KS parse error");
             Log.Warning(ex, "[WorkflowEditorVMV6] KS→BP conversion failed");
         }
     }
@@ -729,7 +830,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         KsSource = _ksTextLens.Project(ir);
         WorkflowName = name;
         IsDirty = false;
-        StatusText = "Loaded (v6)";
+        SetStatus("StatusLoaded", "Loaded (v6)");
 
         // T5: remember the persisted BP layout so any later re-projection
         // (KS→BP switch / DebugRun reload) restores node positions.
@@ -769,19 +870,19 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     {
         if (_fileStore == null)
         {
-            StatusText = "File store unavailable";
+            SetStatus("StatusNoFileStore", "File store unavailable");
             return;
         }
 
         var kcs = await _fileStore.LoadAsync(filePath);
         if (kcs == null)
         {
-            StatusText = $"Workflow not found: {filePath}";
+            SetStatus("StatusWorkflowNotFound", "Workflow not found: {path}", ("path", filePath));
             return;
         }
         if (kcs.IrVersion != "v6")
         {
-            StatusText = $"Not a v6 workflow (IrVersion={kcs.IrVersion ?? "null"})";
+            SetStatus("StatusNotV6", "Not a v6 workflow (IrVersion={version})", ("version", kcs.IrVersion ?? "null"));
             return;
         }
 
@@ -794,7 +895,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusText = $"Failed to load v6 IR: {ex.Message}";
+            SetStatus("StatusLoadFailed", "Failed to load v6 IR: {reason}", ("reason", ex.Message));
         }
     }
 
@@ -819,7 +920,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             {
                 // Abort the save — persisting a partially-parsed IR would permanently
                 // corrupt the .kcs file (const/var/body silently dropped).
-                StatusText = $"Save aborted — {error}";
+                SetStatus("StatusSaveAborted", "Save aborted — {reason}", ("reason", error));
                 Log.Warning("[WorkflowEditorVMV6] SaveAsync aborted: {Error}", error);
                 return;
             }
@@ -874,12 +975,12 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             _eventService?.Publish(EventNames.WorkflowDataSaved,
                 new WorkflowSavedEventArgs(_workflowId, WorkflowName, WorkflowDescription, WorkflowAuthor));
 
-            StatusText = "Saved (v6)";
+            SetStatus("StatusSaved", "Saved (v6)");
             Log.Information("[WorkflowEditorVMV6] Saved workflow: {Id}", _workflowId);
         }
         catch (Exception ex)
         {
-            StatusText = $"Save failed: {ex.Message}";
+            SetStatus("StatusSaveFailed", "Save failed: {reason}", ("reason", ex.Message));
             Log.Error(ex, "[WorkflowEditorVMV6] SaveAsync failed");
         }
     }
@@ -988,7 +1089,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
     {
         if (_runner is null)
         {
-            ExecutionOutput = "[v6] WorkflowRunner 未注入，无法执行。";
+            SetOutput("OutputNoRunner", "[v6] The workflow runner is not attached, so nothing can run.");
             return;
         }
 
@@ -1003,8 +1104,9 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         var (ir, lowering, error, _) = BuildIrForCurrentMode();
         if (error is not null || ir is null)
         {
-            ExecutionOutput = error ?? "解析失败";
-            StatusText = "Error (v6)";
+            SetOutput("OutputParseFailed", "Parse failed");
+            if (error is not null) ExecutionOutput = error;
+            SetStatus("StatusError", "Error (v6)");
             return;
         }
 
@@ -1014,8 +1116,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
             ir.Constants.Count, ir.GlobalVars.Count, ir.Body.Length, lowering != null);
 
         IsExecuting = true;
-        ExecutionOutput = "执行中...";
-        StatusText = "Running (v6)...";
+        SetOutput("OutputRunning", "Running...");
+        SetStatus("StatusRunning", "Running (v6)...");
 
         var tokenSource = new CancellationTokenSource();
         _cancellationTokenSource = tokenSource;
@@ -1026,20 +1128,23 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 () => _runner.ExecuteAsync(ir, lowering, overrides, tokenSource.Token),
                 tokenSource.Token).ConfigureAwait(true);
 
-            ExecutionOutput = result.IsSuccess
-                ? $"执行完成\n耗时: {result.ExecutionTimeMs}ms\n输出:\n{string.Join("\n", result.Output)}"
-                : $"执行错误:\n{result.ErrorMessage}";
-            StatusText = result.IsSuccess ? "Done (v6)" : "Error (v6)";
+            if (result.IsSuccess)
+                SetOutput("OutputDone", "Finished in {ms}ms\nOutput:\n{output}",
+                    ("ms", result.ExecutionTimeMs), ("output", string.Join("\n", result.Output)));
+            else
+                SetOutput("OutputError", "Execution failed:\n{detail}", ("detail", result.ErrorMessage));
+            SetStatus(result.IsSuccess ? "StatusDone" : "StatusError",
+                result.IsSuccess ? "Done (v6)" : "Error (v6)");
         }
         catch (OperationCanceledException)
         {
-            ExecutionOutput = "执行已取消。";
-            StatusText = "Cancelled (v6)";
+            SetOutput("OutputCancelled", "Execution cancelled.");
+            SetStatus("StatusCancelled", "Cancelled (v6)");
         }
         catch (Exception ex)
         {
-            ExecutionOutput = $"执行异常: {ex.Message}";
-            StatusText = "Error (v6)";
+            SetOutput("OutputException", "Execution failed: {reason}", ("reason", ex.Message));
+            SetStatus("StatusError", "Error (v6)");
             Log.Error(ex, "[WorkflowEditorVMV6] Run failed");
         }
         finally
@@ -1067,7 +1172,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
         if (_runner is null)
         {
-            ExecutionOutput = "[v6] WorkflowRunner 未注入，无法调试。";
+            SetOutput("OutputNoRunnerDebug", "[v6] The workflow runner is not attached, so nothing can be debugged.");
             return;
         }
 
@@ -1075,8 +1180,10 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         var (ir, lowering, error, idMap) = BuildIrForCurrentMode();
         if (error is not null || ir is null)
         {
-            ExecutionOutput = $"KS 解析错误，无法调试:\n{error}\n\n提示：缩进必须是 4 空格/级，禁止 Tab。";
-            StatusText = "Parse Error";
+            SetOutput("OutputParseErrorDebug",
+                "KS parse error, cannot debug:\n{detail}\n\nHint: indentation must be 4 spaces per level, no tabs.",
+                ("detail", error));
+            SetStatus("StatusParseErrorShort", "Parse Error");
             return;
         }
 
@@ -1158,8 +1265,8 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
         IsDebugging = true;
         IsPaused = false;
-        ExecutionOutput = "调试中...";
-        StatusText = "Debugging (v6)...";
+        SetOutput("OutputDebugging", "Debugging...");
+        SetStatus("StatusDebugging", "Debugging (v6)...");
 
         var tokenSource = new CancellationTokenSource();
         _cancellationTokenSource = tokenSource;
@@ -1170,20 +1277,23 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
                 () => _runner.ExecuteAsync(ir, lowering, overrides, tokenSource.Token, _debugController),
                 tokenSource.Token).ConfigureAwait(true);
 
-            ExecutionOutput = result.IsSuccess
-                ? $"调试完成\n耗时: {result.ExecutionTimeMs}ms\n输出:\n{string.Join("\n", result.Output)}"
-                : $"调试错误:\n{result.ErrorMessage}";
-            StatusText = result.IsSuccess ? "Debug Done (v6)" : "Error (v6)";
+            if (result.IsSuccess)
+                SetOutput("OutputDebugDone", "Debugged in {ms}ms\nOutput:\n{output}",
+                    ("ms", result.ExecutionTimeMs), ("output", string.Join("\n", result.Output)));
+            else
+                SetOutput("OutputDebugError", "Debug failed:\n{detail}", ("detail", result.ErrorMessage));
+            SetStatus(result.IsSuccess ? "StatusDebugDone" : "StatusError",
+                result.IsSuccess ? "Debug Done (v6)" : "Error (v6)");
         }
         catch (OperationCanceledException)
         {
-            ExecutionOutput = "调试已取消。";
-            StatusText = "Cancelled (v6)";
+            SetOutput("OutputDebugCancelled", "Debug cancelled.");
+            SetStatus("StatusCancelled", "Cancelled (v6)");
         }
         catch (Exception ex)
         {
-            ExecutionOutput = $"调试异常: {ex.Message}";
-            StatusText = "Error (v6)";
+            SetOutput("OutputDebugException", "Debug failed: {reason}", ("reason", ex.Message));
+            SetStatus("StatusError", "Error (v6)");
             Log.Error(ex, "[WorkflowEditorVMV6] DebugRun failed");
         }
         finally
@@ -1297,7 +1407,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         Dispatcher.UIThread.Post(() =>
         {
             IsPaused = true;
-            StatusText = "调试已暂停";
+            SetStatus("StatusDebugPaused", "Debug paused");
         });
     }
 
@@ -1306,7 +1416,7 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
         Dispatcher.UIThread.Post(() =>
         {
             IsPaused = false;
-            StatusText = "调试运行中...";
+            SetStatus("StatusDebugRunning", "Debug is running...");
         });
     }
 
@@ -1447,6 +1557,56 @@ internal partial class WorkflowEditorViewModelV6 : ObservableObject
 
     [RelayCommand]
     private void ClearOutput() => ExecutionOutput = string.Empty;
+
+    // ── Language ──
+
+    /// <summary>Draws everything this class wrote itself again when the reader picks another language.</summary>
+    /// <remarks>
+    /// <para><b>What is redrawn and what cannot be.</b> The four pieces here are the ones this class
+    /// composed from a key: the status line, the output panel's frame, the conversion bar and the mode
+    /// label. Everything else the window shows is either data — a run's output, a workflow's name —
+    /// or a <c>DynamicResource</c> in the XAML, which re-resolves on its own.</para>
+    ///
+    /// <para><b>Why the recipes exist at all.</b> The dictionary is asked when the sentence is written,
+    /// so a language picked afterwards cannot reach a finished string. Asking again needs the key, and
+    /// the key is the only thing that survives the translation — the sentence does not.</para>
+    /// </remarks>
+    private void OnLanguageChanged()
+    {
+        // Written through the backing fields on purpose: the public setters drop the recipe, which is
+        // right for a caller that has a finished sentence and wrong for this one, whose whole job is
+        // to keep the recipe alive across the change.
+        if (_status is { } status)
+            SetProperty(ref _statusText, status.Text, nameof(StatusText));
+
+        if (_output is { } output)
+            SetProperty(ref _executionOutput, output.Text, nameof(ExecutionOutput));
+
+        if (_conversion is { } conversion)
+            SetProperty(ref _conversionError, conversion.Text, nameof(ConversionError));
+
+        OnPropertyChanged(nameof(ModeLabel));
+
+        BlueprintVM.RefreshLanguage();
+    }
+
+    private EventHandler<EventArgs>? _languageChanged;
+
+    /// <summary>Asks to be told when the language changes, for as long as this editor lives.</summary>
+    /// <remarks>
+    /// The event service is injected, so this subscribes only when one was handed over — the tests
+    /// build the editor without a host, and a missing host should give a quieter editor, not one that
+    /// cannot be constructed.
+    /// </remarks>
+    private void SubscribeToLanguageChanges()
+    {
+        if (_eventService is null)
+            return;
+
+        _languageChanged = (_, _) => OnLanguageChanged();
+
+        _eventService.Subscribe(EventNames.LanguageChanged, _languageChanged);
+    }
 }
 
 /// <summary>

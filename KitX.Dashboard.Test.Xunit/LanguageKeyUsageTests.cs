@@ -90,6 +90,18 @@ public class LanguageKeyUsageTests
         new(@"(?<access>private|internal|public|protected)\s+static\s+string\s+(?<name>\w+)\s*\(\s*string\s+key\b",
             RegexOptions.Compiled);
 
+    /// <summary>A prefix a class adds to the name it is given: const string KeyPrefix = "Text_X_".</summary>
+    private static readonly Regex PrefixConstant =
+        new(@"\bconst\s+string\s+\w+\s*=\s*""(?<prefix>Text_[A-Za-z0-9_]+_)""", RegexOptions.Compiled);
+
+    /// <summary>A parameter declared as a resource name, in a method or a record's constructor.</summary>
+    private static readonly Regex KeyParameter =
+        new(@"\bstring\??\s+(?:[Kk]ey)\b", RegexOptions.Compiled);
+
+    /// <summary>A quoted name with no spaces, e.g. the "StatusSaved" in SetStatus("StatusSaved", …).</summary>
+    private static readonly Regex QuotedName =
+        new(@"""(?<name>[A-Za-z_][A-Za-z0-9_]*)""", RegexOptions.Compiled);
+
     /// <summary>A key template with a hole in it, e.g. Text_Greeting_%Step%_%Index%.</summary>
     private static readonly Regex ConstantTemplate =
         new(@"""(?<template>Text_[A-Za-z0-9_]*(?:%[A-Za-z]+%[A-Za-z0-9_]*)+)""", RegexOptions.Compiled);
@@ -197,6 +209,18 @@ public class LanguageKeyUsageTests
         var defined = DefinedKeys();
         var built = new Dictionary<string, string>(StringComparer.Ordinal);
 
+        // Every prefix a class declares, gathered before the file loop: the workflow editor declares
+        // its prefix in one file and calls it from another, so a per-file view would never see both.
+        var allSources = SourceFiles().ToList();
+
+        var prefixes = allSources
+            .SelectMany(file => PrefixConstant.Matches(File.ReadAllText(file)).Cast<Match>())
+            .Select(match => match.Groups["prefix"].Value)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        var keyTaking = KeyTakingMembers(allSources.Select(File.ReadAllText));
+
         void Record(string key, string how)
         {
             if (!built.ContainsKey(key))
@@ -233,6 +257,10 @@ public class LanguageKeyUsageTests
             // (4): a helper that turns a bare name into a key, and the literals it is called with.
             RecordHelperFamily(source, name, Record);
 
+            // (5): a key-taking member reached across files. The Bench declares its helper and calls
+            // it in one file, which (4) follows; the workflow editor splits them on purpose.
+            RecordKeyTakingMembers(source, name, defined, keyTaking, prefixes, Record);
+
             foreach (Match match in ConstantTemplate.Matches(source))
                 RecordTemplate(match.Groups["template"].Value, defined, name, Record);
 
@@ -249,6 +277,111 @@ public class LanguageKeyUsageTests
             Record(key, how);
 
         return built;
+    }
+
+    /// <summary>
+    /// Records the keys the members and constructors that take a bare key build, wherever the prefix
+    /// is declared.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The gap this closes.</b> <see cref="RecordHelperFamily"/> reads a helper's prefix from
+    /// the method's own body and only follows calls in the same file. The workflow editor (v6) splits
+    /// both on purpose: <c>WorkflowEditorText</c> declares <c>KeyPrefix = "Text_WorkflowEditor_"</c>,
+    /// <c>WorkflowEditorViewModelV6</c> wraps it as <c>SetStatus</c>, and
+    /// <c>BlueprintEditorViewModelV6</c> carries a key through a <c>Message</c> record and a
+    /// <c>PaletteItemV6</c> so a sentence can be rebuilt after the reader changes the language. In no
+    /// single file is the prefix and a call site both visible, so a same-file scan calls all 144
+    /// sentences of that window dead.</para>
+    ///
+    /// <para><b>Why the rule is "takes a parameter called key" and not a list of methods.</b> A list
+    /// rots: rename the method and the rule stops matching while still reporting green, and adding a
+    /// sixth carrier means editing the test. Asking whether the declaration takes a <c>key</c>
+    /// parameter covers <c>Get</c>, <c>SetStatus</c>, <c>Reject</c>, the <c>Message</c> record's
+    /// constructor and <c>PaletteItemV6</c>'s, and covers the next one on the day it is written.</para>
+    ///
+    /// <para><b>Why the prefix is read, not listed.</b> Every prefix in the product is a
+    /// <c>const string KeyPrefix = "Text_…"</c>; they are collected once, before the file loop, so a
+    /// prefix declared in one file applies to call sites in another. An argument that does not combine
+    /// with a prefix into a key the file actually defines is dropped, so this cannot bless a prefix
+    /// wholesale the way "the file mentions Text_WorkflowEditor_" would.</para>
+    ///
+    /// <para><b>What it can over-count.</b> Any call to a method named like a key-taking member, with
+    /// an argument that happens to spell a defined key, is recorded. In practice that needs the
+    /// argument to be exactly a resource name, which is what a key is; the direction of the remaining
+    /// error is still towards "not counted", which is the direction that reports a truly dead key.</para>
+    /// </remarks>
+    private static void RecordKeyTakingMembers(
+        string source, string name, HashSet<string> defined, IReadOnlyCollection<string> keyTaking,
+        IReadOnlyList<string> prefixes, Action<string, string> record)
+    {
+        if (keyTaking.Count == 0 || prefixes.Count == 0)
+            return;
+
+        var members = new HashSet<string>(keyTaking, StringComparer.Ordinal);
+
+        foreach (var (member, arguments) in Invocations(source))
+        {
+            if (!members.Contains(member))
+                continue;
+
+            foreach (Match quoted in QuotedName.Matches(arguments))
+                foreach (var prefix in prefixes)
+                {
+                    var candidate = prefix + quoted.Groups["name"].Value;
+
+                    if (defined.Contains(candidate))
+                        record(candidate, "the " + member + " seam in " + name);
+                }
+        }
+    }
+
+    /// <summary>
+    /// The names declared with a parameter called <c>key</c>: a method, a constructor, or a record's
+    /// positional parameter list. Collected across every file first, because a declaration in one file
+    /// is called from another.
+    /// </summary>
+    private static HashSet<string> KeyTakingMembers(IEnumerable<string> sources)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var source in sources)
+            foreach (var (member, arguments) in Invocations(source))
+                if (KeyParameter.IsMatch(arguments))
+                    names.Add(member);
+
+        return names;
+    }
+
+    /// <summary>Every <c>name(...)</c> in the source, with its argument list read to the matching paren.</summary>
+    /// <remarks>
+    /// Read by hand rather than by regex because the argument lists nest: a declaration such as
+    /// <c>SetStatus(string key, string fallback, params (string, object?)[] values)</c> carries a
+    /// parenthesised type, and <c>[^()]*</c> stops at the first one.
+    /// </remarks>
+    private static IEnumerable<(string Name, string Arguments)> Invocations(string source)
+    {
+        for (var open = source.IndexOf('('); open >= 0; open = source.IndexOf('(', open + 1))
+        {
+            var start = open - 1;
+            while (start >= 0 && (char.IsLetterOrDigit(source[start]) || source[start] == '_'))
+                start--;
+
+            if (start == open - 1)
+                continue;
+
+            var member = source.Substring(start + 1, open - start - 1);
+            var depth = 0;
+            var close = open;
+
+            for (; close < source.Length; close++)
+            {
+                if (source[close] == '(') depth++;
+                else if (source[close] == ')' && --depth == 0) break;
+            }
+
+            if (close < source.Length)
+                yield return (member, source.Substring(open + 1, close - open - 1));
+        }
     }
 
     /// <summary>Records the keys a helper family builds from its literal arguments.</summary>
