@@ -222,6 +222,36 @@ public class SurfaceEditorHeightTests
         Assert.Equal("1600", finding.Data!["height"]);
     }
 
+    [Fact]
+    public void A_file_that_cannot_be_read_leaves_no_height_finding_over_an_empty_canvas()
+    {
+        // The refused-file branch is the one exit that empties the canvas without loading anything.
+        // It used to clear the boundary list directly instead of going through RebuildBoundaries, so
+        // the previous document's "taller than a screen" finding stayed in the panel over an empty
+        // canvas, and the canvas kept the height it had because nothing raised the change. Load is
+        // public and production opens a fresh view model per window — which is exactly why this was
+        // reachable only from a test, and why the test is the only thing that would have said so.
+        var editor = new SurfaceEditorViewModel(new RefusesTheSecondLoad(TwelveRowsWithOneList()), _ => []);
+
+        editor.Load("height-test");
+
+        Assert.Contains(
+            editor.Diagnostics, diagnostic => diagnostic.Code == SurfaceEditorViewModel.TallerThanAScreenCode);
+        Assert.Equal(17 * SurfaceElementVM.SlotHeight, editor.CanvasHeight);
+
+        editor.Load("height-test");
+
+        Assert.Empty(editor.Elements);
+        Assert.DoesNotContain(
+            editor.Diagnostics, diagnostic => diagnostic.Code == SurfaceEditorViewModel.TallerThanAScreenCode);
+
+        // Back to one screen, and saying so — an empty card is not a tall one.
+        Assert.Equal(SurfaceMetrics.CardHeight, editor.CanvasHeight);
+
+        // The refusal itself still reaches the author; emptying the findings must not empty this.
+        Assert.False(string.IsNullOrWhiteSpace(editor.ValidationMessage));
+    }
+
     private static SurfaceEditorViewModel EditorOver(
         IReadOnlyList<SurfaceElement> elements,
         IReadOnlyList<Diagnostic>? storeSays = null)
@@ -234,14 +264,53 @@ public class SurfaceEditorHeightTests
 
         return editor;
     }
+    /// <summary>A store whose first load succeeds and whose every load after that refuses the file.</summary>
+    /// <remarks>
+    /// Two loads on one view model is what makes the refused branch observable at all: the finding can
+    /// only be stranded there if there was a previous document to strand it.
+    /// </remarks>
+    private sealed class RefusesTheSecondLoad(IReadOnlyList<SurfaceElement> elements) : ISurfaceStore
+    {
+        private int _loads;
+
+        public SurfaceLoadResult Load(string toolkitId)
+        {
+            _loads++;
+
+            return _loads == 1
+                ? new SurfaceLoadResult(new SurfaceDocument { Elements = elements }, [], [])
+                : new SurfaceLoadResult(
+                    SurfaceDocument.Empty,
+                    [Diagnostic.Error("surface.file.unreadable", "the file could not be read")],
+                    []);
+        }
+
+        public void Save(string toolkitId, SurfaceDocument document)
+        {
+        }
+
+        public IReadOnlyList<Diagnostic> Diagnose(
+            SurfaceDocument document, IEnumerable<KeyDeclaration> keys) => [];
+
+        public void Delete(string toolkitId)
+        {
+        }
+
+        public event EventHandler<SurfaceChangedEventArgs>? Changed
+        {
+            add { }
+            remove { }
+        }
+    }
 
     /// <summary>A store that hands back one document, writes nowhere, and reports what it is given.</summary>
     private sealed class QuietStore(
         IReadOnlyList<SurfaceElement> elements,
-        IReadOnlyList<Diagnostic> diagnostics) : ISurfaceStore
+        IReadOnlyList<Diagnostic> diagnostics,
+        IReadOnlyList<Diagnostic>? errors = null) : ISurfaceStore
     {
         public SurfaceLoadResult Load(string toolkitId) =>
-            new(new SurfaceDocument { Elements = elements }, [], []);
+            new(new SurfaceDocument { Elements = elements }, errors ?? [], []);
 
         public void Save(string toolkitId, SurfaceDocument document)
         {

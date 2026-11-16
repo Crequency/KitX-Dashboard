@@ -331,8 +331,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
         ForgetLastSave();
 
-        // Nothing of the previous card survives a load, including the cell a drag might be holding:
-        // the refused-file branch below empties the canvas without going through Rebuild.
+        // Nothing of the previous card survives a load, including the cell a drag might be holding.
         CancelReorder();
 
         DeclaredKeys.Clear();
@@ -347,7 +346,13 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         {
             ValidationMessage = string.Join(" ", loaded.Errors.Select(e => e.Message));
             Elements.Clear();
-            Boundaries.Clear();
+
+            // Through the shared call, not `Boundaries.Clear()`: emptying the canvas takes away the
+            // rows that made it tall, so the height announcement and the height finding both have to
+            // be recomputed here. This branch used to clear the boundary list directly, which left
+            // the previous document's "taller than a screen" finding standing over an empty canvas —
+            // and left the canvas at its old height, because nothing raised the change.
+            RebuildBoundaries();
         }
         else
         {
@@ -492,6 +497,13 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// what the store reported (<see cref="Save"/>), which does not include this one — so this runs
     /// after that too. The two producers are different questions: the store looks at the file, this
     /// looks at the card's height, and both can be true at once.</para>
+    ///
+    /// <para><b>Idempotent, and meant to be called more than once.</b> It sweeps the previous entry by
+    /// code and inserts a fresh one, so calling it twice in a row leaves exactly one finding. That is
+    /// what lets it sit at the end of both <see cref="RebuildBoundaries"/> and
+    /// <see cref="ForgetLastSave"/>, which callers reach in both orders. Four call sites will make the
+    /// next reader suspect otherwise, so the property is stated here rather than left to be re-derived:
+    /// the cost of a repeated call is a few hundred comparisons, not a duplicated finding.</para>
     /// </remarks>
     private void RefreshTooTall()
     {
