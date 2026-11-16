@@ -347,6 +347,13 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             ValidationMessage = string.Join(" ", loaded.Errors.Select(e => e.Message));
             Elements.Clear();
 
+            // The inspector is emptied by hand here for the same reason Rebuild does it: the cell it
+            // was describing is gone. Without this, HasSelection stays true over an empty canvas and
+            // the panel keeps offering fields for an element that is not on it — and every write
+            // through those fields is a silent no-op (they all `index < 0` and return), which is the
+            // failure mode the comments in SetWeightInPlace and AddNumberField already call out.
+            Select(null);
+
             // Through the shared call, not `Boundaries.Clear()`: emptying the canvas takes away the
             // rows that made it tall, so the height announcement and the height finding both have to
             // be recomputed here. This branch used to clear the boundary list directly, which left

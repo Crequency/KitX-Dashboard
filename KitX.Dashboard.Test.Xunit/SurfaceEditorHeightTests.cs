@@ -239,6 +239,15 @@ public class SurfaceEditorHeightTests
             editor.Diagnostics, diagnostic => diagnostic.Code == SurfaceEditorViewModel.TallerThanAScreenCode);
         Assert.Equal(17 * SurfaceElementVM.SlotHeight, editor.CanvasHeight);
 
+        // Select something, so the second load has a selection to take away. Without this the two
+        // assertions below hold trivially: nothing was ever selected, so `HasSelection` was already
+        // false and `Fields` was already empty, and the test passes against a branch that does not
+        // clear the inspector at all. Measured: with `Select(null)` commented out the test stayed
+        // green before this line existed.
+        editor.Select(editor.Elements[0]);
+        Assert.True(editor.HasSelection);
+        Assert.NotEmpty(editor.Fields);
+
         editor.Load("height-test");
 
         Assert.Empty(editor.Elements);
@@ -250,6 +259,13 @@ public class SurfaceEditorHeightTests
 
         // The refusal itself still reaches the author; emptying the findings must not empty this.
         Assert.False(string.IsNullOrWhiteSpace(editor.ValidationMessage));
+
+        // And the inspector let go of the cell it was describing. Not reachable in production (a
+        // window loads once into a fresh view model), but a panel offering fields for an element that
+        // is not on the canvas is worse than an empty panel: every write through those fields returns
+        // silently (`index < 0`), so the author edits and nothing happens and nothing says so.
+        Assert.False(editor.HasSelection);
+        Assert.Empty(editor.Fields);
     }
 
     private static SurfaceEditorViewModel EditorOver(
