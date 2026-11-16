@@ -54,8 +54,28 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// </remarks>
     public double CanvasWidth => SurfaceMetrics.CardWidth;
 
-    /// <summary>The card's height in logical pixels, as the renderer states it.</summary>
-    public double CanvasHeight => SurfaceMetrics.CardHeight;
+    /// <summary>How tall the canvas is: the card's own height for this document.</summary>
+    /// <remarks>
+    /// <para><b>A floor of one screen, then whatever the document grew to.</b> This used to be
+    /// <c>SurfaceMetrics.CardHeight</c> unconditionally, which was wrong in exactly the way the card
+    /// itself was wrong: the cells are placed by <see cref="SurfaceLayout.PixelTopOf"/>, so a document
+    /// of twelve rows draws cells down to 1024 while the canvas stopped at 845 — and the editor's
+    /// ScrollViewer, scrolling that 845-high border, could not bring the rest into view. The author's
+    /// work was on the canvas and unreachable on the canvas.</para>
+    ///
+    /// <para><b>It reads the same sum the card reads.</b> <see cref="SurfaceLayout.SlotSpanOf"/> here
+    /// rather than a loop over <see cref="Elements"/>, because the editor and the renderer have to
+    /// agree on this number. Summing separately is how the two came to disagree in the first place,
+    /// and the disagreement is invisible while every document fits one screen.</para>
+    ///
+    /// <para><b><see cref="SurfaceElementVM.ListSlotCount"/> is passed in, not read here.</b> How many
+    /// slots a <c>List</c> fills belongs to the renderer, and this class is the reader of that
+    /// renderer's numbers rather than a second place deciding them.</para>
+    /// </remarks>
+    public double CanvasHeight => Math.Max(
+        SurfaceMetrics.CardHeight,
+        SurfaceLayout.SlotSpanOf([.. Elements.Select(cell => cell.Element)], SurfaceElementVM.ListSlotCount)
+            * SurfaceElementVM.SlotHeight);
 
     private readonly ISurfaceStore _store;
     private readonly Func<string, IReadOnlyList<KeyDeclaration>> _keysOf;
@@ -352,6 +372,8 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         foreach (var element in document)
             Elements.Add(new SurfaceElementVM(element, document));
 
+        // Also raises CanvasHeight, which the canvas is a function of: the document just replaced is
+        // what decides how tall the card is.
         RebuildBoundaries();
     }
 
@@ -393,6 +415,18 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     private void MarkDirty() => IsDirty = true;
 
     /// <summary>Recomputes the border between every pair of neighbours on a row.</summary>
+    /// <remarks>
+    /// <para><b>Also where the canvas announces its height.</b> Everything that changes which rows exist
+    /// ends up here — <see cref="Rebuild"/>, <see cref="MoveToRow"/>, <see cref="Clear"/> — and the
+    /// canvas height is a function of exactly that set. Raising the change here rather than in each of
+    /// them is the difference between one site to keep in step and three to forget: the first version
+    /// raised it in <see cref="Rebuild"/> alone, so every move-to-row after loading left the canvas at
+    /// the height it had when the window opened.</para>
+    ///
+    /// <para><b>Not during a drag.</b> A border drag refreshes the existing borders in place (see
+    /// <see cref="SetWeightInPlace"/>) and changes no row, so it does not come through here; only the
+    /// committed moves do.</para>
+    /// </remarks>
     private void RebuildBoundaries()
     {
         Boundaries.Clear();
@@ -403,6 +437,10 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             for (var i = 0; i + 1 < cells.Count; i++)
                 Boundaries.Add(new SurfaceBoundaryVM(cells[i], cells[i + 1]));
         }
+
+        // CanvasHeight is computed and has no setter, so nothing raises a change for it unless this
+        // line does.
+        this.RaisePropertyChanged(nameof(CanvasHeight));
     }
 
     /// <summary>Changes one element's share of its row, redrawing the cells in place.</summary>
@@ -1151,7 +1189,12 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     public void Clear()
     {
         Elements.Clear();
-        Boundaries.Clear();
+
+        // Not `Boundaries.Clear()`: emptying the canvas also takes away the rows that made it tall,
+        // and the canvas has to be told so. This is the one thing Clear shares with every other edit,
+        // so it goes through the same call instead of repeating half of it here.
+        RebuildBoundaries();
+
         Select(null);
 
         // ForgetLastSave already empties the status line unless a write failure is standing, and clearing

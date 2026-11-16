@@ -115,6 +115,89 @@ public class SurfaceEditorGeometryTests
     }
 
     /// <summary>
+    /// A document taller than a screen makes the canvas taller with it.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The defect this covers had two halves and they were the same number.</b>
+    /// <c>CanvasHeight</c> was <c>SurfaceMetrics.CardHeight</c> unconditionally, so the canvas stopped
+    /// at 845 while the cells were placed by <see cref="SurfaceLayout.PixelTopOf"/> and reached past
+    /// it. The editor's ScrollViewer scrolls that canvas, so the author's rows below 845 existed and
+    /// could not be brought into view.</para>
+    ///
+    /// <para><b>Why the existing tests did not catch it: 845 was the right answer for every document
+    /// they used.</b> Thirteen ordinary rows are 832px, which is under the floor, so a constant and a
+    /// computed height agree on all of them. The fixture here has to be taller than one screen before
+    /// the two answers differ at all — that is the whole reason the defect survived a file full of
+    /// geometry tests.</para>
+    /// </remarks>
+    [Fact]
+    public void A_document_taller_than_the_card_makes_the_canvas_taller()
+    {
+        var elements = new List<SurfaceElement>();
+        for (var row = 1; row <= 12; row++)
+            elements.Add(new SurfaceTextElement { Row = row, Key = $"k{row}" });
+
+        elements.Add(new SurfaceListElement { Row = 6, Key = "sessions" });
+
+        var editor = Editor(elements);
+
+        // 11 ordinary rows plus a six-slot List above the floor.
+        Assert.Equal(17 * Slot, editor.CanvasHeight);
+
+        // And the same number the renderer's own layout function gives, so editor and card cannot
+        // drift apart without one of them going red.
+        Assert.Equal(
+            SurfaceLayout.SlotSpanOf(elements, SurfaceMetrics.ListSlotCount) * Slot,
+            editor.CanvasHeight);
+
+        // Every cell is inside the canvas — the claim that was false before, and the reason the
+        // canvas exists at all.
+        Assert.All(editor.Elements, cell =>
+            Assert.True(cell.Top + cell.Height <= editor.CanvasHeight,
+                $"row {cell.Element.Row} ends at {cell.Top + cell.Height}, past the {editor.CanvasHeight}px canvas"));
+    }
+
+    [Fact]
+    public void The_canvas_is_never_shorter_than_one_screen()
+    {
+        // The floor still applies: a one-element document must produce a full screen, or the scrim
+        // and the card outline stop covering the thing the author is arranging on.
+        var editor = Editor([new SurfaceTextElement { Row = 1, Key = "title" }]);
+
+        Assert.Equal(SurfaceMetrics.CardHeight, editor.CanvasHeight);
+    }
+
+    [Fact]
+    public void The_canvas_announces_that_it_grew()
+    {
+        // CanvasHeight has no setter, so nothing raises a change for it unless the class does. The
+        // first load looks correct either way, because the window reads the property as it binds —
+        // only an edit after that shows the bug, as a canvas that cannot grow once the author has
+        // added rows past the floor.
+        var editor = Editor([new SurfaceTextElement { Row = 1, Key = "title" }]);
+
+        var raised = new List<string?>();
+        editor.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        // Placing rows past the floor grows the canvas through the path an author uses, rather than
+        // by loading a second document: Load reads the canvas fresh at bind time and therefore looks
+        // correct even when nothing raises a change.
+        //
+        // Added one on its own row at a time, because a *move* to a far row cannot show this yet: an
+        // empty row still collapses to nothing today (see the design note on empty rows), so a single
+        // cell at row 20 asks for two slots and the floor answers 845. Fifteen rows do cross it.
+        for (var i = 0; i < 15; i++)
+            editor.AddKind(SurfaceElementKind.Button);
+
+        Assert.Contains(nameof(SurfaceEditorViewModel.CanvasHeight), raised);
+
+        // Both halves, because each can be wrong alone: the change was announced, and what it
+        // announces is the taller number rather than the floor.
+        Assert.Equal(16 * Slot, editor.CanvasHeight);
+        Assert.True(editor.CanvasHeight > SurfaceMetrics.CardHeight);
+    }
+
+    /// <summary>
     /// The card holds thirteen slots, and the thirteenth is still on the card.
     /// </summary>
     /// <remarks>
