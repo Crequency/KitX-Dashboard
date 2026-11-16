@@ -411,17 +411,26 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// </remarks>
     private void ForgetLastSave()
     {
-        // Walked backwards, because removing an entry shifts the ones the loop has not seen yet.
-        //
-        // Two codes survive, for different reasons. A failed write is about the disk, which no edit
-        // can change. The card's height is about the canvas, which the edit has just changed — so it
-        // is not kept because it is still true, but because its own producer recomputes it from the
-        // new document and sweeping it here would make the answer depend on which call site ran first.
+        // Walked backwards, because removing an entry shifts the ones the loop has not seen yet. A
+        // failed write is about the disk, and no edit can change the disk, so it is the one entry that
+        // stays through a sweep.
         for (var i = Diagnostics.Count - 1; i >= 0; i--)
         {
-            if (Diagnostics[i].Code != SaveFailedCode && Diagnostics[i].Code != TallerThanAScreenCode)
+            if (Diagnostics[i].Code != SaveFailedCode)
                 Diagnostics.RemoveAt(i);
         }
+
+        // The card's height is swept with everything else and put back by its own producer, right
+        // here, rather than being excused from the sweep.
+        //
+        // The difference is not bookkeeping. Callers reach this in two orders: Rebuild sweeps first
+        // and recomputes at the end, while CommitReorder and Clear recompute first (:852, :1313) and
+        // sweep after (:853, :1320). Excusing the entry would make every one of those correct, and
+        // correct only for as long as nobody moved a line — swapping :852 and :853 reads exactly like
+        // tidying, since Rebuild does it the other way, and nothing would go red. Recomputing here
+        // makes the answer independent of which ran first, so the order carries no meaning and cannot
+        // silently acquire one.
+        RefreshTooTall();
 
         ValidationMessage = null;
 
@@ -1225,11 +1234,22 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         foreach (var warning in warnings)
             Diagnostics.Add(warning);
 
-        Status = warnings.Count > 0
+        // For the same reason Save() calls it: the store has never heard of a screen, so the card's
+        // height is the editor's finding and no amount of asking the store produces it.
+        RefreshTooTall();
+
+        // And the verdict follows the panel, not the store's list. A 1088px card the store liked used
+        // to reach the line below with an empty Diagnostics: the closing dialog (which renders exactly
+        // that collection) would not open, and the status line would say "Saved." over a card that is
+        // too tall. This is the last moment the author can be told, so it is the one that must not be
+        // decided from a list that does not contain the finding being reported.
+        var verdict = Diagnostics.Count > 0;
+
+        Status = verdict
             ? TranslateText("Bench_Surface_SavedWithProblems") ?? "Saved, with problems."
             : TranslateText("Bench_Surface_Saved") ?? "Saved.";
 
-        return warnings.Count > 0 ? SurfaceCloseVerdict.ConfirmFindings : SurfaceCloseVerdict.Close;
+        return verdict ? SurfaceCloseVerdict.ConfirmFindings : SurfaceCloseVerdict.Close;
     }
 
     /// <summary>Records that a write reached the disk, so an earlier failure stops being the latest news.</summary>

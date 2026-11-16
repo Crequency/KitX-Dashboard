@@ -62,8 +62,18 @@ public sealed class SurfaceElementVM : INotifyPropertyChanged
     /// <summary>The card's width, as the renderer states it.</summary>
     public static double CanvasWidth => SurfaceMetrics.CardWidth;
 
-    /// <summary>The card's height, as the renderer states it.</summary>
-    public static double CanvasHeight => SurfaceMetrics.CardHeight;
+    /// <summary>One screen's height, as the renderer states it — a floor, not a size.</summary>
+    /// <remarks>
+    /// <b>Read the name carefully; there are two of these and they answer different questions.</b>
+    /// This one is a constant: how tall one screen is, which is what a cell is measured against when
+    /// the question is "is this still on the first screen". <see
+    /// cref="SurfaceEditorViewModel.CanvasHeight"/> is an instance property that returns the actual
+    /// canvas height for the document on screen, which is this number or larger. The two used to be
+    /// interchangeable, on the day the canvas was always one screen tall; since 2026-11-16 it is not,
+    /// so a caller that wants "how tall is the canvas" has to ask the view model and must not take
+    /// this constant.
+    /// </remarks>
+    public static double ScreenHeight => SurfaceMetrics.CardHeight;
 
     private SurfaceElement _element;
     private IReadOnlyList<SurfaceElement> _document;

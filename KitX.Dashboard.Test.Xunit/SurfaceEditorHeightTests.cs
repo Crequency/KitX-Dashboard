@@ -154,6 +154,74 @@ public class SurfaceEditorHeightTests
         Assert.Equal("Saved.", editor.Status);
     }
 
+    [Fact]
+    public void Closing_a_card_the_store_likes_still_asks_about_its_height()
+    {
+        // The close path is the last moment the author is told anything, and the dialog that asks
+        // "close anyway?" renders exactly this collection. A version that decided from the store's
+        // list would let a 1088px card be closed with nobody told — for as long as the window stays
+        // open, which is the last time it matters.
+        var editor = EditorOver(TwelveRowsWithOneList(), storeSays: []);
+
+        var verdict = editor.PrepareToClose();
+
+        Assert.Equal(SurfaceEditorViewModel.SurfaceCloseVerdict.ConfirmFindings, verdict);
+
+        var finding = Assert.Single(
+            editor.Diagnostics, diagnostic => diagnostic.Code == SurfaceEditorViewModel.TallerThanAScreenCode);
+
+        Assert.Equal("1088", finding.Data!["height"]);
+
+        // And the status says so for the same reason: "Saved." beside a panel holding a warning is
+        // the window contradicting itself.
+        Assert.Equal("Saved, with problems.", editor.Status);
+    }
+
+    [Fact]
+    public void Closing_a_card_that_fits_asks_nothing()
+    {
+        var editor = EditorOver(
+            [new SurfaceTextElement { Row = 1, Weight = 1, Key = "k1" }], storeSays: []);
+
+        Assert.Equal(SurfaceEditorViewModel.SurfaceCloseVerdict.Close, editor.PrepareToClose());
+        Assert.Empty(editor.Diagnostics);
+        Assert.Equal("Saved.", editor.Status);
+    }
+
+    [Fact]
+    public void Clearing_the_canvas_withdraws_the_height_finding()
+    {
+        // Clear rebuilds the boundaries before it sweeps, which is the opposite order from Rebuild.
+        // If the sweep decided whether the finding survives, this path and every edit path would
+        // disagree about a card that has just become empty.
+        var editor = EditorOver(TwelveRowsWithOneList());
+
+        Assert.Contains(
+            editor.Diagnostics, diagnostic => diagnostic.Code == SurfaceEditorViewModel.TallerThanAScreenCode);
+
+        editor.Clear();
+
+        Assert.DoesNotContain(
+            editor.Diagnostics, diagnostic => diagnostic.Code == SurfaceEditorViewModel.TallerThanAScreenCode);
+    }
+
+    [Fact]
+    public void Reordering_onto_a_new_row_keeps_the_height_finding()
+    {
+        // CommitReorder is the other order: it recomputes the boundaries first and sweeps after. The
+        // document is unchanged in height, so the finding must survive the sweep that follows it —
+        // the case that would vanish silently if the finding were merely excused from sweeping.
+        var editor = EditorOver(TwelveRowsWithOneList());
+
+        editor.MoveToRow(editor.Elements[^1], 20);
+
+        var finding = Assert.Single(
+            editor.Diagnostics, diagnostic => diagnostic.Code == SurfaceEditorViewModel.TallerThanAScreenCode);
+
+        // Rows 1..19 are plain and row 20 holds the six-slot list: 19 + 6 = 25 slots, 1600px.
+        Assert.Equal("1600", finding.Data!["height"]);
+    }
+
     private static SurfaceEditorViewModel EditorOver(
         IReadOnlyList<SurfaceElement> elements,
         IReadOnlyList<Diagnostic>? storeSays = null)
