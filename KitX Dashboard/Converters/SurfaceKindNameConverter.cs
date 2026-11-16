@@ -22,6 +22,15 @@ namespace KitX.Dashboard.Converters;
 /// resource yet — the file case, a debug session, a language not shipped — must still draw something
 /// a person can match against <c>surface.json</c>, and the schema word is exactly that. An empty
 /// corner label would hide the kind entirely.</para>
+/// <para><b>Why <see cref="SurfaceElementKind.Unknown"/> is not short-circuited.</b> Until this
+/// round the switch had a <c>SurfaceElementKind.Unknown =&gt; value</c> arm above the general one,
+/// which read as a policy — "the word for an unknown kind is not a word, so leave it alone" — and
+/// was in practice a dead branch: every element kind is a sealed record and
+/// <see cref="SurfaceElementKind.Of"/> covers all seven, so nothing produced that value. What it
+/// actually did was guarantee that the one kind whose name most needs a translation would be the
+/// one kind that never got one, because the dictionary was never asked. Removing it costs nothing
+/// today and makes <c>Text_Bench_Surface_Kind_element</c> reachable the day an eighth kind arrives
+/// without <c>Of</c> being updated — which is the case the constant exists for.</para>
 /// </remarks>
 public sealed class SurfaceKindNameConverter : IValueConverter
 {
@@ -32,7 +41,6 @@ public sealed class SurfaceKindNameConverter : IValueConverter
         => value switch
         {
             null or string { Length: 0 } => string.Empty,
-            SurfaceElementKind.Unknown => value,
             string kind => ViewModelBase.Translate(SurfaceElementKind.NameKeyOf(kind)) ?? kind,
             SurfaceElement element => ViewModelBase.Translate(SurfaceElementKind.NameKeyOf(element)) ??
                                       SurfaceElementKind.Of(element),

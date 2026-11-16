@@ -319,6 +319,7 @@
     <sys:String x:Key="Text_Bench_Surface_Kind_select">選択</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_switch">スイッチ</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_list">リスト</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Kind_element">要素</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unreadable">`{file}` を読めませんでした：{reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_invalid_json">`{file}` は有効な JSON ではありません：{reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_root_not_object">`{file}` は JSON オブジェクトでなければなりません。</sys:String>

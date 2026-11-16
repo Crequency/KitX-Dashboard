@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Avalonia;
@@ -148,6 +149,41 @@ public class SurfaceKindNameDisplayTests
                 .Select(block => $"'{block.Text}'")) + ".");
 
         Assert.NotEqual(SurfaceElementKind.Text, shown);
+    }
+
+
+    /// <summary>
+    /// The word for a kind this build does not know is asked of the dictionary like any other.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why this needs its own test.</b> The branch it replaces was unreachable, so no
+    /// rendered-text assertion could notice it: every element kind is a sealed record and
+    /// <c>SurfaceElementKind.Of</c> covers all seven, which means the converter could short-circuit
+    /// <c>Unknown</c> for a year and no window would differ. A rule that is only observable through
+    /// a value nothing produces is not covered by the tests that produce values — it is covered by
+    /// asking the converter directly with the value the constant names.</para>
+    ///
+    /// <para><b>What the mutation measured.</b> Restoring the short-circuit after this test was
+    /// written turns it red; before it was written, restoring the same line left the suite green.</para>
+    /// </remarks>
+    [AvaloniaFact]
+    public void A_kind_this_build_does_not_know_is_asked_of_the_dictionary_too()
+    {
+        LoadChinese();
+
+        var converter = SurfaceKindNameConverter.Instance;
+
+        var byWord = converter.Convert(SurfaceElementKind.Unknown, typeof(string), null, CultureInfo.InvariantCulture);
+        var byElement = converter.Convert(new SurfaceListElement { Key = "rows" }, typeof(string), null, CultureInfo.InvariantCulture);
+
+        // The dictionary answers, so the word is not the schema's.
+        Assert.Equal(Named(SurfaceElementKind.Unknown), byWord);
+        Assert.NotEqual(SurfaceElementKind.Unknown, byWord);
+
+        // And a kind that does have its own record still answers for itself: the removal above must
+        // not have turned every kind into the same word.
+        Assert.Equal(Named(SurfaceElementKind.List), byElement);
+        Assert.NotEqual(byWord, byElement);
     }
 
     /// <summary>The word this client uses for a kind, asked the same way the converter asks.</summary>

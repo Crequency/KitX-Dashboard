@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using KitX.ToolKit.Contract.Surface;
 using Xunit;
 
 namespace KitX.Dashboard.Test.Xunit;
@@ -269,9 +271,14 @@ public class LanguageKeyUsageTests
                     "diagnostics code in " + name);
         }
 
-        // The kind names come from the contract's own vocabulary, not from a literal in the client.
-        foreach (var kind in new[] { "Text", "Button", "Input", "Number", "Select", "Switch", "List", "Element" })
-            Record("Text_Bench_Surface_Kind_" + kind.ToLowerInvariant(), "SurfaceElementKind.NameKeyOf");
+        // The kind names come from the contract's own vocabulary, not from a literal in the client —
+        // so the vocabulary is read from the contract rather than listed here. A hand-written array
+        // recorded eight words as built, including one that was a dead branch above the general arm
+        // of the converter's switch and defined in no file: the scan was vouching for a key nobody
+        // had written. Reading the class cannot repeat that, and covers the eighth kind on the day
+        // it is added.
+        foreach (var word in KindWords())
+            Record(SurfaceElementKind.NameKeyOf(word), "SurfaceElementKind.NameKeyOf");
 
         foreach (var (key, how) in BuiltFromALibraryConstant)
             Record(key, how);
@@ -571,4 +578,15 @@ public class LanguageKeyUsageTests
         Assert.NotNull(dir);
         return Path.Combine(dir!.FullName, relativePath);
     }
+    /// <summary>Every word the contract can emit as a kind name, read from the contract.</summary>
+    /// <remarks>
+    /// <para>The prefix constant lives on the same class and is not a word: without the filter it
+    /// would ask for a key made of the prefix concatenated with itself.</para>
+    /// </remarks>
+    private static IEnumerable<string> KindWords() =>
+        typeof(SurfaceElementKind)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Where(field => field.Name != nameof(SurfaceElementKind.NameKeyPrefix))
+            .Select(field => (string)field.GetRawConstantValue()!);
 }

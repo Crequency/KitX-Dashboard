@@ -319,6 +319,7 @@
     <sys:String x:Key="Text_Bench_Surface_Kind_select">선택</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_switch">스위치</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_list">목록</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Kind_element">요소</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unreadable">파일을 읽지 못했습니다 (`{file}`): {reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_invalid_json">JSON 구문 오류 (`{file}`): {reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_root_not_object">JSON 객체가 아닙니다 (`{file}`).</sys:String>

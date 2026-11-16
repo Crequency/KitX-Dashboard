@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
@@ -297,12 +298,7 @@ public class SurfaceDiagnosticTextTests
     [AvaloniaFact]
     public void Every_kind_the_toolkit_can_report_has_a_name_in_all_seven_languages()
     {
-        var kinds = new[]
-        {
-            SurfaceElementKind.Text, SurfaceElementKind.Button, SurfaceElementKind.Input,
-            SurfaceElementKind.Number, SurfaceElementKind.Select, SurfaceElementKind.Switch,
-            SurfaceElementKind.List,
-        };
+        var kinds = KindWords();
 
         var missing = new List<string>();
 
@@ -326,6 +322,33 @@ public class SurfaceDiagnosticTextTests
             "Kinds the editor would show in English:" + Environment.NewLine +
             string.Join(Environment.NewLine, missing));
     }
+
+    /// <summary>
+    /// Every word the contract can emit as a kind name, read from the contract itself.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Reflection is the right reader here, and the wrong one two methods up.</b> The
+    /// diagnostics codes are listed by hand because they live in an assembly this project does not
+    /// reference, so a reflected list would have to be mirrored anyway. The kind vocabulary is
+    /// different: <see cref="SurfaceElementKind"/> <em>is</em> the definition of what words exist, and
+    /// the thing under test is the seven shipped files, not the constant table. Asking the table what
+    /// to look for is how the last round went wrong the other way — a hand-written array of seven
+    /// kinds omitted <see cref="SurfaceElementKind.Unknown"/>, so the eighth word was checked in no
+    /// language at all, and the key it needs was added to no file at all.</para>
+    ///
+    /// <para><b>What is excluded, and why it has to be.</b> <c>NameKeyPrefix</c> is also a public
+    /// const string on that class and is not a kind: it is the prefix the other entries are looked up
+    /// under. Without the filter it would ask for <c>Text_Bench_Surface_Kind_text_bench_surface_kind_</c>
+    /// and fail in all seven languages for a reason that reads like a translation gap.</para>
+    /// </remarks>
+    private static IReadOnlyList<string> KindWords() =>
+        typeof(SurfaceElementKind)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Where(field => field.Name != nameof(SurfaceElementKind.NameKeyPrefix))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .OrderBy(word => word, StringComparer.Ordinal)
+            .ToList();
 
     private static string RepositoryFile(string relativePath)
     {

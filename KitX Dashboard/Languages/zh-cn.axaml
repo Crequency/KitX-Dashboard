@@ -319,6 +319,7 @@
     <sys:String x:Key="Text_Bench_Surface_Kind_select">下拉选择</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_switch">开关</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_list">列表</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Kind_element">元素</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unreadable">无法读取 `{file}`：{reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_invalid_json">`{file}` 不是合法的 JSON：{reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_root_not_object">`{file}` 必须是一个 JSON 对象。</sys:String>
