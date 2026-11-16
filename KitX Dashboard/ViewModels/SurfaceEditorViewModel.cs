@@ -285,6 +285,26 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// <summary>Whether there is anything to show in the check panel.</summary>
     public bool HasValidationMessage => !string.IsNullOrEmpty(_validationMessage);
 
+    /// <summary>The code the editor reports a card taller than one screen under.</summary>
+    /// <remarks>
+    /// <para><b>Not the validator's code, and deliberately so.</b> Whether a card is taller than a
+    /// screen is a fact about a renderer, and <see cref="SurfaceValidator"/> lives in
+    /// <c>KitX.ToolKit</c>, which does not reference <c>KitX.ToolKit.View</c> and must not learn a pixel
+    /// number (<c>SurfaceLayout</c>'s own class comment forbids it: a shared layer may not decide a
+    /// number that belongs to one renderer). So the question is asked here, where both the layout sum
+    /// and the renderer's screen height are in scope.</para>
+    ///
+    /// <para><b>What it does not mean.</b> Not "content will be lost": since the card grows to its
+    /// content (§10.2.0.1), nothing is clipped any more. It means the author is laying out for a screen
+    /// they cannot see — a hand-written <c>row: 100</c> asks for 99 blank bands and a 6400px card — and
+    /// that is worth knowing before they save it.</para>
+    ///
+    /// <para><b>A warning, not an error, and never a reason to refuse a save.</b> The card is a
+    /// legitimate thing to write: it may be a document meant for a taller host, or one being edited
+    /// towards a shorter shape. S10 is that a warning never costs the file.</para>
+    /// </remarks>
+    public const string TallerThanAScreenCode = "surface.card.taller-than-a-screen";
+
     /// <summary>What the last save found, one entry per problem.</summary>
     /// <remarks>
     /// <para><b>A collection, because a save can find several and they are separate claims.</b> Each
@@ -392,9 +412,14 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     private void ForgetLastSave()
     {
         // Walked backwards, because removing an entry shifts the ones the loop has not seen yet.
+        //
+        // Two codes survive, for different reasons. A failed write is about the disk, which no edit
+        // can change. The card's height is about the canvas, which the edit has just changed — so it
+        // is not kept because it is still true, but because its own producer recomputes it from the
+        // new document and sweeping it here would make the answer depend on which call site ran first.
         for (var i = Diagnostics.Count - 1; i >= 0; i--)
         {
-            if (Diagnostics[i].Code != SaveFailedCode)
+            if (Diagnostics[i].Code != SaveFailedCode && Diagnostics[i].Code != TallerThanAScreenCode)
                 Diagnostics.RemoveAt(i);
         }
 
@@ -441,6 +466,58 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         // CanvasHeight is computed and has no setter, so nothing raises a change for it unless this
         // line does.
         this.RaisePropertyChanged(nameof(CanvasHeight));
+
+        // And the "taller than a screen" finding is a function of exactly the same set: which rows
+        // exist. Saying it here rather than in five call sites is the same argument as the line above.
+        RefreshTooTall();
+    }
+
+    /// <summary>Keeps one finding, in the panel, about a card taller than the screen it targets.</summary>
+    /// <remarks>
+    /// <para><b>Recomputed, not accumulated.</b> The finding is withdrawn the moment the card fits
+    /// again — an author who compresses the empty rows has fixed it, and a panel still saying the card
+    /// is too tall would be the editor arguing with the canvas. So this sweeps the previous one and,
+    /// if the card is still tall, puts a fresh one back.</para>
+    ///
+    /// <para><b>It survives a save that found the same thing.</b> A save replaces the whole list with
+    /// what the store reported (<see cref="Save"/>), which does not include this one — so this runs
+    /// after that too. The two producers are different questions: the store looks at the file, this
+    /// looks at the card's height, and both can be true at once.</para>
+    /// </remarks>
+    private void RefreshTooTall()
+    {
+        // Backwards, because removing an entry shifts the ones the loop has not seen yet.
+        for (var i = Diagnostics.Count - 1; i >= 0; i--)
+        {
+            if (Diagnostics[i].Code == TallerThanAScreenCode)
+                Diagnostics.RemoveAt(i);
+        }
+
+        var elements = DocumentElements();
+        var slots = SurfaceLayout.SlotSpanOf(elements, SurfaceElementVM.ListSlotCount);
+        var height = slots * SurfaceElementVM.SlotHeight;
+
+        if (height <= SurfaceMetrics.CardHeight)
+            return;
+
+        var highest = 0;
+        foreach (var element in elements)
+        {
+            if (element.Row > highest)
+                highest = element.Row;
+        }
+
+        Diagnostics.Insert(0, Diagnostic.Warning(
+            TallerThanAScreenCode,
+            $"The card is {height:0}px tall, past the {SurfaceMetrics.CardHeight:0}px of one screen: "
+            + $"{slots} row slot(s) up to row {highest}.",
+            data: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["height"] = height.ToString("0", CultureInfo.InvariantCulture),
+                ["screen"] = SurfaceMetrics.CardHeight.ToString("0", CultureInfo.InvariantCulture),
+                ["slots"] = slots.ToString(CultureInfo.InvariantCulture),
+                ["row"] = highest.ToString(CultureInfo.InvariantCulture),
+            }));
     }
 
     /// <summary>Changes one element's share of its row, redrawing the cells in place.</summary>
@@ -803,19 +880,23 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// counting rows. <see cref="SurfaceLayout.SlotHeightOf"/> says how tall a row is; the loop turns
     /// that into a band.</para>
     ///
-    /// <para><b>An empty row has no pixels.</b> §10.2.1.2 keeps row numbers as an order rather than a
-    /// distance, so a row with nothing in it is zero pixels tall and cannot be pointed at; the pointer
-    /// falls through it to the next row that draws something, and a pointer below every band means the
-    /// new row under the last — the only way to append a row by dragging.</para>
+    /// <para><b>An empty row has pixels, and this changed on 2026-11-16.</b> Until then row numbers
+    /// were an order rather than a distance: a row with nothing in it was zero pixels tall, so the
+    /// pointer fell straight through it to the next row that drew something. That made it impossible
+    /// to drag a cell onto an empty row — the drop landed wherever the collapsed band pointed — which
+    /// is precisely the gesture the person was trying to make, and no amount of care at the call site
+    /// could fix it, because the band genuinely had no height.</para>
+    ///
+    /// <para><b>Now every row from 1 to the last one in use is a band</b>, and an empty one is one
+    /// slot. Dropping onto blank space therefore targets the row that blank space is, which is the
+    /// reading a person has when they aim at it.</para>
     /// </remarks>
     private int TargetRow(double canvasY)
     {
         var elements = DocumentElements();
         var top = 0.0;
-        var last = 0;
-        var seen = false;
 
-        foreach (var row in UsedRows())
+        foreach (var row in RowsOnCanvas())
         {
             var height = SurfaceLayout.SlotHeightOf(elements, row, SurfaceElementVM.ListSlotCount)
                 * SurfaceElementVM.SlotHeight;
@@ -824,25 +905,53 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
                 return row;
 
             top += height;
-            last = row;
-            seen = true;
         }
 
-        return seen ? last + 1 : 1;
+        // Below every band: the row under the last one in use. That is the only way to append a row
+        // by dragging, and it is why this does not return the last row instead.
+        return RowsOnCanvas() is { Count: > 0 } rows ? rows[^1] + 1 : 1;
     }
 
     /// <summary>Every element on the canvas, as the layout functions want them.</summary>
     private IReadOnlyList<SurfaceElement> DocumentElements() => [.. Elements.Select(cell => cell.Element)];
 
-    /// <summary>The row numbers in use, ascending — an empty row draws nothing and is skipped.</summary>
-    private IReadOnlyList<int> UsedRows() =>
-        [.. Elements.Select(cell => cell.Element.Row).Distinct().Order()];
+    /// <summary>Every row the canvas draws, from 1 to the highest one in use, blanks included.</summary>
+    /// <remarks>
+    /// <b>Dense, not just the numbers somebody wrote.</b> This used to be the distinct row numbers,
+    /// which quietly made "the rows on the canvas" mean "the rows with something in them". The card
+    /// does not work that way — it gives every number from 1 to the highest a definition, one slot
+    /// tall when nothing stands in it — so computing bands from the sparse list put every band after
+    /// the first gap at the wrong height, and made an empty row unpointable. The two must agree, and
+    /// the cheap way for them to agree is for this to describe the same set the renderer draws.
+    /// </remarks>
+    private IReadOnlyList<int> RowsOnCanvas()
+    {
+        var highest = 0;
+        foreach (var cell in Elements)
+        {
+            if (cell.Element.Row > highest)
+                highest = cell.Element.Row;
+        }
+
+        if (highest == 0)
+            return [];
+
+        var rows = new List<int>(highest);
+        for (var row = 1; row <= highest; row++)
+            rows.Add(row);
+
+        return rows;
+    }
 
     /// <summary>Where a row's band starts and how tall it will be once the drag lands.</summary>
     /// <remarks>
-    /// The height is what the row will be <em>after</em> the drop: dragging a six-slot <c>List</c> into
-    /// a row of buttons makes that row six slots tall, and a drop line drawn one slot high would
-    /// promise a landing place the card cannot honour.
+    /// <para>The height is what the row will be <em>after</em> the drop: dragging a six-slot <c>List</c>
+    /// into a row of buttons makes that row six slots tall, and a drop line drawn one slot high would
+    /// promise a landing place the card cannot honour.</para>
+    ///
+    /// <para><b>Walked over every row, blanks included</b>, for the same reason
+    /// <see cref="TargetRow"/> does: a row that draws nothing still occupies a slot on the card, and a
+    /// band computed from the sparse list would drift by one row for every gap above it.</para>
     /// </remarks>
     private (double Top, double Height) RowBand(int row)
     {
@@ -852,7 +961,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             : SurfaceLayout.SlotCountOf(_reordering.Element, SurfaceElementVM.ListSlotCount);
 
         var top = 0.0;
-        foreach (var used in UsedRows())
+        foreach (var used in RowsOnCanvas())
         {
             var slots = SurfaceLayout.SlotHeightOf(elements, used, SurfaceElementVM.ListSlotCount);
             if (used == row)
@@ -954,15 +1063,23 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         ValidationMessage = null;
         Diagnostics.Clear();
 
-        if (warnings.Count > 0)
-        {
-            foreach (var warning in warnings)
-                Diagnostics.Add(warning);
+        foreach (var warning in warnings)
+            Diagnostics.Add(warning);
 
+        // The editor's own finding is recomputed rather than reported by the store, because the store
+        // has never heard of a screen. It goes after the sweep for the same reason it goes after the
+        // clear: it is a fact about the card, and the card has not changed.
+        RefreshTooTall();
+
+        // The status is decided from the panel, not from the store's list: a card the store liked and
+        // the editor can see is too tall still has one thing to say, and "Saved." over a warning is
+        // the window contradicting itself.
+        if (Diagnostics.Count > 0)
+        {
             Status = TranslateText("Bench_Surface_SavedWithProblems") ?? "Saved, with problems.";
 
             Log.Warning("[SurfaceEditor] '{Toolkit}' was saved with {Count} diagnostic(s)",
-                ToolkitId, warnings.Count);
+                ToolkitId, Diagnostics.Count);
         }
         else
         {
@@ -1422,6 +1539,51 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         MarkDirty();
     }
 
+    /// <summary>Closes up the blank rows a dragged cell left behind.</summary>
+    /// <remarks>
+    /// <para><b>An explicit command, and the only thing that renumbers rows.</b> Since 2026-11-16 an
+    /// empty row draws one slot (§10.2.1.2), so removing the only cell on a row leaves a permanent
+    /// blank band — two rows' worth of nothing in the middle of the card, with no way to remove it.
+    /// This is that way.</para>
+    ///
+    /// <para><b>Why it is not automatic.</b> Compression moves every row below the gap, so doing it as
+    /// a side effect of a delete would silently change rows the author never touched. The gesture that
+    /// says "I meant this" has to be the author's.</para>
+    ///
+    /// <para><b>Relative order is preserved and nothing else is.</b> Rows are mapped to their rank
+    /// among the rows in use — 1, 3, 7 becomes 1, 2, 3 — and the elements on a row keep the order they
+    /// had, so the left-to-right arrangement inside a row survives. Weights survive too: compression
+    /// changes which row a cell is on, never how much of that row it takes.</para>
+    /// </remarks>
+    public void CompressEmptyRows()
+    {
+        var before = CurrentElements();
+
+        var occupied = new SortedSet<int>(before.Select(element => element.Row));
+
+        // Rows are distinct and start at one, so "count equals highest" is the same statement as
+        // "1..highest is all present" — there is no gap to close.
+        if (occupied.Count == 0 || occupied.Count == occupied.Max)
+            return;
+
+        var rank = new Dictionary<int, int>(occupied.Count);
+        var next = 1;
+        foreach (var row in occupied)
+            rank[row] = next++;
+
+        var after = new List<SurfaceElement>(before.Count);
+        foreach (var element in before)
+            after.Add(element with { Row = rank[element.Row] });
+
+        if (after.SequenceEqual(before))
+            return;
+
+        Rebuild(after);
+        ValidationMessage = null;
+        RefreshUnplaced();
+        MarkDirty();
+    }
+
     /// <summary>Moves one element to a different row of the card.</summary>
     /// <param name="element">The element to move.</param>
     /// <param name="row">The row number it should sit on. One or more.</param>
@@ -1778,6 +1940,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         RemoveCommand = ReactiveCommand.Create<SurfaceElementVM>(Remove);
         SaveCommand = ReactiveCommand.Create(SaveFromButton);
         ClearCommand = ReactiveCommand.Create(Clear);
+        CompressRowsCommand = ReactiveCommand.Create(CompressEmptyRows);
     }
 
     /// <inheritdoc/>
@@ -1804,4 +1967,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
     /// <summary>Empties the canvas in memory.</summary>
     public ReactiveCommand<Unit, Unit> ClearCommand { get; private set; } = null!;
+
+    /// <summary>Closes up blank rows, renumbering the rest from one.</summary>
+    public ReactiveCommand<Unit, Unit> CompressRowsCommand { get; private set; } = null!;
 }

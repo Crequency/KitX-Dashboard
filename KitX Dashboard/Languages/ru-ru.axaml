@@ -300,6 +300,7 @@
     <sys:String x:Key="Text_Bench_Surface_Properties">Свойства</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Actions">Элементы управления</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">Сохранить и проверить</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_CompressRows">Сжать пустые строки</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Очистить карточку</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Проверка</sys:String>
 <sys:String x:Key="Text_Bench_Surface_Remove">Убрать с карточки</sys:String>
@@ -320,6 +321,7 @@
     <sys:String x:Key="Text_Bench_Surface_Kind_switch">Переключатель</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_list">Список</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_element">Элемент</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_card_taller_than_a_screen">Карточка высотой {height}px — больше {screen}px одного экрана: {slots} слот(ов) до строки {row}.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unreadable">Не удалось прочитать `{file}`: {reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_invalid_json">`{file}` не является допустимым JSON: {reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_root_not_object">`{file}` должен содержать объект JSON.</sys:String>

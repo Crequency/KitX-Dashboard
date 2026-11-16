@@ -300,6 +300,7 @@
     <sys:String x:Key="Text_Bench_Surface_Properties">속성</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Actions">컨트롤</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">저장하고 확인</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_CompressRows">빈 행 붙이기</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">카드 비우기</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">확인</sys:String>
 <sys:String x:Key="Text_Bench_Surface_Remove">카드에서 제거</sys:String>
@@ -320,6 +321,7 @@
     <sys:String x:Key="Text_Bench_Surface_Kind_switch">스위치</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_list">목록</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_element">요소</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_card_taller_than_a_screen">카드 높이가 {height}px로 한 화면의 {screen}px를 넘습니다: {row}행까지 {slots}칸.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unreadable">파일을 읽지 못했습니다 (`{file}`): {reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_invalid_json">JSON 구문 오류 (`{file}`): {reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_root_not_object">JSON 객체가 아닙니다 (`{file}`).</sys:String>

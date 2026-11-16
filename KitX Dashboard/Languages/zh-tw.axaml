@@ -300,6 +300,7 @@
     <sys:String x:Key="Text_Bench_Surface_Properties">屬性</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Actions">控制項</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">儲存並檢查</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_CompressRows">壓掉空行</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">清空畫布</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">檢查</sys:String>
 <sys:String x:Key="Text_Bench_Surface_Remove">從卡片上移除</sys:String>
@@ -320,6 +321,7 @@
     <sys:String x:Key="Text_Bench_Surface_Kind_switch">開關</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_list">清單</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Kind_element">元素</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_card_taller_than_a_screen">卡片高 {height}px，超過一屏的 {screen}px：到第 {row} 列共 {slots} 個槽。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unreadable">無法讀取 `{file}`：{reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_invalid_json">`{file}` 不是合法的 JSON：{reason}</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_root_not_object">`{file}` 必須是一個 JSON 物件。</sys:String>

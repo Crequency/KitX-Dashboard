@@ -125,6 +125,18 @@
                         <TextBlock Text="{DynamicResource Text_Bench_Surface_Clear}" />
                     </StackPanel>
                 </Button>
+                <!--
+                  Beside "Empty the card" because both are gestures about the whole document rather
+                  than about the selected cell. It is not hidden away behind the blank rows it removes:
+                  those rows are the ones the author just made blank, and a command whose name does not
+                  mention them is a command nobody looks for.
+                -->
+                <Button Command="{Binding CompressRowsCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:MaterialIcon Width="16" Height="16" Kind="ArrowCollapseVertical" />
+                        <TextBlock Text="{DynamicResource Text_Bench_Surface_CompressRows}" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
 

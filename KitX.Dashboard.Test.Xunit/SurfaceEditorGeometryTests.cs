@@ -340,14 +340,19 @@ public class SurfaceEditorGeometryTests
     }
 
     /// <summary>
-    /// Moving a cell past the last occupied row reorders it without adding space, and the canvas follows.
+    /// Moving a cell past the last occupied row takes it that far down, and the canvas follows.
     /// </summary>
     /// <remarks>
-    /// <para><b>This is the case that was reported as a bug.</b> A cell on row 2 given row 6 stays at the
-    /// same height, which reads as "the row was ignored". It is not: a row number is an ordinal, empty
-    /// rows take no height (<c>Package/ToolKit-设计-03-Surface.md</c> §10.2.1.2), so row six with rows
-    /// one and two occupied is simply the band after row two. The test pins the behaviour so the next
-    /// reader meets it as a decision rather than as a defect.</para>
+    /// <para><b>This is the case that was reported as a bug, and it used to be pinned as correct.</b>
+    /// A cell on row 2 given row 6 used to stay at the same height, which read as "the row was
+    /// ignored". The answer at the time was that it had not been ignored: a row number was an ordinal,
+    /// empty rows took no height (§10.2.1.2), so row six with rows one and two occupied was simply
+    /// the band after row two.</para>
+    ///
+    /// <para><b>That ruling was reversed on 2026-11-16</b>, and this test was rewritten rather than
+    /// deleted, because the old behaviour is what the next reader will assume. A row number is now an
+    /// ordinal <i>with distance between the numbers</i>: row 6 is five slots down whether or not
+    /// anybody filled rows 3, 4, and 5.</para>
     ///
     /// <para><b>And the canvas is what is being measured.</b> The assertion is on the drawn rectangle,
     /// so it also covers the rebuild that a row change performs: a rebuild that refreshed the view model
@@ -355,7 +360,7 @@ public class SurfaceEditorGeometryTests
     /// number said otherwise.</para>
     /// </remarks>
     [AvaloniaFact]
-    public void A_row_past_the_last_occupied_one_reorders_the_card_without_adding_space()
+    public void A_row_past_the_last_occupied_one_takes_the_cell_that_far_down()
     {
         var editor = Editor([
             new SurfaceTextElement { Row = 1, Key = "k0" },
@@ -377,7 +382,15 @@ public class SurfaceEditorGeometryTests
 
         var after = DrawnCells(window).Single(cell => cell.Element.Key == "k1").Position.Y;
 
-        Assert.Equal(before, after, tolerance: 0.5);
+        // Five slots down: rows 1, 2, 3, 4, and 5 are above it, and rows 3 through 5 are blank bands
+        // that exist. This is the number the old test asserted it would NOT be.
+        Assert.Equal(5 * SurfaceMetrics.SlotHeight, after, tolerance: 0.5);
+
+        // And the blank bands are really there: the drawn space between the two cells is five slots'
+        // worth, not one. Measuring the gap rather than only the absolute position is what tells
+        // "the cell moved" apart from "everything moved and the gap stayed the same".
+        var k0 = DrawnCells(window).Single(cell => cell.Element.Key == "k0").Position.Y;
+        Assert.Equal(5 * SurfaceMetrics.SlotHeight, after - k0, tolerance: 0.5);
 
         // Now the ordering itself is turned over: the first cell is sent past the second one, so the
         // two must trade places. This is what proves the canvas is following the document rather than
@@ -391,8 +404,10 @@ public class SurfaceEditorGeometryTests
         var moved = DrawnCells(window)
             .ToDictionary(cell => cell.Element.Key, cell => cell.Position.Y);
 
-        Assert.Equal(0, moved["k1"], tolerance: 0.5);
-        Assert.Equal(SurfaceMetrics.SlotHeight, moved["k0"], tolerance: 0.5);
+        // Row 6 is still five slots down, and row 7 is six: they traded places, and each one is where
+        // its own number says rather than one band apart.
+        Assert.Equal(5 * SurfaceMetrics.SlotHeight, moved["k1"], tolerance: 0.5);
+        Assert.Equal(6 * SurfaceMetrics.SlotHeight, moved["k0"], tolerance: 0.5);
     }
 
     /// <summary>Every cell's drawn position, measured in the coordinate space the positions are set in.</summary>
