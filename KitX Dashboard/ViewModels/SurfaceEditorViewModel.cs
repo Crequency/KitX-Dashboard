@@ -497,12 +497,28 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         var left = boundary.Before;
         var right = boundary.After;
 
-        var index = Elements.IndexOf(left);
-        if (index < 0 || Elements.IndexOf(right) != index + 1)
+        // Two positions, and they are not the same number once there is more than one row.
+        //
+        // `position` is where the cell sits in the whole document: it is what the adjacency check
+        // below and the ReferenceEquals sweeps further down must use, because those talk about the
+        // collection. `withinRow` is where it sits inside its own row, and that is what the pixel
+        // and weight arithmetic below must use, because that arithmetic talks about one row.
+        //
+        // Using the document position in the row arithmetic was a real defect, not a naming lapse:
+        // any cell that is not the first of its row has withinRow < position, so `row.Take(position)`
+        // reached past the row into cells that live in other rows, and `CellGap * (position + 1)`
+        // subtracted gaps this row does not have. The mapping from pointer to weight lost
+        // monotonicity — the border jumped left while the hand moved right.
+        var position = Elements.IndexOf(left);
+        if (position < 0 || Elements.IndexOf(right) != position + 1)
             return;
 
         var row = Elements.Where(e => e.Element.Row == left.Element.Row).ToList();
         if (row.Count < 2)
+            return;
+
+        var withinRow = row.IndexOf(left);
+        if (withinRow < 0)
             return;
 
         var shareable = SurfaceElementVM.ShareableWidth(row.Count);
@@ -515,9 +531,9 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         var pairWeight = leftWeight + rightWeight;
 
         // Weight of everything before the left cell; it does not move during this drag.
-        var weightBefore = row.Take(index).Sum(e => Math.Max(1, e.Element.Weight));
+        var weightBefore = row.Take(withinRow).Sum(e => Math.Max(1, e.Element.Weight));
 
-        var pixelsThroughLeft = canvasX - (SurfaceElementVM.CellGap * (index + 1));
+        var pixelsThroughLeft = canvasX - (SurfaceElementVM.CellGap * (withinRow + 1));
         var wantedD = (totalWeight * pixelsThroughLeft / shareable) - weightBefore;
 
         // How much of the pair the left cell should take, as a fraction. Taken from the pointer

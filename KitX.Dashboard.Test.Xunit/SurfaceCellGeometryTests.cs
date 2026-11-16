@@ -293,6 +293,124 @@ public class SurfaceCellGeometryTests
                 $"renderer would read it as 1"));
     }
 
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(5)]
+    [InlineData(8)]
+    [InlineData(13)]
+    public void A_border_dragged_on_a_later_row_lands_on_the_nearest_reachable_weight(int step)
+    {
+        // Two rows, so the cell's position in the whole document and its position inside its own row
+        // stop being the same number. Every drag test above this one uses a single row, where the two
+        // are equal for arithmetic reasons rather than by intent — which is why a mix-up between them
+        // could survive a whole suite of passing drag tests.
+        //
+        // Four cells go on row 1 so the two numbers differ by four, not by one: the gap term that
+        // separates them then differs by 32px, which is two whole weight units and cannot be read as
+        // rounding.
+        var document = new List<SurfaceElement>
+        {
+            new SurfaceTextElement { Row = 1, Weight = 1, Key = "a" },
+            new SurfaceTextElement { Row = 1, Weight = 1, Key = "b" },
+            new SurfaceTextElement { Row = 1, Weight = 1, Key = "c" },
+            new SurfaceTextElement { Row = 1, Weight = 1, Key = "d" },
+            new SurfaceTextElement { Row = 2, Weight = 15, Key = "wide" },
+            new SurfaceTextElement { Row = 2, Weight = 9, Key = "narrow" },
+        };
+
+        var editor = Editor(document);
+
+        // The only boundary in the dragged row; the three above it belong to row 1.
+        var border = editor.Boundaries[3];
+        Assert.Equal("wide", border.Before.Key);
+
+        // Grabbing a border and not moving must change nothing — the first pointer event of every
+        // drag, before the hand has travelled anywhere. Asserted as "unchanged" rather than against
+        // literal 15 and 9: a literal would pin the test to this document's numbers, and the point
+        // here is that a zero-length gesture is not a gesture.
+        var grab = border.Centre;
+        var weightsBefore = WeightsOfRow(editor, 2);
+        editor.DragBoundary(border, grab);
+
+        Assert.Equal(weightsBefore, WeightsOfRow(editor, 2));
+
+        // From here on the row's total weight is fixed, so the split of the dragged pair is a finite
+        // set: the left cell may hold anything from 1 to total-1 parts. Every one of those splits
+        // puts the border at a computable x. That makes "the border follows the hand" an exact,
+        // threshold-free statement:
+        //
+        //     after every pointer move, the border sits on the reachable position nearest the pointer
+        //
+        // No tolerance to tune, and nothing that depends on how far the sweep runs or how big its
+        // steps are — both of which are properties of a test, not of the code.
+        var total = WeightsOfRow(editor, 2).Sum();
+        var reachable = new List<double>();
+        for (var left = 1; left < total; left++)
+            reachable.Add(SurfaceElementVM.CellGap + (SurfaceElementVM.ShareableWidth(2) * left / total));
+
+        var pointer = grab;
+        var checkedFrames = 0;
+        var offFrames = 0;
+        var moved = 0;
+        var previous = border.Centre;
+
+        // Sweep well past the last reachable position so the saturating end is covered too: there the
+        // nearest reachable position is simply the last one, and the border must rest on it.
+        while (pointer < reachable[^1] + (4 * step))
+        {
+            pointer += step;
+            var totalBefore = WeightsOfRow(editor, 2).Sum();
+            editor.DragBoundary(border, pointer);
+            var landed = border.Centre;
+
+            // A frame that changes the row's total is the unit refinement frame — it renumbers the
+            // weights, so the reachable set itself moves and the comparison would be against the old
+            // one. In this implementation that is at most the first frame after the grab.
+            if (WeightsOfRow(editor, 2).Sum() != totalBefore)
+                continue;
+
+            checkedFrames++;
+            if (Math.Abs(landed - previous) > 0.01)
+                moved++;
+            previous = landed;
+
+            var nearest = reachable[0];
+            foreach (var candidate in reachable)
+            {
+                if (Math.Abs(candidate - pointer) < Math.Abs(nearest - pointer))
+                    nearest = candidate;
+            }
+
+            var off = Math.Abs(landed - nearest);
+
+            if (off > 0.5)
+            {
+                offFrames++;
+                Assert.Fail(
+                    $"step {step}px, pointer at {pointer:F1}: the border landed at {landed:F1} but " +
+                    $"the nearest position the weights can express is {nearest:F1} ({off:F1}px off). " +
+                    $"Not following the hand — the weight was computed from the cell's position in " +
+                    $"the document instead of its position inside its row.");
+            }
+        }
+
+        Assert.True(checkedFrames > 5, $"only {checkedFrames} frames were compared");
+        Assert.True(moved > 0, "the border never moved; the sweep proved nothing");
+        Assert.Equal(0, offFrames);
+
+        // The sweep must have reached the end of the row's range, or the comparison above would have
+        // been vacuous about saturation.
+        Assert.Equal(total - 1, editor.Elements[4].Element.Weight);
+        Assert.Equal(1, editor.Elements[5].Element.Weight);
+    }
+
+    /// <summary>The weights of every cell on one row, in the order they are drawn.</summary>
+    private static List<int> WeightsOfRow(SurfaceEditorViewModel editor, int row) =>
+        [.. editor.Elements.Where(cell => cell.Element.Row == row).Select(cell => cell.Element.Weight)];
+
     /// <summary>An editor holding one document, wired to a store that keeps nothing.</summary>
     /// <remarks>
     /// The real <see cref="SurfaceEditorViewModel"/> is used rather than a stub: the drag arithmetic
