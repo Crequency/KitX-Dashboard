@@ -251,6 +251,9 @@
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">配置校验失败（{0} 项），保存被拒绝</sys:String>
     <sys:String x:Key="Text_Bench_Saved">已保存</sys:String>
     <sys:String x:Key="Text_Bench_SaveFailed">保存失败：{0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_disk_full">磁盘已满，卡片写不进磁盘。腾出一些空间后再保存：{0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_not_permitted">这个文件是只读的，卡片写不进磁盘。改掉它的权限后再保存：{0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_no_folder">这张卡片所在的文件夹已经不在了，卡片写不进磁盘。重建它后再保存：{0}</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejectedTitle">保存被拒绝</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejected">配置校验未通过</sys:String>
     <sys:String x:Key="Text_Bench_SpawnRejected">试运行失败：工具箱未挂载或已达最大实例数</sys:String>

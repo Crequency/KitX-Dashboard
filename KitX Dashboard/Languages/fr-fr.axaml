@@ -251,6 +251,9 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">Échec de la validation ({0} problèmes), enregistrement refusé</sys:String>
     <sys:String x:Key="Text_Bench_Saved">Enregistré</sys:String>
     <sys:String x:Key="Text_Bench_SaveFailed">Échec de l'enregistrement : {0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_disk_full">Le disque est plein : la carte n'a pas pu être écrite. Libérez de l'espace, puis enregistrez à nouveau : {0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_not_permitted">Ce fichier est en lecture seule : la carte n'a pas pu être écrite. Modifiez ses autorisations, puis enregistrez à nouveau : {0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_no_folder">Le dossier de cette carte n'existe plus : la carte n'a pas pu être écrite. Recréez-le, puis enregistrez à nouveau : {0}</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejectedTitle">Enregistrement refusé</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejected">La validation de la configuration a échoué</sys:String>
     <sys:String x:Key="Text_Bench_SpawnRejected">Échec de l'essai : boîte à outils non montée ou nombre maximal d'instances atteint</sys:String>

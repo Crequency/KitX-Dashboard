@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reactive;
 using KitX.ToolKit.Contract;
@@ -283,13 +284,28 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// string. The author had edited a card and the screen said nothing at all. <see cref="IsDirty"/>
     /// already knew; nothing was reading it.</para>
     ///
-    /// <para><b>A view, not a second fact.</b> This composes the two properties that carry the facts
+    /// <para><b>A view, not a second fact.</b> This composes the properties that carry the facts
     /// and stores nothing of its own, so it cannot disagree with them. <see cref="Status"/> keeps its
     /// meaning — what the last save reported — because tests read it for exactly that.</para>
+    ///
+    /// <para><b>The alarm outranks the dirty mark.</b> A failed write leaves the card dirty on
+    /// purpose — nothing reached the disk — so asking “is it dirty” first answered “Not saved yet.”
+    /// and buried the reason the save had just computed. Both sentences are true and the order they
+    /// were written in was the whole difference: the author pressed save, was told nothing changed on
+    /// screen, and the one line that said why was written to a property nothing was reading.</para>
     /// </remarks>
-    public string StatusLine => IsDirty
-        ? TranslateText("Bench_Surface_Unsaved") ?? "Not saved yet."
-        : Status;
+    public string StatusLine
+    {
+        get
+        {
+            if (_writeFailed)
+                return Status;
+
+            return IsDirty
+                ? TranslateText("Bench_Surface_Unsaved") ?? "Not saved yet."
+                : Status;
+        }
+    }
 
     /// <summary>The editor's own refusal, or null when it has nothing to refuse.</summary>
     /// <remarks>
@@ -1353,7 +1369,16 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// Keeping them one method made the full version run at a call site where two of its three effects
     /// were immediately overwritten — harmless, and misleading to anyone reading either end.
     /// </remarks>
-    private void AcknowledgeWrite() => _writeFailed = false;
+    private void AcknowledgeWrite()
+    {
+        _writeFailed = false;
+
+        // StatusLine reads the flag directly, so the bar has to be told the precedence changed. Every
+        // caller but one rewrites Status immediately after and would have got the notification from
+        // there anyway; the automatic write does not, and it is the one where the alarm going away is
+        // the only news on screen.
+        this.RaisePropertyChanged(nameof(StatusLine));
+    }
 
     /// <summary>Takes down the alarm raised by an earlier failed write, now that a write succeeded.</summary>
     /// <remarks>
@@ -1379,6 +1404,15 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     }
 
     /// <summary>Makes a failed write visible in both places the author can still see.</summary>
+    /// <remarks>
+    /// <para><b>The sentence says what to do about it, not just that it happened.</b> “Save failed”
+    /// leaves an author with one button they have already pressed and now distrust, and a clock that
+    /// will fail again in thirty seconds. The cause is separated from the platform's own words
+    /// because the two lead to different actions: a full disk is somebody deleting something, a
+    /// refused permission is somebody else changing a setting, and a folder that is gone is neither.
+    /// The reason is still carried underneath, because it is the only part that names this machine's
+    /// particular problem.</para>
+    /// </remarks>
     private void ReportSaveFailure(Exception exception)
     {
         _writeFailed = true;
@@ -1387,9 +1421,10 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         // sentence up by code and fills {reason} from it (see SurfaceDiagnosticText), so what the
         // author reads is in their language while the log keeps the English sentence.
         var reason = exception.Message;
+        var cause = CauseOf(exception);
 
         Status = string.Format(
-            TranslateText("Bench_SaveFailed") ?? "Save failed: {0}",
+            TranslateText(StatusKeyFor(cause)) ?? "Save failed: {0}",
             reason);
 
         Diagnostics.Clear();
@@ -1397,9 +1432,77 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             SaveFailedCode,
             $"The card could not be written: {reason}",
             null,
-            new Dictionary<string, string>(StringComparer.Ordinal) { ["reason"] = reason }));
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["reason"] = reason,
+                [CauseField] = cause,
+            }));
 
         Log.Error(exception, "[SurfaceEditor] '{Toolkit}' could not be written", ToolkitId);
+
+        // The flag now outranks the dirty mark in StatusLine, and Status may have been set to the
+        // same sentence as before (two failed writes in a row both name the disk), in which case its
+        // setter said nothing. The bar has to be told, or the first failure explains itself and the
+        // second is invisible.
+        this.RaisePropertyChanged(nameof(StatusLine));
+    }
+
+    /// <summary>The resource key that holds what to do about this kind of failure.</summary>
+    /// <param name="cause">One of the values <see cref="CauseOf"/> returns.</param>
+    /// <remarks>
+    /// <para><b>Written out rather than assembled.</b> <c>"Text_Bench_SaveFailed_" + cause</c> is the
+    /// shorter version and it is unreadable to every tool that asks whether a key is used: the
+    /// language-key scan reads literals, so four keys nothing could see would be reported as defined
+    /// nowhere and displayed never — which, on the day somebody deletes them as dead, is exactly what
+    /// would happen. A key nobody can find in the source is a key only its author knows exists.</para>
+    ///
+    /// <para><b>And an unknown cause is not a missing sentence.</b> The switch has a default arm for
+    /// the same reason <see cref="CauseOf"/> has one: a cause added later without a sentence here
+    /// still has to say something, and the general sentence is true of every failure.</para>
+    /// </remarks>
+    public static string StatusKeyFor(string cause) => cause switch
+    {
+        "disk-full" => "Text_Bench_SaveFailed_disk_full",
+        "not-permitted" => "Text_Bench_SaveFailed_not_permitted",
+        "no-folder" => "Text_Bench_SaveFailed_no_folder",
+        _ => "Text_Bench_SaveFailed",
+    };
+
+    /// <summary>The value <see cref="CauseOf"/> records under <c>cause</c> in the finding's data.</summary>
+    /// <remarks>
+    /// Read by the panel through <c>{cause}</c> and by tests that want to know which branch ran
+    /// without depending on the platform's own error message.
+    /// </remarks>
+    public const string CauseField = "cause";
+
+    /// <summary>Which of the failures the author can do something about this one is.</summary>
+    /// <param name="exception">What the write threw.</param>
+    /// <returns>
+    /// <c>disk-full</c>, <c>not-permitted</c>, <c>no-folder</c> or <c>other</c>.
+    /// </returns>
+    /// <remarks>
+    /// <para><b>Order matters.</b> <see cref="DirectoryNotFoundException"/> and
+    /// <see cref="FileNotFoundException"/> both derive from <see cref="IOException"/>, so the general
+    /// case has to be matched last or it swallows them.</para>
+    ///
+    /// <para><b>A guess, honestly labelled.</b> <see cref="Exception.HResult"/> is the only thing a
+    /// portable <see cref="IOException"/> carries about its cause, and .NET does not guarantee it is
+    /// populated by every platform. <c>0x27</c> and <c>0x70</c> are ERROR_HANDLE_DISK_FULL and
+    /// ERROR_DISK_FULL; anything else falls through to <c>other</c>, which says “the file could not be
+    /// written” and repeats the platform's words rather than inventing a diagnosis. A wrong guess
+    /// here would send somebody to clear space on a disk that is not full.</para>
+    /// </remarks>
+    public static string CauseOf(Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+
+        return exception switch
+        {
+            UnauthorizedAccessException => "not-permitted",
+            DirectoryNotFoundException => "no-folder",
+            IOException io when (io.HResult & 0xFFFF) is 0x27 or 0x70 => "disk-full",
+            _ => "other",
+        };
     }
 
     /// <summary>What the window has to do after <see cref="PrepareToClose"/>.</summary>

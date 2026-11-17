@@ -251,6 +251,9 @@
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">設定検証に失敗（{0} 件）、保存は拒否されました</sys:String>
     <sys:String x:Key="Text_Bench_Saved">保存しました</sys:String>
     <sys:String x:Key="Text_Bench_SaveFailed">保存に失敗：{0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_disk_full">ディスクがいっぱいで、カードを書き込めませんでした。空きを作ってから、もう一度保存してください：{0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_not_permitted">このファイルは読み取り専用のため、カードを書き込めませんでした。権限を変えてから、もう一度保存してください：{0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_no_folder">このカードのフォルダーが見つからないため、カードを書き込めませんでした。作り直してから、もう一度保存してください：{0}</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejectedTitle">保存が拒否されました</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejected">設定検証が通りませんでした</sys:String>
     <sys:String x:Key="Text_Bench_SpawnRejected">試運転に失敗：ツールボックスが未マウントか最大インスタンス数に達しました</sys:String>

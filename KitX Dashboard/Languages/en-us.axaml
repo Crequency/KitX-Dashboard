@@ -251,6 +251,9 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">Config validation failed ({0} issues), save rejected</sys:String>
     <sys:String x:Key="Text_Bench_Saved">Saved</sys:String>
     <sys:String x:Key="Text_Bench_SaveFailed">Save failed: {0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_disk_full">The disk is full, so the card could not be written. Free some space, then save again: {0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_not_permitted">This file is read-only, so the card could not be written. Change its permissions, then save again: {0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed_no_folder">The folder this card belongs in is gone, so the card could not be written. Recreate it, then save again: {0}</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejectedTitle">Save rejected</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejected">Config validation did not pass</sys:String>
     <sys:String x:Key="Text_Bench_SpawnRejected">Trial run failed: toolbox not mounted or max instances reached</sys:String>
