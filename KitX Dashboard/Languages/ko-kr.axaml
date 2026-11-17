@@ -250,10 +250,7 @@
     <sys:String x:Key="Text_Bench_SaveMountedRejected">도구 상자가 마운트되어 있습니다. 저장 전에 마운트를 해제하세요</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">구성 검증 실패({0}개), 저장이 거부되었습니다</sys:String>
     <sys:String x:Key="Text_Bench_Saved">저장됨</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed">저장 실패: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_disk_full">디스크가 가득 차서 카드를 쓰지 못했습니다. 공간을 확보한 뒤 다시 저장하세요: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_not_permitted">이 파일이 읽기 전용이라 카드를 쓰지 못했습니다. 권한을 바꾼 뒤 다시 저장하세요: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_no_folder">이 카드가 있어야 할 폴더가 없어서 카드를 쓰지 못했습니다. 폴더를 다시 만든 뒤 저장하세요: {0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed">'{0}'에 쓰지 못했습니다: {1}</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejectedTitle">저장 거부됨</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejected">구성 검증이 통과되지 않았습니다</sys:String>
     <sys:String x:Key="Text_Bench_SpawnRejected">시험 실행 실패: 도구 상자가 마운트되지 않았거나 최대 인스턴스 수에 도달했습니다</sys:String>
@@ -358,7 +355,7 @@
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 남겼습니다: `min`({min})이 `max`({max})보다 큽니다. 범위를 버렸습니다.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 남겼습니다: `step`({step})이 양수가 아니어서 기본값 1을 씁니다.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 남겼습니다: `decimals`({decimals})이 음수여서 기본값은 렌더러가 정합니다.</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_save_failed">카드를 기록하지 못했습니다: {reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_save_failed">카드를 `{file}`에 쓰지 못했습니다: {reason}</sys:String>
     <!-- Workflow Editor (v6) -->
     <sys:String x:Key="Text_WorkflowEditor_AddHelperFunction">도우미 함수 추가</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_AddParameter">매개변수 추가</sys:String>

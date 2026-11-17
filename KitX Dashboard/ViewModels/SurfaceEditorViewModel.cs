@@ -1436,104 +1436,86 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
     /// <summary>Makes a failed write visible in both places the author can still see.</summary>
     /// <remarks>
-    /// <para><b>The sentence says what to do about it, not just that it happened.</b> “Save failed”
-    /// leaves an author with one button they have already pressed and now distrust, and a clock that
-    /// will fail again in thirty seconds. The cause is separated from the platform's own words
-    /// because the two lead to different actions: a full disk is somebody deleting something, a
-    /// refused permission is somebody else changing a setting, and a folder that is gone is neither.
-    /// The reason is still carried underneath, because it is the only part that names this machine's
-    /// particular problem.</para>
+    /// <para><b>What the author needs is where and why, not a category.</b> An earlier draft branched
+    /// on the exception into “disk full”, “no permission” and “no folder”, one sentence each. Measured
+    /// on this machine, a read-only card throws <see cref="UnauthorizedAccessException"/> and reaches
+    /// exactly one of those; the other two were reachable only by exceptions built in a test, so two
+    /// thirds of that vocabulary would have been copy for situations nobody had observed. What is
+    /// always true is the path — which the platform cannot name, because the atomic write fails on
+    /// <c>surface.json.tmp</c> — and the platform's own first line, which names the actual trouble.
+    /// </para>
+    ///
+    /// <para><b>The first line, not the whole message.</b> A framework message can run to several
+    /// sentences of advice; the bar is one line under a button. The first sentence is the part that
+    /// says what happened; the rest is usually what to do, which this window says in its own words.
+    /// </para>
     /// </remarks>
     private void ReportSaveFailure(Exception exception)
     {
         _writeFailed = true;
 
-        // The reason travels as a named value, not folded into the sentence: the panel looks the
-        // sentence up by code and fills {reason} from it (see SurfaceDiagnosticText), so what the
-        // author reads is in their language while the log keeps the English sentence.
-        var reason = exception.Message;
-        var cause = CauseOf(exception);
+        // Unwrapped, because what the author is being told about is the write, not the wrapper a
+        // caller added around it. SurfaceWriteException's own message repeats its inner one, so
+        // reading the base keeps the sentence from saying the same thing twice.
+        var failure = exception.GetBaseException();
 
+        // A real path when the store told us one; otherwise the platform's message, which at least
+        // names a file even if it is the temporary one. Never empty: an empty string here would
+        // produce a sentence with a hole in it rather than a less precise sentence.
+        var where = exception is SurfaceWriteException { Path: { Length: > 0 } path }
+            ? path
+            : ToolkitId;
+
+        var reason = FirstSentence(failure.Message);
+
+        // The reason and the place travel as named values, not folded into the sentence: the panel
+        // looks the sentence up by code and fills them (see SurfaceDiagnosticText), so what the
+        // author reads is in their language while the log keeps the English sentence.
         Status = string.Format(
-            TranslateText(StatusKeyFor(cause)) ?? "Save failed: {0}",
+            TranslateText("Bench_SaveFailed") ?? "Could not write '{0}': {1}",
+            where,
             reason);
 
         Diagnostics.Clear();
         Diagnostics.Add(Diagnostic.Error(
             SaveFailedCode,
-            $"The card could not be written: {reason}",
+            $"The card could not be written to {where}: {reason}",
             null,
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
+                ["file"] = where,
                 ["reason"] = reason,
-                [CauseField] = cause,
             }));
 
         Log.Error(exception, "[SurfaceEditor] '{Toolkit}' could not be written", ToolkitId);
 
-        // The flag now outranks the dirty mark in StatusLine, and Status may have been set to the
-        // same sentence as before (two failed writes in a row both name the disk), in which case its
+        // The flag now outranks the dirty mark in StatusLine, and Status may be set to the same
+        // sentence as before (two failures in a row both name the same file), in which case its
         // setter said nothing. The bar has to be told, or the first failure explains itself and the
         // second is invisible.
         this.RaisePropertyChanged(nameof(StatusLine));
     }
 
-    /// <summary>The resource key that holds what to do about this kind of failure.</summary>
-    /// <param name="cause">One of the values <see cref="CauseOf"/> returns.</param>
+    /// <summary>The first sentence of a message, on one line.</summary>
+    /// <param name="message">What the platform or the store said.</param>
     /// <remarks>
-    /// <para><b>Written out rather than assembled.</b> <c>"Text_Bench_SaveFailed_" + cause</c> is the
-    /// shorter version and it is unreadable to every tool that asks whether a key is used: the
-    /// language-key scan reads literals, so four keys nothing could see would be reported as defined
-    /// nowhere and displayed never — which, on the day somebody deletes them as dead, is exactly what
-    /// would happen. A key nobody can find in the source is a key only its author knows exists.</para>
-    ///
-    /// <para><b>And an unknown cause is not a missing sentence.</b> The switch has a default arm for
-    /// the same reason <see cref="CauseOf"/> has one: a cause added later without a sentence here
-    /// still has to say something, and the general sentence is true of every failure.</para>
+    /// Split on the sentence-ending punctuation followed by a space, not on any full stop: a Windows
+    /// path can contain one, and cutting inside <c>C:\Users\a.b\…</c> would leave half a path in the
+    /// status bar. Newlines go first, because a framework message is often several lines and the bar
+    /// shows one.
     /// </remarks>
-    public static string StatusKeyFor(string cause) => cause switch
+    public static string FirstSentence(string message)
     {
-        "disk-full" => "Text_Bench_SaveFailed_disk_full",
-        "not-permitted" => "Text_Bench_SaveFailed_not_permitted",
-        "no-folder" => "Text_Bench_SaveFailed_no_folder",
-        _ => "Text_Bench_SaveFailed",
-    };
+        if (string.IsNullOrWhiteSpace(message))
+            return string.Empty;
 
-    /// <summary>The value <see cref="CauseOf"/> records under <c>cause</c> in the finding's data.</summary>
-    /// <remarks>
-    /// Read by the panel through <c>{cause}</c> and by tests that want to know which branch ran
-    /// without depending on the platform's own error message.
-    /// </remarks>
-    public const string CauseField = "cause";
+        var line = message.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)[0].Trim();
 
-    /// <summary>Which of the failures the author can do something about this one is.</summary>
-    /// <param name="exception">What the write threw.</param>
-    /// <returns>
-    /// <c>disk-full</c>, <c>not-permitted</c>, <c>no-folder</c> or <c>other</c>.
-    /// </returns>
-    /// <remarks>
-    /// <para><b>Order matters.</b> <see cref="DirectoryNotFoundException"/> and
-    /// <see cref="FileNotFoundException"/> both derive from <see cref="IOException"/>, so the general
-    /// case has to be matched last or it swallows them.</para>
-    ///
-    /// <para><b>A guess, honestly labelled.</b> <see cref="Exception.HResult"/> is the only thing a
-    /// portable <see cref="IOException"/> carries about its cause, and .NET does not guarantee it is
-    /// populated by every platform. <c>0x27</c> and <c>0x70</c> are ERROR_HANDLE_DISK_FULL and
-    /// ERROR_DISK_FULL; anything else falls through to <c>other</c>, which says “the file could not be
-    /// written” and repeats the platform's words rather than inventing a diagnosis. A wrong guess
-    /// here would send somebody to clear space on a disk that is not full.</para>
-    /// </remarks>
-    public static string CauseOf(Exception exception)
-    {
-        ArgumentNullException.ThrowIfNull(exception);
+        var end = line.IndexOf(". ", StringComparison.Ordinal);
+        if (end > 0)
+            line = line[..(end + 1)];
 
-        return exception switch
-        {
-            UnauthorizedAccessException => "not-permitted",
-            DirectoryNotFoundException => "no-folder",
-            IOException io when (io.HResult & 0xFFFF) is 0x27 or 0x70 => "disk-full",
-            _ => "other",
-        };
+        return line;
     }
 
     /// <summary>What the window has to do after <see cref="PrepareToClose"/>.</summary>

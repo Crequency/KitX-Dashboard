@@ -250,10 +250,7 @@
     <sys:String x:Key="Text_Bench_SaveMountedRejected">Инструмент смонтирован — отмонтируйте перед сохранением</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">Ошибка проверки конфигурации ({0} проблем), сохранение отклонено</sys:String>
     <sys:String x:Key="Text_Bench_Saved">Сохранено</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed">Ошибка сохранения: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_disk_full">Диск заполнен, поэтому карточку записать не удалось. Освободите место и сохраните снова: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_not_permitted">Этот файл доступен только для чтения, поэтому карточку записать не удалось. Измените права и сохраните снова: {0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_no_folder">Папки, в которой должна лежать эта карточка, больше нет, поэтому записать её не удалось. Создайте её и сохраните снова: {0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed">Не удалось записать «{0}»: {1}</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejectedTitle">Сохранение отклонено</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejected">Проверка конфигурации не пройдена</sys:String>
     <sys:String x:Key="Text_Bench_SpawnRejected">Пробный запуск не удался: инструмент не смонтирован или достигнут максимум экземпляров</sys:String>
@@ -358,7 +355,7 @@
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">Оставлен {kindName} (`{kind}`) в строке {row}, вес {weight}: `min` ({min}) больше `max` ({max}); диапазон отброшен.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">Оставлен {kindName} (`{kind}`) в строке {row}, вес {weight}: `step` ({step}) не положителен; по умолчанию 1.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">Оставлен {kindName} (`{kind}`) в строке {row}, вес {weight}: `decimals` ({decimals}) отрицательно; по умолчанию выбор за отрисовщиком.</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_save_failed">Карточку не удалось записать: {reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_save_failed">Карточку не удалось записать в `{file}`: {reason}</sys:String>
     <!-- Workflow Editor (v6) -->
     <sys:String x:Key="Text_WorkflowEditor_AddHelperFunction">Добавить вспомогательную функцию</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_AddParameter">Добавить параметр</sys:String>

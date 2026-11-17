@@ -250,10 +250,7 @@
     <sys:String x:Key="Text_Bench_SaveMountedRejected">工具箱已掛載，請先解除安裝後再儲存設定</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">設定校驗失敗（{0} 項），儲存被拒絕</sys:String>
     <sys:String x:Key="Text_Bench_Saved">已儲存</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed">儲存失敗：{0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_disk_full">磁碟已滿，卡片寫不進磁碟。騰出一些空間後再儲存：{0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_not_permitted">這個檔案是唯讀的，卡片寫不進磁碟。改掉它的權限後再儲存：{0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_no_folder">這張卡片所在的資料夾已經不在了，卡片寫不進磁碟。重建它後再儲存：{0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed">寫不進「{0}」：{1}</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejectedTitle">儲存被拒絕</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejected">設定校驗未通過</sys:String>
     <sys:String x:Key="Text_Bench_SpawnRejected">試運行失敗：工具箱未掛載或已達最大執行個體數</sys:String>
@@ -358,7 +355,7 @@
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">已保留第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`min`（{min}）大於 `max`（{max}），範圍已捨棄。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">已保留第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`step`（{step}）不是正數，預設以 1 處理。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">已保留第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`decimals`（{decimals}）是負數，預設交給繪製器決定。</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_save_failed">卡片寫不進磁碟：{reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_save_failed">卡片寫不進 `{file}`：{reason}</sys:String>
     <!-- Workflow Editor (v6) -->
     <sys:String x:Key="Text_WorkflowEditor_AddHelperFunction">新增輔助函式</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_AddParameter">新增參數</sys:String>

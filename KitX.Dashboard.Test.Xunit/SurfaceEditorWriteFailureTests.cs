@@ -88,31 +88,65 @@ public class SurfaceEditorWriteFailureTests
         Assert.Equal("Saved.", editor.StatusLine);
     }
 
-    /// <summary>The bar says what went wrong, not merely that something did.</summary>
+    /// <summary>The bar says which file, and repeats the platform's own words.</summary>
     /// <remarks>
-    /// A permission failure and a full disk are fixed by different people. The cause is asserted
-    /// through the translated sentence rather than through the exception's own message, because the
-    /// message is whatever the platform wrote and this window does not own it.
+    /// <para><b>Both halves, because they answer different questions.</b> The path says where to go;
+    /// the platform's first line says what is wrong when the author gets there. An earlier draft
+    /// classified the cause into “disk full”, “no permission” and “no folder” instead — measured on
+    /// this machine a read-only card throws <see cref="UnauthorizedAccessException"/> and reaches
+    /// exactly one of those branches, so two thirds of that vocabulary was copy for situations nobody
+    /// had observed. The platform's sentence is not a guess.</para>
+    ///
+    /// <para><b>The file name is the part the platform cannot supply.</b> The write composes into
+    /// <c>surface.json.tmp</c> and swaps, so a failure at the swap names the temporary file — a path
+    /// the author has never seen and cannot look at. That is why the store wraps the failure in
+    /// <see cref="SurfaceWriteException"/>, which carries the real path.</para>
     /// </remarks>
     [Fact]
-    public void The_status_bar_names_the_cause_in_the_readers_language()
+    public void The_status_bar_names_the_file_and_repeats_what_the_system_said()
     {
         var store = new FailingStore
         {
-            Failure = new UnauthorizedAccessException("Access to the path is denied."),
+            Failure = new SurfaceWriteException(
+                "write-failure-test",
+                @"C:\cards\surface.json",
+                new UnauthorizedAccessException("Access to the path is denied.")),
         };
         var editor = EditorOver(store);
 
         editor.Place(editor.DeclaredKeys[^1]);
         editor.AutoSaveIfDirty();
 
+        Assert.Contains("surface.json", editor.StatusLine, StringComparison.Ordinal);
+        Assert.Contains("denied", editor.StatusLine, StringComparison.Ordinal);
+
+        // Not the temporary file's name: that path is real, and useless to the author.
+        Assert.DoesNotContain("surface.json.tmp", editor.StatusLine, StringComparison.Ordinal);
+
         var refused = Assert.Single(editor.Diagnostics.Where(diagnostic =>
             diagnostic.Code == SurfaceEditorViewModel.SaveFailedCode));
 
         Assert.NotNull(refused.Data);
-        Assert.True(refused.Data!.TryGetValue("cause", out var cause));
-        Assert.Equal("not-permitted", cause);
+        Assert.True(refused.Data!.TryGetValue("file", out var file));
+        Assert.Contains("surface.json", file, StringComparison.Ordinal);
+        Assert.True(refused.Data!.TryGetValue("reason", out var reason));
+        Assert.Contains("denied", reason, StringComparison.Ordinal);
     }
+
+    /// <summary>A framework message is several lines and the bar is one.</summary>
+    /// <remarks>
+    /// Asserted on the helper rather than through a store, because the point is the shape of the
+    /// text: a message that arrives with advice after a full stop and a line break must not put
+    /// either of them on the status bar. The path's own full stop (<c>C:\Users\a.b\…</c>) must
+    /// survive, which is why the split is on <c>". "</c> and not on <c>'.'</c>.
+    /// </remarks>
+    [Theory]
+    [InlineData("Access to the path is denied.", "Access to the path is denied.")]
+    [InlineData("Access is denied.\r\n   at System.IO.File.WriteAllText(...)", "Access is denied.")]
+    [InlineData("disk full\nfree some space", "disk full")]
+    [InlineData(@"'C:\Users\a.b\surface.json' is denied.", @"'C:\Users\a.b\surface.json' is denied.")]
+    public void Only_the_first_line_of_a_message_reaches_the_bar(string message, string expected) =>
+        Assert.Equal(expected, SurfaceEditorViewModel.FirstSentence(message));
 
     private static SurfaceEditorViewModel EditorOver(ISurfaceStore store)
     {

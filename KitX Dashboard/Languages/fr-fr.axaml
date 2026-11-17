@@ -250,10 +250,7 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_SaveMountedRejected">La boîte à outils est montée — démontez-la avant d'enregistrer</sys:String>
     <sys:String x:Key="Text_Bench_SaveInvalidRejected">Échec de la validation ({0} problèmes), enregistrement refusé</sys:String>
     <sys:String x:Key="Text_Bench_Saved">Enregistré</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed">Échec de l'enregistrement : {0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_disk_full">Le disque est plein : la carte n'a pas pu être écrite. Libérez de l'espace, puis enregistrez à nouveau : {0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_not_permitted">Ce fichier est en lecture seule : la carte n'a pas pu être écrite. Modifiez ses autorisations, puis enregistrez à nouveau : {0}</sys:String>
-    <sys:String x:Key="Text_Bench_SaveFailed_no_folder">Le dossier de cette carte n'existe plus : la carte n'a pas pu être écrite. Recréez-le, puis enregistrez à nouveau : {0}</sys:String>
+    <sys:String x:Key="Text_Bench_SaveFailed">Impossible d'écrire « {0} » : {1}</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejectedTitle">Enregistrement refusé</sys:String>
     <sys:String x:Key="Text_Bench_SaveRejected">La validation de la configuration a échoué</sys:String>
     <sys:String x:Key="Text_Bench_SpawnRejected">Échec de l'essai : boîte à outils non montée ou nombre maximal d'instances atteint</sys:String>
@@ -358,7 +355,7 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">{kindName} (`{kind}`) conservé à la rangée {row}, poids {weight} : `min` ({min}) dépasse `max` ({max}) ; l'intervalle est écarté.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">{kindName} (`{kind}`) conservé à la rangée {row}, poids {weight} : `step` ({step}) n'est pas positif ; il vaut 1 par défaut.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">{kindName} (`{kind}`) conservé à la rangée {row}, poids {weight} : `decimals` ({decimals}) est négatif ; c'est au moteur de rendu de choisir par défaut.</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_save_failed">La carte n'a pas pu être écrite : {reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_save_failed">La carte n'a pas pu être écrite dans `{file}` : {reason}</sys:String>
     <!-- Workflow Editor (v6) -->
     <sys:String x:Key="Text_WorkflowEditor_AddHelperFunction">Ajouter une fonction auxiliaire</sys:String>
     <sys:String x:Key="Text_WorkflowEditor_AddParameter">Ajouter un paramètre</sys:String>

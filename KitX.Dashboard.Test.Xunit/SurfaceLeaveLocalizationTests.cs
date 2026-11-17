@@ -44,7 +44,7 @@ public class SurfaceLeaveLocalizationTests
         ("Text_Bench_Surface_LeaveBody", []),
         ("Text_Bench_Surface_LeaveAnyway", []),
         ("Text_Bench_Surface_LeaveStay", []),
-        ("Text_Bench_Diag_save_failed", ["reason"]),
+        ("Text_Bench_Diag_save_failed", ["file", "reason"]),
     ];
 
     private static readonly Regex Placeholder =
@@ -163,8 +163,16 @@ public class SurfaceLeaveLocalizationTests
             Assert.DoesNotContain(literal, markup, StringComparison.Ordinal);
     }
 
-[Fact]
-    public void A_write_that_fails_is_reported_as_a_finding_that_carries_the_reason()
+    /// <summary>The panel's sentence names the place and repeats the reason.</summary>
+    /// <remarks>
+    /// Asserted through the same <see cref="Diagnostic"/> the product builds, so the named values
+    /// are checked against what the writer records rather than against a dictionary made up here.
+    /// An earlier version hard-coded a reason and no place; the place was added because the store
+    /// knows the real file name while the platform's message names the temporary one, and a finding
+    /// that cannot say where is a finding the author cannot act on.
+    /// </remarks>
+    [Fact]
+    public void A_write_that_fails_is_reported_as_a_finding_that_carries_the_place_and_the_reason()
     {
         var viewModel = new SurfaceEditorViewModel(new ThrowingStore(), _ => []);
         viewModel.Load("save-failure-test");
@@ -179,8 +187,15 @@ public class SurfaceLeaveLocalizationTests
         var failure = Assert.Single(viewModel.Diagnostics);
 
         Assert.Equal(SurfaceEditorViewModel.SaveFailedCode, failure.Code);
-        Assert.Equal("The card could not be written: disk full", failure.Message);
+
+        // This store is an ordinary one, so there is no SurfaceWriteException to carry a path and
+        // the toolkit id stands in. What matters is that the sentence and the finding agree on it,
+        // and that the platform's own words come through.
+        Assert.Contains("save-failure-test", failure.Message, StringComparison.Ordinal);
+
         Assert.NotNull(failure.Data);
+        Assert.True(failure.Data!.TryGetValue("file", out var file));
+        Assert.Equal("save-failure-test", file);
         Assert.True(failure.Data!.TryGetValue("reason", out var reason));
         Assert.Equal("disk full", reason);
 
