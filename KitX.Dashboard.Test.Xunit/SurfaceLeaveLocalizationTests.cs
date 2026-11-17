@@ -38,6 +38,18 @@ public class SurfaceLeaveLocalizationTests
         ["en-us", "fr-fr", "ja-jp", "ko-kr", "ru-ru", "zh-cn", "zh-tw"];
 
     /// <summary>Every key this change is responsible for, and what it is allowed to contain.</summary>
+    /// <remarks>
+    /// <para><b>This table covers these five keys and nothing else.</b> It is not a registry of
+    /// every diagnostic sentence, and it does not promise that the placeholders of the other
+    /// <c>Text_Bench_Diag_*</c> lines are filled by anything. Those sentences are written by
+    /// <c>SurfaceValidator</c> and <c>SurfaceStore</c> in <c>KitX.ToolKit</c>, which this table
+    /// cannot see; asserting their placeholders here would mean either reading that producer
+    /// code (unreliable — it changes without this file) or keeping a second list as long as the
+    /// producer's (a second source of truth, which this codebase already pays for elsewhere).</para>
+    /// <para>To widen it, answer first: <em>who declares which placeholders each diagnostic
+    /// sentence is allowed to have?</em> Until there is an answer, a longer table here would be
+    /// a guess wearing a test's clothes.</para>
+    /// </remarks>
     private static readonly (string Key, string[] Placeholders)[] Keys =
     [
         ("Text_Bench_Surface_LeaveTitle", []),
