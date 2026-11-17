@@ -306,6 +306,7 @@
     <sys:String x:Key="Text_Bench_Surface_Remove">카드에서 제거</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">가중치는 1 이상이어야 합니다.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">행 번호는 1 이상이어야 합니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_NumberNotANumber">'{0}'은(는) 숫자여야 합니다.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Unsaved">아직 저장되지 않았습니다.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">저장했습니다.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">저장했지만 문제가 있습니다.</sys:String>

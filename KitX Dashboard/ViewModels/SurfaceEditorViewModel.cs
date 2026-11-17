@@ -1898,7 +1898,15 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
                 {
                     // Refused, and said out loud: a silently ignored keystroke is indistinguishable
                     // from a field that does not work.
-                    ValidationMessage = $"'{label}' must be a number.";
+                    //
+                    // Translated, because it lands in the same column as every finding the panel
+                    // shows, and an author who chose Chinese reads a Chinese panel with one English
+                    // sentence in it. string.Format for the same reason the element limit uses it:
+                    // the resource carries a {0}, and the fallback beside it has to be formatted the
+                    // same way or the two halves disagree.
+                    ValidationMessage = string.Format(
+                        TranslateText("Bench_Surface_NumberNotANumber") ?? "'{0}' must be a number.",
+                        label);
                     return e;
                 }
 

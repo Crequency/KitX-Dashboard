@@ -306,6 +306,7 @@
     <sys:String x:Key="Text_Bench_Surface_Remove">从卡片上移除</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">权重至少为 1。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">行号至少为 1。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_NumberNotANumber">“{0}”必须是数字。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Unsaved">尚未保存。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">已保存。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">已保存，但有问题。</sys:String>
