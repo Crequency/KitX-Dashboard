@@ -303,9 +303,10 @@
     <sys:String x:Key="Text_Bench_Surface_CompressRows">Сжать пустые строки</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Очистить карточку</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Проверка</sys:String>
-<sys:String x:Key="Text_Bench_Surface_Remove">Убрать с карточки</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Remove">Убрать с карточки</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Вес должен быть не меньше 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">Номер строки должен быть не меньше 1.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Unsaved">Ещё не сохранено.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">Сохранено.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">Сохранено, но есть проблемы.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">Карточка вмещает не более {0} элементов.</sys:String>

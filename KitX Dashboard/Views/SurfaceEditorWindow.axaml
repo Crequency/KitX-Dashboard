@@ -9,6 +9,7 @@
         Title="{DynamicResource Text_Bench_Surface_Title}"
         Width="1180"
         Height="900"
+        KeyDown="OnWindowKeyDown"
         WindowStartupLocation="CenterOwner">
 
     <Window.Resources>
@@ -71,6 +72,25 @@
         <Style Selector="Border.cell.selected">
             <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}" />
             <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <!--
+          The one action here that loses something. The renderer has Button.kitx-danger in its own
+          resource dictionary (§10.6 of the Surface design: 不可逆或代价高的动作 — 结束/删除/清空), and
+          that dictionary is not reachable from the Dashboard. The three colours are copied from the
+          design's table (亮色 #E0A6A8 / #FDF3F3 / #C0322F, 暗色 #7C3D41 / #3B2325 / #F0737A) rather
+          than invented, so the editor's danger reads the same as the card's would.
+        -->
+        <Style Selector="Button.danger">
+            <Setter Property="BorderBrush" Value="#E0A6A8" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="#FDF3F3" />
+            <Setter Property="Foreground" Value="#C0322F" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="12,6" />
+        </Style>
+        <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#FBE3E3" />
         </Style>
 
         <Style Selector="Border.grip">
@@ -292,18 +312,18 @@
                                                            Margin="0,14,0,0"
                                                            VerticalAlignment="Top"
                                                            TextTrimming="CharacterEllipsis" />
-                                                <!--  One control, at the bottom right: remove. A
-                                                      weight is not typed here any more — dragging the
-                                                      border beside the cell sets it, so there is
-                                                      nothing to confirm and nothing to explain.  -->
-                                                <Button Classes="flat"
-                                                        HorizontalAlignment="Right"
-                                                        VerticalAlignment="Bottom"
-                                                        ToolTip.Tip="{DynamicResource Text_Bench_Surface_Remove}"
-                                                        Command="{Binding $parent[Window].DataContext.RemoveCommand}"
-                                                        CommandParameter="{Binding}">
-                                                    <icon:MaterialIcon Width="14" Height="14" Kind="Close" />
-                                                </Button>
+                                                <!--
+                                                  There was a remove button here, 48x34 at the bottom
+                                                  right, and it overlapped the label of every one-slot
+                                                  cell by 48x18 — a click aimed at the cell's lower left
+                                                  deleted the cell instead, and the auto-save wrote it
+                                                  to disk with nothing said on screen. A cell may be 31
+                                                  DIP wide by design (ShareableWidth), 15 of which is
+                                                  content: a button with consequences cannot be made to
+                                                  fit by making it smaller. Removing is now an explicit
+                                                  act in the inspector, and Delete or Backspace on the
+                                                  canvas does the same thing.
+                                                -->
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -379,7 +399,7 @@
                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                     BorderThickness="1,0,0,0"
                     Padding="12,0,0,0">
-                <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
                     <TextBlock Grid.Row="0"
                                Text="{DynamicResource Text_Bench_Surface_Properties}"
                                FontWeight="SemiBold"
@@ -422,11 +442,28 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <TextBlock Grid.Row="2"
+                    <!--
+                      Removing is a deliberate act, beside the panel that says what will be removed —
+                      and it is only offered while something is selected, so the button cannot be
+                      pressed with nothing to delete. The cell's own corner used to carry this, which
+                      made a click on the cell's label delete the cell.
+                    -->
+                    <Button Grid.Row="2"
+                            Classes="danger"
+                            IsVisible="{Binding HasSelection}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Margin="0,0,0,16"
+                            ToolTip.Tip="{DynamicResource Text_Bench_Surface_Remove}"
+                            Command="{Binding RemoveCommand}"
+                            CommandParameter="{Binding Selected}"
+                            Content="{DynamicResource Text_Bench_Surface_Remove}" />
+
+                    <TextBlock Grid.Row="3"
                                Text="{DynamicResource Text_Bench_Surface_Check}"
                                FontWeight="SemiBold"
                                Margin="0,0,0,8" />
-                    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto">
                         <StackPanel Spacing="6">
                             <!-- The editor's own refusal: one gesture, one sentence. -->
                             <Border IsVisible="{Binding HasValidationMessage}"
@@ -467,8 +504,8 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <TextBlock Grid.Row="4"
-                               Text="{Binding Status}"
+                    <TextBlock Grid.Row="5"
+                               Text="{Binding StatusLine}"
                                FontSize="12"
                                Opacity="0.75"
                                TextWrapping="Wrap"

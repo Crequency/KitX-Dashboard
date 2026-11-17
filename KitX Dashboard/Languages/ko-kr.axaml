@@ -303,9 +303,10 @@
     <sys:String x:Key="Text_Bench_Surface_CompressRows">빈 행 붙이기</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">카드 비우기</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">확인</sys:String>
-<sys:String x:Key="Text_Bench_Surface_Remove">카드에서 제거</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Remove">카드에서 제거</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">가중치는 1 이상이어야 합니다.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">행 번호는 1 이상이어야 합니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Unsaved">아직 저장되지 않았습니다.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">저장했습니다.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">저장했지만 문제가 있습니다.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">카드에는 요소를 최대 {0}개까지 놓을 수 있습니다.</sys:String>

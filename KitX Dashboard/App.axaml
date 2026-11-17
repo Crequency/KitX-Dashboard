@@ -1,4 +1,4 @@
-﻿<Application x:Class="KitX.Dashboard.App"
+<Application x:Class="KitX.Dashboard.App"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fluent="using:FluentAvalonia.UI.Media"
@@ -66,6 +66,18 @@
     <Application.Styles>
         <sty:FluentAvaloniaTheme/>
         <materialIcons:MaterialIconStyles/>
+
+        <!--
+          Application-wide, because a class that is used by more than one window cannot be defined by
+          one of them. `Button.palette` was defined in BenchWindow's own Window.Styles while the Surface
+          editor also wrote Classes="palette" — and a Window.Styles entry reaches only that window, so
+          the editor's palette buttons were styled by nothing at all. Two setter, no theme: the shape of
+          this style is small enough that a window-scoped copy is pure duplication.
+        -->
+        <Style Selector="Button.palette">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
 
         <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml"/>
         <StyleInclude Source="avares://AvaloniaProgressRing/Styles/ProgressRing.xaml"/>

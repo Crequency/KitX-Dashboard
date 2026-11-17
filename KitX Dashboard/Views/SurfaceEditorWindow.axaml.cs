@@ -289,4 +289,34 @@ public partial class SurfaceEditorWindow : Window
         if (DataContext is SurfaceEditorViewModel editor)
             editor.Select(null);
     }
+
+    /// <summary>Delete or Backspace removes the selected cell; nothing else is a removal.</summary>
+    /// <remarks>
+    /// <para><b>In the window, not the view model.</b> Which key a keyboard gesture is, is a fact about
+    /// a control; what removing does is a fact about the document. The view model already exposes
+    /// <see cref="SurfaceEditorViewModel.Remove"/> and the inspector's button calls it — this is the
+    /// second way to ask for the same act, not a second act.</para>
+    ///
+    /// <para><b>Only when nothing is being typed into.</b> These keys mean "delete a character" inside
+    /// a text box, and the inspector is full of them; removing the selected cell because the author
+    /// pressed Backspace while editing a label would be the same defect as the button this replaces,
+    /// with a worse reach.</para>
+    /// </remarks>
+    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Delete or Key.Back))
+            return;
+
+        if (e.Source is TextBox or ComboBox or AutoCompleteBox)
+            return;
+
+        if (DataContext is not SurfaceEditorViewModel editor)
+            return;
+
+        if (editor.Selected is not { } selected)
+            return;
+
+        editor.Remove(selected);
+        e.Handled = true;
+    }
 }

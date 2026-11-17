@@ -43,10 +43,6 @@
     </Window.Resources>
 
     <Window.Styles>
-        <Style Selector="Button.palette">
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Margin" Value="0,2"/>
-        </Style>
         <Style Selector="TextBlock.section">
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>

@@ -251,15 +251,45 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     public bool IsDirty
     {
         get => _isDirty;
-        private set => this.RaiseAndSetIfChanged(ref _isDirty, value);
+        private set
+        {
+            if (_isDirty == value)
+                return;
+
+            this.RaiseAndSetIfChanged(ref _isDirty, value);
+            this.RaisePropertyChanged(nameof(StatusLine));
+        }
     }
 
     /// <summary>What the last save reported.</summary>
     public string Status
     {
         get => _status;
-        private set => this.RaiseAndSetIfChanged(ref _status, value);
+        private set
+        {
+            if (string.Equals(_status, value, StringComparison.Ordinal))
+                return;
+
+            this.RaiseAndSetIfChanged(ref _status, value);
+            this.RaisePropertyChanged(nameof(StatusLine));
+        }
     }
+
+    /// <summary>What the status bar says: an unsaved card says so instead of repeating the last save.</summary>
+    /// <remarks>
+    /// <para><b>Why this exists rather than more writes to <see cref="Status"/>.</b> The auto-save
+    /// writes to disk without saying anything when it succeeds, so between an edit and the next save
+    /// the bar held whatever the previous save had said — which, on a fresh window, is the empty
+    /// string. The author had edited a card and the screen said nothing at all. <see cref="IsDirty"/>
+    /// already knew; nothing was reading it.</para>
+    ///
+    /// <para><b>A view, not a second fact.</b> This composes the two properties that carry the facts
+    /// and stores nothing of its own, so it cannot disagree with them. <see cref="Status"/> keeps its
+    /// meaning — what the last save reported — because tests read it for exactly that.</para>
+    /// </remarks>
+    public string StatusLine => IsDirty
+        ? TranslateText("Bench_Surface_Unsaved") ?? "Not saved yet."
+        : Status;
 
     /// <summary>The editor's own refusal, or null when it has nothing to refuse.</summary>
     /// <remarks>

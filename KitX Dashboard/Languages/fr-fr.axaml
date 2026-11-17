@@ -303,9 +303,10 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_Surface_CompressRows">Resserrer les rangées vides</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Vider la carte</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Vérification</sys:String>
-<sys:String x:Key="Text_Bench_Surface_Remove">Retirer de la carte</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Remove">Retirer de la carte</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Le poids doit être au moins 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">La rangée doit être au moins 1.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_Unsaved">Pas encore enregistré.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">Enregistré.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">Enregistré, avec des problèmes.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">Une carte contient au plus {0} éléments.</sys:String>
