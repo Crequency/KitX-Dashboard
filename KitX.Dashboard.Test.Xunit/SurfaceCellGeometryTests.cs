@@ -337,49 +337,53 @@ public class SurfaceCellGeometryTests
 
         Assert.Equal(weightsBefore, WeightsOfRow(editor, 2));
 
-        // From here on the row's total weight is fixed, so the split of the dragged pair is a finite
-        // set: the left cell may hold anything from 1 to total-1 parts. Every one of those splits
-        // puts the border at a computable x. That makes "the border follows the hand" an exact,
-        // threshold-free statement:
-        //
-        //     after every pointer move, the border sits on the reachable position nearest the pointer
+        // From here on the statement is: after every pointer move, the border sits on the reachable
+        // position nearest the pointer. "Reachable" is a finite set because a weight is a whole
+        // number, and the set is a function of the row's current total — which the drag may refine
+        // while it runs, so the set is recomputed each frame rather than once from the grab.
         //
         // No tolerance to tune, and nothing that depends on how far the sweep runs or how big its
         // steps are — both of which are properties of a test, not of the code.
-        var total = WeightsOfRow(editor, 2).Sum();
-        var reachable = new List<double>();
-        for (var left = 1; left < total; left++)
-            reachable.Add(SurfaceElementVM.CellGap + (SurfaceElementVM.ShareableWidth(2) * left / total));
-
         var pointer = grab;
         var checkedFrames = 0;
         var offFrames = 0;
         var moved = 0;
+        var refined = 0;
         var previous = border.Centre;
+        var previousTotal = WeightsOfRow(editor, 2).Sum();
 
-        // Sweep well past the last reachable position so the saturating end is covered too: there the
-        // nearest reachable position is simply the last one, and the border must rest on it.
-        while (pointer < reachable[^1] + (4 * step))
+        // The row's right edge, not a distance from the start: a sweep that stopped short would make
+        // the saturation checks below vacuous, and the bound must not be a function of the numbers
+        // being measured.
+        var end = SurfaceElementVM.CanvasWidth;
+
+        while (pointer < end)
         {
             pointer += step;
-            var totalBefore = WeightsOfRow(editor, 2).Sum();
             editor.DragBoundary(border, pointer);
-            var landed = border.Centre;
 
-            // A frame that changes the row's total is the unit refinement frame — it renumbers the
-            // weights, so the reachable set itself moves and the comparison would be against the old
-            // one. In this implementation that is at most the first frame after the grab.
-            if (WeightsOfRow(editor, 2).Sum() != totalBefore)
-                continue;
+            var landed = border.Centre;
+            var total = WeightsOfRow(editor, 2).Sum();
+
+            // A frame that changes the row's total is a unit-refinement frame; it renumbers the
+            // weights, so the comparison below must use the set the *new* total describes. Counted
+            // rather than skipped: a drag that refined on every frame would be a document rewritten
+            // sixty times a second, and that is worth noticing.
+            if (total != previousTotal)
+            {
+                refined++;
+                previousTotal = total;
+            }
 
             checkedFrames++;
             if (Math.Abs(landed - previous) > 0.01)
                 moved++;
             previous = landed;
 
-            var nearest = reachable[0];
-            foreach (var candidate in reachable)
+            var nearest = SurfaceElementVM.CellGap;
+            for (var left = 1; left < total; left++)
             {
+                var candidate = SurfaceElementVM.CellGap + (SurfaceElementVM.ShareableWidth(2) * left / total);
                 if (Math.Abs(candidate - pointer) < Math.Abs(nearest - pointer))
                     nearest = candidate;
             }
@@ -401,10 +405,132 @@ public class SurfaceCellGeometryTests
         Assert.True(moved > 0, "the border never moved; the sweep proved nothing");
         Assert.Equal(0, offFrames);
 
+        // At most one renumbering for the whole drag. A lattice that is fine enough needs to be
+        // refined once; refining again means the first refinement was not fine enough, and refining
+        // on every frame means the drag rewrites the document sixty times a second.
+        Assert.True(
+            refined <= 1,
+            $"the row was renumbered {refined} times during one drag; a refinement is meant to happen " +
+            $"once, and a drag that keeps renumbering is rewriting the file while the hand moves");
+
         // The sweep must have reached the end of the row's range, or the comparison above would have
         // been vacuous about saturation.
-        Assert.Equal(total - 1, editor.Elements[4].Element.Weight);
+        var final = WeightsOfRow(editor, 2).Sum();
+        Assert.Equal(final - 1, editor.Elements[4].Element.Weight);
         Assert.Equal(1, editor.Elements[5].Element.Weight);
+    }
+
+    [Fact]
+    public void A_slow_drag_keeps_the_border_under_the_pointer_every_frame()
+    {
+        // The author's report: "dragging a border sideways twitches instead of following the mouse".
+        //
+        // The border can only stand where the row's integer weights put it, so how closely it can
+        // follow the hand is the question of how fine that lattice is. A lattice coarser than the
+        // pointer's own travel per frame gives no position next to the hand: the border holds still
+        // while the hand moves, then jumps past it and is dragged back — which is exactly what a
+        // twitch looks like, and why a fast drag hides it and a slow one does not.
+        //
+        // One pixel per frame is the smallest a frame's travel can be while still being a move, so
+        // "the border is within one pixel of the hand, on every frame, at one pixel per frame" is the
+        // statement with no tuned number in it. A drag may not be asked to do better than the pointer
+        // can express.
+        var document = new List<SurfaceElement>
+        {
+            new SurfaceTextElement { Row = 1, Weight = 15, Key = "wide" },
+            new SurfaceTextElement { Row = 1, Weight = 9, Key = "narrow" },
+        };
+
+        var editor = Editor(document);
+        var border = editor.Boundaries[0];
+
+        // A real document, not the palette's 1:1: fifteen to nine is what the file holds after some
+        // dragging, and it is the state in which the lattices are coarsest relative to the row.
+        Assert.Equal(15, editor.Elements[0].Element.Weight);
+        Assert.Equal(9, editor.Elements[1].Element.Weight);
+
+        var start = border.Centre;
+        var pointer = start;
+        var previous = start;
+        var frames = 0;
+
+        // A fixed end: the loop bound must not be a function of what the loop is measuring, or a
+        // border that stopped following would also stop the sweep and the test would report success.
+        var end = start + 60;
+
+        while (pointer < end)
+        {
+            pointer += 1;
+            editor.DragBoundary(border, pointer);
+
+            var landed = border.Centre;
+
+            Assert.True(
+                Math.Abs(landed - pointer) <= 1,
+                $"pointer at {pointer:F1}: the border is at {landed:F1}, {Math.Abs(landed - pointer):F1}px " +
+                $"away — the row's units are coarser than the pointer's own travel");
+
+            Assert.True(
+                landed >= previous - 0.01,
+                $"pointer at {pointer:F1}: the border went from {previous:F1} back to {landed:F1} — it " +
+                $"moved against the hand");
+
+            previous = landed;
+            frames++;
+        }
+
+        Assert.True(frames > 30, $"only {frames} frames were compared");
+        Assert.True(
+            border.Centre >= start + 55,
+            $"the border began at {start:F1} and ended at {border.Centre:F1}, while the hand travelled " +
+            $"to {end:F1} — it fell behind rather than following");
+    }
+
+    [Fact]
+    public void Once_the_border_reaches_the_edge_of_the_row_it_stops_moving_and_stops_rewriting()
+    {
+        // A drag that leaves the row: the border can go no further, because a weight is at least one
+        // part and the pair has to keep its whole share. Past that point the hand keeps travelling
+        // and the border cannot, so every further frame is a frame in which "follow the hand" is
+        // unsatisfiable.
+        //
+        // What must not happen there is the editor trying harder. The obvious way to try is to refine
+        // the units again — the lattice is what was holding the border back everywhere else on the
+        // row — but at the edge it is not the lattice, it is the edge, and refining changes nothing
+        // about where the border sits while multiplying every weight on the row. Left unchecked that
+        // runs until the growth guard stops it, and a drag off the end of a row quietly turns
+        // "15:9" into six-figure integers.
+        var document = new List<SurfaceElement>
+        {
+            new SurfaceTextElement { Row = 1, Weight = 15, Key = "wide" },
+            new SurfaceTextElement { Row = 1, Weight = 9, Key = "narrow" },
+        };
+
+        var editor = Editor(document);
+        var border = editor.Boundaries[0];
+
+        // Far past the right edge of the row, so the border is pinned.
+        editor.DragBoundary(border, SurfaceElementVM.CanvasWidth * 2);
+
+        var pinned = editor.Elements.Select(cell => cell.Element.Weight).ToList();
+        var pinnedBorder = border.Centre;
+
+        // Keep pushing. Thirty frames is more than enough for a per-frame refinement to show up, and
+        // it is not a number the implementation can satisfy by being slow.
+        for (var frame = 0; frame < 30; frame++)
+        {
+            editor.DragBoundary(border, (SurfaceElementVM.CanvasWidth * 2) + frame);
+
+            Assert.Equal(pinnedBorder, border.Centre, 3);
+        }
+
+        Assert.Equal(
+            pinned,
+            editor.Elements.Select(cell => cell.Element.Weight).ToList());
+
+        // And the pinned state is the edge of the row, not some arbitrary place: the left cell holds
+        // every part but the right cell's one.
+        Assert.Equal(1, editor.Elements[1].Element.Weight);
     }
 
     /// <summary>The weights of every cell on one row, in the order they are drawn.</summary>

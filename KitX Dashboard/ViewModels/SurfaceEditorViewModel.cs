@@ -634,15 +634,34 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         MarkDirty();
     }
 
-    /// <summary>How many canvas pixels one weight unit should be worth, during a drag.</summary>
+    /// <summary>How many canvas pixels one weight unit may be worth, during a drag. Never more than one.</summary>
     /// <remarks>
-    /// A row of two cells at weight 1 and 1 has no room to move: the pair's total is 2, so the only
-    /// integer split is 1/1. Dragging it would do nothing, and "nothing happened" is the worst
+    /// <para>A row of two cells at weight 1 and 1 has no room to move: the pair's total is 2, so the
+    /// only integer split is 1/1. Dragging it would do nothing, and "nothing happened" is the worst
     /// possible answer to a deliberate gesture. So a drag may refine the row's units — see
-    /// <see cref="DragBoundary"/> — and this is how fine a unit should be: about sixteen pixels,
-    /// which is a fifth of the narrowest cell and a comfortable target for a mouse.
+    /// <see cref="DragBoundary"/> — and this is the finest a unit may stay.</para>
+    ///
+    /// <para><b>One canvas pixel is the pointer's own resolution, and that is the whole rule.</b> A
+    /// weight is an integer, so a drag can only ever place the border on the lattice the row's units
+    /// describe. When a unit is worth more than the distance the pointer moves in one frame, the
+    /// border has nothing to land on between two lattices, and it waits: the hand travels and the
+    /// border sits still for a few frames, then jumps past the hand and comes back. That is the
+    /// "twitching" the author reported, and it is a property of the lattice, not of the arithmetic
+    /// that reads the pointer. This constant used to be 16, chosen as "a comfortable distance for a
+    /// mouse to drag before the number changes" — a real thing to want, but it was bought by making
+    /// the border unable to stand where the hand is.</para>
+    ///
+    /// <para><b>The cost, and why it is the lesser one.</b> Refining the units multiplies every
+    /// weight on the row by the same factor, so the ratios — everything the renderer reads — are
+    /// unchanged; only the integers in <c>surface.json</c> grow, to three digits on a row that has
+    /// been dragged. The alternative, keeping the units coarse and having the border follow the
+    /// pointer from a fractional position that is quantised once on release, would make a cell's
+    /// drawn width stop being a function of its declaration: <see cref="SurfaceElementVM"/> would
+    /// have to read a drag in progress out of the editor on every layout pass, which is the coupling
+    /// its class comment exists to forbid. Readable-anywhere ratios beat a picture that disagrees
+    /// with the file for as long as the button is held.</para>
     /// </remarks>
-    public const double PixelsPerWeightUnit = 16;
+    public const double PixelsPerWeightUnit = 1;
 
     /// <summary>Drags the border between two cells to a canvas position.</summary>
     /// <param name="boundary">The border being dragged.</param>
@@ -713,18 +732,43 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         // before any rounding, so the finer unit below divides the right interval.
         var fraction = Math.Clamp(wantedD / pairWeight, 0, 1);
 
-        var pairPixels = left.Width + SurfaceElementVM.CellGap + right.Width;
-        var wantedUnits = (int)Math.Round(pairPixels / PixelsPerWeightUnit);
-        var factor = Math.Max(1, (int)Math.Ceiling(wantedUnits / (double)pairWeight));
+        // Where the border would land if the pair kept the units it has now, in pixels. Compared
+        // against the pointer rather than against a weight, because the thing that has to hold is
+        // "the border is where the hand is" — a statement about pixels.
+        var coarse = Math.Clamp((int)Math.Round(fraction * pairWeight), 1, pairWeight - 1);
+        var coarseX = (SurfaceElementVM.CellGap * (withinRow + 1))
+            + (shareable * (double)(weightBefore + coarse) / totalWeight);
 
-        // Guard against a pathological row growing without bound: a factor is only worth applying
-        // when the resulting numbers stay in a range a person could still read in the file.
-        if ((long)totalWeight * factor > 100_000)
-            factor = 1;
+        // The row's units are refined only when they are too coarse to stand next to the hand.
+        //
+        // Always refining would be simpler, and wrong: pressing a border without moving would
+        // renumber the row (15:9 becoming 240:144) and mark the document dirty, so that a gesture
+        // which did nothing would leave a file that changed. Refining on demand keeps a zero-length
+        // drag a no-op, and still lets the lattice follow the hand from the first pixel that needs it.
+        //
+        // Half a pixel is where the comparison turns, and it is not a tuned number: rounding to the
+        // nearest unit can never be further out than half a unit, so once the border is more than
+        // half a pixel from the hand there is a finer lattice that would stand closer.
+        var factor = 1;
+        if (Math.Abs(coarseX - canvasX) > 0.5)
+        {
+            // A unit of the pair is worth `pairPixels / pairTotal` pixels, so pairTotal has to reach
+            // the pair's width in pixels for the border to be able to stand within one pixel of the
+            // hand. Rounded up, not down: a lattice one unit too coarse puts the border on the wrong
+            // side of the hand, while one unit too fine costs only a slightly larger integer.
+            var pairPixels = left.Width + SurfaceElementVM.CellGap + right.Width;
+            var wantedUnits = (int)Math.Ceiling(pairPixels / PixelsPerWeightUnit);
+            factor = Math.Max(1, (int)Math.Ceiling(wantedUnits / (double)pairWeight));
+
+            // Guard against a pathological row growing without bound. This now bites on very wide
+            // cards rather than on ordinary ones; when it does, a coarse lattice is still better than
+            // integers nobody can read.
+            if ((long)totalWeight * factor > 100_000)
+                factor = 1;
+        }
 
         var pairTotal = pairWeight * factor;
-        var newLeft = (int)Math.Round(fraction * pairTotal);
-        newLeft = Math.Clamp(newLeft, 1, pairTotal - 1);
+        var newLeft = Math.Clamp((int)Math.Round(fraction * pairTotal), 1, pairTotal - 1);
         var newRight = pairTotal - newLeft;
 
         if (newLeft == leftWeight && newRight == rightWeight)
