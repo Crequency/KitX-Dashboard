@@ -145,11 +145,46 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
         if (!confirmed)
             return;
 
-        _toolkitService.DeleteToolkit(toolkitId);
+        string? failure = null;
+
+        try
+        {
+            _toolkitService.DeleteToolkit(toolkitId);
+        }
+        catch (Exception ex)
+        {
+            // The store refuses a mounted ToolKit (`ToolkitService.DeleteToolkit` throws
+            // `toolkit.mounted`), and moving the directory into `.trash` can fail with an
+            // `IOException`. Neither used to reach the screen: the exception travelled to
+            // `RxApp.DefaultExceptionHandler`, which writes one log line, so pressing delete
+            // looked like nothing happening at all.
+            //
+            // This is an exit, not a fence. Greying the button out while mounted would hide the
+            // failure from anyone who reaches the command from code -- and it would turn an
+            // explained refusal into a silent button, which is less than the user has today.
+            // `CanDelete` would also be a per-card copy of a service-level fact, i.e. a second
+            // place that can go stale; the service is the only thing that knows.
+            //
+            // The message is written onto the card *after* the rebuild below, and that ordering
+            // is the point: `card` is the reference that was captured before the dialog opened,
+            // and `_cards` may have been rebuilt while it was up. Writing to the captured
+            // instance would put the message on a card the list no longer holds, which looks
+            // exactly like the message never being written.
+            //
+            // The text is the exception's own words: written for developers, not translated.
+            // Making it a language key is a separate change -- seven dictionaries and a reason
+            // token per code -- and mixing it in here would make the red evidence ambiguous
+            // about which half was under test.
+            failure = ex.Message;
+        }
 
         // Re-read rather than patch: `_cards` may have been rebuilt while the dialog was up, and
-        // editing it here would race whichever handler rebuilt it.
+        // editing it here would race whichever handler rebuilt it. This runs whether the delete
+        // succeeded or was refused, so the page shows what the store actually holds.
         RefreshCards();
+
+        if (failure is not null)
+            _cards.FirstOrDefault(c => c.Model.GetId() == toolkitId)?.ErrorMessage = failure;
     }
 
     private void RefreshCards()

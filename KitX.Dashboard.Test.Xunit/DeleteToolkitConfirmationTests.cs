@@ -41,10 +41,18 @@ public class DeleteToolkitConfirmationTests
 
         public string? LastAskedName { get; private set; }
 
+        /// <summary>
+        /// Runs while the dialog is "open", i.e. between the handler's capture of the card and
+        /// its use of the answer. Used to rebuild the card list underneath the handler, which is
+        /// the real ordering: `ToolkitListChanged` can fire while the dialog is up.
+        /// </summary>
+        public Action? WhileAsking { get; set; }
+
         public Task<bool> ConfirmDeleteToolkitAsync(string toolkitName, Window? owner = null)
         {
             QuestionsAsked++;
             LastAskedName = toolkitName;
+            WhileAsking?.Invoke();
             return Task.FromResult(answer);
         }
 
@@ -75,11 +83,40 @@ public class DeleteToolkitConfirmationTests
 
         public List<string> Deletions { get; } = [];
 
+        /// <summary>
+        /// When set, a delete fails the way the real store fails: `ToolkitService.DeleteToolkit`
+        /// throws for a mounted ToolKit, and moving the directory into `.trash` can throw an
+        /// `IOException`. Off by default so the four confirmation tests keep seeing a store that
+        /// records and returns.
+        /// </summary>
+        public Exception? DeleteThrows { get; set; }
+
         public IReadOnlyList<Toolkit> ListToolkits() => _toolkits;
+
+        /// <summary>
+        /// Drops a ToolKit from the list and announces it, which is what the real service does
+        /// after a successful delete. Announcing rather than letting the test call refresh keeps
+        /// the test on the production path: the page rebuilds because it is subscribed, not
+        /// because the test reached in.
+        /// </summary>
+        public void RemoveAndAnnounce(string toolkitId)
+        {
+            _toolkits.RemoveAll(t => t.GetId() == toolkitId);
+            ToolkitListChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>Puts a ToolKit back without announcing, so the next announce rebuilds both.</summary>
+        public void Restore(Toolkit toolkit)
+        {
+            _toolkits.Add(toolkit);
+            _toolkits.Sort((left, right) => string.CompareOrdinal(left.GetId(), right.GetId()));
+        }
 
         public bool DeleteToolkit(string toolkitId)
         {
             Deletions.Add(toolkitId);
+            if (DeleteThrows is not null)
+                throw DeleteThrows;
             return _toolkits.RemoveAll(t => t.GetId() == toolkitId) > 0;
         }
 
@@ -215,5 +252,68 @@ public class DeleteToolkitConfirmationTests
 
         Assert.Equal(before, page.Cards.Select(card => card.Model.GetId()).ToList());
         Assert.Empty(store.Deletions);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // The refusal has to reach the screen, not the log
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task A_refused_delete_says_why_on_the_card_that_was_clicked()
+    {
+        var (page, store, _) = Build(answer: true);
+        store.DeleteThrows = new InvalidOperationException(
+            "ToolKit 'tk-1' is mounted; unmount before deleting.");
+
+        await page.DeleteToolkitCommand.Execute(page.Cards[0]).ToTask();
+
+        // The card is read back out of the collection rather than off the reference the test
+        // still holds -- asking the reference would pass even when the collection has moved on.
+        var card = Assert.Single(page.Cards, c => c.Model.GetId() == "tk-1");
+        Assert.Contains("unmount before deleting", card.ErrorMessage);
+        Assert.Equal(2, page.Cards.Count);
+    }
+
+    [Fact]
+    public async Task A_refusal_survives_the_list_being_rebuilt_while_the_question_was_up()
+    {
+        var (page, store, windows) = Build(answer: true);
+        store.DeleteThrows = new IOException("the disk is full");
+
+        // The list is rebuilt *while the dialog is open*, which is what `ToolkitListChanged`
+        // does in production. The handler captured `card` before this ran, so writing the
+        // message onto that instance would put it on a card the collection no longer holds --
+        // and the page would show nothing, which is indistinguishable from swallowing it.
+        windows.WhileAsking = () =>
+        {
+            // A rebuild that keeps the same two ToolKits: the card the handler captured is
+            // replaced by a fresh instance with the same id, which is exactly the case where
+            // writing to the captured reference looks right and shows nothing.
+            store.RemoveAndAnnounce("tk-2");
+            store.Restore(Sample("second", "tk-2"));
+        };
+
+        await page.DeleteToolkitCommand.Execute(page.Cards[0]).ToTask();
+
+        var card = Assert.Single(page.Cards, c => c.Model.GetId() == "tk-1");
+        Assert.Contains("disk is full", card.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_refusal_after_the_toolkit_is_gone_leaves_no_card_to_complain_on()
+    {
+        var (page, store, windows) = Build(answer: true);
+        store.DeleteThrows = new IOException("the disk is full");
+
+        // The ToolKit leaves the store while the dialog is up, so by the time the refusal is
+        // known there is no card left to carry it. The page must survive that: a `?.` that is
+        // silently null is the right answer here, and a second exception thrown from inside the
+        // catch would replace "the delete failed" with "the page crashed".
+        windows.WhileAsking = () => store.RemoveAndAnnounce("tk-1");
+
+        await page.DeleteToolkitCommand.Execute(page.Cards[0]).ToTask();
+
+        Assert.DoesNotContain(page.Cards, c => c.Model.GetId() == "tk-1");
+        Assert.Equal(1, store.Deletions.Count);
     }
 }
