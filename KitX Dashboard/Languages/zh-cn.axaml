@@ -311,6 +311,7 @@
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">行号至少为 1。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NumberNotANumber">“{0}”必须是数字。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Unsaved">尚未保存。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_LoadDropped">这个文件里有 {0} 项无法加载，不在卡片上。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">已保存。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">已保存，但有问题。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">一张卡片最多放 {0} 个元素。</sys:String>

@@ -311,6 +311,7 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">La rangée doit être au moins 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NumberNotANumber">« {0} » doit être un nombre.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Unsaved">Pas encore enregistré.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_LoadDropped">{0} élément(s) de ce fichier n'ont pas pu être chargés et ne sont pas sur la carte.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">Enregistré.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">Enregistré, avec des problèmes.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">Une carte contient au plus {0} éléments.</sys:String>

@@ -311,6 +311,7 @@
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">橫排序號至少為 1。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NumberNotANumber">「{0}」必須是數字。</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Unsaved">尚未儲存。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_LoadDropped">這個檔案裡有 {0} 項無法載入，不在卡片上。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">已儲存。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">已儲存，但有問題。</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">一張卡片最多放 {0} 個元素。</sys:String>

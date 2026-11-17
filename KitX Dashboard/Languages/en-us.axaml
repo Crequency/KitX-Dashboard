@@ -311,6 +311,7 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">Row must be at least 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NumberNotANumber">'{0}' must be a number.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Unsaved">Not saved yet.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_LoadDropped">{0} item(s) in this file could not be loaded and are not on the card.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">Saved.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">Saved, with problems.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">A card holds at most {0} elements.</sys:String>

@@ -311,6 +311,7 @@
     <sys:String x:Key="Text_Bench_Surface_RowOutOfRange">Номер строки должен быть не меньше 1.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_NumberNotANumber">«{0}» должно быть числом.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Unsaved">Ещё не сохранено.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_LoadDropped">{0} элемент(ов) из этого файла не удалось загрузить, и на карточке их нет.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_Saved">Сохранено.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_SavedWithProblems">Сохранено, но есть проблемы.</sys:String>
   <sys:String x:Key="Text_Bench_Surface_TooManyElements">Карточка вмещает не более {0} элементов.</sys:String>

@@ -413,10 +413,41 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         }
 
         if (loaded.Warnings.Count > 0)
-            Log.Warning("[SurfaceEditor] {Count} element(s) were dropped loading '{Toolkit}'",
-                loaded.Warnings.Count, toolkitId);
+            ReportDroppedOnLoad(loaded.Warnings);
 
         RefreshUnplaced();
+    }
+
+    /// <summary>The code a load reports under when it could not keep every element the file had.</summary>
+    /// <remarks>
+    /// <para><b>The count is the news, and the log was the only place it went.</b> Reading a file
+    /// drops elements the build cannot draw — an unknown <c>type</c>, a field the contract never
+    /// declared — and the remainder is a legitimate card. What was missing was any statement on
+    /// screen: the author opened a card, it was one cell shorter than the file, and nothing said the
+    /// file used to hold more. A card that quietly lost a cell looks exactly like a card that never
+    /// had it.</para>
+    ///
+    /// <para><b>Each dropped element keeps its own sentence in the panel.</b> The count alone says
+    /// "something is gone"; the entries say what, and they are already translated by code through
+    /// the same path every other finding takes, so this adds no vocabulary of its own.</para>
+    /// </remarks>
+    public const string DroppedOnLoadCode = "surface.load.dropped";
+
+    /// <summary>Says on screen what reading the file had to throw away.</summary>
+    /// <param name="warnings">One entry per element the store could not keep.</param>
+    private void ReportDroppedOnLoad(IReadOnlyList<Diagnostic> warnings)
+    {
+        Log.Warning("[SurfaceEditor] {Count} element(s) were dropped loading '{Toolkit}'",
+            warnings.Count, ToolkitId);
+
+        // After the height finding, not before: RefreshTooTall has already run through Rebuild, and
+        // these describe the file rather than the card, so they read last.
+        foreach (var warning in warnings)
+            Diagnostics.Add(warning);
+
+        Status = string.Format(
+            TranslateText("Bench_Surface_LoadDropped") ?? "{0} item(s) could not be loaded.",
+            warnings.Count);
     }
 
     /// <summary>The elements currently on the canvas, in declaration order.</summary>
