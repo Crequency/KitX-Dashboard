@@ -333,8 +333,8 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_Diag_file_unsupported_layout_version">`{file}` déclare `layoutVersion` {version} ; cette version dispose selon {expected}. Refus plutôt que reflow.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_elements_missing">`{file}` n'a pas de tableau `elements`.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unknown_field">`{file}` a un champ de premier niveau non reconnu `{field}` ; il a été ignoré. Les fichiers de disposition écrits pour un ancien modèle en portent souvent un.</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">Un élément a été écarté : {reason}</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_empty">Un élément a été écarté : il s'est désérialisé en null.</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">`{type}` de la ligne {row} a été écarté : {reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_empty">L'élément n° {index} de `elements` a été écarté : il s'est désérialisé en null.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_events_not_allowed">{kindName} (`{kind}`) ne peut pas déclarer `events` ; seuls `Button` et `Input` s'expriment d'eux-mêmes, et les valeurs des autres voyagent sous l'élément qui le fait. Le champ a été ignoré.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_unknown_field">{kindName} (`{kind}`) a un champ non reconnu `{field}` ; il a été ignoré et la valeur par défaut appliquée.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_no_key">{kindName} (`{kind}`) écarté à la rangée {row}, poids {weight} : il n'est lié à aucune clé et aucun nom de clé n'a été fourni.</sys:String>

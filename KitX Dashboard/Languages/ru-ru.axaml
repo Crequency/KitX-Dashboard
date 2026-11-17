@@ -333,8 +333,8 @@
     <sys:String x:Key="Text_Bench_Diag_file_unsupported_layout_version">`{file}` объявляет `layoutVersion` {version}, а эта сборка раскладывает по {expected}. Отказываюсь, а не переверстываю.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_elements_missing">В `{file}` нет массива `elements`.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unknown_field">В `{file}` есть незнакомое поле верхнего уровня `{field}`; оно проигнорировано. Файлы раскладки, написанные под старую модель, часто его несут.</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">Отброшен один элемент: {reason}</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_empty">Отброшен один элемент: он десериализовался в null.</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">Элемент `{type}` в строке {row} отброшен: {reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_empty">Элемент № {index} в `elements` отброшен: он десериализовался в null.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_events_not_allowed">{kindName} (`{kind}`) не может объявлять `events`; сами говорят только `Button` и `Input`, а значения остальных идут под тем элементом, который это делает. Поле проигнорировано.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_unknown_field">У {kindName} (`{kind}`) незнакомое поле `{field}`; оно проигнорировано, применено значение по умолчанию.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_no_key">Отброшен {kindName} (`{kind}`) в строке {row}, вес {weight}: он не привязан к ключу, и имя ключа не задано.</sys:String>

@@ -333,8 +333,8 @@
     <sys:String x:Key="Text_Bench_Diag_file_unsupported_layout_version">`{file}` 宣告的 `layoutVersion` 是 {version}，而本版本依 {expected} 排版。寧可拒絕，也不重排。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_elements_missing">`{file}` 裡沒有 `elements` 陣列。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unknown_field">`{file}` 有一個不認得的頂層欄位 `{field}`，已忽略。依舊版排版模型寫成的檔案常帶這種欄位。</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">捨棄了一個元素：{reason}</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_empty">捨棄了一個元素：它反序列化為 null。</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">已捨棄第 {row} 行的 `{type}`：{reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_empty">已捨棄 `elements` 中的第 {index} 個元素：它反序列化為 null。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_events_not_allowed">{kindName}（`{kind}`）不能宣告 `events`；只有 `Button` 和 `Input` 自己能發聲，其餘元素的值隨著它們一起送出。該欄位已忽略。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_unknown_field">{kindName}（`{kind}`）有不認得的欄位 `{field}`，已忽略並套用預設值。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_no_key">已捨棄第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：它沒有綁定任何鍵，也沒給出鍵名。</sys:String>

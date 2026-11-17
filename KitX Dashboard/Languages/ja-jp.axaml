@@ -333,8 +333,8 @@
     <sys:String x:Key="Text_Bench_Diag_file_unsupported_layout_version">`{file}` は `layoutVersion` {version} を宣言していますが、このビルドは {expected} でレイアウトします。組み直さずに拒否します。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_elements_missing">`{file}` に `elements` 配列がありません。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unknown_field">`{file}` に未知のトップレベル フィールド `{field}` があり、無視しました。古いレイアウト モデル向けに書かれたファイルにはよくあります。</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">要素を 1 つ破棄しました：{reason}</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_empty">要素を 1 つ破棄しました：デシリアライズ結果が null でした。</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">{row} 行目の `{type}` を破棄しました：{reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_empty">`elements` の {index} 番目の要素を破棄しました：デシリアライズ結果が null でした。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_events_not_allowed">{kindName}（`{kind}`）は `events` を宣言できません。自分で発信できるのは `Button` と `Input` だけで、ほかの要素の値はそれらに載って送られます。このフィールドは無視しました。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_unknown_field">{kindName}（`{kind}`）に未知のフィールド `{field}` があり、無視して既定値を適用しました。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_no_key">行 {row}、重み {weight} の {kindName}（`{kind}`）を破棄しました：どのキーにも結び付いておらず、キー名も指定されていません。</sys:String>

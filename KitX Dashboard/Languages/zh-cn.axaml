@@ -333,8 +333,8 @@
     <sys:String x:Key="Text_Bench_Diag_file_unsupported_layout_version">`{file}` 声明的 `layoutVersion` 是 {version}，而本版本按 {expected} 排版。宁可拒绝，也不重排。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_elements_missing">`{file}` 里没有 `elements` 数组。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unknown_field">`{file}` 有一个不认识的顶层字段 `{field}`，已忽略。按旧版排版模型写成的文件常带这种字段。</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">丢弃了一个元素：{reason}</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_empty">丢弃了一个元素：它反序列化为 null。</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">已丢弃第 {row} 行的 `{type}`：{reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_empty">已丢弃 `elements` 中的第 {index} 个元素：它反序列化为 null。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_events_not_allowed">{kindName}（`{kind}`）不能声明 `events`；只有 `Button` 和 `Input` 自己能发声，其余元素的值随它们一起走。该字段已忽略。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_unknown_field">{kindName}（`{kind}`）有不认识的字段 `{field}`，已忽略并采用默认值。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_no_key">已丢弃第 {row} 行、权重 {weight} 的 {kindName}（`{kind}`）：它没有绑定任何键，也没给出键名。</sys:String>

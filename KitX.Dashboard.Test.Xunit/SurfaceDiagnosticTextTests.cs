@@ -88,8 +88,9 @@ public class SurfaceDiagnosticTextTests
     /// </remarks>
     private static readonly HashSet<string> KnownPlaceholders = new(StringComparer.Ordinal)
     {
-        "count", "decimals", "expected", "field", "file", "key", "kind", "kindName", "known",
-        "max", "min", "name", "reason", "row", "step", "type", "value", "version", "weight",
+        "count", "decimals", "expected", "field", "file", "index", "key", "kind", "kindName",
+        "known", "max", "min", "name", "reason", "row", "step", "type", "value", "version",
+        "weight",
     };
 
     private static readonly Regex Placeholder =

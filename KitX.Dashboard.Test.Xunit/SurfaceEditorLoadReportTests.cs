@@ -1,6 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
+using Avalonia.Markup.Xaml;
 using KitX.Dashboard.ViewModels;
 using KitX.ToolKit.Contract;
 using KitX.ToolKit.Contract.Declaration;
@@ -93,12 +98,62 @@ public class SurfaceEditorLoadReportTests
         Assert.Equal(DroppingStore.Kept, editor.Elements.Count);
     }
 
+    /// <summary>The panel names the row, not only the number of things missing.</summary>
+    /// <remarks>
+    /// <para><b>Why a count is not enough.</b> “Two items could not be loaded” tells the author to go
+    /// looking. It does not tell them where to look, and a card of a dozen rows gives a dozen
+    /// places to check against the file by eye. The row is the thing they typed and the thing they
+    /// can go and edit, so the sentence has to carry it.</para>
+    ///
+    /// <para><b>Read through the same path the panel reads.</b> The assertion formats the shipped
+    /// <c>zh-cn</c> sentence with the values the producer recorded — not against a sentence written
+    /// into this test. A test that spells out the sentence here would agree with the dictionary by
+    /// construction and would keep passing if the producer stopped recording <c>row</c>; this one
+    /// fails on either.</para>
+    /// </remarks>
+    [AvaloniaFact]
+    public void The_panel_names_the_row_a_dropped_element_came_from()
+    {
+        var editor = EditorOver(new DroppingStore(dropped: 2));
+        editor.Load("load-report-test");
+
+        var dictionary = Assert.IsType<ResourceDictionary>(AvaloniaRuntimeXamlLoader.Load(
+            File.ReadAllText(RepositoryFile(
+                Path.Combine(@"KitX Clients\KitX Dashboard\KitX Dashboard", "Languages", "zh-cn.axaml")))));
+
+        Assert.True(dictionary.TryGetResource("Text_Bench_Diag_element_unsupported_type", null,
+            out var found));
+        var sentence = Assert.IsType<string>(found);
+
+        // The two entries say row 1 and row 2; the numbers are distinct on purpose, so a panel that
+        // printed the same one twice cannot pass.
+        foreach (var (diagnostic, row) in editor.Diagnostics.Zip(["1", "2"]))
+        {
+            var line = SurfaceDiagnosticText.Fill(sentence, diagnostic.Data);
+
+            Assert.Contains($"第 {row} 行", line, StringComparison.Ordinal);
+            Assert.Contains("Slider", line, StringComparison.Ordinal);
+            Assert.DoesNotContain("{", line, StringComparison.Ordinal);
+        }
+    }
+
     private static SurfaceEditorViewModel EditorOver(ISurfaceStore store)
     {
         var editor = new SurfaceEditorViewModel(
             store, _ => [new KeyDeclaration("title", "string", KeyRole.Out)]);
 
         return editor;
+    }
+
+    private static string RepositoryFile(string relativePath)
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "KitX.sln")))
+            dir = dir.Parent;
+
+        Assert.NotNull(dir);
+        return Path.Combine(dir!.FullName, relativePath);
     }
 
     /// <summary>A store whose load keeps one element and drops as many as it is told.</summary>
@@ -123,8 +178,14 @@ public class SurfaceEditorLoadReportTests
                 .Range(1, _dropped)
                 .Select(row => Diagnostic.Warning(
                     DroppedCode,
-                    $"Dropped one element: no type named 'Slider' at row {row}.",
-                    new DiagnosticPath(ToolkitId: toolkitId)))
+                    $"Dropped element at row {row}: no type named 'Slider'.",
+                    new DiagnosticPath(ToolkitId: toolkitId),
+                    new Dictionary<string, string>(StringComparer.Ordinal)
+                    {
+                        ["row"] = row.ToString(CultureInfo.InvariantCulture),
+                        ["type"] = "Slider",
+                        ["reason"] = "no type named 'Slider'",
+                    }))
                 .ToList();
 
             return new SurfaceLoadResult(new SurfaceDocument { Elements = kept }, [], dropped);

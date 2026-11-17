@@ -333,8 +333,8 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unsupported_layout_version">`{file}` declares `layoutVersion` {version}; this build lays out {expected}. Refusing rather than reflowing.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_elements_missing">`{file}` has no `elements` array.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_file_unknown_field">`{file}` has an unrecognised top-level field `{field}`; it was ignored. Layout files written for an older layout model often carry one.</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">Dropped one element: {reason}</sys:String>
-    <sys:String x:Key="Text_Bench_Diag_element_empty">Dropped one element: it deserialised to null.</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_unsupported_type">Dropped the `{type}` at row {row}: {reason}</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_empty">Dropped element {index} of `elements`: it deserialised to null.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_events_not_allowed">{kindName} cannot declare `events`; only a `Button` or an `Input` speaks on its own, and the others' values travel under whichever element does. The field was ignored.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_unknown_field">{kindName} has an unrecognised field `{field}`; it was ignored and the default applied.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_no_key">Dropped {kindName} at row {row}, weight {weight}: it is not bound to a key and no key name was given.</sys:String>
