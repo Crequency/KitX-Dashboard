@@ -176,6 +176,12 @@
     <sys:String x:Key="Text_ToolKit_Create">Новый ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Удалить</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyTitle">Пока нет ToolKit</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteTitle">Удалить этот инструментарий?</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteBody">«{0}» и всё его содержимое будут удалены из хранилища.</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteWarning">Отменить это из приложения нельзя.</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteConfirm">Удалить</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteCancel">Отмена</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteUntitled">этот инструментарий</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyHint">Нажмите «Новый ToolKit», чтобы создать первый</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — Верстак</sys:String>
     <sys:String x:Key="Text_Bench_ManualTrigger">Ручной триггер</sys:String>

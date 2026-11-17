@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using KitX.Core.Contract.Event;
 using KitX.Dashboard.ViewModels;
@@ -162,5 +163,26 @@ public class WindowService : IWindowService
     public void ShowDialog<T>(T window, Window? owner = null)
         where T : Window
         => ShowWindow(window, owner, showDialog: true);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <para>Uses <c>ShowDialog&lt;bool&gt;</c> directly rather than <see cref="ShowDialog{T}"/>:
+    /// the non-generic wrapper calls <c>ShowDialog(owner)</c> without a type argument, which
+    /// returns a bare <see cref="Task"/> and throws the answer away.</para>
+    /// <para>A modal with no owner is not modal in Avalonia — it would take the whole desktop and
+    /// leave the asker unblocked. The page can be built without a main window in tests, so the
+    /// null case answers "no" instead of throwing.</para>
+    /// </remarks>
+    public async Task<bool> ConfirmDeleteToolkitAsync(string toolkitName, Window? owner = null)
+    {
+        if (owner is null)
+            return false;
+
+        var dialog = new DeleteToolkitDialog(toolkitName);
+
+        // Anything but an explicit confirm means no: closing with the X and pressing Escape both
+        // settle as null on the task, and `Close(false)` settles as false.
+        return await dialog.ShowDialog<bool>(owner);
+    }
 
 }

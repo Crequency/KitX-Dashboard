@@ -176,6 +176,12 @@
     <sys:String x:Key="Text_ToolKit_Create">新建 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">删除</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyTitle">还没有 ToolKit</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteTitle">删除这个工具包？</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteBody">「{0}」及其中的全部内容都会从仓库中移除。</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteWarning">在应用内无法撤销。</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteConfirm">删除</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteCancel">取消</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteUntitled">这个工具包</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyHint">点击「新建 ToolKit」创建第一个工具箱</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — 工作台</sys:String>
     <sys:String x:Key="Text_Bench_ManualTrigger">手动触发</sys:String>

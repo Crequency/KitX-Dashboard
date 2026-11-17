@@ -1,0 +1,32 @@
+<Window x:Class="KitX.Dashboard.Views.DeleteToolkitDialog"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="460"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <!--
+      The ToolKit's name is shown, because the card the button was on may have scrolled out of
+      view by the time this opens, and "delete this?" without a name asks the reader to remember
+      which card they clicked.
+    -->
+    <Grid RowDefinitions="Auto, Auto" Margin="20">
+        <TextBlock Grid.Row="0"
+                   x:Name="DeleteToolkitMessage"
+                   TextWrapping="Wrap"
+                   MaxHeight="320" />
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8"
+                    Margin="0,20,0,0">
+            <Button x:Name="DeleteToolkitCancel"
+                    Click="OnCancel" />
+            <Button x:Name="DeleteToolkitConfirm"
+                    Classes="danger"
+                    Click="OnConfirm" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -176,6 +176,12 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_ToolKit_Create">Nouveau ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Supprimer</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyTitle">Aucun ToolKit</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteTitle">Supprimer ce ToolKit ?</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteBody">« {0} » et tout son contenu seront retirés du dépôt.</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteWarning">Cette action ne peut pas être annulée depuis l’application.</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteConfirm">Supprimer</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteCancel">Annuler</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteUntitled">ce ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyHint">Cliquez sur « Nouveau ToolKit » pour créer le premier</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — Établi</sys:String>
     <sys:String x:Key="Text_Bench_ManualTrigger">Déclencheur manuel</sys:String>

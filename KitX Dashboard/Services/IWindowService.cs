@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using KitX.Dashboard.Views;
 using KitX.ToolKit.Contract.Declaration;
@@ -68,4 +69,19 @@ public interface IWindowService
     /// <summary>Opens a window as a modal dialog with the given owner.</summary>
     void ShowDialog<T>(T window, Window? owner = null) where T : Window;
 
+    /// <summary>
+    /// Asks whether to delete the ToolKit with the given display name, and returns the answer.
+    /// </summary>
+    /// <param name="toolkitName">The name to show in the question, or empty.</param>
+    /// <param name="owner">The window the question belongs to.</param>
+    /// <returns><see langword="true"/> only when the reader confirmed.</returns>
+    /// <remarks>
+    /// <para><b>Why this lives on the window service.</b> The caller is a view model, and a view
+    /// model that constructs a <c>Window</c> cannot be tested without a running application — the
+    /// same reason every other window here is opened through this interface. It is also the only
+    /// place that knows the owner window, which modal centring needs.</para>
+    /// <para><b>Why <see langword="bool"/> and not a tri-state.</b> Closing with the X, pressing
+    /// Escape, and clicking Cancel all mean "do not delete"; there is no third answer to give.</para>
+    /// </remarks>
+    Task<bool> ConfirmDeleteToolkitAsync(string toolkitName, Window? owner = null);
 }

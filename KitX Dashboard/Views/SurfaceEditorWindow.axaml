@@ -74,25 +74,6 @@
             <Setter Property="BorderThickness" Value="2" />
         </Style>
 
-        <!--
-          The one action here that loses something. The renderer has Button.kitx-danger in its own
-          resource dictionary (§10.6 of the Surface design: 不可逆或代价高的动作 — 结束/删除/清空), and
-          that dictionary is not reachable from the Dashboard. The three colours are copied from the
-          design's table (亮色 #E0A6A8 / #FDF3F3 / #C0322F, 暗色 #7C3D41 / #3B2325 / #F0737A) rather
-          than invented, so the editor's danger reads the same as the card's would.
-        -->
-        <Style Selector="Button.danger">
-            <Setter Property="BorderBrush" Value="#E0A6A8" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Background" Value="#FDF3F3" />
-            <Setter Property="Foreground" Value="#C0322F" />
-            <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="Padding" Value="12,6" />
-        </Style>
-        <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#FBE3E3" />
-        </Style>
-
         <Style Selector="Border.grip">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Cursor" Value="SizeWestEast" />

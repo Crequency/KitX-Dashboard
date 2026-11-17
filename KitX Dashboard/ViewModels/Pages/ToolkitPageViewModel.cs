@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
 using KitX.Core.Contract.Event;
 using KitX.Dashboard.Services;
 using KitX.ToolKit.Contract;
@@ -74,13 +75,7 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
             RefreshCards();
         });
 
-        DeleteToolkitCommand = ReactiveCommand.Create<ToolkitCardVM>(card =>
-        {
-            if (card is null)
-                return;
-            _toolkitService.DeleteToolkit(card.Model.GetId());
-            RefreshCards();
-        });
+        DeleteToolkitCommand = ReactiveCommand.CreateFromTask<ToolkitCardVM>(DeleteToolkitAsync);
     }
 
     public override void InitEvents()
@@ -118,6 +113,43 @@ internal class ToolkitPageViewModel : ViewModelBase, IDisposable
         var counts = _toolkitService.ActiveFlowCounts();
         foreach (var card in _cards)
             card.RunningInstances = counts.TryGetValue(card.Model.GetId(), out var active) ? active : 0;
+    }
+
+    /// <summary>
+    /// Asks, then deletes — in that order, and nothing else in between.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why the id is read before the await and the name only once.</b> The card is a
+    /// snapshot of one list scan. While the dialog is open the store can change from elsewhere
+    /// (another window, a workflow finishing), so after the await the question "does this card
+    /// still exist" has to be asked of the store, not of the card. The id is what to ask with; it
+    /// is taken before the await because the reference itself may be gone by then.</para>
+    /// <para><b>Deleting something that vanished.</b> <c>DeleteToolkit</c> returns false for an id
+    /// that is no longer there, which is the right answer for "the reader wanted it gone": they
+    /// do not need an error for a wish that has already come true. The refresh runs either way, so
+    /// the page shows what the store actually holds.</para>
+    /// </remarks>
+    private async Task DeleteToolkitAsync(ToolkitCardVM? card)
+    {
+        if (card is null)
+            return;
+
+        var toolkitId = card.Model.GetId();
+        var name = card.Model.Meta.Name;
+
+        var confirmed = await _windowService.ConfirmDeleteToolkitAsync(
+            name, _windowService.MainWindow);
+
+        // Nothing has been touched at this point. A cancelled or dismissed dialog leaves the
+        // store exactly as it was, which is what the test with the recording fake checks.
+        if (!confirmed)
+            return;
+
+        _toolkitService.DeleteToolkit(toolkitId);
+
+        // Re-read rather than patch: `_cards` may have been rebuilt while the dialog was up, and
+        // editing it here would race whichever handler rebuilt it.
+        RefreshCards();
     }
 
     private void RefreshCards()

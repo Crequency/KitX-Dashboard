@@ -176,6 +176,12 @@
     <sys:String x:Key="Text_ToolKit_Create">새 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">삭제</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyTitle">아직 ToolKit이 없습니다</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteTitle">이 툴킷을 삭제할까요?</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteBody">‘{0}’ 및 그 안의 모든 내용이 저장소에서 제거됩니다.</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteWarning">애플리케이션에서는 되돌릴 수 없습니다.</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteConfirm">삭제</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteCancel">취소</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteUntitled">이 툴킷</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyHint">'새 ToolKit'을 클릭하여 첫 번째 도구 키트를 만드세요</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — 작업대</sys:String>
     <sys:String x:Key="Text_Bench_ManualTrigger">수동 트리거</sys:String>

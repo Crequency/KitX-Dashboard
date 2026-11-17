@@ -176,6 +176,12 @@
     <sys:String x:Key="Text_ToolKit_Create">新規 ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">削除</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyTitle">ToolKit がまだありません</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteTitle">このツールキットを削除しますか？</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteBody">「{0}」とその中身がすべてリポジトリから削除されます。</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteWarning">アプリケーションからは元に戻せません。</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteConfirm">削除</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteCancel">キャンセル</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteUntitled">このツールキット</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyHint">「新しい ToolKit」をクリックして最初のツールキットを作成</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — ワークベンチ</sys:String>
     <sys:String x:Key="Text_Bench_ManualTrigger">手動トリガー</sys:String>

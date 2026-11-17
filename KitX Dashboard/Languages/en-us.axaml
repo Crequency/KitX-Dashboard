@@ -176,6 +176,12 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_ToolKit_Create">New ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_Delete">Delete</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyTitle">No ToolKits yet</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteTitle">Delete this ToolKit?</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteBody">“{0}” and everything in it will be removed from the repository.</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteWarning">This cannot be undone from the application.</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteConfirm">Delete</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteCancel">Cancel</sys:String>
+    <sys:String x:Key="Text_ToolKit_DeleteUntitled">this ToolKit</sys:String>
     <sys:String x:Key="Text_ToolKit_EmptyHint">Click "New ToolKit" to create your first one</sys:String>
     <sys:String x:Key="Text_Bench_Title">KitX Bench — Workbench</sys:String>
     <sys:String x:Key="Text_Bench_ManualTrigger">Manual trigger</sys:String>
