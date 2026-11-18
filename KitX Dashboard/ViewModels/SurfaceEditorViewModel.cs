@@ -566,6 +566,21 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// The full version is reached once per edit; this one is reached once per frame. Merging them
     /// would either put the height recomputation on the drag path or take the height finding out of
     /// the sweep that a genuinely height-changing edit goes through.</para>
+    ///
+    /// <para><b>The two are not interchangeable, and the difference is not only cost.</b> The full
+    /// version recomputes the height finding and inserts it at the front of the list, so on a frame
+    /// that reaches this commit point it can put that entry back when it is absent and move it to
+    /// the top when it is present. This one only removes, so a list with one entry still has one
+    /// entry and the order of the survivors is the order it found them in. The test that pins the
+    /// first difference is <c>A_drag_does_not_bring_a_finding_back</c>: it saves with the store
+    /// refusing the write, which leaves exactly the write alarm, then drags and expects exactly
+    /// that alarm to remain.</para>
+    ///
+    /// <para><b>The cost is proportional to <see cref="Diagnostics"/>.Count, and this runs once per
+    /// pointer move.</b> Today that count is small because a save produces few findings, not because
+    /// the path is cheap: at sixty frames a second, every entry removed is also a collection-changed
+    /// notification the panel redraws for. That is the same kind of note as the one on
+    /// <see cref="RefreshTooTall"/> about a repeated call costing comparisons rather than findings.</para>
     /// </remarks>
     private void SweepStaleDiagnostics()
     {

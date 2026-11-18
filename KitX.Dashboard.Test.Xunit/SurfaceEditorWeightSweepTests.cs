@@ -115,6 +115,47 @@ public class SurfaceEditorWeightSweepTests
     }
 
     /// <summary>
+    /// A drag does not bring a finding back, and a narrow sweep is what makes that true.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why this is not the same test as the one above.</b> <c>A_write_alarm_outlives_a_drag</c>
+    /// proves the alarm survives. This one proves nothing <em>else</em> appears beside it -- and the
+    /// difference is real rather than theoretical, because the obvious simplification of the sweep,
+    /// calling <c>ForgetLastSave</c> instead, does exactly that.</para>
+    ///
+    /// <para>The path is the one that separates them. A failed write leaves <c>Diagnostics</c> holding
+    /// the alarm alone, because <c>Save</c> clears the list and adds the store's findings before the
+    /// write is attempted. From there <c>ForgetLastSave</c> keeps the alarm and then recomputes the
+    /// height finding, putting it back at the front: on a card taller than a screen, a drag would
+    /// resurrect a finding that the failed save had already removed. The narrow sweep only removes,
+    /// so it cannot add anything back.</para>
+    ///
+    /// <para>That distinction used to be invisible to this file -- every test here passed under
+    /// either implementation, which is why the mutation to <c>ForgetLastSave</c> went green. It was
+    /// green because the write-alarm test asked only about the alarm's survival and nothing asked
+    /// about the list's membership.</para>
+    /// </remarks>
+    [Fact]
+    public void A_drag_does_not_bring_a_finding_back()
+    {
+        // Tall enough that a height recomputation would have something to insert: the document is
+        // 896px against an 845px screen, so if the sweep recomputes, this finding reappears.
+        var store = new RecordingStore(Tall(), []) { FailSave = true };
+        var editor = EditorOver(store);
+
+        editor.SaveCommand.Execute().Subscribe();
+
+        // The failed write replaced the list with exactly the alarm, even though the card is too tall.
+        var before = Assert.Single(editor.Diagnostics);
+        Assert.Equal(SurfaceEditorViewModel.SaveFailedCode, before.Code);
+
+        Drag(editor);
+
+        var after = Assert.Single(editor.Diagnostics);
+        Assert.Equal(SurfaceEditorViewModel.SaveFailedCode, after.Code);
+    }
+
+    /// <summary>
     /// A drag that changes nothing leaves the findings alone.
     /// </summary>
     /// <remarks>
