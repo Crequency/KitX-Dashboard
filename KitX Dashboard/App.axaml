@@ -32,22 +32,10 @@
             <SolidColorBrush x:Key="ThemePrimaryAccentTransparent11" Color="#113873D9"/>
 
             <!-- ── KitX design tokens (ToolKit/Bench UX 重设计 §4.1) ── -->
-            <!-- Spacing -->
-            <sys:Double x:Key="KitXSpacingXS">4</sys:Double>
-            <sys:Double x:Key="KitXSpacingS">8</sys:Double>
-            <sys:Double x:Key="KitXSpacingM">12</sys:Double>
-            <sys:Double x:Key="KitXSpacingL">16</sys:Double>
-            <sys:Double x:Key="KitXSpacingXL">24</sys:Double>
             <!-- Radius -->
-            <CornerRadius x:Key="KitXRadiusControl">4</CornerRadius>
             <CornerRadius x:Key="KitXRadiusCard">8</CornerRadius>
-            <CornerRadius x:Key="KitXRadiusNode">6</CornerRadius>
             <!-- Type scale -->
-            <sys:Double x:Key="KitXTypePageTitle">22</sys:Double>
-            <sys:Double x:Key="KitXTypeWindowTitle">20</sys:Double>
-            <sys:Double x:Key="KitXTypeCardTitle">18</sys:Double>
             <sys:Double x:Key="KitXTypeBody">13</sys:Double>
-            <sys:Double x:Key="KitXTypeCaption">12</sys:Double>
             <!-- State colors -->
             <SolidColorBrush x:Key="KitXStateInfo" Color="#FF3873D9"/>
             <SolidColorBrush x:Key="KitXStateWarning" Color="#FFB8860B"/>
