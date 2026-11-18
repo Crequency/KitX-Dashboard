@@ -534,6 +534,37 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             Status = string.Empty;
     }
 
+    /// <summary>Drops the findings that described the document as it was before this edit.</summary>
+    /// <remarks>
+    /// <para><b>The narrow half of <see cref="ForgetLastSave"/>, for paths that run every frame.</b>
+    /// A border drag calls into a weight change on every pointer move. The full teardown also
+    /// recomputes the card's height and rewrites the status line, and neither belongs on that path:
+    /// a weight edit changes no row, so the height finding is still true, and the status line is
+    /// owned by the edit that decides whether there is anything to say.</para>
+    ///
+    /// <para><b>Which entries survive.</b> A failed write describes the disk, and a drag cannot
+    /// change the disk; the height finding describes rows, and a drag moves no cell between rows.
+    /// Everything else in the list was produced by a save and speaks about the document that save
+    /// wrote, which this edit has just replaced. So those two are kept and the rest go.</para>
+    ///
+    /// <para><b>Not a substitute for <see cref="ForgetLastSave"/>, and not to be merged with it.</b>
+    /// The full version is reached once per edit; this one is reached once per frame. Merging them
+    /// would either put the height recomputation on the drag path or take the height finding out of
+    /// the sweep that a genuinely height-changing edit goes through.</para>
+    /// </remarks>
+    private void SweepStaleDiagnostics()
+    {
+        // Backwards, for the same reason ForgetLastSave walks backwards: removing an entry shifts
+        // the ones the loop has not looked at yet.
+        for (var i = Diagnostics.Count - 1; i >= 0; i--)
+        {
+            if (Diagnostics[i].Code is SaveFailedCode or TallerThanAScreenCode)
+                continue;
+
+            Diagnostics.RemoveAt(i);
+        }
+    }
+
     /// <summary>Records that the canvas no longer matches what is on disk.</summary>
     /// <remarks>
     /// One place, because every edit has to say it and no edit may say it differently: the flag is
@@ -683,6 +714,11 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             boundary.Refresh();
 
         ValidationMessage = null;
+
+        // The numbers in the file changed, so anything the last save found about them describes a
+        // document that no longer exists. Narrow on purpose: see the method.
+        SweepStaleDiagnostics();
+
         MarkDirty();
     }
 
@@ -859,6 +895,12 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
             border.Refresh();
 
         ValidationMessage = null;
+
+        // Reached on every pointer move, which is why the sweep here is the narrow one: a weight
+        // edit makes the last save's findings stale, but it moves nothing between rows, so the
+        // height finding and the write alarm both still hold.
+        SweepStaleDiagnostics();
+
         MarkDirty();
     }
 
