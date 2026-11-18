@@ -358,6 +358,7 @@
     <sys:String x:Key="Text_Bench_Diag_element_position_out_of_grid">已捨棄第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`row` 是 {row}，列號必須從 1 開始。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_weight_repaired">已保留第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`weight` 是 {weight}，以 1 處理。權重是正數的份數，一列依列內各份數之和分配寬度。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_text_unknown_format">已保留第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`format` 是 `{value}`，本版本不認得，以純文字顯示。</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_text_unknown_role">已保留第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`role` 是 `{value}`，本版本不認得，以內文顯示。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">已保留第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`min`（{min}）大於 `max`（{max}），範圍已捨棄。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">已保留第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`step`（{step}）不是正數，預設以 1 處理。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">已保留第 {row} 列、權重 {weight} 的 {kindName}（`{kind}`）：`decimals`（{decimals}）是負數，預設交給繪製器決定。</sys:String>

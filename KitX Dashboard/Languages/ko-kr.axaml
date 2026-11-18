@@ -358,6 +358,7 @@
     <sys:String x:Key="Text_Bench_Diag_element_position_out_of_grid">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 버렸습니다: `row`가 {row}입니다. 행 번호는 1부터 시작합니다.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_weight_repaired">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 남겼습니다: `weight`가 {weight}이라 1로 처리합니다. 가중치는 양의 몫 수이며, 한 행은 그 행 몫의 합으로 너비를 나눕니다.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_text_unknown_format">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 남겼습니다: `format`이 `{value}`인데 이 빌드는 모릅니다. 일반 텍스트로 표시합니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_text_unknown_role">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 남겼습니다: `role`이 `{value}`인데 이 빌드는 모릅니다. 본문으로 표시합니다.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 남겼습니다: `min`({min})이 `max`({max})보다 큽니다. 범위를 버렸습니다.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 남겼습니다: `step`({step})이 양수가 아니어서 기본값 1을 씁니다.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">행 {row}, 가중치 {weight}의 {kindName}(`{kind}`)을 남겼습니다: `decimals`({decimals})이 음수여서 기본값은 렌더러가 정합니다.</sys:String>

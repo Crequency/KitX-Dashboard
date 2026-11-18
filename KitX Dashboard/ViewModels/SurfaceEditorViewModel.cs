@@ -1923,6 +1923,8 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         {
             case SurfaceTextElement:
                 AddField<SurfaceTextElement>("key", e => e.Key, (e, v) => e with { Key = Null(v) }, KeyChoices());
+                AddField<SurfaceTextElement>("role", e => e.Role, (e, v) => e with { Role = Null(v) },
+                    ["", "title", "body", "caption"]);
                 AddField<SurfaceTextElement>("format", e => e.Format, (e, v) => e with { Format = Null(v) },
                     ["", "text", "date", "datetime", "percent"]);
                 break;

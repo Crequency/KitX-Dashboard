@@ -358,6 +358,7 @@
     <sys:String x:Key="Text_Bench_Diag_element_position_out_of_grid">行 {row}、重み {weight} の {kindName}（`{kind}`）を破棄しました：`row` は {row} です。行番号は 1 から始まります。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_weight_repaired">行 {row}、重み {weight} の {kindName}（`{kind}`）を残しました：`weight` は {weight} で、1 として扱います。重みは正の部数で、行はその行の部数の合計で幅を分けます。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_text_unknown_format">行 {row}、重み {weight} の {kindName}（`{kind}`）を残しました：`format` は `{value}` で、このビルドでは不明です。プレーン テキストとして表示します。</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_text_unknown_role">行 {row}、重み {weight} の {kindName}（`{kind}`）を残しました：`role` は `{value}` で、このビルドでは不明です。本文として表示します。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">行 {row}、重み {weight} の {kindName}（`{kind}`）を残しました：`min`（{min}）が `max`（{max}）より大きいので、範囲は破棄しました。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">行 {row}、重み {weight} の {kindName}（`{kind}`）を残しました：`step`（{step}）が正でないので、既定の 1 にします。</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">行 {row}、重み {weight} の {kindName}（`{kind}`）を残しました：`decimals`（{decimals}）が負なので、既定ではレンダラーに任せます。</sys:String>

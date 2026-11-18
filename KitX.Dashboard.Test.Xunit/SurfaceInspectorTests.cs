@@ -244,7 +244,7 @@ public class SurfaceInspectorTests
 
         Assert.Same(editor.Elements[0], editor.Selected);
         Assert.Equal(
-            ["type", "row", "key", "format"],
+            ["type", "row", "key", "role", "format"],
             editor.Fields.Select(field => field.Label).ToArray());
         Assert.Equal("title", Field(editor, "key").Value);
     }

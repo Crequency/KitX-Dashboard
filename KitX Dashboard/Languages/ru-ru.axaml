@@ -358,6 +358,7 @@
     <sys:String x:Key="Text_Bench_Diag_element_position_out_of_grid">Отброшен {kindName} (`{kind}`) в строке {row}, вес {weight}: `row` равно {row}, номера строк начинаются с 1.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_weight_repaired">Оставлен {kindName} (`{kind}`) в строке {row}, вес {weight}: `weight` равно {weight}; считается за 1. Вес — положительное число частей, и строка делит свою ширину на сумму частей в ней.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_text_unknown_format">Оставлен {kindName} (`{kind}`) в строке {row}, вес {weight}: `format` равно `{value}`, эта сборка его не знает; показывается как обычный текст.</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_text_unknown_role">Оставлен {kindName} (`{kind}`) в строке {row}, вес {weight}: `role` равно `{value}`, эта сборка его не знает; показывается как основной текст.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">Оставлен {kindName} (`{kind}`) в строке {row}, вес {weight}: `min` ({min}) больше `max` ({max}); диапазон отброшен.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">Оставлен {kindName} (`{kind}`) в строке {row}, вес {weight}: `step` ({step}) не положителен; по умолчанию 1.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">Оставлен {kindName} (`{kind}`) в строке {row}, вес {weight}: `decimals` ({decimals}) отрицательно; по умолчанию выбор за отрисовщиком.</sys:String>

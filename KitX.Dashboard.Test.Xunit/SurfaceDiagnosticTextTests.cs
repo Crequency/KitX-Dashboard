@@ -74,6 +74,7 @@ public class SurfaceDiagnosticTextTests
         "surface.element.position-out-of-grid",
         "surface.element.weight-repaired",
         "surface.element.text.unknown-format",
+        "surface.element.text.unknown-role",
         "surface.element.number.range-reversed",
         "surface.element.number.step-not-positive",
         "surface.element.number.decimals-negative",

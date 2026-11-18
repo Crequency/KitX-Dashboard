@@ -358,6 +358,7 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_position_out_of_grid">Dropped {kindName} at row {row}, weight {weight}: `row` is {row}, row numbers start at 1.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_weight_repaired">Kept {kindName} at row {row}, weight {weight}: `weight` is {weight}; it is treated as 1. A weight is a positive number of parts, and a row divides its width by the sum of the parts in it.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_text_unknown_format">Kept {kindName} at row {row}, weight {weight}: `format` is `{value}`, which this build does not know; it is shown as plain text.</sys:String>
+    <sys:String x:Key="Text_Bench_Diag_element_text_unknown_role">Kept {kindName} at row {row}, weight {weight}: `role` is `{value}`, which this build does not know; it is shown as body text.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_range_reversed">Kept {kindName} at row {row}, weight {weight}: `min` ({min}) is greater than `max` ({max}); the range is dropped.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_step_not_positive">Kept {kindName} at row {row}, weight {weight}: `step` ({step}) is not positive; it defaults to 1.</sys:String>
     <sys:String x:Key="Text_Bench_Diag_element_number_decimals_negative">Kept {kindName} at row {row}, weight {weight}: `decimals` ({decimals}) is negative; it defaults to the renderer's choice.</sys:String>
