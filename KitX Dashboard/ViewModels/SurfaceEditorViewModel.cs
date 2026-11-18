@@ -205,6 +205,21 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
 
     /// <summary>Selects a cell, or clears the inspector when given null.</summary>
     /// <param name="element">The cell to inspect, or null.</param>
+    /// <remarks>
+    /// <para><b>Selection and the findings are not two views of one state.</b> This was investigated
+    /// because it looked like a hole: the check panel draws <c>Diagnostics</c> without asking about
+    /// <c>HasSelection</c>, so a finding can be on screen with nothing selected. Every path has that
+    /// property, including the plainest one -- saving never selects anything, so the moment a save
+    /// reports something, a finding exists and no cell is selected. A question whose answer is "always"
+    /// was not measuring a defect; the two facts simply have different owners.</para>
+    ///
+    /// <para>What does govern a finding's life is the document: it is produced by a save, it describes
+    /// the document that save wrote, and it stops being true when the document changes. Nothing about
+    /// the pointer has any say in it, which is why clearing the selection leaves the panel alone and
+    /// why editing the canvas does not. See <see cref="SweepStaleDiagnostics"/> for the paths that
+    /// change the document without going through a rebuild, and
+    /// <see cref="ForgetLastSave"/> for the ones that do.</para>
+    /// </remarks>
     public void Select(SurfaceElementVM? element)
     {
         if (ReferenceEquals(_selected, element))
