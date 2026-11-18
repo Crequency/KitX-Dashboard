@@ -185,4 +185,28 @@ public class WindowService : IWindowService
         return await dialog.ShowDialog<bool>(owner);
     }
 
+    /// <summary>
+    /// Asks whether to take every element off the card, saying how many there are.
+    /// </summary>
+    /// <param name="elementCount">How many elements the canvas holds right now.</param>
+    /// <param name="owner">The window the question belongs to.</param>
+    /// <returns><see langword="true"/> only when the reader confirmed.</returns>
+    /// <remarks>
+    /// <para>Same shape and same reasoning as <see cref="ConfirmDeleteToolkitAsync"/>: the caller is
+    /// a view model, and a view model that builds a <c>Window</c> cannot be tested without a running
+    /// application. A modal with no owner answers "no" rather than taking the desktop.</para>
+    /// <para>The count is a parameter rather than something the dialog reads, because the dialog has
+    /// no view model and the number lives on the canvas — asking the caller is the only place the
+    /// number is known, and the sentence is useless without it.</para>
+    /// </remarks>
+    public async Task<bool> ConfirmClearSurfaceAsync(int elementCount, Window? owner = null)
+    {
+        if (owner is null)
+            return false;
+
+        var dialog = new ClearSurfaceDialog(elementCount);
+
+        return await dialog.ShowDialog<bool>(owner);
+    }
+
 }

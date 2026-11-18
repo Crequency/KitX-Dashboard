@@ -308,6 +308,10 @@ Si ce n'était pas vous, veuillez vérifier la sécurité de votre appareil.</sy
     <sys:String x:Key="Text_Bench_Surface_Save">Enregistrer et vérifier</sys:String>
     <sys:String x:Key="Text_Bench_Surface_CompressRows">Resserrer les rangées vides</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Vider la carte</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearTitle">Vider la carte ?</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearBody">Les {0} éléments de cette carte en seront retirés. Le fichier sur le disque garde son contenu jusqu'à l'enregistrement.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearConfirm">Vider</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearCancel">Annuler</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Vérification</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Remove">Retirer de la carte</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Le poids doit être au moins 1.</sys:String>

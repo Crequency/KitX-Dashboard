@@ -308,6 +308,10 @@
     <sys:String x:Key="Text_Bench_Surface_Save">儲存並檢查</sys:String>
     <sys:String x:Key="Text_Bench_Surface_CompressRows">壓掉空行</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">清空畫布</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearTitle">清空卡片？</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearBody">卡片上的 {0} 個元素都會被移除。不儲存的話，磁碟上的檔案仍是原樣。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearConfirm">清空</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearCancel">取消</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">檢查</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Remove">從卡片上移除</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">權重至少為 1。</sys:String>

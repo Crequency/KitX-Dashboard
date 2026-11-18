@@ -56,6 +56,14 @@ public class DeleteToolkitConfirmationTests
             return Task.FromResult(answer);
         }
 
+        /// <summary>
+        /// Not part of what this file tests. The editor's own fake records it; here it answers
+        /// "no" so a test that accidentally reached it would clear nothing and say so loudly
+        /// rather than silently emptying a canvas.
+        /// </summary>
+        public Task<bool> ConfirmClearSurfaceAsync(int elementCount, Window? owner = null)
+            => Task.FromResult(false);
+
         public MainWindow? MainWindow { get; set; }
         public PluginsLaunchWindow? PluginsLaunchWindow { get; set; }
         public Toolkit? BenchToolkit { get; set; }

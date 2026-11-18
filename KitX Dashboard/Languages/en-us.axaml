@@ -308,6 +308,10 @@ If this wasn't you, please check your device's security.</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Save">Save and check</sys:String>
     <sys:String x:Key="Text_Bench_Surface_CompressRows">Close up blank rows</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Empty the card</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearTitle">Empty the card?</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearBody">All {0} elements on this card will be taken off it. The file on disk keeps what it has until you save.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearConfirm">Empty it</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearCancel">Cancel</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Check</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Remove">Remove from card</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Weight must be at least 1.</sys:String>

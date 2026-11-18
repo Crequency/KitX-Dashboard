@@ -39,7 +39,7 @@ public class SurfaceLeaveLocalizationTests
 
     /// <summary>Every key this change is responsible for, and what it is allowed to contain.</summary>
     /// <remarks>
-    /// <para><b>This table covers these five keys and nothing else.</b> It is not a registry of
+    /// <para><b>This table covers the keys listed in it and nothing else.</b> It is not a registry of
     /// every diagnostic sentence, and it does not promise that the placeholders of the other
     /// <c>Text_Bench_Diag_*</c> lines are filled by anything. Those sentences are written by
     /// <c>SurfaceValidator</c> and <c>SurfaceStore</c> in <c>KitX.ToolKit</c>, which this table
@@ -57,6 +57,15 @@ public class SurfaceLeaveLocalizationTests
         ("Text_Bench_Surface_LeaveAnyway", []),
         ("Text_Bench_Surface_LeaveStay", []),
         ("Text_Bench_Diag_save_failed", ["file", "reason"]),
+
+        // The empty-the-card confirmation. `ClearBody` carries a positional `{0}` for the count,
+        // which the placeholder regex above does not match at all — it only knows named
+        // placeholders. Listing it as allowed would claim a check that never runs, so this table
+        // says what it actually knows: no *named* placeholder is allowed in any of the four.
+        ("Text_Bench_Surface_ClearTitle", []),
+        ("Text_Bench_Surface_ClearBody", []),
+        ("Text_Bench_Surface_ClearConfirm", []),
+        ("Text_Bench_Surface_ClearCancel", []),
     ];
 
     private static readonly Regex Placeholder =

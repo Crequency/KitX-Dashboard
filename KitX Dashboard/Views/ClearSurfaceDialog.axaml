@@ -1,0 +1,32 @@
+<Window x:Class="KitX.Dashboard.Views.ClearSurfaceDialog"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="460"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <!--
+      The sentence carries the element count, because "empty the card?" asks the reader to remember
+      what is on it. Twelve elements and one element are the same click, and only one of them is
+      worth a second thought.
+    -->
+    <Grid RowDefinitions="Auto, Auto" Margin="20">
+        <TextBlock Grid.Row="0"
+                   x:Name="ClearSurfaceMessage"
+                   TextWrapping="Wrap"
+                   MaxHeight="320" />
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8"
+                    Margin="0,20,0,0">
+            <Button x:Name="ClearSurfaceCancel"
+                    Click="OnCancel" />
+            <Button x:Name="ClearSurfaceConfirm"
+                    Classes="danger"
+                    Click="OnConfirm" />
+        </StackPanel>
+    </Grid>
+</Window>

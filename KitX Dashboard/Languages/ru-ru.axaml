@@ -308,6 +308,10 @@
     <sys:String x:Key="Text_Bench_Surface_Save">Сохранить и проверить</sys:String>
     <sys:String x:Key="Text_Bench_Surface_CompressRows">Сжать пустые строки</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">Очистить карточку</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearTitle">Очистить карточку?</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearBody">Все элементы карточки ({0}) будут сняты. Файл на диске останется прежним до сохранения.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearConfirm">Очистить</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearCancel">Отмена</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">Проверка</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Remove">Убрать с карточки</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">Вес должен быть не меньше 1.</sys:String>

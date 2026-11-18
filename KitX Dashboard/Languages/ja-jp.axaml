@@ -308,6 +308,10 @@
     <sys:String x:Key="Text_Bench_Surface_Save">保存して確認</sys:String>
     <sys:String x:Key="Text_Bench_Surface_CompressRows">空の行を詰める</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">カードを空にする</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearTitle">カードを空にしますか？</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearBody">このカードの {0} 個の要素がすべて外れます。保存するまで、ディスク上のファイルはそのままです。</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearConfirm">空にする</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearCancel">キャンセル</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">確認</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Remove">カードから外す</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">重みは 1 以上にしてください。</sys:String>

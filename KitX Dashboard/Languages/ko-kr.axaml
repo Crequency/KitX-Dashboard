@@ -308,6 +308,10 @@
     <sys:String x:Key="Text_Bench_Surface_Save">저장하고 확인</sys:String>
     <sys:String x:Key="Text_Bench_Surface_CompressRows">빈 행 붙이기</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Clear">카드 비우기</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearTitle">카드를 비울까요?</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearBody">카드의 요소 {0}개가 모두 빠집니다. 저장하기 전까지 디스크의 파일은 그대로입니다.</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearConfirm">비우기</sys:String>
+    <sys:String x:Key="Text_Bench_Surface_ClearCancel">취소</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Check">확인</sys:String>
     <sys:String x:Key="Text_Bench_Surface_Remove">카드에서 제거</sys:String>
     <sys:String x:Key="Text_Bench_Surface_WeightOutOfRange">가중치는 1 이상이어야 합니다.</sys:String>

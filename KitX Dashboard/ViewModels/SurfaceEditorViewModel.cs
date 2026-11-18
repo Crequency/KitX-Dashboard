@@ -5,6 +5,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
+using KitX.Dashboard.Services;
 using KitX.ToolKit.Contract;
 using KitX.ToolKit.Contract.Declaration;
 using KitX.ToolKit.Contract.Surface;
@@ -81,6 +83,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     private readonly ISurfaceStore _store;
     private readonly Func<string, IReadOnlyList<KeyDeclaration>> _keysOf;
     private readonly Func<string, string?>? _nameOf;
+    private readonly IWindowService? _windows;
 
     private string _toolkitId = string.Empty;
     private string _status = string.Empty;
@@ -99,7 +102,8 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     public SurfaceEditorViewModel(
         ISurfaceStore store,
         Func<string, IReadOnlyList<KeyDeclaration>> keysOf,
-        Func<string, string?>? nameOf = null)
+        Func<string, string?>? nameOf = null,
+        IWindowService? windows = null)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(keysOf);
@@ -107,6 +111,7 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         _store = store;
         _keysOf = keysOf;
         _nameOf = nameOf;
+        _windows = windows;
 
         InitCommands();
     }
@@ -1531,7 +1536,40 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         WriteFailed,
     }
 
+    /// <summary>Asks, and empties the canvas only if the answer was yes.</summary>
+    /// <remarks>
+    /// <para><b>Why the question is in the command and not in <see cref="Clear"/>.</b> <c>Clear</c>
+    /// is the act; this is the permission to perform it. Keeping them apart is what lets the tests
+    /// say "the canvas was untouched" about a fake window service, instead of needing a real dialog
+    /// to click and a real window to see.</para>
+    ///
+    /// <para><b>What happens when there is no window service.</b> A view model built without one —
+    /// which is every test that has no interest in dialogs — must still be usable, so an absent
+    /// service means the answer is yes. That is the opposite default from <c>ConfirmDelete…</c>, and
+    /// deliberately: deletion removes a ToolKit from the repository, while this removes elements
+    /// from a draft that is not written until saved. The safer default is the one that does not
+    /// silently change behaviour for a caller who never asked a question.</para>
+    /// </remarks>
+    private async Task ClearFromButton()
+    {
+        if (_windows is not null)
+        {
+            var confirmed = await _windows.ConfirmClearSurfaceAsync(Elements.Count, _windows.MainWindow);
+
+            if (!confirmed)
+                return;
+        }
+
+        Clear();
+    }
+
     /// <summary>Removes every element from the canvas, without touching the file until saved.</summary>
+    /// <remarks>
+    /// <b>Unguarded on purpose.</b> This is the act, not the permission — the confirmation lives in
+    /// <see cref="ClearCommand"/>. A guard here as well would make the command's own test pass for
+    /// the wrong reason, and would leave no way to empty the canvas from a caller that already
+    /// knows the answer.
+    /// </remarks>
     public void Clear()
     {
         Elements.Clear();
@@ -2178,7 +2216,11 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
         SelectCommand = ReactiveCommand.Create<SurfaceElementVM?>(Select);
         RemoveCommand = ReactiveCommand.Create<SurfaceElementVM>(Remove);
         SaveCommand = ReactiveCommand.Create(SaveFromButton);
-        ClearCommand = ReactiveCommand.Create(Clear);
+
+        // Not `Create(Clear)`: emptying the card asks first now, so the command has to be able to
+        // await an answer. The clear itself stays synchronous and unguarded — this changes who may
+        // call it, not what it does.
+        ClearCommand = ReactiveCommand.CreateFromTask(ClearFromButton);
         CompressRowsCommand = ReactiveCommand.Create(CompressEmptyRows);
     }
 
@@ -2204,7 +2246,12 @@ public sealed partial class SurfaceEditorViewModel : ViewModelBase
     /// <summary>Writes the canvas to the store.</summary>
     public ReactiveCommand<Unit, Unit> SaveCommand { get; private set; } = null!;
 
-    /// <summary>Empties the canvas in memory.</summary>
+    /// <summary>Empties the canvas in memory, after asking.</summary>
+    /// <remarks>
+    /// The asking lives here and the emptying lives in <see cref="Clear"/>, so a test can call one
+    /// without the other. That split is what makes "not confirmed never reaches the canvas" a claim a
+    /// test can make about a fake, rather than something you check by clicking and looking.
+    /// </remarks>
     public ReactiveCommand<Unit, Unit> ClearCommand { get; private set; } = null!;
 
     /// <summary>Closes up blank rows, renumbering the rest from one.</summary>

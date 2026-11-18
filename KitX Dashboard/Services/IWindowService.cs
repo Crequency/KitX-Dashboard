@@ -84,4 +84,19 @@ public interface IWindowService
     /// Escape, and clicking Cancel all mean "do not delete"; there is no third answer to give.</para>
     /// </remarks>
     Task<bool> ConfirmDeleteToolkitAsync(string toolkitName, Window? owner = null);
+
+    /// <summary>
+    /// Asks whether to take every element off the card, and returns the answer.
+    /// </summary>
+    /// <param name="elementCount">How many elements the canvas holds right now.</param>
+    /// <param name="owner">The window the question belongs to.</param>
+    /// <returns><see langword="true"/> only when the reader confirmed.</returns>
+    /// <remarks>
+    /// <para><b>Why the count is in the signature.</b> The dialog has no view model, and the number
+    /// lives on the canvas. Passing it is what lets the sentence say how much is about to go instead
+    /// of asking the reader to recount it.</para>
+    /// <para><b>Why <see langword="bool"/> and not a tri-state.</b> The same reason as
+    /// <see cref="ConfirmDeleteToolkitAsync"/>: X, Escape and Cancel all mean "leave it alone".</para>
+    /// </remarks>
+    Task<bool> ConfirmClearSurfaceAsync(int elementCount, Window? owner = null);
 }

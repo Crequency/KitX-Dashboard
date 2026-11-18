@@ -146,7 +146,11 @@ public partial class App : Application
                 return toolkit?.Keys ?? [];
             },
             toolkitId => sp.GetRequiredService<KitX.ToolKit.Contract.IToolkitService>()
-                .GetToolkit(toolkitId)?.Meta.Name));
+                .GetToolkit(toolkitId)?.Meta.Name,
+            // The window service is what lets the editor ask before emptying the card. It is resolved
+            // here rather than injected anywhere upstream for the reason stated on the interface: this
+            // service never constructor-injects a view model, so the edge only points one way.
+            sp.GetRequiredService<IWindowService>()));
 
         // C3 convergence: all remaining ViewModels — constructor-injected services,
         // resolved via App.GetService at their View creation points.
