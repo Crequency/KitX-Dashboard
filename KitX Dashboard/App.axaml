@@ -36,11 +36,6 @@
             <CornerRadius x:Key="KitXRadiusCard">8</CornerRadius>
             <!-- Type scale -->
             <sys:Double x:Key="KitXTypeBody">13</sys:Double>
-            <!-- State colors -->
-            <SolidColorBrush x:Key="KitXStateInfo" Color="#FF3873D9"/>
-            <SolidColorBrush x:Key="KitXStateWarning" Color="#FFB8860B"/>
-            <SolidColorBrush x:Key="KitXStateDanger" Color="#FFD13438"/>
-            <SolidColorBrush x:Key="KitXStateSuccess" Color="#FF107C10"/>
 
             <FontFamily x:Key="SarasaMonoCL">avares://KitX.Dashboard.Fonts/sarasa-mono-cl-regular.ttf#Sarasa Mono CL</FontFamily>
             <FontFamily x:Key="SourceHanSans">avares://KitX.Dashboard.Fonts/SourceHanSans-VF.ttf#Source Han Sans VF</FontFamily>
